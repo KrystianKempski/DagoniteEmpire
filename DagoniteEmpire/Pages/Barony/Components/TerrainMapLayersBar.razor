@@ -1,0 +1,50 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<div class="terrain-page__layers">
+    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">Layers:</MudText>
+    @foreach (var layer in AllLayers)
+    {
+        var on = IsVisible(layer);
+        <MudChip T="string"
+                 Variant="@(on ? Variant.Filled : Variant.Outlined)"
+                 Color="Color.Default"
+                 Size="Size.Small"
+                 Class="@(on ? "terrain-layer-chip terrain-layer-chip--on" : "terrain-layer-chip")"
+                 OnClick="@(() => OnToggleLayer.InvokeAsync(layer))">
+            @Label(layer)
+        </MudChip>
+    }
+    @if (ShowClearLayer)
+    {
+        <MudButton Variant="Variant.Outlined"
+                   Size="Size.Small"
+                   Class="barony-turn-btn barony-turn-btn--ghost"
+                   StartIcon="@Icons.Material.Filled.DeleteSweep"
+                   OnClick="OnClearLayer">
+            Clear current layer
+        </MudButton>
+    }
+</div>
+
+@code {
+    private static readonly TerrainMapLayer[] AllLayers = Enum.GetValues<TerrainMapLayer>();
+
+    [Parameter] public IReadOnlySet<TerrainMapLayer> VisibleLayers { get; set; }
+        = new HashSet<TerrainMapLayer>();
+    [Parameter] public bool ShowClearLayer { get; set; }
+    [Parameter] public EventCallback<TerrainMapLayer> OnToggleLayer { get; set; }
+    [Parameter] public EventCallback OnClearLayer { get; set; }
+
+    private bool IsVisible(TerrainMapLayer layer) => VisibleLayers.Contains(layer);
+
+    private static string Label(TerrainMapLayer layer) => layer switch
+    {
+        TerrainMapLayer.Fertility => "Fertility",
+        TerrainMapLayer.TerrainType => "Terrain type",
+        TerrainMapLayer.Domain => "Domain",
+        TerrainMapLayer.Fief => "Fief",
+        TerrainMapLayer.Resources => "Resources",
+        TerrainMapLayer.Improvements => "Improvements",
+        _ => layer.ToString(),
+    };
+}

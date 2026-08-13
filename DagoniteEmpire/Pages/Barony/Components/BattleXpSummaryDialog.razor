@@ -1,0 +1,146 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Models.BaronyModels
+
+<MudDialog Class="baron-influence-dialog battle-xp-summary-mud-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@TitleText</MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog battle-xp-summary-dialog">
+            <MudTable Items="@Rows"
+                      Dense="true"
+                      Hover="true"
+                      Breakpoint="Breakpoint.None"
+                      Class="battle-xp-summary-dialog__table">
+                <HeaderContent>
+                    <MudTh class="battle-xp-summary-dialog__unit-col">Unit</MudTh>
+                    <MudTh class="battle-xp-summary-dialog__num-col">Dmg<br />dealt</MudTh>
+                    <MudTh class="battle-xp-summary-dialog__num-col">Dmg<br />taken</MudTh>
+                    <MudTh class="battle-xp-summary-dialog__num-col">Engaged<br />rounds</MudTh>
+                    <MudTh class="battle-xp-summary-dialog__num-col">Kills</MudTh>
+                    <MudTh class="battle-xp-summary-dialog__num-col">Fled</MudTh>
+                    <MudTh class="battle-xp-summary-dialog__num-col">Base<br />XP</MudTh>
+                    @if (CanAdjust)
+                    {
+                        <MudTh class="battle-xp-summary-dialog__bonus-col">MG<br />bonus</MudTh>
+                        <MudTh class="battle-xp-summary-dialog__note-col">MG note</MudTh>
+                    }
+                    <MudTh class="battle-xp-summary-dialog__num-col">Final<br />XP</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Unit" class="battle-xp-summary-dialog__unit-col">@context.UnitName</MudTd>
+                    <MudTd DataLabel="Dmg dealt" class="battle-xp-summary-dialog__num-col">@context.DamageDealt</MudTd>
+                    <MudTd DataLabel="Dmg taken" class="battle-xp-summary-dialog__num-col">@context.DamageTaken</MudTd>
+                    <MudTd DataLabel="Engaged rounds" class="battle-xp-summary-dialog__num-col">@context.EngagedRounds</MudTd>
+                    <MudTd DataLabel="Kills" class="battle-xp-summary-dialog__num-col">@context.Kills</MudTd>
+                    <MudTd DataLabel="Fled" class="battle-xp-summary-dialog__num-col">@(context.Fled ? "yes" : "no")</MudTd>
+                    <MudTd DataLabel="Base XP" class="battle-xp-summary-dialog__num-col">@context.XpNetBase</MudTd>
+                    @if (CanAdjust)
+                    {
+                        <MudTd DataLabel="MG bonus" class="battle-xp-summary-dialog__bonus-col">
+                            <MudNumericField T="int"
+                                             Value="@context.MgBonusXp"
+                                             ValueChanged="@((int v) => context.MgBonusXp = v)"
+                                             HideSpinButtons="false"
+                                             Min="-50"
+                                             Max="50"
+                                             Immediate="true"
+                                             Variant="Variant.Outlined"
+                                             Margin="Margin.Dense"
+                                             Class="battle-xp-summary-dialog__bonus-input" />
+                        </MudTd>
+                        <MudTd DataLabel="MG note" class="battle-xp-summary-dialog__note-col">
+                            <MudTextField T="string"
+                                          Value="@context.MgNote"
+                                          ValueChanged="@((string v) => context.MgNote = v)"
+                                          Immediate="true"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          Placeholder="Note…"
+                                          Class="battle-xp-summary-dialog__note-input" />
+                        </MudTd>
+                    }
+                    <MudTd DataLabel="Final XP" class="battle-xp-summary-dialog__num-col">
+                        <b>@context.XpNetFinal</b>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        @if (CanAdjust)
+        {
+            <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+            <MudButton Class="baron-influence-save-btn"
+                       Variant="Variant.Filled"
+                       OnClick="Confirm">
+                Confirm XP
+            </MudButton>
+        }
+        else
+        {
+            <MudButton Class="baron-influence-save-btn"
+                       Variant="Variant.Filled"
+                       OnClick="Acknowledge">
+                OK
+            </MudButton>
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public BaronyBattleXpSummaryDTO Summary { get; set; } = new();
+    [Parameter] public bool CanAdjust { get; set; }
+
+    private string TitleText =>
+        CanAdjust
+            ? "Battle XP summary (MG review)"
+            : "Battle XP summary";
+
+    private List<BaronyBattleXpSummaryEntryDTO> Rows { get; set; } = new();
+
+    protected override void OnParametersSet()
+    {
+        Rows = (Summary.Entries ?? new())
+            .Select(e => new BaronyBattleXpSummaryEntryDTO
+            {
+                UnitId = e.UnitId,
+                UnitName = e.UnitName,
+                DamageDealt = e.DamageDealt,
+                DamageTaken = e.DamageTaken,
+                EngagedRounds = e.EngagedRounds,
+                Kills = e.Kills,
+                Fled = e.Fled,
+                XpFromDamageDealt = e.XpFromDamageDealt,
+                XpFromEngagedRounds = e.XpFromEngagedRounds,
+                XpFromKills = e.XpFromKills,
+                XpLossFromDamageTaken = e.XpLossFromDamageTaken,
+                XpLossFromFlee = e.XpLossFromFlee,
+                XpNetBase = e.XpNetBase,
+                MgBonusXp = e.MgBonusXp,
+                MgNote = e.MgNote,
+            })
+            .OrderBy(e => e.UnitName)
+            .ToList();
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Confirm()
+    {
+        var result = new BaronyBattleXpSummaryDTO
+        {
+            Id = Summary.Id,
+            Utc = Summary.Utc,
+            AcknowledgedByBaron = Summary.AcknowledgedByBaron,
+            Entries = Rows,
+        };
+        MudDialog.Close(DialogResult.Ok(result));
+    }
+
+    private void Acknowledge() => MudDialog.Close(DialogResult.Ok(true));
+}

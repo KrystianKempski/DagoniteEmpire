@@ -1,0 +1,138 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog">
+            <MudTextField @bind-Value="_displayName"
+                          Label="Name"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Required="true"
+                          HelperText="@(IsVillage ? "Village place name shown on Domain Panel." : null)"
+                          Class="baron-influence-field" />
+            <MudTextField @bind-Value="_notes"
+                          Label="Notes"
+                          HelperText="Optional notes / formula text."
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="2"
+                          Class="baron-influence-field" />
+
+            @if (IsCustom)
+            {
+                <MudText Typo="Typo.caption" Class="mb-1" Style="color:var(--barony-muted);">Icon</MudText>
+                <div class="custom-improvement-icon-picker">
+                    @foreach (var icon in MapImprovement.IconChoices)
+                    {
+                        var url = icon;
+                        var selected = string.Equals(_iconUrl, url, StringComparison.OrdinalIgnoreCase);
+                        <BaronyTooltip Text="@url">
+                            <button type="button"
+                                    class="custom-improvement-icon-picker__btn @(selected ? "custom-improvement-icon-picker__btn--selected" : "")"
+                                    aria-label="@url"
+                                    @onclick="() => _iconUrl = url">
+                                <img src="@url" alt="" class="custom-improvement-icon-picker__img" />
+                            </button>
+                        </BaronyTooltip>
+                    }
+                </div>
+            }
+
+            <MudCheckBox T="bool"
+                         @bind-Value="_isInactive"
+                         Label="Inactive"
+                         Color="Color.Primary"
+                         Dense="true"
+                         Class="baron-influence-field" />
+
+            @if (_isInactive)
+            {
+                <MudTextField @bind-Value="_inactiveReason"
+                              Label="Why inactive"
+                              HelperText="Shown when hovering the improvement name on Domain Panel."
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Lines="2"
+                              Class="baron-influence-field" />
+            }
+
+            <PpbVectorEditor @bind-Value="_additive" Title="PPB additive (+)" Compact="true" />
+            <PpbVectorEditor @bind-Value="_percent" Title="PPB percent (%)" Compact="true" Percent="true" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public TerrainImprovementDTO Improvement { get; set; } = new();
+
+    private string _displayName = string.Empty;
+    private string? _notes;
+    private bool _isInactive;
+    private string? _inactiveReason;
+    private string _iconUrl = MapImprovement.StoneTowerIconUrl;
+    private PpbVector _additive = new();
+    private PpbVector _percent = new();
+
+    private bool IsVillage =>
+        string.Equals(Improvement.Name, MapImprovement.Village, StringComparison.OrdinalIgnoreCase);
+
+    private bool IsCustom => MapImprovement.IsCustom(Improvement.Name);
+
+    private bool IsMapPlaced => MapImprovement.IsKnown(Improvement.Name);
+
+    protected override void OnInitialized()
+    {
+        _displayName = BaronyCalc.ImprovementDisplayLabel(Improvement);
+        _notes = Improvement.FormulaText;
+        _isInactive = !Improvement.IsActive;
+        _inactiveReason = Improvement.InactiveReason;
+        _iconUrl = string.IsNullOrWhiteSpace(Improvement.IconUrl)
+            ? MapImprovement.StoneTowerIconUrl
+            : Improvement.IconUrl.Trim();
+        if (!MapImprovement.IconChoices.Contains(_iconUrl, StringComparer.OrdinalIgnoreCase))
+            _iconUrl = MapImprovement.StoneTowerIconUrl;
+        _additive = Improvement.Additive.Clone();
+        _percent = Improvement.Percent.Clone();
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(_displayName))
+        {
+            _snackBar.Add("Name is required.", Severity.Warning);
+            return;
+        }
+
+        if (IsMapPlaced)
+        {
+            // Keep map kind in Name (icons). Description holds place name or catalog label.
+            Improvement.Description = _displayName.Trim();
+        }
+        else
+        {
+            Improvement.Name = _displayName.Trim();
+        }
+
+        Improvement.FormulaText = string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim();
+        Improvement.IsActive = !_isInactive;
+        Improvement.InactiveReason = string.IsNullOrWhiteSpace(_inactiveReason)
+            ? null
+            : _inactiveReason.Trim();
+        Improvement.IconUrl = IsCustom ? _iconUrl : null;
+        Improvement.Additive = _additive.Clone();
+        Improvement.Percent = _percent.Clone();
+
+        MudDialog.Close(DialogResult.Ok(Improvement));
+    }
+}

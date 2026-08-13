@@ -1,0 +1,30 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+@if (string.IsNullOrWhiteSpace(TipText))
+{
+    <span class="php-metric-icon @BaronPhpVisuals.CssClass(Metric)"
+          style="@MaskStyle"
+          aria-hidden="true"></span>
+}
+else
+{
+    <BaronyTooltip Text="@TipText">
+        <span class="php-metric-icon @BaronPhpVisuals.CssClass(Metric)"
+              style="@MaskStyle"
+              aria-hidden="true"></span>
+    </BaronyTooltip>
+}
+
+@code {
+    [Parameter] public PhpMetric Metric { get; set; }
+    /// <summary>Tooltip text. Null = metric name. Empty string = no tooltip (e.g. outer BaronyTooltip).</summary>
+    [Parameter] public string? Title { get; set; }
+
+    private string? TipText =>
+        Title is null ? BaronPhpVisuals.Name(Metric)
+        : string.IsNullOrWhiteSpace(Title) ? null
+        : Title;
+
+    private string MaskStyle =>
+        $"--php-icon-url: url('{BaronPhpVisuals.IconUrl(Metric)}');";
+}

@@ -1,0 +1,501 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<article class="project-card @CardClass @(_isOpen ? "project-card--open" : "project-card--collapsed")">
+    <header class="project-card__header" @onclick="Toggle" role="button" aria-expanded="@_isOpen">
+        <div class="project-card__title-row">
+            <h3 class="project-card__title">@Audience.Title</h3>
+            @if (Audience.HasPpb || Audience.HasPhp)
+            {
+                <div class="baron-audience__ppb-glance">
+                    @if (Audience.HasPpb)
+                    {
+                        <PpbSummaryChips Vector="@AudienceGlance" />
+                    }
+                    @if (Audience.HasPhp)
+                    {
+                        <div class="baron-php-summary">
+                            @if (Audience.Prestige != 0)
+                            {
+                                <PhpMetricChip Metric="PhpMetric.Prestige" Value="@Audience.Prestige" ShowLabel="false" />
+                            }
+                            @if (Audience.Honor != 0)
+                            {
+                                <PhpMetricChip Metric="PhpMetric.Honor" Value="@Audience.Honor" ShowLabel="false" />
+                            }
+                            @if (Audience.Fear != 0)
+                            {
+                                <PhpMetricChip Metric="PhpMetric.Fear" Value="@Audience.Fear" ShowLabel="false" />
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            <div class="project-card__badges">
+                @if (!IsCouncil)
+                {
+                    <span class="project-output-badge">@Audience.PetitionerName</span>
+                }
+                else
+                {
+                    <span class="project-output-badge">Council</span>
+                }
+                <span class="baron-audience__status baron-audience__status--@StatusCss">@Audience.StatusDisplay</span>
+                @if (Audience.ContinuedFromAudienceId is not null)
+                {
+                    <BaronyTooltip Text="Continued from a deferred audience">
+                        <span class="baron-audience__continued">continued</span>
+                    </BaronyTooltip>
+                }
+            </div>
+        </div>
+
+        @if (_isOpen)
+        {
+            <span class="project-card__turns">
+                @Audience.ExchangeCount exchange@(Audience.ExchangeCount == 1 ? "" : "s")
+                · T@(Audience.TurnNumber)
+            </span>
+        }
+    </header>
+
+    @if (_isOpen)
+    {
+        <div class="baron-audience__body">
+            <div class="baron-audience__exchanges">
+                @foreach (var x in Audience.Exchanges.OrderBy(e => e.SortOrder).ThenBy(e => e.Id))
+                {
+                    <div class="baron-audience__exchange @ExchangeThemeClass(x)">
+                        <div class="baron-audience__exchange-head">
+                            @SpeakerLabel(x)
+                            <span>· T@(x.TurnNumber)</span>
+                        </div>
+                        <div class="baron-audience__exchange-body">
+                            @if (TryGetChapterLink(x, out var chapterId, out var chapterLabel))
+                            {
+                                <span>@chapterLabel </span>
+                                <a href="/chapter/@chapterId">Open chapter</a>
+                            }
+                            else
+                            {
+                                @x.Body
+                            }
+                        </div>
+                        @if (x.IsResourceChange
+                            && ((x.Additive is not null && !x.Additive.IsEmpty) || x.HasPhp))
+                        {
+                            <div class="baron-audience__ppb-delta">
+                                @if (x.Additive is not null && !x.Additive.IsEmpty)
+                                {
+                                    @foreach (var info in PpbCatalog.All)
+                                    {
+                                        var v = x.Additive[info.Key];
+                                        if (v == 0m)
+                                            continue;
+                                        <span class="baron-audience__ppb-delta-item @PpbCellStyle.ValueClass(info.Key, v)">
+                                            @PpbFormat.Additive(v) @info.ShortEn
+                                        </span>
+                                    }
+                                }
+                                @if (x.Prestige != 0)
+                                {
+                                    <span class="baron-audience__ppb-delta-item php-metric--prestige">
+                                        @FmtPhp(x.Prestige) Prestige
+                                    </span>
+                                }
+                                @if (x.Honor != 0)
+                                {
+                                    <span class="baron-audience__ppb-delta-item php-metric--honor">
+                                        @FmtPhp(x.Honor) Honor
+                                    </span>
+                                }
+                                @if (x.Fear != 0)
+                                {
+                                    <span class="baron-audience__ppb-delta-item php-metric--fear">
+                                        @FmtPhp(x.Fear) Fear
+                                    </span>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            @if (ShowSummary && (!string.IsNullOrWhiteSpace(Audience.GmSummary) || !string.IsNullOrWhiteSpace(Audience.OutcomeNotes)))
+            {
+                <div class="baron-audience__summary">
+                    @if (!string.IsNullOrWhiteSpace(Audience.GmSummary))
+                    {
+                        <div><span class="baron-audience__summary-label">Summary</span> @Audience.GmSummary</div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Audience.OutcomeNotes))
+                    {
+                        <div><span class="baron-audience__summary-label">Outcomes</span> @Audience.OutcomeNotes</div>
+                    }
+                </div>
+            }
+
+            @if (CanReply)
+            {
+                <div class="baron-audience__composer @(CanWriteAsGm ? "baron-audience__composer--gm" : "baron-audience__composer--baron")">
+                    @if (CanWriteAsGm)
+                    {
+                        <div class="baron-audience__speaker-row">
+                            <MudSelect T="string"
+                                       @bind-Value="_speakerMode"
+                                       Label="Speak as"
+                                       Variant="Variant.Outlined"
+                                       Margin="Margin.Dense"
+                                       Dense="true"
+                                       Disabled="Busy">
+                                @if (HasCourtSpeakers)
+                                {
+                                    @foreach (var name in CourtSpeakerNames)
+                                    {
+                                        <MudSelectItem Value="@name">@name</MudSelectItem>
+                                    }
+                                    <MudSelectItem Value="@BaronCouncilSession.GameMasterSpeaker">@BaronCouncilSession.GameMasterSpeaker</MudSelectItem>
+                                    <MudSelectItem Value="@SpeakerModeOther">Other character</MudSelectItem>
+                                }
+                                else
+                                {
+                                    <MudSelectItem Value="@SpeakerModePetitioner">@Audience.PetitionerName (petitioner)</MudSelectItem>
+                                    <MudSelectItem Value="@BaronCouncilSession.GameMasterSpeaker">@BaronCouncilSession.GameMasterSpeaker</MudSelectItem>
+                                    <MudSelectItem Value="@SpeakerModeOther">Other character</MudSelectItem>
+                                }
+                            </MudSelect>
+                            @if (_speakerMode == SpeakerModeOther)
+                            {
+                                <MudTextField @bind-Value="_otherSpeaker"
+                                              Label="Character name"
+                                              Variant="Variant.Outlined"
+                                              Margin="Margin.Dense"
+                                              Immediate="true"
+                                              Disabled="Busy" />
+                            }
+                        </div>
+                    }
+                    else if (CanWriteAsBaron)
+                    {
+                        <div class="baron-audience__speaker-row">
+                            <MudSelect T="string"
+                                       @bind-Value="_baronSpeakerMode"
+                                       Label="Speak as"
+                                       Variant="Variant.Outlined"
+                                       Margin="Margin.Dense"
+                                       Dense="true"
+                                       Disabled="Busy">
+                                <MudSelectItem Value="@SpeakerModeBaron">@BaronLordSpeaker</MudSelectItem>
+                                <MudSelectItem Value="@BaronCouncilSession.QuestionToGmSpeaker">@BaronCouncilSession.QuestionToGmSpeaker</MudSelectItem>
+                            </MudSelect>
+                        </div>
+                    }
+                    <MudTextField @bind-Value="_draft"
+                                  Label="@(ComposerLabel)"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Lines="3"
+                                  Immediate="true"
+                                  Disabled="Busy" />
+                    <div class="baron-audience__composer-actions">
+                        <MudButton Size="Size.Small"
+                                   Variant="Variant.Filled"
+                                   Class="barony-turn-btn barony-turn-btn--solid"
+                                   Disabled="@(Busy || !CanSpeak)"
+                                   OnClick="SpeakAsync">
+                            Speak
+                        </MudButton>
+                        @if (CanWriteAsGm)
+                        {
+                            <MudButton Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       Class="barony-turn-btn barony-turn-btn--ghost"
+                                       Disabled="Busy"
+                                       OnClick="() => OnAddResources.InvokeAsync()">
+                                Add resources
+                            </MudButton>
+                            <MudButton Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       Class="barony-turn-btn barony-turn-btn--ghost"
+                                       Disabled="Busy"
+                                       OnClick="() => OnCreateProject.InvokeAsync()">
+                                Add project
+                            </MudButton>
+                            <MudButton Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       Class="barony-turn-btn barony-turn-btn--ghost"
+                                       Disabled="Busy"
+                                       OnClick="() => OnMakeChapter.InvokeAsync()">
+                                Make chapter
+                            </MudButton>
+                            <MudButton Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       Class="barony-turn-btn barony-turn-btn--ghost"
+                                       Disabled="Busy"
+                                       OnClick="() => OnResolve.InvokeAsync()">Resolve</MudButton>
+                            @if (!IsCouncil)
+                            {
+                                <MudButton Size="Size.Small"
+                                           Variant="Variant.Outlined"
+                                           Class="barony-turn-btn barony-turn-btn--ghost"
+                                           Disabled="Busy"
+                                           OnClick="() => OnDefer.InvokeAsync()">Defer to next turn</MudButton>
+                            }
+                            <MudButton Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       Class="barony-turn-btn barony-turn-btn--ghost"
+                                       Disabled="Busy"
+                                       OnClick="() => OnDismiss.InvokeAsync()">Dismiss</MudButton>
+                        }
+                        else if (CanWriteAsBaron)
+                        {
+                            <MudButton Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       Class="barony-turn-btn barony-turn-btn--ghost"
+                                       Disabled="Busy"
+                                       OnClick="() => OnDismiss.InvokeAsync()">Dismiss</MudButton>
+                        }
+                    </div>
+                </div>
+            }
+            else if (CanWriteAsGm
+                     && string.Equals(Audience.Status, BaronAudienceStatus.Deferred, StringComparison.OrdinalIgnoreCase)
+                     && !ShowSummary)
+            {
+                <div class="baron-audience__composer-actions mb-2">
+                    <MudButton Size="Size.Small"
+                               Variant="Variant.Outlined"
+                               Class="barony-turn-btn barony-turn-btn--ghost"
+                               Disabled="Busy"
+                               OnClick="() => OnMakeChapter.InvokeAsync()">
+                        Make chapter
+                    </MudButton>
+                </div>
+                <MudText Typo="Typo.caption">Deferred — will open again next turn with the last exchange.</MudText>
+            }
+            else if (CanWriteAsGm && ReadOnly)
+            {
+                <div class="baron-audience__composer-actions">
+                    <MudButton Size="Size.Small"
+                               Variant="Variant.Outlined"
+                               Class="barony-turn-btn barony-turn-btn--ghost"
+                               Disabled="Busy"
+                               OnClick="() => OnMakeChapter.InvokeAsync()">
+                        Make chapter
+                    </MudButton>
+                </div>
+            }
+        </div>
+    }
+</article>
+
+@code {
+    public const string SpeakerModePetitioner = "petitioner";
+    public const string SpeakerModeOther = "other";
+    public const string SpeakerModeBaron = "baron";
+    public const string ProjectSpeaker = "Project";
+    public const string ChapterSpeaker = "Chapter";
+
+    /// <summary>Stored in exchange body after the human-readable line.</summary>
+    public const string ChapterLinkPrefix = "#/chapter/";
+
+    public static string FormatChapterExchangeBody(string chapterName, int chapterId) =>
+        $"Created chapter \"{chapterName}\".\n{ChapterLinkPrefix}{chapterId}";
+
+    public sealed record SpeakRequest(string Body, bool IsGmSide, string? SpeakerName);
+
+    [Parameter, EditorRequired] public BaronAudienceDTO Audience { get; set; } = default!;
+    [Parameter] public bool ReadOnly { get; set; }
+    [Parameter] public bool ShowSummary { get; set; }
+    [Parameter] public bool CanWriteAsGm { get; set; }
+    [Parameter] public bool CanWriteAsBaron { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    /// <summary>When set (Council), Speak As lists these courtier names instead of petitioner.</summary>
+    [Parameter] public IReadOnlyList<string>? CourtSpeakers { get; set; }
+    /// <summary>Player baron character name — used for "Lord …" in Speak as.</summary>
+    [Parameter] public string? BaronCharacterName { get; set; }
+    [Parameter] public EventCallback<SpeakRequest> OnSpeak { get; set; }
+    [Parameter] public EventCallback OnAddResources { get; set; }
+    [Parameter] public EventCallback OnCreateProject { get; set; }
+    [Parameter] public EventCallback OnMakeChapter { get; set; }
+    [Parameter] public EventCallback OnResolve { get; set; }
+    [Parameter] public EventCallback OnDefer { get; set; }
+    [Parameter] public EventCallback OnDismiss { get; set; }
+
+    private bool _isOpen;
+    private string _draft = "";
+    private string _speakerMode = SpeakerModePetitioner;
+    private string _baronSpeakerMode = SpeakerModeBaron;
+    private string _otherSpeaker = "";
+    private bool _speakersInitialized;
+
+    private bool IsCouncil => BaronAudienceKind.IsCouncil(Audience.Kind);
+
+    private IReadOnlyList<string> CourtSpeakerNames =>
+        (CourtSpeakers ?? Array.Empty<string>())
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .Select(n => n.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private bool HasCourtSpeakers => CourtSpeakerNames.Count > 0;
+
+    private string BaronLordSpeaker => FormatBaronLordSpeaker(BaronCharacterName);
+
+    public static string FormatBaronLordSpeaker(string? characterName) =>
+        string.IsNullOrWhiteSpace(characterName) ? "Lord" : $"Lord {characterName.Trim()}";
+
+    private string StatusCss => (Audience.Status ?? "scheduled").ToLowerInvariant();
+
+    private string CardClass =>
+        Audience.IsClosed
+            ? "project-card--inactive"
+            : string.Equals(Audience.Status, BaronAudienceStatus.Deferred, StringComparison.OrdinalIgnoreCase)
+                ? "project-card--allocating"
+                : string.Equals(Audience.Status, BaronAudienceStatus.InProgress, StringComparison.OrdinalIgnoreCase)
+                    ? "project-card--active"
+                    : string.Empty;
+
+    private PpbVector AudienceGlance => Audience.Additive?.Clone() ?? new PpbVector();
+
+    private bool CanReply =>
+        !ReadOnly
+        && !Audience.IsClosed
+        && !string.Equals(Audience.Status, BaronAudienceStatus.Deferred, StringComparison.OrdinalIgnoreCase)
+        && (CanWriteAsGm || CanWriteAsBaron);
+
+    private bool CanSpeak =>
+        !string.IsNullOrWhiteSpace(_draft)
+        && (!CanWriteAsGm
+            || _speakerMode != SpeakerModeOther
+            || !string.IsNullOrWhiteSpace(_otherSpeaker));
+
+    private string ComposerLabel =>
+        CanWriteAsGm
+            ? (_speakerMode == SpeakerModeOther
+                ? "Other character speaks…"
+                : _speakerMode == BaronCouncilSession.GameMasterSpeaker
+                    ? "Game Master speaks…"
+                    : HasCourtSpeakers
+                        ? $"{_speakerMode} speaks…"
+                        : "Petitioner speaks…")
+            : (_baronSpeakerMode == BaronCouncilSession.QuestionToGmSpeaker
+                ? "Question to GM…"
+                : "Your reply…");
+
+    protected override void OnParametersSet()
+    {
+        if (HasCourtSpeakers
+            && (_speakerMode == SpeakerModePetitioner
+                || string.IsNullOrWhiteSpace(_speakerMode)
+                || (!_speakersInitialized && _speakerMode == SpeakerModeOther)))
+        {
+            if (!CourtSpeakerNames.Contains(_speakerMode, StringComparer.OrdinalIgnoreCase)
+                && _speakerMode != SpeakerModeOther
+                && !string.Equals(_speakerMode, BaronCouncilSession.GameMasterSpeaker, StringComparison.OrdinalIgnoreCase))
+            {
+                _speakerMode = CourtSpeakerNames[0];
+            }
+            _speakersInitialized = true;
+            return;
+        }
+
+        if (_speakersInitialized)
+            return;
+
+        _speakerMode = SpeakerModePetitioner;
+        _speakersInitialized = true;
+    }
+
+    private void Toggle() => _isOpen = !_isOpen;
+
+    private string ExchangeThemeClass(BaronAudienceExchangeDTO x) =>
+        x.IsResourceChange || IsProjectNote(x) || IsChapterNote(x)
+            ? "baron-audience__exchange--resource"
+            : IsQuestionToGm(x)
+                ? "baron-audience__exchange--question"
+                : IsGameMaster(x)
+                    ? "baron-audience__exchange--gm-master"
+                    : x.IsFromPetitioner
+                        ? "baron-audience__exchange--gm"
+                        : "baron-audience__exchange--baron";
+
+    private string SpeakerLabel(BaronAudienceExchangeDTO x)
+    {
+        if (x.IsResourceChange)
+            return "Resource change";
+        if (!string.IsNullOrWhiteSpace(x.SpeakerName))
+            return x.SpeakerName.Trim();
+        return x.IsFromPetitioner
+            ? (IsCouncil ? BaronCouncilSession.PetitionerLabel : Audience.PetitionerName)
+            : "Lord";
+    }
+
+    private static bool IsProjectNote(BaronAudienceExchangeDTO x) =>
+        string.Equals(x.SpeakerName, ProjectSpeaker, StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsChapterNote(BaronAudienceExchangeDTO x) =>
+        string.Equals(x.SpeakerName, ChapterSpeaker, StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsQuestionToGm(BaronAudienceExchangeDTO x) =>
+        string.Equals(x.SpeakerName, BaronCouncilSession.QuestionToGmSpeaker, StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsGameMaster(BaronAudienceExchangeDTO x) =>
+        string.Equals(x.SpeakerName, BaronCouncilSession.GameMasterSpeaker, StringComparison.OrdinalIgnoreCase);
+
+    private static bool TryGetChapterLink(BaronAudienceExchangeDTO x, out int chapterId, out string label)
+    {
+        chapterId = 0;
+        label = x.Body ?? string.Empty;
+        if (!IsChapterNote(x) || string.IsNullOrWhiteSpace(x.Body))
+            return false;
+
+        var body = x.Body;
+        var idx = body.LastIndexOf(ChapterLinkPrefix, StringComparison.Ordinal);
+        if (idx < 0)
+            return false;
+
+        var idPart = body[(idx + ChapterLinkPrefix.Length)..].Trim();
+        if (!int.TryParse(idPart, out chapterId) || chapterId <= 0)
+            return false;
+
+        label = body[..idx].TrimEnd();
+        if (string.IsNullOrWhiteSpace(label))
+            label = "Chapter created.";
+        return true;
+    }
+
+    private async Task SpeakAsync()
+    {
+        var text = _draft.Trim();
+        if (string.IsNullOrEmpty(text) || !CanSpeak)
+            return;
+
+        string? speaker = null;
+        var isGm = CanWriteAsGm;
+        if (isGm)
+        {
+            if (_speakerMode == SpeakerModeOther)
+                speaker = _otherSpeaker.Trim();
+            else if (string.Equals(_speakerMode, BaronCouncilSession.GameMasterSpeaker, StringComparison.OrdinalIgnoreCase))
+                speaker = BaronCouncilSession.GameMasterSpeaker;
+            else if (HasCourtSpeakers)
+                speaker = _speakerMode;
+            else if (_speakerMode != SpeakerModePetitioner)
+                speaker = _speakerMode;
+        }
+        else if (_baronSpeakerMode == BaronCouncilSession.QuestionToGmSpeaker)
+        {
+            speaker = BaronCouncilSession.QuestionToGmSpeaker;
+        }
+        else if (_baronSpeakerMode == SpeakerModeBaron)
+        {
+            speaker = BaronLordSpeaker;
+        }
+
+        await OnSpeak.InvokeAsync(new SpeakRequest(text, isGm, speaker));
+        _draft = "";
+    }
+
+    private static string FmtPhp(int v) => v == 0 ? "·" : (v > 0 ? $"+{v}" : v.ToString());
+}

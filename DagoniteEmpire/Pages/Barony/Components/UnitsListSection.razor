@@ -1,0 +1,75 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Business.Repository.BaronyRepos
+
+<BaronySection Title="Units">
+    <Summary>
+        <span class="projects-summary__item">Select a unit to open its card</span>
+    </Summary>
+    <ChildContent>
+        @if (Units.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No units yet. Use the generator above.</MudText>
+        }
+        else
+        {
+            <div style="overflow-x:auto;">
+                <table class="ppb-table ppb-table--source ppb-table--lined">
+                    <thead>
+                        <tr>
+                            <th class="ppb-row-label source-col">Name</th>
+                            <th>Status</th>
+                            <th>Atk</th>
+                            <th>Def</th>
+                            <th>HP</th>
+                            <th>Move</th>
+                            <th>Wage</th>
+                            <th>Training</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var u in Units)
+                        {
+                            var combat = UnitStatHelper.Compute(u);
+                            var selected = SelectedId == u.Id;
+                            var upkeep = UnitStatHelper.ComputeUpkeep(u);
+                            <tr class="@(selected ? "source-row--system" : null)"
+                                style="cursor:pointer;"
+                                @onclick="() => OnSelect.InvokeAsync(u.Id)">
+                                <td class="ppb-row-label source-col">
+                                    <span class="source-cell__name">@u.Name</span>
+                                </td>
+                                <td>@u.Status</td>
+                                <td>@combat.Attack</td>
+                                <td>@combat.Defense</td>
+                                <td>@u.CurrentHp/@combat.MaxHp</td>
+                                <td>@combat.Move</td>
+                                <td>@upkeep.Gold</td>
+                                <td>
+                                    @if (u.IsTraining)
+                                    {
+                                        <text>@(u.TrainingTurnsRemaining?.ToString() ?? "?") turns</text>
+                                        @if (u.TrainingProjectId is int pid)
+                                        {
+                                            <text> · <a href="/barony/projects">project #@pid</a></text>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <text>—</text>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public List<BaronyUnitDTO> Units { get; set; } = new();
+    [Parameter] public int? SelectedId { get; set; }
+    [Parameter] public EventCallback<int> OnSelect { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+}

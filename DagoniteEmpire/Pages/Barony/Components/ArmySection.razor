@@ -1,0 +1,113 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<BaronySection Title="Army">
+    <Summary>
+        <PpbSummaryChips Vector="@Glance" />
+    </Summary>
+    <ChildContent>
+        @if (RowList.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                No active units. Training units do not count toward upkeep until graduation.
+            </MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                Per-turn upkeep of Active units: wage (Gold), food, and defense.
+            </MudText>
+            <div style="overflow-x:auto;">
+                <table class="ppb-table ppb-table--advisors ppb-table--community ppb-table--lined">
+                    <colgroup>
+                        <col class="community-col-source" />
+                        @foreach (var _ in PpbCatalog.All)
+                        {
+                            <col class="ppb-pair-col" />
+                            <col class="ppb-pair-col" />
+                        }
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th rowspan="2" class="ppb-row-label community-col-source">Unit</th>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <th colspan="2"><BaronyTooltip Text="@info.NameEn">@PpbShort(info.Key)</BaronyTooltip></th>
+                            }
+                        </tr>
+                        <tr>
+                            @foreach (var _ in PpbCatalog.All)
+                            {
+                                <th class="ppb-subcol ppb-subcol--add">+</th>
+                                <th class="ppb-subcol ppb-subcol--pct">%</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in RowList)
+                        {
+                            <tr>
+                                <td class="ppb-row-label community-col-source">
+                                    @if (!string.IsNullOrWhiteSpace(row.Formula) || !string.IsNullOrWhiteSpace(row.Note))
+                                    {
+                                        <BaronyTooltip Title="@row.Label" Text="@(row.Note is null ? row.Formula! : $"{row.Note}\n\n{row.Formula}")">
+                                            <span>@row.Label</span>
+                                        </BaronyTooltip>
+                                    }
+                                    else
+                                    {
+                                        @row.Label
+                                    }
+                                </td>
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    var add = row.Additive[info.Key];
+                                    var pct = row.Percent[info.Key];
+                                    <td class="@PpbCellStyle.ValueClass(info.Key, add)">@FmtAdd(add)</td>
+                                    <td class="@PpbCellStyle.ValueClass(info.Key, pct)">@FmtPct(pct)</td>
+                                }
+                            </tr>
+                        }
+                        <tr class="ppb-summary-row">
+                            <td class="ppb-row-label community-col-source">Σ section</td>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <td class="@PpbCellStyle.ValueClass(info.Key, AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>
+                                <td class="@PpbCellStyle.ValueClass(info.Key, PercentSum[info.Key])"><b>@FmtPct(PercentSum[info.Key])</b></td>
+                            }
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public IEnumerable<PpbModifierRow>? Rows { get; set; }
+
+    private List<PpbModifierRow> RowList => Rows?.ToList() ?? new();
+    private PpbVector AdditiveSum => BaronyCalc.SumAdditive(RowList);
+    private PpbVector PercentSum => BaronyCalc.SumPercent(RowList);
+    private PpbVector Glance => BaronyCalc.SectionGlance(RowList);
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        Ppb.Treasury => "Gold",
+        _ => p.ToString(),
+    };
+
+    private static string FmtAdd(decimal v) => PpbFormat.Additive(v);
+    private static string FmtPct(decimal v) => PpbFormat.Percent(v);
+}

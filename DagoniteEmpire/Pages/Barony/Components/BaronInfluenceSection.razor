@@ -1,0 +1,117 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IDialogService _dialogService
+
+<BaronySection Title="Influence on Barony">
+    <Summary>
+        <PpbSummaryChips Vector="@_total" ExcludeTreasury="true" />
+    </Summary>
+    <ChildContent>
+        <div style="overflow-x:auto;">
+            <SourcePpbTable Rows="@_rows"
+                            Summary="@_total"
+                            SummaryLabel="Σ total influence"
+                            CanEdit="@CanEdit"
+                            OnEdit="EditRowAsync"
+                            OnDelete="DeleteRowAsync" />
+        </div>
+
+        @if (CanEdit)
+        {
+            <MudButton Variant="Variant.Outlined" Class="mt-3" StartIcon="@Icons.Material.Filled.Add" OnClick="AddRowAsync">
+                Add Bonus Source
+            </MudButton>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public BaronyDTO Barony { get; set; } = new();
+    [Parameter] public CharacterDTO? Character { get; set; }
+    [Parameter] public List<BaronInfluenceModifierDTO> CustomModifiers { get; set; } = new();
+    [Parameter] public List<BaronTimeActionDTO> TimeActions { get; set; } = new();
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    [Inject] private IBaronyRepository _baronyRepo { get; set; } = default!;
+    [Inject] private ISnackbar _snackBar { get; set; } = default!;
+
+    private List<BaronInfluenceRow> _rows = new();
+    private PpbVector _total = new();
+
+    protected override void OnParametersSet() => RebuildRows();
+
+    private void RebuildRows()
+    {
+        var managementJc = BaronyCalc.ManagementJcSpent(TimeActions);
+        _rows = BaronyCalc.BuildInfluenceRows(
+            Character, Barony.Prestige, Barony.Honor, Barony.Fear, CustomModifiers, managementJc);
+        _total = BaronyCalc.SumInfluenceRows(_rows);
+    }
+
+    private async Task AddRowAsync() => await OpenEditDialog(new BaronInfluenceModifierDTO { BaronyId = Barony.Id });
+
+    private async Task EditRowAsync(BaronInfluenceRow row)
+    {
+        if (row.IsSystem || row.ModifierId is null)
+            return;
+
+        var modifier = CustomModifiers.FirstOrDefault(m => m.Id == row.ModifierId);
+        if (modifier is null)
+            return;
+
+        await OpenEditDialog(new BaronInfluenceModifierDTO
+        {
+            Id = modifier.Id,
+            BaronyId = modifier.BaronyId,
+            Source = modifier.Source,
+            Additive = modifier.Additive.Clone(),
+            FormulaText = modifier.FormulaText,
+            Description = modifier.Description,
+        });
+    }
+
+    private async Task OpenEditDialog(BaronInfluenceModifierDTO draft)
+    {
+        var isNew = draft.Id <= 0;
+        var parameters = new DialogParameters<BaronInfluenceEditDialog>
+        {
+            { x => x.Modifier, draft },
+        };
+
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.False,
+            FullWidth = false,
+            CloseOnEscapeKey = true,
+        };
+
+        var dialog = await _dialogService.ShowAsync<BaronInfluenceEditDialog>(
+            isNew ? "Add Bonus Source" : "Edit Bonus Source",
+            parameters,
+            options);
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronInfluenceModifierDTO saved)
+            return;
+
+        if (string.IsNullOrWhiteSpace(saved.Source))
+        {
+            _snackBar.Add("Source name is required.", Severity.Warning);
+            return;
+        }
+
+        await _baronyRepo.SaveBaronInfluenceModifier(saved);
+        _snackBar.Add("Bonus source saved.", Severity.Success);
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task DeleteRowAsync(BaronInfluenceRow row)
+    {
+        if (row.ModifierId is null or <= 0)
+            return;
+
+        await _baronyRepo.DeleteBaronInfluenceModifier(row.ModifierId.Value);
+        _snackBar.Add("Bonus source removed.", Severity.Success);
+        await OnChanged.InvokeAsync();
+    }
+}

@@ -1,0 +1,75 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<BaronySection Title="Treaty trade bonuses" DefaultOpen="true">
+    <Summary>
+        <span class="projects-summary__item">@_receivedCount good@(_receivedCount == 1 ? "" : "s") from treaties</span>
+    </Summary>
+    <ChildContent>
+        @if (_receivedCount == 0 && !_hasTreatyPpb)
+        {
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                No treaty goods, route economy, or gold flows yet.
+            </MudText>
+        }
+        else
+        {
+            <div class="trade-goods-ppb-summary">
+                <table class="ppb-table ppb-table--lined trade-goods-ppb-table">
+                    <thead>
+                        <tr>
+                            <th>PPB</th>
+                            <th>Additive</th>
+                            <th>Percent</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in Rows)
+                        {
+                            <tr>
+                                <td>@row.Label</td>
+                                <td class="trade-goods-ppb-num">@row.Additive</td>
+                                <td class="trade-goods-ppb-num">@row.Percent</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public IReadOnlyList<BaronyTradeTreaty> Treaties { get; set; } = Array.Empty<BaronyTradeTreaty>();
+
+    private int _receivedCount => TradeTreatyCalculator.BaronyReceivedGoods(Treaties).Count;
+
+    private bool _hasTreatyPpb
+    {
+        get
+        {
+            TradeTreatyCalculator.SumTreatyBonuses(Treaties, out var add, out var pct);
+            return PpbCatalog.All.Any(info => add[info.Key] != 0m || pct[info.Key] != 0m);
+        }
+    }
+
+    private IEnumerable<PpbRow> Rows
+    {
+        get
+        {
+            TradeTreatyCalculator.SumTreatyBonuses(Treaties, out var add, out var pct);
+            foreach (var info in PpbCatalog.All)
+            {
+                var a = add[info.Key];
+                var p = pct[info.Key];
+                if (a == 0m && p == 0m)
+                    continue;
+                yield return new PpbRow(
+                    info.NameEn,
+                    a == 0m ? "—" : PpbFormat.Additive(a),
+                    p == 0m ? "—" : PpbFormat.Percent(p));
+            }
+        }
+    }
+
+    private sealed record PpbRow(string Label, string Additive, string Percent);
+}

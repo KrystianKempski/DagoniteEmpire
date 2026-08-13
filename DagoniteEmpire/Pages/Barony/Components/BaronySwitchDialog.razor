@@ -1,0 +1,73 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color:var(--barony-muted);">
+                Choose which barony to manage.
+            </MudText>
+            <MudSelect T="BaronyListItemDTO?"
+                       Label="Barony"
+                       Value="@_selected"
+                       ValueChanged="OnSelectedChanged"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Dense="true"
+                       Class="baron-influence-field"
+                       Disabled="@(Baronies.Count == 0)">
+                @if (Baronies.Count == 0)
+                {
+                    <MudSelectItem Value="@((BaronyListItemDTO?)null)">No baronies — create in Panel MG</MudSelectItem>
+                }
+                else
+                {
+                    @foreach (var barony in Baronies)
+                    {
+                        <MudSelectItem Value="@barony">@($"{barony.Name} — {barony.BaronName}")</MudSelectItem>
+                    }
+                }
+            </MudSelect>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn"
+                   Variant="Variant.Filled"
+                   Disabled="@(!CanApply)"
+                   OnClick="Apply">
+            Switch
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public IReadOnlyList<BaronyListItemDTO> Baronies { get; set; } = Array.Empty<BaronyListItemDTO>();
+    [Parameter] public int CurrentCharacterId { get; set; }
+
+    private BaronyListItemDTO? _selected;
+
+    private bool CanApply =>
+        _selected is not null && _selected.CharacterId != CurrentCharacterId;
+
+    protected override void OnInitialized()
+    {
+        _selected = CurrentCharacterId > 0
+            ? Baronies.FirstOrDefault(b => b.CharacterId == CurrentCharacterId)
+            : Baronies.FirstOrDefault();
+    }
+
+    private void OnSelectedChanged(BaronyListItemDTO? value) => _selected = value;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Apply()
+    {
+        if (!CanApply || _selected is null)
+            return;
+        MudDialog.Close(DialogResult.Ok(_selected));
+    }
+}

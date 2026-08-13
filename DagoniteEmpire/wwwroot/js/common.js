@@ -1,4 +1,4 @@
-﻿window.ShowToastr = (type, message) => {
+window.ShowToastr = (type, message) => {
     toastr.options = {
         "closeButton": false,
         "debug": false,
@@ -191,4 +191,88 @@ window.uploadCroppedPortrait = async (sourceCanvas, folder) => {
 window.uploadEllipseIcon = async (sourceCanvas, folder) => {
     const dataUrl = window.getEllipseImage(sourceCanvas);
     return await window.uploadPortraitDataUrl(dataUrl, folder);
+};
+
+/** Pick Mud Placement so a ~22rem tooltip stays in the viewport. Prefers Right. */
+window.baronyPickTooltipPlacement = function (el, preferred) {
+    if (!el || typeof el.getBoundingClientRect !== 'function') {
+        return preferred || 'Right';
+    }
+
+    const r = el.getBoundingClientRect();
+    const vw = window.innerWidth || document.documentElement.clientWidth || 0;
+    const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+    const needW = Math.min(22 * 16, Math.max(200, vw * 0.9));
+    const needH = Math.min(240, Math.max(120, vh * 0.45));
+    const space = {
+        Right: vw - r.right,
+        Left: r.left,
+        Bottom: vh - r.bottom,
+        Top: r.top
+    };
+    const need = { Right: needW, Left: needW, Bottom: needH, Top: needH };
+    const pref = preferred || 'Right';
+
+    if ((space[pref] ?? 0) >= (need[pref] ?? needW)) {
+        return pref;
+    }
+
+    const order = ['Right', 'Left', 'Bottom', 'Top'];
+    for (const side of order) {
+        if ((space[side] ?? 0) >= (need[side] ?? needW)) {
+            return side;
+        }
+    }
+
+    return order.slice().sort((a, b) => (space[b] ?? 0) - (space[a] ?? 0))[0] || 'Right';
+};
+
+/** Hide an open BaronyTooltip when the user scrolls (capture phase). */
+let baronyTipScrollOwner = null;
+let baronyTipScrollHandler = null;
+
+window.baronyTipWatchScroll = function (ownerId, dotNetRef) {
+    window.baronyTipUnwatchScroll();
+
+    baronyTipScrollOwner = ownerId;
+    baronyTipScrollHandler = function () {
+        if (dotNetRef) {
+            dotNetRef.invokeMethodAsync('OnScrollHide');
+        }
+    };
+
+    window.addEventListener('scroll', baronyTipScrollHandler, true);
+};
+
+window.baronyTipUnwatchScroll = function (ownerId) {
+    if (ownerId && baronyTipScrollOwner && baronyTipScrollOwner !== ownerId) {
+        return;
+    }
+
+    if (baronyTipScrollHandler) {
+        window.removeEventListener('scroll', baronyTipScrollHandler, true);
+    }
+
+    baronyTipScrollOwner = null;
+    baronyTipScrollHandler = null;
+};
+// --- Demo mode: fire-and-forget "leaving the page" beacon ---
+// On real navigation away / tab close the browser fires pagehide and we notify
+// the server so the demo barony is purged promptly. A page refresh also fires
+// pagehide, but the reloaded page re-touches the session before it expires.
+window.registerDemoLeaveBeacon = function (url) {
+    if (!url) return;
+    window.__demoLeaveUrl = url;
+    if (window.__demoLeaveHandler) return;
+    window.__demoLeaveHandler = function () {
+        var u = window.__demoLeaveUrl;
+        if (u && navigator.sendBeacon) {
+            navigator.sendBeacon(u);
+        }
+    };
+    window.addEventListener('pagehide', window.__demoLeaveHandler);
+};
+
+window.unregisterDemoLeaveBeacon = function () {
+    window.__demoLeaveUrl = null;
 };

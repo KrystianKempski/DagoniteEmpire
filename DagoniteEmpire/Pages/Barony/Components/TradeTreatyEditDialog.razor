@@ -1,0 +1,330 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog trade-treaty-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog trade-treaty-edit-dialog">
+            <MudTextField @bind-Value="_title"
+                          Label="Title (optional)"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="baron-influence-field mb-2"
+                          HelperText="Shown on the Trade Goods list. Leave blank for an auto name." />
+
+            <MudText Typo="Typo.subtitle2" Class="mb-1">Trade partner</MudText>
+            <MudText Typo="Typo.body2" Class="mb-3" Style="color:var(--barony-muted);">
+                @(Counterparty is null
+                    ? "—"
+                    : $"{Counterparty.Title} {Counterparty.Name} {Counterparty.House} · {Counterparty.Holdings}")
+            </MudText>
+
+            @if (LockRoute)
+            {
+                <MudText Typo="Typo.subtitle2" Class="mb-1">Route</MudText>
+                <MudText Typo="Typo.caption" Class="mb-2 d-block" Style="color:var(--barony-muted);">
+                    Seats below follow the path from the March map. To change who is on the route, redesign it there.
+                </MudText>
+                <MudButton Variant="Variant.Outlined"
+                           Size="Size.Small"
+                           Class="mb-3"
+                           OnClick="RequestManualRouteDesign">
+                    Redesign route manually
+                </MudButton>
+            }
+
+            <MudText Typo="Typo.subtitle2" Class="mb-1">Seats on the route</MudText>
+            <MudText Typo="Typo.caption" Class="mb-2 d-block" Style="color:var(--barony-muted);">
+                For each seat you may swap goods and add a gold sweetener. Destination needs at least one exchanged good.
+            </MudText>
+
+            @for (var i = 0; i < _paragraphs.Count; i++)
+            {
+                var index = i;
+                var paragraph = _paragraphs[index];
+                var addressee = KnownLordsCatalog.FindByKey(paragraph.LordKey);
+                var lordName = addressee?.Name ?? "this lord";
+                var lordGoods = addressee is null
+                    ? (IReadOnlyList<string>)Array.Empty<string>()
+                    : KnownLordsCatalog.ProducedGoodKeys(addressee)
+                        .OrderBy(k => TradeGoodsCatalog.Find(k)?.Name ?? k, StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+                <div class="trade-treaty-edit-paragraph barony-panel mb-3 pa-3">
+                    <MudText Typo="Typo.subtitle2" Class="mb-1">
+                        @(index + 1). @TradeTreatyParagraphLabels.AddresseeHeading(paragraph)
+                    </MudText>
+                    <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
+                        @if (paragraph.IsDestination)
+                        {
+                            <text>End of the route — your main trade partner.</text>
+                        }
+                        else
+                        {
+                            <text>Passage seat — toll applies; optional side deal with this lord.</text>
+                        }
+                    </MudText>
+
+                    @if (!paragraph.IsDestination)
+                    {
+                        <MudText Typo="Typo.body2" Class="mb-2">
+                            Toll: <strong>@paragraph.CustomsGoldPerTurn.ToString("0.##")</strong> gold/turn
+                            <span style="color:var(--barony-muted);"> (set on the map)</span>
+                        </MudText>
+                    }
+
+                    <MudNumericField T="decimal"
+                                     Label="Gold sweetener / turn"
+                                     Value="paragraph.SweetenerGoldPerTurn"
+                                     ValueChanged="v => SetSweetener(index, v)"
+                                     Variant="Variant.Outlined"
+                                     Margin="Margin.Dense"
+                                     Class="mb-2"
+                                     Style="max-width:14rem;"
+                                     HelperText="+ you pay · − you receive" />
+
+                    <MudSelect T="string"
+                               Label="@($"You give {lordName}")"
+                               MultiSelection="true"
+                               SelectedValues="_paragraphBaronyGrants[index]"
+                               SelectedValuesChanged="v => OnBaronyGrantsChanged(index, v)"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Class="baron-influence-field"
+                               ToStringFunc="@GoodLabel">
+                        @foreach (var key in _baronyGoodOptions)
+                        {
+                            <MudSelectItem Value="@key">@GoodLabel(key)</MudSelectItem>
+                        }
+                    </MudSelect>
+
+                    <MudSelect T="string"
+                               Label="@($"{lordName} gives you")"
+                               MultiSelection="true"
+                               SelectedValues="_paragraphLordGrants[index]"
+                               SelectedValuesChanged="v => OnLordGrantsChanged(index, v)"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Class="baron-influence-field mt-2"
+                               ToStringFunc="@GoodLabel"
+                               Disabled="@(addressee is null)">
+                        @foreach (var key in lordGoods)
+                        {
+                            <MudSelectItem Value="@key">@GoodLabel(key)</MudSelectItem>
+                        }
+                    </MudSelect>
+                </div>
+            }
+
+            <MudDivider Class="my-3" />
+            <MudText Typo="Typo.subtitle2" Class="mb-2">Totals</MudText>
+            <div class="trade-treaty-validation-slot mb-2" aria-live="polite">
+                @if (_validationErrors.Count > 0)
+                {
+                    <MudAlert Severity="Severity.Error" Dense="true" Class="ma-0">
+                        <ul class="ma-0 pa-0" style="list-style:inside;">
+                            @foreach (var err in _validationErrors)
+                            {
+                                <li>@err</li>
+                            }
+                        </ul>
+                    </MudAlert>
+                }
+            </div>
+            <MudText Typo="Typo.body2">
+                Goods received:
+                @( _previewReceived.Count == 0 ? "—" : string.Join(", ", _previewReceived.Select(g => g.Name)) )
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mt-1">
+                Economy from route: +@_previewRouteEconomy.ToString("0.##")
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mt-1">
+                Tolls: @_previewCustoms.ToString("0.##") gold/turn
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mt-1">
+                Sweeteners:
+                @if (_previewSweetener == 0m)
+                {
+                    <text>—</text>
+                }
+                else if (_previewSweetener > 0m)
+                {
+                    <text>you pay @_previewSweetener.ToString("0.##") gold/turn</text>
+                }
+                else
+                {
+                    <text>you receive @((-_previewSweetener).ToString("0.##")) gold/turn</text>
+                }
+            </MudText>
+            @if (_previewReceived.Count > 0)
+            {
+                <div class="trade-goods-ppb-summary mt-2">
+                    <MudText Typo="Typo.caption" Class="mb-1">PPB bonuses (goods + route economy)</MudText>
+                    <table class="ppb-table ppb-table--lined trade-goods-ppb-table">
+                        <thead>
+                            <tr>
+                                <th>PPB</th>
+                                <th>Additive</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in _previewPpbRows)
+                            {
+                                <tr>
+                                    <td>@row.Label</td>
+                                    <td class="trade-goods-ppb-num">@row.Value</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save treaty</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    public const string ManualRouteDesignRequest = "manual-design";
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public IReadOnlyCollection<string> BaronyAvailableGoodKeys { get; set; } = Array.Empty<string>();
+    [Parameter] public IReadOnlyCollection<string> BorderLordKeys { get; set; } = Array.Empty<string>();
+    [Parameter] public BaronyTradeTreaty? ExistingTreaty { get; set; }
+    [Parameter] public IReadOnlyList<BaronyTradeTreaty> AllTreaties { get; set; } = Array.Empty<BaronyTradeTreaty>();
+    [Parameter] public bool LockRoute { get; set; }
+    [Parameter] public MarchMapDocument? MapDocument { get; set; }
+    [Parameter] public string? PlayerSeatNodeId { get; set; }
+    [Parameter] public IReadOnlyCollection<string> BlockedLordKeys { get; set; } = Array.Empty<string>();
+
+    private string _treatyId = Guid.NewGuid().ToString("N");
+    private string? _title;
+    private string _counterpartyLordKey = string.Empty;
+    private List<TradeTreatyParagraph> _paragraphs = new();
+    private readonly Dictionary<int, HashSet<string>> _paragraphBaronyGrants = new();
+    private readonly Dictionary<int, HashSet<string>> _paragraphLordGrants = new();
+
+    private KnownLordEntry? Counterparty => KnownLordsCatalog.FindByKey(_counterpartyLordKey);
+
+    private IReadOnlyList<string> _baronyGoodOptions =>
+        BaronyAvailableGoodKeys.OrderBy(k => TradeGoodsCatalog.Find(k)?.Name ?? k, StringComparer.OrdinalIgnoreCase).ToList();
+
+    private BaronyTradeTreaty Draft => BuildDraft();
+
+    private IReadOnlyList<TradeGoodEntry> _previewReceived => TradeTreatyCalculator.BaronyReceivedGoods(new[] { Draft });
+    private decimal _previewRouteEconomy => TradeTreatyCalculator.RouteEconomyBonus(Draft);
+    private decimal _previewCustoms => TradeTreatyCalculator.TotalCustomsGoldPerTurn(new[] { Draft });
+    private decimal _previewSweetener => TradeTreatyCalculator.TotalSweetenerGoldPerTurn(new[] { Draft });
+    private IReadOnlyList<PpbPreviewRow> _previewPpbRows => BuildPreviewPpb();
+    private IReadOnlyList<string> _validationErrors => TradeTreatyCalculator.ValidateTreaty(
+        Draft,
+        BaronyAvailableGoodKeys,
+        BorderLordKeys,
+        AllTreaties.ToList(),
+        MapDocument,
+        PlayerSeatNodeId,
+        BlockedLordKeys);
+
+    protected override void OnInitialized()
+    {
+        if (ExistingTreaty is not null)
+        {
+            _treatyId = ExistingTreaty.Id;
+            _title = ExistingTreaty.Title;
+            _counterpartyLordKey = ExistingTreaty.CounterpartyLordKey;
+            _paragraphs = ExistingTreaty.Paragraphs.Select(CloneParagraph).ToList();
+        }
+
+        if (_paragraphs.Count == 0 && !string.IsNullOrWhiteSpace(_counterpartyLordKey))
+        {
+            _paragraphs.Add(new TradeTreatyParagraph
+            {
+                LordKey = _counterpartyLordKey,
+                IsDestination = true,
+            });
+        }
+
+        SyncGrantSelections();
+    }
+
+    private static TradeTreatyParagraph CloneParagraph(TradeTreatyParagraph p) => new()
+    {
+        LordKey = p.LordKey,
+        IsDestination = p.IsDestination,
+        CustomsGoldPerTurn = p.CustomsGoldPerTurn,
+        SweetenerGoldPerTurn = p.SweetenerGoldPerTurn,
+        BaronyGrantsGoodKeys = p.BaronyGrantsGoodKeys.ToList(),
+        CounterpartyGrantsGoodKeys = p.CounterpartyGrantsGoodKeys.ToList(),
+    };
+
+    private void SyncGrantSelections()
+    {
+        _paragraphBaronyGrants.Clear();
+        _paragraphLordGrants.Clear();
+        for (var i = 0; i < _paragraphs.Count; i++)
+        {
+            _paragraphBaronyGrants[i] = _paragraphs[i].BaronyGrantsGoodKeys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            _paragraphLordGrants[i] = _paragraphs[i].CounterpartyGrantsGoodKeys.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
+    private void OnBaronyGrantsChanged(int index, IEnumerable<string> values)
+    {
+        var set = values.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        _paragraphBaronyGrants[index] = set;
+        _paragraphs[index].BaronyGrantsGoodKeys = set.OrderBy(k => k, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    private void OnLordGrantsChanged(int index, IEnumerable<string> values)
+    {
+        var set = values.ToHashSet(StringComparer.OrdinalIgnoreCase);
+        _paragraphLordGrants[index] = set;
+        _paragraphs[index].CounterpartyGrantsGoodKeys = set.OrderBy(k => k, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    private void SetSweetener(int index, decimal value) =>
+        _paragraphs[index].SweetenerGoldPerTurn = value;
+
+    private BaronyTradeTreaty BuildDraft() => new()
+    {
+        Id = _treatyId,
+        Title = _title,
+        CounterpartyLordKey = _counterpartyLordKey,
+        Paragraphs = _paragraphs.Select(CloneParagraph).ToList(),
+    };
+
+    private IReadOnlyList<PpbPreviewRow> BuildPreviewPpb()
+    {
+        TradeTreatyCalculator.SumTreatyBonuses(new[] { Draft }, out var add, out _);
+        return PpbCatalog.All
+            .Select(info => (info.NameEn, add[info.Key]))
+            .Where(x => x.Item2 != 0m)
+            .Select(x => new PpbPreviewRow(x.NameEn, PpbFormat.Additive(x.Item2)))
+            .ToList();
+    }
+
+    private static string GoodLabel(string key) => TradeGoodsCatalog.Find(key)?.Name ?? key;
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void RequestManualRouteDesign() =>
+        MudDialog.Close(DialogResult.Ok(TradeTreatyEditDialog.ManualRouteDesignRequest));
+
+    private void Save()
+    {
+        var errors = _validationErrors;
+        if (errors.Count > 0)
+        {
+            _snackBar.Add("Fix the errors below before saving.", Severity.Error);
+            return;
+        }
+
+        MudDialog.Close(DialogResult.Ok(BuildDraft()));
+    }
+
+    private sealed record PpbPreviewRow(string Label, string Value);
+}

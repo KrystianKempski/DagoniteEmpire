@@ -1,0 +1,70 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IDialogService _dialogService
+
+<div class="barony-page-header">
+    <div class="barony-page-header__lead">
+        <div class="barony-page-header__title-row">
+            <h1 class="barony-page-title mb-0">@Title</h1>
+            @if (BaronyHelpCatalog.TryGet(HelpKey, out var _helpEntry))
+            {
+                <MudIconButton Icon="@Icons.Material.Filled.HelpOutline"
+                               Size="Size.Small"
+                               Class="barony-page-header__help-btn"
+                               aria-label="@($"Help: {Title}")"
+                               OnClick="@(() => OpenHelpAsync(_helpEntry))" />
+            }
+        </div>
+        @if (Summary is not null)
+        {
+            <div class="barony-page-header__summary">
+                @Summary
+            </div>
+        }
+        @if (ShowSectionToggle && ViewOptions is not null)
+        {
+            <BaronyTooltip Text="Default section state: expanded / collapsed (you can still toggle each section manually).">
+                <MudSwitch T="bool"
+                           Class="barony-page-header__sections-switch"
+                           Value="ViewOptions.DefaultExpanded"
+                           ValueChanged="OnDefaultExpandedChanged"
+                           Color="Color.Default"
+                           Label="Sections expanded by default" />
+            </BaronyTooltip>
+        }
+    </div>
+    <div class="barony-page-header__trailing">
+        @if (Actions is not null)
+        {
+            <div class="barony-page-header__actions">
+                @Actions
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [CascadingParameter] public BaronyViewOptions? ViewOptions { get; set; }
+
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public RenderFragment? Summary { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+    [Parameter] public bool ShowSectionToggle { get; set; } = true;
+
+    /// <summary>Barony card key (e.g. "resources"). When it matches a catalog entry, a "?" help button is shown.</summary>
+    [Parameter] public string? HelpKey { get; set; }
+
+    private void OnDefaultExpandedChanged(bool value)
+    {
+        if (ViewOptions is not null)
+            ViewOptions.DefaultExpanded = value;
+    }
+
+    private async Task OpenHelpAsync(BaronyHelpEntry entry)
+    {
+        var parameters = new DialogParameters<BaronyHelpDialog> { { x => x.Entry, entry } };
+        await _dialogService.ShowAsync<BaronyHelpDialog>(
+            entry.Title,
+            parameters,
+            new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true });
+    }
+}

@@ -49,6 +49,59 @@ namespace Microsoft.AspNetCore.Routing
                 return TypedResults.LocalRedirect($"~/{returnUrl}");
             });
 
+            // Public "Try baron" demo: provision an isolated cloned barony and sign in the hidden demo user.
+            accountGroup.MapGet("/DemoBaron", async (
+                [FromServices] SignInManager<ApplicationUser> signInManager,
+                [FromServices] UserManager<ApplicationUser> userManager,
+                [FromServices] DA_Business.Services.Interfaces.IDemoBaronyService demoService) =>
+            {
+                var demoUser = await userManager.FindByNameAsync(DA_Common.SD.DemoBaronUserName);
+                if (demoUser is null)
+                    return Results.LocalRedirect("~/Account/Login");
+
+                var info = await demoService.CreateSessionAsync();
+                await signInManager.SignInAsync(demoUser, isPersistent: false);
+                return Results.LocalRedirect($"~/demo/enter?t={info.Token}&c={info.CharacterId}");
+            }).AllowAnonymous();
+
+            // Public "Try Game Master" demo: same isolated cloned barony, signed in as the hidden GM.
+            accountGroup.MapGet("/DemoGameMaster", async (
+                [FromServices] SignInManager<ApplicationUser> signInManager,
+                [FromServices] UserManager<ApplicationUser> userManager,
+                [FromServices] DA_Business.Services.Interfaces.IDemoBaronyService demoService) =>
+            {
+                var demoGmUser = await userManager.FindByNameAsync(DA_Common.SD.DemoGmUserName);
+                if (demoGmUser is null)
+                    return Results.LocalRedirect("~/Account/Login");
+
+                var info = await demoService.CreateSessionAsync();
+                await signInManager.SignInAsync(demoGmUser, isPersistent: false);
+                return Results.LocalRedirect($"~/demo/enter?t={info.Token}&c={info.CharacterId}");
+            }).AllowAnonymous();
+
+            // Leave the demo: purge the session's cloned data and sign out.
+            accountGroup.MapGet("/DemoExit", async (
+                [FromServices] SignInManager<ApplicationUser> signInManager,
+                [FromServices] DA_Business.Services.Interfaces.IDemoBaronyService demoService,
+                [FromQuery] string? t) =>
+            {
+                if (Guid.TryParse(t, out var token))
+                    await demoService.EndSessionAsync(token);
+                await signInManager.SignOutAsync();
+                return Results.LocalRedirect("~/Account/Login");
+            }).AllowAnonymous();
+
+            // Fire-and-forget beacon sent by the browser on pagehide (tab close / navigate away):
+            // mark the session near-expired so the sweeper purges it promptly if the visitor is gone.
+            accountGroup.MapPost("/DemoLeave", async (
+                [FromServices] DA_Business.Services.Interfaces.IDemoBaronyService demoService,
+                [FromQuery] string? t) =>
+            {
+                if (Guid.TryParse(t, out var token))
+                    await demoService.MarkLeavingAsync(token);
+                return Results.Ok();
+            }).AllowAnonymous();
+
             var manageGroup = accountGroup.MapGroup("/Manage").RequireAuthorization();
 
             manageGroup.MapPost("/LinkExternalLogin", async (

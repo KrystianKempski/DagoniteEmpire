@@ -1,0 +1,286 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IDialogService _dialogService
+
+<BaronySection Title="@BaronyCalc.OfficeSectionTitle(Advisor)">
+    <Summary>
+        @if (_rows.Count > 0)
+        {
+            <PpbSummaryChips Vector="@_total" />
+        }
+    </Summary>
+    <ChildContent>
+        @if (!string.IsNullOrWhiteSpace(OfficeDescription))
+        {
+            <MudText Typo="Typo.body2" Class="advisor-office-description mb-3">@OfficeDescription</MudText>
+        }
+
+        <div class="advisor-office-header">
+            <div class="advisor-office-header__row">
+                <MudText Typo="Typo.subtitle1" Class="advisor-office-name">
+                    @(string.IsNullOrWhiteSpace(Advisor.PersonName) ? "Unassigned" : Advisor.PersonName)
+                </MudText>
+                @if (CanEdit)
+                {
+                    <BaronyTooltip Text="Edit advisor profile">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                       Size="Size.Small"
+                                       OnClick="EditProfileAsync" />
+                    </BaronyTooltip>
+                }
+            </div>
+            @if (!string.IsNullOrWhiteSpace(PersonDescription))
+            {
+                <MudText Typo="Typo.body2" Class="advisor-person-description">@PersonDescription</MudText>
+            }
+        </div>
+
+        <div style="overflow-x:auto;">
+            @if (_rows.Count > 0)
+            {
+                <OfficeSourcePpbTable Rows="@_rows"
+                                        Summary="@_total"
+                                        SummaryCost="@_totalCost"
+                                        SummaryLabel="Σ total influence"
+                                        SignificantSkills="@_significantSkills"
+                                        CanEdit="@CanManage"
+                                        OnEdit="EditRowAsync"
+                                        OnDelete="DeleteRowAsync"
+                                        CellTooltip="@((row, key) => row.SystemKind == AdvisorInfluenceSystemKind.Skills ? CourtPpbFormulas.FormulaLabel(key) : null)" />
+            }
+            else if (!BaronyCalc.IsOfficeAssigned(Advisor))
+            {
+                <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                    No advisor assigned — no skill influence.
+                </MudText>
+            }
+        </div>
+
+        @if (CanManage)
+        {
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="AddRowAsync">
+                    Add Bonus Source
+                </MudButton>
+                @if (!BaronyCalc.IsCoreOffice(Advisor))
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Error"
+                               StartIcon="@Icons.Material.Filled.Delete"
+                               OnClick="DeleteOfficeAsync">
+                        Remove Office
+                    </MudButton>
+                }
+            </div>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public AdvisorDTO Advisor { get; set; } = new();
+    [Parameter] public List<AdvisorInfluenceModifierDTO> CustomModifiers { get; set; } = new();
+    [Parameter] public List<AvailableAdvisorDTO> AvailableAdvisors { get; set; } = new();
+    [Parameter] public IEnumerable<AdvisorDTO>? AllAdvisors { get; set; }
+    [Parameter] public bool CanEdit { get; set; }
+    /// <summary>MG/Admin — bonus sources, office CRUD. Baron uses CanEdit only to assign/dismiss.</summary>
+    [Parameter] public bool CanManage { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    [Inject] private IBaronyRepository _baronyRepo { get; set; } = default!;
+    [Inject] private ISnackbar _snackBar { get; set; } = default!;
+
+    private List<AdvisorInfluenceRow> _rows = new();
+    private PpbVector _total = new();
+    private decimal _totalCost;
+    private HashSet<Ppb> _significantSkills = new();
+
+    private string? OfficeDescription => BaronyCalc.ResolveOfficeDescription(Advisor);
+    private string? PersonDescription =>
+        BaronyCalc.ResolvePersonDescription(Advisor)
+        ?? (Advisor.AvailableAdvisorId is int aid
+            ? AvailableAdvisors.FirstOrDefault(a => a.Id == aid)?.Description
+            : null);
+
+    protected override void OnParametersSet() => RebuildRows();
+
+    private void RebuildRows()
+    {
+        _significantSkills = BaronyCalc.EffectiveSignificantSkills(Advisor).ToHashSet();
+        _rows = BaronyCalc.BuildAdvisorInfluenceRows(Advisor, CustomModifiers);
+        _total = BaronyCalc.SumAdvisorInfluenceRows(_rows, _significantSkills);
+        _totalCost = BaronyCalc.TotalOfficeCost(Advisor, CustomModifiers);
+    }
+
+    private async Task EditProfileAsync()
+    {
+        var occupiedIds = AvailableAdvisors
+            .Where(a => AllOffices.Any(o => o.AvailableAdvisorId == a.Id && o.Id != Advisor.Id))
+            .Select(a => a.Id)
+            .ToHashSet();
+
+        var parameters = new DialogParameters<AdvisorProfileEditDialog>
+        {
+            { x => x.Advisor, CloneAdvisor() },
+            { x => x.AllowTitleEdit, CanManage && !BaronyCalc.IsCoreOffice(Advisor) },
+            { x => x.AllowUpkeepEdit, CanManage },
+            { x => x.AvailableAdvisors, AvailableAdvisors },
+            { x => x.OccupiedAvailableAdvisorIds, occupiedIds },
+        };
+
+        var dialog = await _dialogService.ShowAsync<AdvisorProfileEditDialog>(
+            "Edit Advisor Profile",
+            parameters,
+            DialogOptions());
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not AdvisorDTO saved)
+            return;
+
+        ApplyAdvisor(saved);
+        await PersistAdvisorAsync();
+    }
+
+    private async Task EditRowAsync(AdvisorInfluenceRow row)
+    {
+        if (!CanManage || row.IsSystem || row.ModifierId is null)
+            return;
+
+        var modifier = CustomModifiers.FirstOrDefault(m => m.Id == row.ModifierId);
+        if (modifier is null)
+            return;
+
+        await OpenModifierDialog(new AdvisorInfluenceModifierDTO
+        {
+            Id = modifier.Id,
+            AdvisorId = modifier.AdvisorId,
+            Source = modifier.Source,
+            Additive = modifier.Additive.Clone(),
+            FormulaText = modifier.FormulaText,
+            Description = modifier.Description,
+            CostGold = modifier.CostGold,
+        });
+    }
+
+    private async Task AddRowAsync()
+    {
+        if (!CanManage) return;
+        await OpenModifierDialog(new AdvisorInfluenceModifierDTO { AdvisorId = Advisor.Id });
+    }
+
+    private async Task OpenModifierDialog(AdvisorInfluenceModifierDTO draft)
+    {
+        if (!CanManage) return;
+        var isNew = draft.Id <= 0;
+        var parameters = new DialogParameters<AdvisorInfluenceEditDialog>
+        {
+            { x => x.Modifier, draft },
+        };
+
+        var dialog = await _dialogService.ShowAsync<AdvisorInfluenceEditDialog>(
+            isNew ? "Add Bonus Source" : "Edit Bonus Source",
+            parameters,
+            DialogOptions());
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not AdvisorInfluenceModifierDTO saved)
+            return;
+
+        if (string.IsNullOrWhiteSpace(saved.Source))
+        {
+            _snackBar.Add("Source name is required.", Severity.Warning);
+            return;
+        }
+
+        saved.AdvisorId = Advisor.Id;
+        var savedDto = await _baronyRepo.SaveAdvisorInfluenceModifier(saved);
+        var mods = CustomModifiers.ToList();
+        if (isNew)
+            mods.Add(savedDto);
+        else
+        {
+            var index = mods.FindIndex(m => m.Id == savedDto.Id);
+            if (index >= 0)
+                mods[index] = savedDto;
+            else
+                mods.Add(savedDto);
+        }
+
+        BaronyCalc.SyncAdvisorAdditive(Advisor, mods);
+        await _baronyRepo.SaveAdvisor(Advisor);
+        _snackBar.Add("Bonus source saved.", Severity.Success);
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task DeleteRowAsync(AdvisorInfluenceRow row)
+    {
+        if (!CanManage || row.ModifierId is null or <= 0)
+            return;
+
+        await _baronyRepo.DeleteAdvisorInfluenceModifier(row.ModifierId.Value);
+        var mods = CustomModifiers.Where(m => m.Id != row.ModifierId).ToList();
+        BaronyCalc.SyncAdvisorAdditive(Advisor, mods);
+        await _baronyRepo.SaveAdvisor(Advisor);
+        _snackBar.Add("Bonus source removed.", Severity.Success);
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task DeleteOfficeAsync()
+    {
+        if (!CanManage || BaronyCalc.IsCoreOffice(Advisor))
+            return;
+
+        foreach (var modifier in CustomModifiers)
+            await _baronyRepo.DeleteAdvisorInfluenceModifier(modifier.Id);
+
+        await _baronyRepo.DeleteAdvisor(Advisor.Id);
+        _snackBar.Add("Office removed.", Severity.Success);
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task PersistAdvisorAsync()
+    {
+        BaronyCalc.SyncAdvisorAdditive(Advisor, CustomModifiers);
+        await _baronyRepo.SaveAdvisor(Advisor);
+        _snackBar.Add("Office updated.", Severity.Success);
+        await OnChanged.InvokeAsync();
+    }
+
+    private AdvisorDTO CloneAdvisor() => new()
+    {
+        Id = Advisor.Id,
+        BaronyId = Advisor.BaronyId,
+        AvailableAdvisorId = Advisor.AvailableAdvisorId,
+        OfficeType = Advisor.OfficeType,
+        Title = Advisor.Title,
+        PersonName = Advisor.PersonName,
+        Description = Advisor.Description,
+        PersonDescription = Advisor.PersonDescription,
+        UpkeepGold = Advisor.UpkeepGold,
+        IsBaron = Advisor.IsBaron,
+        Skills = Advisor.Skills.Clone(),
+        SignificantSkills = Advisor.SignificantSkills.ToList(),
+        Additive = Advisor.Additive.Clone(),
+        Percent = Advisor.Percent.Clone(),
+    };
+
+    private void ApplyAdvisor(AdvisorDTO saved)
+    {
+        Advisor.PersonName = saved.PersonName;
+        Advisor.Title = saved.Title;
+        Advisor.Description = saved.Description;
+        Advisor.PersonDescription = saved.PersonDescription;
+        Advisor.UpkeepGold = saved.UpkeepGold;
+        Advisor.AvailableAdvisorId = saved.AvailableAdvisorId;
+        Advisor.Skills = saved.Skills.Clone();
+        if (!BaronyCalc.IsOfficeAssigned(Advisor))
+            Advisor.Skills = new PpbVector();
+    }
+
+    private static DialogOptions DialogOptions() => new()
+    {
+        MaxWidth = MaxWidth.False,
+        FullWidth = false,
+        CloseOnEscapeKey = true,
+    };
+
+    private List<AdvisorDTO> AllOffices => BaronyCalc.OrderOffices(AllAdvisors);
+}

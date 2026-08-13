@@ -1,0 +1,38 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<div class="ppb-chips">
+    @foreach (var info in VisibleColumns)
+    {
+        var v = Vector?[info.Key] ?? 0m;
+        if (v == 0m && HideZero)
+        {
+            continue;
+        }
+        var accent = PpbVisuals.ColorHex(info.Key);
+        <BaronyTooltip Text="@info.NameEn">
+            <span class="ppb-chip @PpbCellStyle.ChipClass(info.Key, v)"
+                  style="@($"--ppb-accent:{accent}")">
+                @if (PpbVisuals.HasIcon(info.Key))
+                {
+                    <BaronyResourceIcon Resource="info.Key" Size="xs" />
+                }
+                <span class="ppb-chip__label">@info.ShortEn</span>
+                <span class="ppb-chip__value">@Fmt(v)</span>
+            </span>
+        </BaronyTooltip>
+    }
+</div>
+
+@code {
+    [Parameter] public PpbVector? Vector { get; set; }
+    [Parameter] public bool HideZero { get; set; } = true;
+    [Parameter] public bool ExcludeTreasury { get; set; }
+    [Parameter] public IReadOnlyCollection<PpbInfo>? Columns { get; set; }
+
+    private IEnumerable<PpbInfo> VisibleColumns =>
+        Columns is { Count: > 0 }
+            ? Columns
+            : ExcludeTreasury ? PpbCatalog.All.Where(p => p.Key != Ppb.Treasury) : PpbCatalog.All;
+
+    private static string Fmt(decimal v) => PpbFormat.Additive(v);
+}

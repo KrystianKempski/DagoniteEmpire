@@ -1,0 +1,139 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@implements IDisposable
+@inject IBaronyRepository _baronyRepo
+@inject ICharacterRepository _characterRepo
+@inject IUserService _userService
+@inject NavigationManager _navigationManager
+
+@if (_ready)
+{
+    <div class="barony-resource-hud">
+        @foreach (var info in ResourceCatalog.All)
+        {
+            var stock = _stocks[info.Key];
+            var delta = _expected[info.Key];
+            var color = ResourceCatalog.ColorKey(info.Key);
+            <BaronyHudTip Title="@info.NameEn"
+                          Text="@BaronyUiTooltips.ResourceHud(info.Key, stock, delta)"
+                          Align="BaronyHudTip.HudTipAlign.End">
+                <div class="barony-resource-hud__item barony-resource-hud__item--@color">
+                    <div class="barony-resource-hud__main">
+                        <span class="barony-resource-hud__icon terrain-resource-option__icon"
+                              style="@IconStyle(info.Key)"
+                              aria-hidden="true"></span>
+                        <span class="barony-resource-hud__stock">@PpbFormat.Number(stock)</span>
+                    </div>
+                    <span class="barony-resource-hud__delta @DeltaClass(delta)">@FmtDelta(delta)</span>
+                </div>
+            </BaronyHudTip>
+        }
+    </div>
+}
+
+@code {
+    [CascadingParameter] public BaronyViewOptions? ViewOptions { get; set; }
+
+    private bool _ready;
+    private PpbVector _stocks = new();
+    private PpbVector _expected = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _navigationManager.LocationChanged += OnLocationChanged;
+        if (ViewOptions is not null)
+            ViewOptions.ResourceHudChanged += OnResourceHudChanged;
+        await ReloadAsync();
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+        => _ = InvokeAsync(ReloadAsync);
+
+    private void OnResourceHudChanged()
+        => _ = InvokeAsync(ReloadAsync);
+
+    private async Task ReloadAsync()
+    {
+        try
+        {
+            var userInfo = await _userService.GetUserInfo();
+            var isAdminOrMg = userInfo?.IsAdminOrMG == true;
+            var characterId = userInfo?.SelectedCharacter?.Id ?? 0;
+
+            BaronyDTO? barony = characterId > 0
+                ? await _baronyRepo.GetByCharacterId(characterId)
+                : null;
+
+            // Same first-paint fallback as BaronyPageBase for MG/Admin.
+            if (barony is null && isAdminOrMg)
+            {
+                var summaries = await _baronyRepo.GetAllSummaries();
+                if (summaries.Count > 0)
+                {
+                    var pick = summaries.FirstOrDefault(b => b.CharacterId == characterId)
+                               ?? summaries[0];
+                    if (pick.CharacterId != characterId)
+                        await _userService.SetSelectedCharId(pick.CharacterId);
+                    barony = await _baronyRepo.GetByCharacterId(pick.CharacterId);
+                }
+            }
+
+            if (barony is null)
+            {
+                _ready = false;
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            var overview = await _baronyRepo.GetOverview(barony.Id);
+            if (overview is null)
+            {
+                _ready = false;
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            var character = await _characterRepo.GetById(barony.CharacterId, fullIncludes: true);
+            var baronModifiers = await _baronyRepo.GetBaronInfluenceModifiers(barony.Id);
+            var advisorModifiers = await _baronyRepo.GetAdvisorInfluenceModifiers(barony.Id);
+            await _baronyRepo.EnsureBaronTimeDefaults(barony.Id);
+            var managementJc = BaronyCalc.ManagementJcSpent(await _baronyRepo.GetBaronTimeActions(barony.Id));
+
+            _stocks = ResourceCatalog.Slice(overview.Barony.ResourceStocks);
+            _expected = BaronyCalc.ExpectedResourceIncome(
+                overview, character, baronModifiers, advisorModifiers, managementJc);
+            _ready = true;
+        }
+        catch
+        {
+            _ready = false;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private static string IconStyle(Ppb key) =>
+        $"--resource-color:{PpbVisuals.ColorHex(key)};" +
+        $"-webkit-mask-image:url('{PpbVisuals.IconUrl(key) ?? ResourceCatalog.IconUrl(key)}');" +
+        $"mask-image:url('{PpbVisuals.IconUrl(key) ?? ResourceCatalog.IconUrl(key)}');";
+
+    private static string FmtDelta(decimal delta)
+    {
+        var r = PpbFormat.Round(delta);
+        return r == 0m ? "+0" : PpbFormat.Additive(delta);
+    }
+
+    private static string DeltaClass(decimal delta)
+    {
+        var r = PpbFormat.Round(delta);
+        return r > 0m ? "barony-resource-hud__delta--pos"
+            : r < 0m ? "barony-resource-hud__delta--neg"
+            : "barony-resource-hud__delta--zero";
+    }
+
+    public void Dispose()
+    {
+        _navigationManager.LocationChanged -= OnLocationChanged;
+        if (ViewOptions is not null)
+            ViewOptions.ResourceHudChanged -= OnResourceHudChanged;
+    }
+}

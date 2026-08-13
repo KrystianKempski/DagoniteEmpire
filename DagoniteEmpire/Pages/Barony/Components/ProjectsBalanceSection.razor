@@ -1,0 +1,224 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IJSRuntime Js
+
+<BaronySection Title="Project Summary">
+    <Summary>
+        <span class="projects-summary">
+            <span class="projects-summary__item">@_rows.Count project@(_rows.Count == 1 ? "" : "s")</span>
+        </span>
+    </Summary>
+    <ChildContent>
+        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
+            Overview of open projects. Click a project name to jump to its card below.
+        </MudText>
+
+        @if (_rows.Count == 0 && !HasAudienceRow && !HasAdventureRow)
+        {
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No projects to show.</MudText>
+        }
+        else
+        {
+            <div class="projects-balance-table-wrap">
+                <table class="ppb-table ppb-table--resources ppb-table--advisors ppb-table--city-buildings ppb-table--decrees ppb-table--project-output ppb-table--projects-balance ppb-table--lined">
+                    <colgroup>
+                        <col class="projects-balance-col-name" />
+                        @foreach (var _ in _costColumns)
+                        {
+                            <col class="resource-col-ppb" />
+                        }
+                        @foreach (var _ in PpbCatalog.All)
+                        {
+                            <col class="ppb-pair-col" />
+                            <col class="ppb-pair-col" />
+                        }
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th rowspan="3" class="ppb-row-label projects-balance-col-name">Project</th>
+                            <th colspan="@_costColumns.Count" class="project-card__panel-title projects-balance-zone-title">Cost</th>
+                            <th colspan="@(PpbCatalog.All.Count * 2)" class="project-card__panel-title projects-balance-zone-title projects-balance-split-start">Expected Output</th>
+                        </tr>
+                        <tr>
+                            @foreach (var info in _costColumns)
+                            {
+                                <th rowspan="2" class="projects-balance-subhead">@info.ShortEn</th>
+                            }
+                            @{
+                                var outputIndex = 0;
+                            }
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <th colspan="2" class="projects-balance-output-head @(outputIndex == 0 ? "projects-balance-split-start" : null)">@PpbShort(info.Key)</th>
+                                outputIndex++;
+                            }
+                        </tr>
+                        <tr>
+                            @{
+                                outputIndex = 0;
+                            }
+                            @foreach (var _ in PpbCatalog.All)
+                            {
+                                <th class="projects-balance-output-head ppb-subcol ppb-subcol--add @(outputIndex == 0 ? "projects-balance-split-start" : null)">+</th>
+                                <th class="projects-balance-output-head ppb-subcol ppb-subcol--pct">%</th>
+                                outputIndex++;
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _rows)
+                        {
+                            var activeCost = row.Project.GetActiveCost();
+                            var outputCellIndex = 0;
+                            <tr class="@RowClass(row.Project)">
+                                <td class="ppb-row-label projects-balance-col-name">
+                                    <button type="button"
+                                            class="projects-balance-project-link"
+                                            @onclick="@(() => ScrollToProjectAsync(row.Project.Id))">
+                                        @row.Project.Name
+                                    </button>
+                                </td>
+                                @foreach (var info in _costColumns)
+                                {
+                                    <td class="projects-balance-zone--cost @PpbCellClass(info.Key, activeCost[info.Key])">@Fmt(activeCost[info.Key])</td>
+                                }
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    var hideOutput = row.Project.IsResultHiddenFromViewer(CanManage);
+                                    <td class="projects-balance-output-cell @(hideOutput ? null : PpbCellClass(info.Key, row.Project.ResultAdditive[info.Key])) @(outputCellIndex == 0 ? "projects-balance-split-start" : null)">@(hideOutput ? "?" : FmtAdd(row.Project.ResultAdditive[info.Key]))</td>
+                                    <td class="projects-balance-output-cell @(hideOutput ? null : PpbCellClass(info.Key, row.Project.ResultPercent[info.Key]))">@(hideOutput ? "?" : FmtPct(row.Project.ResultPercent[info.Key]))</td>
+                                    outputCellIndex++;
+                                }
+                            </tr>
+                        }
+
+                        @if (HasAudienceRow)
+                        {
+                            var audienceOutputIndex = 0;
+                            <tr class="projects-balance-tr--audience">
+                                <td class="ppb-row-label projects-balance-col-name">
+                                    <span>@BaronAudiencePpb.SummaryRowName</span>
+                                </td>
+                                @foreach (var info in _costColumns)
+                                {
+                                    <td class="projects-balance-zone--cost">·</td>
+                                }
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    <td class="projects-balance-output-cell @PpbCellClass(info.Key, _audienceAdd[info.Key]) @(audienceOutputIndex == 0 ? "projects-balance-split-start" : null)">@FmtAdd(_audienceAdd[info.Key])</td>
+                                    <td class="projects-balance-output-cell @PpbCellClass(info.Key, _audiencePct[info.Key])">@FmtPct(_audiencePct[info.Key])</td>
+                                    audienceOutputIndex++;
+                                }
+                            </tr>
+                        }
+
+                        @if (HasAdventureRow)
+                        {
+                            var adventureOutputIndex = 0;
+                            <tr class="projects-balance-tr--audience">
+                                <td class="ppb-row-label projects-balance-col-name">
+                                    <span>@BaronAdventurePpb.SummaryRowName</span>
+                                </td>
+                                @foreach (var info in _costColumns)
+                                {
+                                    <td class="projects-balance-zone--cost">·</td>
+                                }
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    <td class="projects-balance-output-cell @PpbCellClass(info.Key, _adventureAdd[info.Key]) @(adventureOutputIndex == 0 ? "projects-balance-split-start" : null)">@FmtAdd(_adventureAdd[info.Key])</td>
+                                    <td class="projects-balance-output-cell @PpbCellClass(info.Key, _adventurePct[info.Key])">@FmtPct(_adventurePct[info.Key])</td>
+                                    adventureOutputIndex++;
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public List<BaronyProjectDTO> Projects { get; set; } = new();
+    [Parameter] public List<BaronAudienceDTO> Audiences { get; set; } = new();
+    [Parameter] public List<BaronyEventDTO> Events { get; set; } = new();
+    [Parameter] public int CurrentTurn { get; set; } = 1;
+    [Parameter] public bool CanManage { get; set; }
+
+    /// <summary>Food … Defense (7 cumulative resources, required cost).</summary>
+    private static readonly IReadOnlyList<PpbInfo> _costColumns = ResourceCatalog.All.Take(7).ToList();
+
+    private List<BalanceRow> _rows = new();
+    private PpbVector _audienceAdd = new();
+    private PpbVector _audiencePct = new();
+    private bool HasAudienceRow => !_audienceAdd.IsEmpty || !_audiencePct.IsEmpty;
+    private PpbVector _adventureAdd = new();
+    private PpbVector _adventurePct = new();
+    private bool HasAdventureRow => !_adventureAdd.IsEmpty || !_adventurePct.IsEmpty;
+
+    protected override void OnParametersSet() => RebuildRows();
+
+    private void RebuildRows()
+    {
+        _rows = Projects
+            .Where(p => !ProjectStatus.IsCompleted(p.Status) && !ProjectStatus.IsCancelled(p.Status))
+            .OrderBy(p => p.Status == ProjectStatus.InProgress ? 0
+                : ProjectStatus.IsResourceAllocation(p.Status) ? 1
+                : p.Status == ProjectStatus.Draft ? 2
+                : 3)
+            .ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(p => new BalanceRow { Project = p })
+            .ToList();
+
+        BaronyCalc.AudienceCumulativeTotals(Audiences, CurrentTurn, out _audienceAdd, out _audiencePct);
+        BaronyCalc.AdventureCumulativeTotals(Events, CurrentTurn, out _adventureAdd, out _adventurePct);
+    }
+
+    private static string ProjectAnchorId(int projectId) => $"project-{projectId}";
+
+    private async Task ScrollToProjectAsync(int projectId)
+    {
+        try
+        {
+            await Js.InvokeVoidAsync("ScrollToElement", ProjectAnchorId(projectId));
+        }
+        catch
+        {
+            // ignore disconnect / prerender
+        }
+    }
+
+    private static string RowClass(BaronyProjectDTO project) =>
+        project.Status == ProjectStatus.InProgress
+            ? "projects-balance-tr--active"
+            : ProjectStatus.IsResourceAllocation(project.Status)
+                ? "projects-balance-tr--allocating"
+                : string.Empty;
+
+    private static string Fmt(decimal v) => v == 0m ? "·" : PpbFormat.Number(v);
+    private static string FmtAdd(decimal v) => v == 0m ? "·" : PpbFormat.Additive(v);
+    private static string FmtPct(decimal v) => v == 0m ? "·" : PpbFormat.Percent(v);
+    private static string PpbCellClass(Ppb key, decimal v) => PpbCellStyle.ValueClass(key, v);
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        Ppb.Treasury => "Gold",
+        _ => p.ToString(),
+    };
+
+    private sealed class BalanceRow
+    {
+        public BaronyProjectDTO Project { get; init; } = new();
+    }
+}

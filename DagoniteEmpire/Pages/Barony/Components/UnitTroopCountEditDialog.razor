@@ -1,0 +1,67 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Common.Barony
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Troop count</MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            @if (!string.IsNullOrWhiteSpace(UnitName))
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                    @UnitName
+                </MudText>
+            }
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                Full strength is @FullStrength. Each 10% lost → −1 Attack/Defense, −4 Max HP
+                (floors: Atk/Def ≥ 1, Max HP ≥ 10). Understrength units regenerate
+                +@UnitRules.TroopRegenPerTurn troops per turn.
+            </MudText>
+            <MudNumericField T="int"
+                             @bind-Value="_value"
+                             Label="Troops"
+                             HelperText="@Helper"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0"
+                             Max="@FullStrength"
+                             Class="baron-influence-field" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string? UnitName { get; set; }
+    [Parameter] public int Value { get; set; } = UnitRules.DefaultTroopCount;
+    [Parameter] public int FullStrength { get; set; } = UnitRules.DefaultTroopCount;
+
+    private int _value;
+
+    private string Helper
+    {
+        get
+        {
+            var preview = UnitCasualtyFormulas.Compute(_value, FullStrength);
+            return preview.Steps == 0
+                ? "No casualty penalty at this strength."
+                : $"Preview: {preview.Steps} steps → Atk {preview.Attack}, Def {preview.Defense}, HP {preview.Hp}.";
+        }
+    }
+
+    protected override void OnInitialized()
+        => _value = Math.Clamp(Value, 0, Math.Max(1, FullStrength));
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+        => MudDialog.Close(DialogResult.Ok(Math.Clamp(_value, 0, Math.Max(1, FullStrength))));
+}

@@ -1,0 +1,42 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog">
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);" Class="mb-2">
+                Starting stock for turn 1. Values update current resource stocks (shown above).
+            </MudText>
+            <PpbVectorEditor @bind-Value="_values"
+                             Title="Stock from previous turn"
+                             Compact="true"
+                             Columns="@ResourceCatalog.All" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public PpbVector Values { get; set; } = new();
+
+    private PpbVector _values = new();
+
+    protected override void OnInitialized()
+    {
+        _values = ResourceCatalog.Slice(Values);
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        MudDialog.Close(DialogResult.Ok(ResourceCatalog.Slice(_values)));
+    }
+}

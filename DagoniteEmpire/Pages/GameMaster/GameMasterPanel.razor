@@ -30,10 +30,12 @@
             Panel Mistrza Gry
         </MudText>
         <MudText Typo="Typo.body1" Color="Color.Secondary" Class="pb-4">
-            Narzędzia Mistrza Gry: podsumowania kampanii oraz edycja zatwierdzonych przedmiotów w bazie.
+            Narzędzia Mistrza Gry: baronie, podsumowania kampanii oraz edycja zatwierdzonych przedmiotów w bazie.
         </MudText>
 
         <GmApprovedEquipmentSection />
+
+        <GmBaronySection />
 
         <MudPaper Class="pa-4 mb-4" Elevation="2">
             <MudGrid>
@@ -138,6 +140,13 @@
         try
         {
             UserInfo = await _userService.GetUserInfo();
+            // Demo GM sessions carry the GameMaster role but must stay inside their throwaway barony:
+            // keep them out of the panel that lists/edits real baronies, campaigns and approved equipment.
+            if (SD.IsDemoUserName(UserInfo?.UserName))
+            {
+                _navigationManager.NavigateTo("/barony", forceLoad: true);
+                return;
+            }
             if (UserInfo?.IsAdminOrMG == true)
             {
                 Campaigns = (await _campaignRepository.GetAll()).OrderBy(c => c.Name).ToList();

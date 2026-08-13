@@ -1,0 +1,106 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(IsEdit ? "Edit domain" : "Add domain")</MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            <MudTextField @bind-Value="_name"
+                          Label="Domain name"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="baron-influence-field"
+                          Required="true" />
+            <MudTextField @bind-Value="_lordName"
+                          Label="Lord name"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="baron-influence-field"
+                          Required="true" />
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">Domain color</MudText>
+            <div class="terrain-domain-color-row">
+                @foreach (var swatch in Swatches)
+                {
+                    <BaronyTooltip Text="@swatch">
+                        <button type="button"
+                                class="terrain-fertility-swatch @(swatch == _colorHex ? "terrain-fertility-swatch--selected" : "")"
+                                style="background-color: @swatch"
+                                aria-label="@($"Color {swatch}")"
+                                @onclick="() => _colorHex = swatch"></button>
+                    </BaronyTooltip>
+                }
+                <BaronyTooltip Text="Custom color">
+                    <label class="terrain-domain-custom-color">
+                        <input type="color"
+                               class="terrain-domain-color-input"
+                               value="@_colorHex"
+                               @onchange="OnCustomColorChanged" />
+                    </label>
+                </BaronyTooltip>
+            </div>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@(IsEdit ? "Save" : "Add")</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public TerrainMapDomainDTO? EditDomain { get; set; }
+
+    private bool IsEdit => EditDomain is not null;
+    private string _name = string.Empty;
+    private string _lordName = string.Empty;
+    private string _colorHex = "#c0392b";
+
+    protected override void OnParametersSet()
+    {
+        if (EditDomain is null)
+            return;
+
+        _name = EditDomain.Name;
+        _lordName = EditDomain.LordName;
+        _colorHex = EditDomain.ColorHex;
+    }
+
+    private static readonly string[] Swatches =
+    {
+        "#c0392b", "#e67e22", "#f1c40f", "#27ae60",
+        "#2980b9", "#8e44ad", "#7f8c8d", "#9c7a33",
+    };
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void OnCustomColorChanged(ChangeEventArgs e)
+    {
+        if (e.Value is string value && !string.IsNullOrWhiteSpace(value))
+            _colorHex = value;
+    }
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _snackBar.Add("Domain name is required.", Severity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_lordName))
+        {
+            _snackBar.Add("Lord name is required.", Severity.Warning);
+            return;
+        }
+
+        var dto = EditDomain ?? new TerrainMapDomainDTO { SortOrder = 100 };
+        dto.Name = _name.Trim();
+        dto.LordName = _lordName.Trim();
+        dto.ColorHex = _colorHex;
+        MudDialog.Close(DialogResult.Ok(dto));
+    }
+}

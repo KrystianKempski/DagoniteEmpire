@@ -1,0 +1,134 @@
+@inject ICharacterRepository _characterRepository
+@inject IBaronyRepository _baronyRepo
+@inject ISnackbar _snackBar
+
+<MudDialog>
+    <DialogContent>
+        <MudRadioGroup T="string"
+                       @bind-Value="_seedProfile"
+                       Label="Barony profile"
+                       Class="mb-3">
+            <MudRadio T="string" Value='@("darkhold")'>Darkhold (pre-seeded)</MudRadio>
+            <MudRadio T="string" Value='@("custom")'>Custom (blank start)</MudRadio>
+        </MudRadioGroup>
+
+        <MudTextField @bind-Value="_name"
+                      Label="Barony name"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Required="true"
+                      Disabled="@IsDarkholdProfile"
+                      Class="mb-3" />
+        <MudTextField @bind-Value="_description"
+                      Label="Description"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Lines="3"
+                      Class="mb-3" />
+        <MudSelect T="CharacterDTO?"
+                   Label="Baron character (Duke)"
+                   @bind-Value="_selectedCharacter"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Dense="true"
+                   Required="true"
+                   Placeholder="Select a Duke character">
+            @foreach (var character in _eligibleCharacters)
+            {
+                <MudSelectItem Value="@character">@CharacterLabel(character)</MudSelectItem>
+            }
+        </MudSelect>
+        @if (_eligibleCharacters.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Class="mt-3" Dense="true">
+                No eligible Duke characters. Create and approve a character with type Duke that does not already have a barony.
+            </MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="@(_eligibleCharacters.Count == 0)"
+                   OnClick="SaveAsync">
+            Create barony
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private string _name = string.Empty;
+    private string? _description;
+    private string _seedProfile = "darkhold";
+    private CharacterDTO? _selectedCharacter;
+    private List<CharacterDTO> _eligibleCharacters = new();
+    private bool IsDarkholdProfile => string.Equals(_seedProfile, "darkhold", StringComparison.OrdinalIgnoreCase);
+
+    protected override async Task OnInitializedAsync()
+    {
+        _name = DarkholdSeeder.BaronyName;
+
+        var allCharacters = (await _characterRepository.GetAllApproved(fullIncludes: false)).ToList();
+        var dukeCharacters = allCharacters
+            .Where(c => c.NPCType == SD.NPCType.Duke && c.IsApproved)
+            .OrderBy(c => c.NPCName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var assignedCharacterIds = (await _baronyRepo.GetAllSummaries())
+            .Select(b => b.CharacterId)
+            .ToHashSet();
+
+        _eligibleCharacters = dukeCharacters
+            .Where(c => !assignedCharacterIds.Contains(c.Id))
+            .ToList();
+    }
+
+    private static string CharacterLabel(CharacterDTO character)
+    {
+        var owner = string.IsNullOrWhiteSpace(character.UserName) ? "—" : character.UserName;
+        return $"{character.NPCName} ({owner})";
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _snackBar.Add("Barony name is required.", Severity.Warning);
+            return;
+        }
+
+        if (_selectedCharacter is null)
+        {
+            _snackBar.Add("Select a baron character.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            var effectiveName = IsDarkholdProfile
+                ? DarkholdSeeder.BaronyName
+                : _name.Trim();
+
+            var barony = await _baronyRepo.CreateForCharacter(
+                _selectedCharacter.Id,
+                effectiveName,
+                _description,
+                _seedProfile);
+
+            _snackBar.Add($"Barony \"{barony.Name}\" created (with campaign).", Severity.Success);
+            MudDialog.Close(DialogResult.Ok(barony));
+        }
+        catch (RepositoryErrorException ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Failed to create barony: " + ex.Message, Severity.Error);
+        }
+    }
+}

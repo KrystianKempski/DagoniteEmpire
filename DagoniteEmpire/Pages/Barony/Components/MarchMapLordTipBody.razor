@@ -1,0 +1,63 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<div class="barony-tip__box march-map-lord-tip">
+    @if (IsPlayerSeat && Player is not null)
+    {
+        <div class="barony-tip__title">
+            @(string.IsNullOrWhiteSpace(Player.BaronName) ? "You" : Player.BaronName)
+            <span class="march-map-lord-tip__you">(you)</span>
+        </div>
+        <div class="march-map-lord-tip__meta">
+            Baron · @Player.SeatMapLabel · @Player.BaronyName
+        </div>
+        <div class="march-map-lord-tip__section">
+            <div class="barony-tip__body">Your seat on the Eastern March. Other lords know you as the ruler of @Player.BaronyName.</div>
+        </div>
+    }
+    else if (Lord is not null)
+    {
+        <div class="barony-tip__title">@Lord.Name @Lord.House</div>
+        <div class="march-map-lord-tip__meta">
+            @Lord.Title · @Lord.Holdings · Wealth @Lord.Wealth
+        </div>
+        @if (!string.IsNullOrWhiteSpace(Lord.ProducedGoods))
+        {
+            <div class="march-map-lord-tip__section">
+                <div class="march-map-lord-tip__label">Available goods</div>
+                <div class="trade-good-chip-row trade-good-chip-row--tip">
+                    @foreach (var key in TradeGoodLordNames.ParseLordGoodsList(Lord.ProducedGoods))
+                    {
+                        var good = TradeGoodsCatalog.Find(key);
+                        if (good is null)
+                            continue;
+                        <span class="trade-good-chip">
+                            <TradeGoodIcon Good="@good" />
+                            <span>@good.Name</span>
+                        </span>
+                    }
+                </div>
+            </div>
+        }
+        @if (!string.IsNullOrWhiteSpace(Lord.Description))
+        {
+            <div class="march-map-lord-tip__section">
+                <div class="march-map-lord-tip__label">Description</div>
+                <div class="barony-tip__body">@Lord.Description</div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="barony-tip__title">@PlaceLabel</div>
+        <div class="barony-tip__body" style="color:var(--barony-muted);">
+            No linked lord in the Known lords catalog.
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public KnownLordEntry? Lord { get; set; }
+    [Parameter] public string PlaceLabel { get; set; } = "";
+    [Parameter] public bool IsPlayerSeat { get; set; }
+    [Parameter] public MarchMapPlayerBaronyContext? Player { get; set; }
+}

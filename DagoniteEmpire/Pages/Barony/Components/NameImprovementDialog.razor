@@ -1,0 +1,105 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@Title</MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            <MudTextField @bind-Value="_name"
+                          Label="Name"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="baron-influence-field"
+                          Required="true"
+                          Immediate="true" />
+            @if (NeedsPopulation)
+            {
+                <MudNumericField T="int"
+                                 @bind-Value="_population"
+                                 Label="Population (Pop)"
+                                 HelperText="@PopulationHelp"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Min="0"
+                                 Class="baron-influence-field" />
+            }
+            @if (IsVillage)
+            {
+                <MudCheckBox T="bool"
+                             @bind-Value="_hasPalisade"
+                             Label="Palisade (+5 Defense, +3 Stability, +1 Law)"
+                             Color="Color.Primary"
+                             Dense="true"
+                             Class="baron-influence-field" />
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Confirm</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    public sealed class PlaceNameDraft
+    {
+        public string Name { get; set; } = string.Empty;
+        public int Population { get; set; }
+        public bool HasPalisade { get; set; }
+    }
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public string ImprovementKind { get; set; } = MapImprovement.Town;
+    [Parameter] public string? InitialName { get; set; }
+    [Parameter] public int InitialPopulation { get; set; }
+    [Parameter] public bool InitialHasPalisade { get; set; }
+
+    private string _name = string.Empty;
+    private int _population;
+    private bool _hasPalisade;
+
+    private bool IsVillage =>
+        string.Equals(ImprovementKind, MapImprovement.Village, StringComparison.OrdinalIgnoreCase);
+
+    private bool IsTown =>
+        string.Equals(ImprovementKind, MapImprovement.Town, StringComparison.OrdinalIgnoreCase);
+
+    private bool NeedsPopulation => IsVillage || IsTown;
+
+    private string PopulationHelp => IsTown
+        ? "Town PPB is computed from Population."
+        : "Village PPB is computed from Population, tile fertility, and palisade.";
+
+    private string Title => $"Name this {MapImprovement.DisplayName(ImprovementKind).ToLowerInvariant()}";
+
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrWhiteSpace(InitialName))
+            _name = InitialName;
+        _population = Math.Max(0, InitialPopulation);
+        _hasPalisade = InitialHasPalisade;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        var trimmed = _name.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            _snackBar.Add("Enter a name.", Severity.Warning);
+            return;
+        }
+
+        MudDialog.Close(DialogResult.Ok(new PlaceNameDraft
+        {
+            Name = trimmed,
+            Population = NeedsPopulation ? Math.Max(0, _population) : 0,
+            HasPalisade = IsVillage && _hasPalisade,
+        }));
+    }
+}

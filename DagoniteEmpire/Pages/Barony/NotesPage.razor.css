@@ -1,0 +1,418 @@
+/* Fill the visible viewport below the fixed barony header + bottom tabbar. The height
+   rules must hang off .barony-notes__page (a real element in THIS component, so it carries
+   the scoped attribute) and reach into MudTabs via ::deep — a class on the MudTabs root
+   itself would not receive the scope attribute. */
+.barony-notes__page {
+    display: flex;
+    flex-direction: column;
+    height: calc(100dvh - 64px - 12px - 96px);
+    min-height: 34rem;
+}
+
+.barony-notes__page ::deep .mud-tabs {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.barony-notes__page ::deep .mud-tabs-panels {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.barony-notes__page ::deep .mud-tab-panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.barony-notes__journal {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.barony-notes__layout {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+}
+
+.barony-notes__threads {
+    flex: 0 0 220px;
+    width: 220px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border: 1px solid var(--barony-border-strong);
+    border-radius: 6px;
+    background: var(--barony-surface-2);
+    overflow: hidden;
+}
+
+.barony-notes__threads-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: .3rem .35rem .3rem .7rem;
+    border-bottom: 1px solid var(--barony-border-strong);
+    font-weight: 700;
+    font-size: .85rem;
+    color: var(--barony-ink);
+}
+
+.barony-notes__thread-list {
+    list-style: none;
+    margin: 0;
+    padding: .25rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.barony-notes__thread-item {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: .5rem;
+    padding: .4rem .55rem;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--barony-ink);
+}
+
+.barony-notes__thread-item:hover {
+    background: var(--barony-accent-soft);
+}
+
+.barony-notes__thread-item--active {
+    background: var(--barony-surface);
+    border-color: var(--barony-border-strong);
+}
+
+.barony-notes__thread-title {
+    font-size: .85rem;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.barony-notes__thread-meta {
+    flex: 0 0 auto;
+    font-size: .7rem;
+    color: var(--barony-muted);
+}
+
+.barony-notes__editor-pane {
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.barony-notes__editor-head {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin-bottom: .4rem;
+}
+
+.barony-notes__title-field {
+    flex: 1 1 auto;
+}
+
+.barony-notes__status {
+    flex: 0 0 auto;
+}
+
+.barony-notes__status--saved {
+    color: var(--barony-pos, #4c8a4c);
+}
+
+.barony-notes__status--pending {
+    color: #b8860b;
+}
+
+.barony-notes__editor {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.barony-notes__editor ::deep .ql-container {
+    flex: 1 1 auto;
+    min-height: 0;
+    font-size: 1rem;
+}
+
+/* Keep the Quill toolbar on a single row instead of wrapping every icon group. */
+.barony-notes__editor ::deep .ql-toolbar.ql-snow {
+    white-space: nowrap;
+    overflow-x: auto;
+}
+
+.barony-notes__editor ::deep .ql-toolbar.ql-snow .ql-formats {
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+}
+
+.barony-notes__editor ::deep .ql-editor {
+    height: 100%;
+    overflow-y: auto;
+}
+
+.barony-notes__placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .5rem;
+    text-align: center;
+    padding: 2.5rem 1rem;
+    color: var(--barony-muted);
+}
+
+/* ---- Sticky notes board ---- */
+.barony-notes__sticky {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.barony-notes__sticky-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: .6rem;
+}
+
+.barony-notes__sticky-board {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-content: flex-start;
+    gap: 14px;
+    padding: 2px;
+}
+
+.barony-notes__sticky-card {
+    flex: 0 0 15rem;
+    width: 15rem;
+    min-height: 12rem;
+    display: flex;
+    flex-direction: column;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .18);
+    border: 1px solid rgba(0, 0, 0, .08);
+    padding: .45rem .55rem .6rem;
+    color: #2b2b2b;
+    transition: transform .08s ease, box-shadow .08s ease;
+}
+
+.barony-notes__sticky-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .25);
+}
+
+.barony-notes__sticky-card--dragging {
+    opacity: .5;
+    transform: rotate(-1deg);
+}
+
+.barony-notes__sticky-head {
+    display: flex;
+    align-items: center;
+    gap: .3rem;
+    margin-bottom: .35rem;
+}
+
+.barony-notes__sticky-grip {
+    cursor: grab;
+    color: rgba(0, 0, 0, .45);
+    font-size: 1rem;
+    line-height: 1;
+    user-select: none;
+}
+
+.barony-notes__sticky-colors {
+    display: flex;
+    gap: 3px;
+    margin-left: .1rem;
+    flex: 1 1 auto;
+}
+
+.barony-notes__sticky-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, .25);
+    padding: 0;
+    cursor: pointer;
+}
+
+.barony-notes__sticky-swatch--active {
+    outline: 2px solid rgba(0, 0, 0, .55);
+    outline-offset: 1px;
+}
+
+.barony-notes__sticky-card ::deep .mud-icon-button {
+    color: rgba(0, 0, 0, .55);
+}
+
+.barony-notes__sticky-title {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(0, 0, 0, .18);
+    font-weight: 700;
+    font-size: .95rem;
+    color: #2b2b2b;
+    padding: .15rem .1rem;
+    margin-bottom: .35rem;
+    outline: none;
+}
+
+.barony-notes__sticky-title::placeholder {
+    color: rgba(0, 0, 0, .35);
+}
+
+.barony-notes__sticky-body {
+    flex: 1 1 auto;
+    min-height: 6rem;
+    resize: vertical;
+    background: transparent;
+    border: none;
+    outline: none;
+    font-size: .9rem;
+    line-height: 1.35;
+    color: #2b2b2b;
+    font-family: inherit;
+}
+
+.barony-notes__sticky-body::placeholder {
+    color: rgba(0, 0, 0, .35);
+}
+
+/* ---- Reminders ---- */
+.barony-notes__reminders {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.barony-notes__reminder-add {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding: .6rem .7rem;
+    border: 1px solid var(--barony-border-strong);
+    border-radius: 6px;
+    background: var(--barony-surface-2);
+    margin-bottom: .6rem;
+}
+
+.barony-notes__reminder-text {
+    flex: 1 1 16rem;
+    min-width: 12rem;
+    background: var(--barony-surface);
+    border: 1px solid var(--barony-border-strong);
+    border-radius: 4px;
+    padding: .35rem .5rem;
+    font-size: .9rem;
+    color: var(--barony-ink);
+    outline: none;
+}
+
+.barony-notes__reminder-in {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    font-size: .85rem;
+    color: var(--barony-muted);
+}
+
+.barony-notes__reminder-turns {
+    width: 4rem;
+    background: var(--barony-surface);
+    border: 1px solid var(--barony-border-strong);
+    border-radius: 4px;
+    padding: .35rem .4rem;
+    font-size: .9rem;
+    color: var(--barony-ink);
+    outline: none;
+}
+
+.barony-notes__reminder-list {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 2px;
+}
+
+.barony-notes__reminder-card {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .35rem .5rem;
+    border: 1px solid var(--barony-border-strong);
+    border-left: 4px solid var(--barony-border-strong);
+    border-radius: 6px;
+    background: var(--barony-surface);
+}
+
+.barony-notes__reminder-card--due {
+    border-left-color: #c0392b;
+    background: color-mix(in srgb, #c0392b 8%, var(--barony-surface));
+}
+
+.barony-notes__reminder-card--done {
+    opacity: .6;
+}
+
+.barony-notes__reminder-card--done .barony-notes__reminder-title {
+    text-decoration: line-through;
+}
+
+.barony-notes__reminder-main {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    line-height: 1.25;
+}
+
+.barony-notes__reminder-title {
+    font-size: .9rem;
+    font-weight: 600;
+    color: var(--barony-ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.barony-notes__reminder-meta {
+    font-size: .72rem;
+    color: var(--barony-muted);
+}
+
+.barony-notes__reminder-card--due ::deep .barony-notes__reminder-toggle {
+    color: #c0392b;
+}

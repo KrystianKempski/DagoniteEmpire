@@ -1,0 +1,1104 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Business.Repository.BaronyRepos
+@inject IBaronyRepository _baronyRepo
+@inject ISnackbar _snackBar
+
+<BaronySection Title="Unit generator">
+    <Summary>
+        <span class="projects-summary">
+            <span class="projects-summary__item">Live preview updates with every selector</span>
+        </span>
+    </Summary>
+    <ChildContent>
+        <div class="unit-workshop">
+            <div class="unit-workshop__body">
+                @* ---- Left: costs + selectors ---- *@
+                <div class="unit-workshop__left">
+                    <MudTextField @bind-Value="_name"
+                                  @bind-Value:after="Recalc"
+                                  Immediate="true"
+                                  Label="Unit name"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Disabled="@(!CanEdit)"
+                                  Class="baron-influence-field" />
+
+                    @* ---- Total cost (Excel “KOSZT CAŁKOWITY”) — above recruit/training ---- *@
+                    <div class="unit-workshop__costs">
+                        <div class="unit-workshop__costs-title">Total cost</div>
+                        <div class="unit-workshop__cost-grid">
+                            <BaronyTooltip Title="Production"
+                                           Text="Production needed to craft gear for the unit. Items set to Buy or Defense contribute 0 here.">
+                                <div class="unit-workshop__cost">
+                                    <span class="unit-workshop__cost-label">Production</span>
+                                    <span class="unit-workshop__cost-value unit-workshop__cost-value--production">
+                                        @_costs.Production
+                                        <BaronyResourceIcon Resource="Ppb.Production" Size="xs" />
+                                    </span>
+                                </div>
+                            </BaronyTooltip>
+                            <BaronyTooltip Title="Gold total"
+                                           Text="Total gold before training completes: recruit hire gold + gear gold + one-time training fee.">
+                                <div class="unit-workshop__cost">
+                                    <span class="unit-workshop__cost-label">Gold (total)</span>
+                                    <span class="unit-workshop__cost-value unit-workshop__cost-value--gold">
+                                        @_costs.GoldTotal
+                                        <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
+                                    </span>
+                                    <span class="unit-workshop__cost-sub">
+                                        Rec @_costs.GoldRecruit · Gear @_costs.GoldEquipment · Trn @_costs.GoldTraining
+                                    </span>
+                                </div>
+                            </BaronyTooltip>
+                            <BaronyTooltip Title="Defense"
+                                           Text="Defense needed to create the unit: recruit selection + gear acquired as Defense (2× market gold) + accelerate (50 Defense per turn cut).">
+                                <div class="unit-workshop__cost">
+                                    <span class="unit-workshop__cost-label">Defense</span>
+                                    <span class="unit-workshop__cost-value unit-workshop__cost-value--defense">
+                                        @_costs.DefenseTotal
+                                        <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" />
+                                    </span>
+                                    <span class="unit-workshop__cost-sub">
+                                        Rec @_costs.DefenseRecruit · Gear @_costs.DefenseEquipment · Acc @_costs.DefenseAccelerate
+                                    </span>
+                                </div>
+                            </BaronyTooltip>
+                            <BaronyTooltip Title="Wage / turn"
+                                           Text="@WageTurnTip">
+                                <div class="unit-workshop__cost">
+                                    <span class="unit-workshop__cost-label">Wage / turn</span>
+                                    <span class="unit-workshop__cost-value unit-workshop__cost-value--gold">
+                                        @_previewUpkeep.Gold
+                                        <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
+                                    </span>
+                                    <span class="unit-workshop__cost-sub">
+                                        Base @_previewUpkeep.BaseWage · Gear @_previewUpkeep.GearGold
+                                        · Def/t @_previewUpkeep.Defense
+                                    </span>
+                                </div>
+                            </BaronyTooltip>
+                            <BaronyTooltip Title="Time"
+                                           Text="Turns required to finish the unit after acceleration. Express can complete in 0 turns.">
+                                <div class="unit-workshop__cost">
+                                    <span class="unit-workshop__cost-label">Time (turns)</span>
+                                    <span class="unit-workshop__cost-value">@_costs.Turns</span>
+                                </div>
+                            </BaronyTooltip>
+                            <BaronyTooltip Title="Gold (gear)"
+                                           Text="Gold for weapons and armor at project start: Craft uses catalog gold; Buy uses market (Mkt); Defense items add 0 here.">
+                                <div class="unit-workshop__cost">
+                                    <span class="unit-workshop__cost-label">Gold (gear)</span>
+                                    <span class="unit-workshop__cost-value unit-workshop__cost-value--gold">
+                                        @_costs.GoldEquipment
+                                        <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
+                                    </span>
+                                </div>
+                            </BaronyTooltip>
+                            <BaronyTooltip Title="Gold (training)"
+                                           Text="Recruit hire gold (e.g. mercenaries) plus the one-time training fee (Express 10 · Accelerated 20 · Standard 40 · Elite 75). Paid when the project starts — not per turn.">
+                                <div class="unit-workshop__cost">
+                                    <span class="unit-workshop__cost-label">Gold (training)</span>
+                                    <span class="unit-workshop__cost-value unit-workshop__cost-value--gold">
+                                        @(_costs.GoldTraining + _costs.GoldRecruit)
+                                        <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
+                                    </span>
+                                    <span class="unit-workshop__cost-sub">
+                                        Rec @_costs.GoldRecruit · Trn @_costs.GoldTraining
+                                    </span>
+                                </div>
+                            </BaronyTooltip>
+                            <BaronyTooltip Title="Experience points"
+                                           Text="Experience points (XP) to spend after training finishes. Attribute raise = target level × 10; base skill = level × 3; specialization = level × 1 (cannot exceed parent); discipline raise = current level.">
+                                <div class="unit-workshop__cost">
+                                    <span class="unit-workshop__cost-label">XP</span>
+                                    <span class="unit-workshop__cost-value">@_costs.Pd</span>
+                                </div>
+                            </BaronyTooltip>
+                        </div>
+                        <MudText Typo="Typo.caption" Class="unit-workshop__howto">
+                            Recruit → training → gear. Per item: Craft (Prod+Gold), Buy (Mkt), or Defense (2×Mkt). Max units ≈ Society; each unit is 50 troops.
+                        </MudText>
+                    </div>
+
+                    <div class="unit-workshop__pair">
+                        <section class="unit-workshop__block unit-workshop__block--compact">
+                            <BaronyTooltip Title="Recruit selection"
+                                           Text="Choose how you select recruits. Sets starting attributes and max base skill (combined with training’s Skl — the lower wins). Cost may be Defense and/or gold; Forced hire also adds a Loyalty/Stability event.">
+                                <h3 class="unit-workshop__heading">Recruit</h3>
+                            </BaronyTooltip>
+                            <MudRadioGroup T="string"
+                                           Value="_recruitKey"
+                                           ValueChanged="OnRecruitChanged"
+                                           Disabled="@(!CanEdit)">
+                                <table class="ppb-table ppb-table--source ppb-table--lined unit-workshop__table unit-workshop__table--compact">
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th class="ppb-row-label">Option</th>
+                                            <th>
+                                                <BaronyTooltip Title="Attributes"
+                                                               Text="Attribute level for the unit (Build, Agility, Will, Perception start at this score)."
+                                                               Placement="Placement.Top">
+                                                    <span>Att</span>
+                                                </BaronyTooltip>
+                                            </th>
+                                            <th>
+                                                <BaronyTooltip Title="Defense"
+                                                               Text="Defense resource cost for this selection (0 for mercenaries / forced hire)."
+                                                               Placement="Placement.Top">
+                                                    <span class="unit-workshop__th-res">
+                                                        <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" />
+                                                    </span>
+                                                </BaronyTooltip>
+                                            </th>
+                                            <th>
+                                                <BaronyTooltip Title="Gold"
+                                                               Text="Hire gold for this selection (mercenaries). Added to the project gold track."
+                                                               Placement="Placement.Top">
+                                                    <span class="unit-workshop__th-res">
+                                                        <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
+                                                    </span>
+                                                </BaronyTooltip>
+                                            </th>
+                                            <th>
+                                                <BaronyTooltip Title="Max base skill"
+                                                               Text="Maximum base skill rank reachable by graduation. Combined with training’s Skl (the lower wins)."
+                                                               Placement="Placement.Top">
+                                                    <span>Skl</span>
+                                                </BaronyTooltip>
+                                            </th>
+                                            <th>
+                                                <BaronyTooltip Title="Wage"
+                                                               Text="Share of the unit’s wage after training. Total wage = recruit + training."
+                                                               Placement="Placement.Top">
+                                                    <span>Wag</span>
+                                                </BaronyTooltip>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var r in UnitRecruitSelectionCatalog.All)
+                                        {
+                                            <tr class="@(_recruitKey == r.Key ? "unit-workshop__row--active" : null)"
+                                                @onclick="() => SelectRecruit(r.Key)">
+                                                <td><MudRadio T="string" Value="@r.Key" Dense="true" /></td>
+                                                <td class="ppb-row-label">
+                                                    <BaronyTooltip Title="@r.Name"
+                                                                   Text="@RecruitTip(r)"
+                                                                   Placement="Placement.Right">
+                                                        <span>@r.Name</span>
+                                                    </BaronyTooltip>
+                                                </td>
+                                                <td>@r.AttributeScore</td>
+                                                <td>@r.DefenseCost</td>
+                                                <td>@r.GoldCost</td>
+                                                <td>@r.MaxBaseSkill</td>
+                                                <td>@r.Wage</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </MudRadioGroup>
+                        </section>
+
+                        <section class="unit-workshop__block unit-workshop__block--compact">
+                            <BaronyTooltip Title="Training"
+                                           Text="Grants XP on graduation, a one-time gold fee, turns (Trn), starting discipline (Dis), max base skill (Skl), and wage (Wag). Standard/Elite also grant free attribute points after graduation.">
+                                <h3 class="unit-workshop__heading">Training</h3>
+                            </BaronyTooltip>
+                            <MudRadioGroup T="string"
+                                           Value="_trainingKey"
+                                           ValueChanged="OnTrainingChanged"
+                                           Disabled="@(!CanEdit)">
+                                <table class="ppb-table ppb-table--source ppb-table--lined unit-workshop__table unit-workshop__table--compact">
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th class="ppb-row-label">Type</th>
+                                            <th>
+                                                <BaronyTooltip Title="Experience points"
+                                                               Text="Experience points (XP) available to spend after training finishes."
+                                                               Placement="Placement.Top">
+                                                    <span>XP</span>
+                                                </BaronyTooltip>
+                                            </th>
+                                            <th>
+                                                <BaronyTooltip Title="Gold"
+                                                               Text="One-time training fee in gold: Express 10 · Accelerated 20 · Standard 40 · Elite 75."
+                                                               Placement="Placement.Top">
+                                                    <span class="unit-workshop__th-res">
+                                                        <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
+                                                    </span>
+                                                </BaronyTooltip>
+                                            </th>
+                                            <th>
+                                                <BaronyTooltip Title="Turns"
+                                                               Text="Turns needed to finish training before acceleration."
+                                                               Placement="Placement.Top">
+                                                    <span>Trn</span>
+                                                </BaronyTooltip>
+                                            </th>
+                                            <th>
+                                                <BaronyTooltip Title="Max base skill"
+                                                               Text="Max base skill at graduation. Combined with recruit’s Skl (the lower wins)."
+                                                               Placement="Placement.Top">
+                                                    <span>Skl</span>
+                                                </BaronyTooltip>
+                                            </th>
+                                            <th>
+                                                <BaronyTooltip Title="Discipline"
+                                                               Text="Starting discipline after training (range 1–18). Raising discipline later costs XP equal to the current level."
+                                                               Placement="Placement.Top">
+                                                    <span>Dis</span>
+                                                </BaronyTooltip>
+                                            </th>
+                                            <th>
+                                                <BaronyTooltip Title="Wage"
+                                                               Text="Training share of wage after graduation. Total wage = recruit + training."
+                                                               Placement="Placement.Top">
+                                                    <span>Wag</span>
+                                                </BaronyTooltip>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var t in UnitTrainingTypeCatalog.All)
+                                        {
+                                            var trainTip = string.IsNullOrWhiteSpace(t.Notes)
+                                                ? $"{t.Name}: {t.Pd} XP · {t.GoldCost} Gld · {t.Turns} Trn · Dis {t.StartingDiscipline}"
+                                                : $"{t.Name}: {t.Notes}. {t.Pd} XP · {t.GoldCost} Gld · {t.Turns} Trn · Dis {t.StartingDiscipline}";
+                                            <tr class="@(_trainingKey == t.Key ? "unit-workshop__row--active" : null)"
+                                                @onclick="() => SelectTraining(t.Key)">
+                                                <td><MudRadio T="string" Value="@t.Key" Dense="true" /></td>
+                                                <td class="ppb-row-label">
+                                                    <BaronyTooltip Title="@t.Name" Text="@trainTip" Placement="Placement.Right">
+                                                        <span>@t.Name</span>
+                                                    </BaronyTooltip>
+                                                </td>
+                                                <td>@t.Pd</td>
+                                                <td>@t.GoldCost</td>
+                                                <td>@t.Turns</td>
+                                                <td>@t.MaxBaseSkill</td>
+                                                <td>@t.StartingDiscipline</td>
+                                                <td>@t.Wage</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </MudRadioGroup>
+                            <div class="unit-workshop__accel">
+                                <BaronyTooltip Title="Accelerate"
+                                               Text="Speed up training with Defense. Cutting one turn costs 50 Defense. Enter how many turns to cut — usable any time during training (here: at project start).">
+                                    <div class="unit-workshop__accel-field">
+                                        <span class="unit-workshop__accel-icon" aria-hidden="true">
+                                            <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" />
+                                        </span>
+                                        <MudNumericField T="int"
+                                                         Value="_accelerate"
+                                                         ValueChanged="OnAccelerateChanged"
+                                                         Label="Accel (−50 / turn)"
+                                                         Variant="Variant.Outlined"
+                                                         Margin="Margin.Dense"
+                                                         Min="0"
+                                                         Max="@_maxAccel"
+                                                         Disabled="@(!CanEdit)"
+                                                         Class="baron-influence-field" />
+                                    </div>
+                                </BaronyTooltip>
+                            </div>
+                        </section>
+                    </div>
+
+                    @if (_race.BonusBaseSkillPicks > 0)
+                    {
+                        <section class="unit-workshop__block unit-workshop__block--compact">
+                            <BaronyTooltip Title="@($"{_race.Name} race bonus")"
+                                           Text="@($"Humans get +{_race.BonusBaseSkillAmount} Other on {_race.BonusBaseSkillPicks} base skills of your choice (shown in the Other skill column).")">
+                                <h3 class="unit-workshop__heading">Race bonus — @_race.Name</h3>
+                            </BaronyTooltip>
+                            <div class="unit-workshop__race-picks">
+                                <MudSelect T="string"
+                                           Label="Base skill +1"
+                                           Value="@(_raceBonus1 ?? string.Empty)"
+                                           ValueChanged="OnRaceBonus1Changed"
+                                           Variant="Variant.Outlined"
+                                           Margin="Margin.Dense"
+                                           Dense="true"
+                                           Disabled="@(!CanEdit)"
+                                           Class="baron-influence-field">
+                                    <MudSelectItem Value="@string.Empty">—</MudSelectItem>
+                                    @foreach (var s in UnitRaceSkillBonus.EligibleBaseSkills
+                                                  .Where(x => !string.Equals(x.Key, _raceBonus2, StringComparison.OrdinalIgnoreCase)))
+                                    {
+                                        <MudSelectItem Value="@s.Key">@s.Name</MudSelectItem>
+                                    }
+                                </MudSelect>
+                                <MudSelect T="string"
+                                           Label="Base skill +1"
+                                           Value="@(_raceBonus2 ?? string.Empty)"
+                                           ValueChanged="OnRaceBonus2Changed"
+                                           Variant="Variant.Outlined"
+                                           Margin="Margin.Dense"
+                                           Dense="true"
+                                           Disabled="@(!CanEdit)"
+                                           Class="baron-influence-field">
+                                    <MudSelectItem Value="@string.Empty">—</MudSelectItem>
+                                    @foreach (var s in UnitRaceSkillBonus.EligibleBaseSkills
+                                                  .Where(x => !string.Equals(x.Key, _raceBonus1, StringComparison.OrdinalIgnoreCase)))
+                                    {
+                                        <MudSelectItem Value="@s.Key">@s.Name</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            </div>
+                            <MudText Typo="Typo.caption" Class="unit-workshop__note unit-workshop__note--tight">
+                                Cap max base skill: <b>@_costs.MaxBaseSkill</b>
+                                (lower of recruit/training Skl)
+                            </MudText>
+                        </section>
+                    }
+
+                    <section class="unit-workshop__block unit-workshop__block--compact">
+                        <div class="unit-workshop__gear-head">
+                            <BaronyTooltip Title="Gear"
+                                           Text="How each item is acquired: Craft = Production + catalog gold; Buy = market gold (Mkt) only, no Production; Defense = 2× Mkt as Defense. Weapon 1 quality (Good +1 / Poor −1 Atk &amp; Dmg) is set by the GM for the whole barony.">
+                                <h3 class="unit-workshop__heading">Gear</h3>
+                            </BaronyTooltip>
+                            @if (CanManageAsMg)
+                            {
+                                <MudSelect T="string"
+                                           Label="Gear quality (MG)"
+                                           Value="_quality"
+                                           ValueChanged="OnQualityChanged"
+                                           Variant="Variant.Outlined"
+                                           Margin="Margin.Dense"
+                                           Dense="true"
+                                           Class="baron-influence-field unit-workshop__quality">
+                                    @foreach (var q in UnitWeaponQuality.All)
+                                    {
+                                        <MudSelectItem Value="@q">@q</MudSelectItem>
+                                    }
+                                </MudSelect>
+                            }
+                            else
+                            {
+                                <MudText Typo="Typo.caption" Class="unit-workshop__quality-ro">
+                                    Quality: <b>@_quality</b>
+                                    <span style="color:var(--barony-muted);"> (GM)</span>
+                                </MudText>
+                            }
+                        </div>
+                        <MudText Typo="Typo.caption" Class="unit-workshop__note unit-workshop__note--tight">
+                            Acquire:
+                            <BaronyResourceIcon Resource="Ppb.Production" Size="xs" /> Craft ·
+                            <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" /> Buy (Mkt) ·
+                            <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" /> Def (2×Mkt)
+                        </MudText>
+                        <div class="unit-gear-pay">
+                            @GearPayRow("W1", _w1?.Name, _w1?.ProductionCost, _w1?.GoldCost, _w1?.MarketGold,
+                                _payW1, OnPayW1Changed, required: true)
+                            @GearPayRow("W2", UnitWeaponCatalog.Find(_weapon2)?.Name,
+                                UnitWeaponCatalog.Find(_weapon2)?.ProductionCost,
+                                UnitWeaponCatalog.Find(_weapon2)?.GoldCost,
+                                UnitWeaponCatalog.Find(_weapon2)?.MarketGold,
+                                _payW2, OnPayW2Changed, required: false)
+                            @GearPayRow("Arm", _armorDef?.Name, _armorDef?.ProductionCost, _armorDef?.GoldCost, _armorDef?.MarketGold,
+                                _payArmor, OnPayArmorChanged, required: false)
+                            @GearPayRow("Shd", _shieldDef?.Name, _shieldDef?.ProductionCost, _shieldDef?.GoldCost, _shieldDef?.MarketGold,
+                                _payShield, OnPayShieldChanged, required: false)
+                            @GearPayRow("Mnt", _mountDef?.Name, _mountDef?.ProductionCost, _mountDef?.GoldCost, _mountDef?.MarketGold,
+                                _payMount, OnPayMountChanged, required: false)
+                        </div>
+                    </section>
+
+                    @if (CanEdit)
+                    {
+                        <MudButton Class="barony-turn-btn barony-turn-btn--solid"
+                                   Variant="Variant.Filled"
+                                   Disabled="@(_busy)"
+                                   OnClick="StartAsync">
+                            Start training project
+                        </MudButton>
+                    }
+                </div>
+
+                @* ---- Right: live unit card (Excel “FORMOWANY ODDZIAŁ”) ---- *@
+                <div class="unit-workshop__right">
+                    @if (_xpDirty)
+                    {
+                        <div class="unit-xp-bar">
+                            <span class="unit-xp-bar__text">
+                                Pending XP: <b>@XpSpentPending</b>
+                                · left <b>@_draft.RemainingPd</b>
+                                @if (FreeAttrsSpentPending > 0)
+                                {
+                                    <text> · free attrs <b>@FreeAttrsSpentPending</b></text>
+                                }
+                            </span>
+                            <div class="unit-xp-bar__actions">
+                                <MudButton Size="Size.Small"
+                                           Variant="Variant.Filled"
+                                           Class="barony-turn-btn barony-turn-btn--solid"
+                                           OnClick="SaveDraftXp">
+                                    Save
+                                </MudButton>
+                                <MudButton Size="Size.Small"
+                                           Variant="Variant.Outlined"
+                                           Class="barony-turn-btn barony-turn-btn--ghost"
+                                           OnClick="UndoDraftXp">
+                                    Undo
+                                </MudButton>
+                            </div>
+                        </div>
+                    }
+                    <UnitDraftCardPreview Unit="@_draft"
+                                          TitleEyebrow="Forming unit"
+                                          CanManageAsMg="@CanManageAsMg"
+                                          CanSpendPd="@CanEdit"
+                                          SkillsChanged="OnDraftSkillsChanged"
+                                          OnXpDraftChanged="OnDraftXpChanged" />
+                </div>
+            </div>
+
+            <UnitEquipmentPicker Unit="@_draft"
+                                 Weapon1Key="@_weapon1"
+                                 Weapon2Key="@_weapon2"
+                                 ArmorKey="@_armorKey"
+                                 ShieldKey="@_shieldKey"
+                                 MountKey="@_mountKey"
+                                 CanEdit="@CanEdit"
+                                 Availability="@_availability"
+                                 Weapon1Changed="OnWeapon1Changed"
+                                 Weapon2Changed="OnWeapon2Changed"
+                                 ArmorChanged="OnArmorChanged"
+                                 ShieldChanged="OnShieldChanged"
+                                 MountChanged="OnMountChanged" />
+        </div>
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public int BaronyId { get; set; }
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public bool CanManageAsMg { get; set; }
+    [Parameter] public EventCallback<StartUnitTrainingResult> OnStarted { get; set; }
+
+    private string _name = string.Empty;
+    private string _recruitKey = UnitRecruitSelectionCatalog.BestAvailable.Key;
+    private string _trainingKey = UnitTrainingTypeCatalog.Standard.Key;
+    private string _weapon1 = "short-spears";
+    private string? _weapon2 = "simple-bows";
+    private string? _armorKey = null;
+    private string? _shieldKey = "wooden-medium-shield";
+    private string? _mountKey = null;
+    private string _quality = UnitWeaponQuality.Normal;
+    private string _payW1 = UnitEquipmentAcquireMode.Craft;
+    private string _payW2 = UnitEquipmentAcquireMode.Craft;
+    private string _payArmor = UnitEquipmentAcquireMode.Craft;
+    private string _payShield = UnitEquipmentAcquireMode.Craft;
+    private string _payMount = UnitEquipmentAcquireMode.Craft;
+    private int _accelerate;
+    private bool _busy;
+    private string? _raceBonus1;
+    private string? _raceBonus2;
+
+    private UnitTrainingCostSummary _costs = default!;
+    private UnitUpkeepTotals _previewUpkeep;
+    private BaronyUnitDTO _draft = new();
+    private UnitWeaponDef? _w1;
+    private UnitArmorDef? _armorDef;
+    private UnitArmorDef? _shieldDef;
+    private UnitMountDef? _mountDef;
+    private UnitRaceDef _race => UnitRaceCatalog.Find(_draft.RaceKey);
+    private bool _sanitizingGear;
+    private TradeGoodAvailabilitySnapshot? _availability;
+
+    private string WageTurnTip => UnitUpkeepFormulas.Explain(_previewUpkeep)
+        + " Food defaults to 0.5/turn once Active (Domain Panel → Army).";
+
+    private string _xpRecruitKey = string.Empty;
+    private string _xpTrainingKey = string.Empty;
+    private bool _xpDirty;
+    private DraftXpBaseline? _xpBaseline;
+
+    private int XpSpentPending =>
+        _xpBaseline is null ? 0 : Math.Max(0, _xpBaseline.RemainingPd - _draft.RemainingPd);
+
+    private int FreeAttrsSpentPending =>
+        _xpBaseline is null ? 0 : Math.Max(0, _xpBaseline.FreeAttributePoints - _draft.FreeAttributePoints);
+
+    private int _maxAccel => UnitTrainingTypeCatalog.Find(_trainingKey)?.Turns ?? 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Recalc before any await so the first render never sees a null upkeep preview.
+        Recalc();
+        await LoadBaronyQualityAsync();
+        if (BaronyId > 0)
+            _availability = await _baronyRepo.GetTradeGoodAvailability(BaronyId);
+        Recalc();
+    }
+
+    private async Task LoadBaronyQualityAsync()
+    {
+        if (BaronyId <= 0) return;
+        try
+        {
+            var barony = await _baronyRepo.GetById(BaronyId);
+            if (barony is not null)
+                _quality = UnitWeaponQuality.Normalize(barony.DefaultUnitWeaponQuality);
+        }
+        catch
+        {
+            _quality = UnitWeaponQuality.Normal;
+        }
+    }
+
+    private async Task OnQualityChanged(string v)
+    {
+        if (!CanManageAsMg) return;
+        _quality = UnitWeaponQuality.Normalize(v);
+        Recalc();
+        try
+        {
+            var barony = await _baronyRepo.GetById(BaronyId);
+            if (barony is null) return;
+            barony.DefaultUnitWeaponQuality = _quality;
+            await _baronyRepo.UpdateBarony(barony);
+            _snackBar.Add($"Default gear quality set to {_quality}.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save gear quality: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private void SelectRecruit(string key)
+    {
+        if (!CanEdit) return;
+        _recruitKey = key;
+        Recalc();
+    }
+
+    private void SelectTraining(string key)
+    {
+        if (!CanEdit) return;
+        _trainingKey = key;
+        _accelerate = Math.Min(_accelerate, _maxAccel);
+        Recalc();
+    }
+
+    private Task OnRecruitChanged(string v) { _recruitKey = v; Recalc(); return Task.CompletedTask; }
+
+    private static string RecruitTip(UnitRecruitSelection r)
+    {
+        var tip = $"Att {r.AttributeScore} · Def {r.DefenseCost} · Gold {r.GoldCost} · Skl {r.MaxBaseSkill} · Wag {r.Wage}";
+        if (!string.IsNullOrWhiteSpace(r.Notes))
+            tip += $"\n\n{r.Notes}";
+        return tip;
+    }
+
+    private Task OnTrainingChanged(string v)
+    {
+        _trainingKey = v;
+        _accelerate = Math.Min(_accelerate, _maxAccel);
+        Recalc();
+        return Task.CompletedTask;
+    }
+
+    private Task OnRaceBonus1Changed(string v)
+    {
+        _raceBonus1 = string.IsNullOrWhiteSpace(v) ? null : v;
+        if (string.Equals(_raceBonus1, _raceBonus2, StringComparison.OrdinalIgnoreCase))
+            _raceBonus2 = null;
+        Recalc();
+        return Task.CompletedTask;
+    }
+
+    private Task OnRaceBonus2Changed(string v)
+    {
+        _raceBonus2 = string.IsNullOrWhiteSpace(v) ? null : v;
+        if (string.Equals(_raceBonus1, _raceBonus2, StringComparison.OrdinalIgnoreCase))
+            _raceBonus1 = null;
+        Recalc();
+        return Task.CompletedTask;
+    }
+    private Task OnWeapon1Changed(string v)
+    {
+        if (string.IsNullOrWhiteSpace(v)) return Task.CompletedTask;
+        _weapon1 = v;
+        if (_weapon2 == v) { _weapon2 = null; _payW2 = UnitEquipmentAcquireMode.Craft; }
+        Recalc();
+        return Task.CompletedTask;
+    }
+    private Task OnWeapon2Changed(string? v)
+    {
+        _weapon2 = string.IsNullOrWhiteSpace(v) ? null : v;
+        if (_weapon2 is null) _payW2 = UnitEquipmentAcquireMode.Craft;
+        Recalc();
+        return Task.CompletedTask;
+    }
+    private Task OnArmorChanged(string? v)
+    {
+        _armorKey = string.IsNullOrWhiteSpace(v) ? null : v;
+        if (_armorKey is null) _payArmor = UnitEquipmentAcquireMode.Craft;
+        Recalc();
+        return Task.CompletedTask;
+    }
+    private Task OnShieldChanged(string? v)
+    {
+        _shieldKey = string.IsNullOrWhiteSpace(v) ? null : v;
+        if (_shieldKey is null) _payShield = UnitEquipmentAcquireMode.Craft;
+        Recalc();
+        return Task.CompletedTask;
+    }
+
+    private Task OnMountChanged(string? v)
+    {
+        _mountKey = string.IsNullOrWhiteSpace(v) ? null : v;
+        if (_mountKey is null) _payMount = UnitEquipmentAcquireMode.Craft;
+        Recalc();
+        return Task.CompletedTask;
+    }
+    private Task OnPayW1Changed(string v) { _payW1 = UnitEquipmentAcquireMode.Normalize(v); Recalc(); return Task.CompletedTask; }
+    private Task OnPayW2Changed(string v) { _payW2 = UnitEquipmentAcquireMode.Normalize(v); Recalc(); return Task.CompletedTask; }
+    private Task OnPayArmorChanged(string v) { _payArmor = UnitEquipmentAcquireMode.Normalize(v); Recalc(); return Task.CompletedTask; }
+    private Task OnPayShieldChanged(string v) { _payShield = UnitEquipmentAcquireMode.Normalize(v); Recalc(); return Task.CompletedTask; }
+    private Task OnPayMountChanged(string v) { _payMount = UnitEquipmentAcquireMode.Normalize(v); Recalc(); return Task.CompletedTask; }
+    private Task OnAccelerateChanged(int v) { _accelerate = Math.Clamp(v, 0, _maxAccel); Recalc(); return Task.CompletedTask; }
+
+    private UnitEquipmentPayModes CurrentPayModes => new(
+        UnitEquipmentAcquireMode.Normalize(_payW1),
+        _weapon2 is null ? UnitEquipmentAcquireMode.Craft : UnitEquipmentAcquireMode.Normalize(_payW2),
+        _armorKey is null ? UnitEquipmentAcquireMode.Craft : UnitEquipmentAcquireMode.Normalize(_payArmor),
+        _shieldKey is null ? UnitEquipmentAcquireMode.Craft : UnitEquipmentAcquireMode.Normalize(_payShield),
+        _mountKey is null ? UnitEquipmentAcquireMode.Craft : UnitEquipmentAcquireMode.Normalize(_payMount));
+
+    private RenderFragment GearPayRow(
+        string slot,
+        string? name,
+        int? prod,
+        int? gold,
+        int? market,
+        string mode,
+        Func<string, Task> onChanged,
+        bool required) => __builder =>
+    {
+        var hasItem = !string.IsNullOrWhiteSpace(name);
+        var m = UnitEquipmentAcquireMode.Normalize(mode);
+        var tipTitle = $"{slot}: {(hasItem ? name : (required ? "required" : "none"))}";
+        var tipText = !hasItem
+            ? (required ? "Weapon 1 is required." : "Optional — pick from the catalog below.")
+            : m switch
+            {
+                UnitEquipmentAcquireMode.Buy =>
+                    $"Buy for {market} gold (Mkt). No Production.",
+                UnitEquipmentAcquireMode.Defense =>
+                    $"Paid as Defense: {market * 2} (2× Mkt {market}). No Production/Gold.",
+                _ =>
+                    $"Craft: Production {prod} · Gold {gold}. Or Buy (Mkt {market}) / Defense (2×Mkt).",
+            };
+        var rowMod = !hasItem ? null
+            : m == UnitEquipmentAcquireMode.Buy ? "unit-gear-pay__row--buy"
+            : m == UnitEquipmentAcquireMode.Defense ? "unit-gear-pay__row--defense"
+            : "unit-gear-pay__row--craft";
+        <BaronyTooltip Title="@tipTitle" Text="@tipText" Placement="Placement.Right">
+            <div class="unit-gear-pay__row @rowMod">
+                <span class="unit-gear-pay__slot">@slot</span>
+                <span class="unit-gear-pay__name">@(hasItem ? name : (required ? "—" : "none"))</span>
+                @if (hasItem)
+                {
+                    <MudRadioGroup T="string"
+                                   Value="@m"
+                                   ValueChanged="EventCallback.Factory.Create<string>(this, onChanged)"
+                                   Disabled="@(!CanEdit)"
+                                   Class="unit-gear-pay__modes">
+                        <BaronyTooltip Title="Craft" Text="@($"Production {prod} + gold {gold}.")">
+                            <MudRadio T="string" Value="@UnitEquipmentAcquireMode.Craft" Dense="true" Class="unit-gear-pay__mode">
+                                <BaronyResourceIcon Resource="Ppb.Production" Size="xs" />
+                            </MudRadio>
+                        </BaronyTooltip>
+                        <BaronyTooltip Title="Buy" Text="@($"Market gold {market} (Mkt). No Production.")">
+                            <MudRadio T="string" Value="@UnitEquipmentAcquireMode.Buy" Dense="true" Class="unit-gear-pay__mode">
+                                <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
+                            </MudRadio>
+                        </BaronyTooltip>
+                        <BaronyTooltip Title="Defense" Text="@($"2× market = {(market ?? 0) * 2} Defense.")">
+                            <MudRadio T="string" Value="@UnitEquipmentAcquireMode.Defense" Dense="true" Class="unit-gear-pay__mode">
+                                <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" />
+                            </MudRadio>
+                        </BaronyTooltip>
+                    </MudRadioGroup>
+                }
+            </div>
+        </BaronyTooltip>
+    };
+
+    private void Recalc()
+    {
+        var recruit = UnitRecruitSelectionCatalog.Find(_recruitKey) ?? UnitRecruitSelectionCatalog.Volunteers;
+        var training = UnitTrainingTypeCatalog.Find(_trainingKey) ?? UnitTrainingTypeCatalog.Standard;
+        _w1 = UnitWeaponCatalog.Find(_weapon1);
+        _armorDef = UnitArmorCatalog.Find(_armorKey);
+        _shieldDef = UnitArmorCatalog.Find(_shieldKey);
+        _mountDef = UnitMountCatalog.Find(_mountKey);
+
+        _costs = UnitTrainingCostFormulas.Compute(
+            recruit, training,
+            _w1,
+            UnitWeaponCatalog.Find(_weapon2),
+            _armorDef,
+            _shieldDef,
+            _mountDef,
+            CurrentPayModes, _accelerate);
+
+        var sameRecruitTraining =
+            string.Equals(_xpRecruitKey, _recruitKey, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(_xpTrainingKey, _trainingKey, StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrEmpty(_xpRecruitKey);
+
+        // Same recruit/training: keep XP spends, skill bases, Other sources across gear/name tweaks.
+        // Recruit or training changed: full reset to catalog defaults (attrs, discipline, XP, skill bases).
+        Dictionary<string, int>? keepBase = null;
+        Dictionary<string, int>? keepOther = null;
+        Dictionary<string, List<UnitCombatModifierEntry>>? keepSkillOtherSources = null;
+        Dictionary<string, List<UnitCombatModifierEntry>>? keepCombatOther = null;
+        Dictionary<string, List<UnitCombatModifierEntry>>? keepAttrOtherSources = null;
+        int keepBuild = 0, keepAgi = 0, keepWill = 0, keepPer = 0, keepDis = 0, keepPd = 0, keepFree = 0;
+
+        if (sameRecruitTraining)
+        {
+            keepBase = new Dictionary<string, int>(_draft.SkillBase, StringComparer.OrdinalIgnoreCase);
+            keepOther = new Dictionary<string, int>(_draft.SkillOther, StringComparer.OrdinalIgnoreCase);
+            keepSkillOtherSources = CloneNamedModifiers(_draft.SkillOtherSources);
+            keepCombatOther = CloneNamedModifiers(_draft.CombatOther);
+            keepAttrOtherSources = CloneNamedModifiers(_draft.AttrOtherSources);
+            keepBuild = _draft.Build;
+            keepAgi = _draft.Agility;
+            keepWill = _draft.Will;
+            keepPer = _draft.Perception;
+            keepDis = _draft.Discipline;
+            keepPd = _draft.RemainingPd;
+            keepFree = _draft.FreeAttributePoints;
+        }
+
+        _draft = UnitDraftFactory.FromGenerator(
+            _name, _recruitKey, _trainingKey,
+            _weapon1, _weapon2, _armorKey, _shieldKey, _mountKey, _quality,
+            _costs);
+
+        if (sameRecruitTraining)
+        {
+            foreach (var (key, value) in keepBase!)
+                _draft.SkillBase[key] = value;
+            foreach (var (key, value) in keepOther!)
+                _draft.SkillOther[key] = value;
+            _draft.SkillOtherSources = keepSkillOtherSources!;
+            UnitCombatOtherFormulas.ApplySkillOtherTotals(_draft.SkillOtherSources, _draft.SkillOther);
+            _draft.CombatOther = keepCombatOther!;
+            var (atk, def, dmg, mov, arm, hp) = UnitCombatOtherFormulas.SumAll(_draft.CombatOther);
+            _draft.OtherAttack = atk;
+            _draft.OtherDefense = def;
+            _draft.OtherDamage = dmg;
+            _draft.OtherMove = mov;
+            _draft.OtherArmor = arm;
+            _draft.OtherHp = hp;
+
+            _draft.AttrOtherSources = keepAttrOtherSources!;
+            UnitCombatOtherFormulas.ApplyAttrOtherTotals(
+                _draft.AttrOtherSources,
+                out var oBuild, out var oAgi, out var oWill, out var oPer);
+            _draft.AttrOtherBuild = oBuild;
+            _draft.AttrOtherAgility = oAgi;
+            _draft.AttrOtherWill = oWill;
+            _draft.AttrOtherPerception = oPer;
+
+            _draft.Build = keepBuild;
+            _draft.Agility = keepAgi;
+            _draft.Will = keepWill;
+            _draft.Perception = keepPer;
+            _draft.Discipline = keepDis;
+            _draft.RemainingPd = keepPd;
+            _draft.FreeAttributePoints = keepFree;
+            ClampBaseSkillsToCap(_draft);
+            ApplyRaceSkillBonus(_draft);
+            _draft.CurrentHp = UnitStatHelper.Compute(_draft).MaxHp;
+            if (!_xpDirty)
+                _xpBaseline = DraftXpBaseline.Capture(_draft);
+        }
+        else
+        {
+            ApplyRaceSkillBonus(_draft);
+            _xpRecruitKey = _recruitKey;
+            _xpTrainingKey = _trainingKey;
+            _xpBaseline = DraftXpBaseline.Capture(_draft);
+            _xpDirty = false;
+        }
+
+        if (!_sanitizingGear && SanitizeGearKeys())
+        {
+            _sanitizingGear = true;
+            try { Recalc(); }
+            finally { _sanitizingGear = false; }
+        }
+
+        _previewUpkeep = UnitStatHelper.ComputeUpkeep(_draft);
+    }
+
+    /// <summary>
+    /// Drop armor/shield/mount/weapons the draft can no longer wear (stats / Riding / trade access).
+    /// Returns true when keys changed and Recalc must run again.
+    /// </summary>
+    private bool SanitizeGearKeys()
+    {
+        var build = _draft.EffectiveBuild;
+        var skillTotals = UnitStatHelper.BuildSkillTotals(_draft);
+        var armorSkill = skillTotals.GetValueOrDefault(UnitSkillKey.ArmorSkill);
+        var ridingSkill = skillTotals.GetValueOrDefault(UnitSkillKey.Riding);
+        var changed = false;
+
+        if (_armorKey is not null)
+        {
+            var a = UnitArmorCatalog.Find(_armorKey);
+            if (a is null || !UnitEquipmentTradeAccess.MeetsArmor(a, build, armorSkill, _availability, out _))
+            {
+                _armorKey = null;
+                _payArmor = UnitEquipmentAcquireMode.Craft;
+                changed = true;
+            }
+        }
+
+        if (_shieldKey is not null)
+        {
+            var s = UnitArmorCatalog.Find(_shieldKey);
+            if (s is null || !UnitEquipmentTradeAccess.MeetsArmor(s, build, armorSkill, _availability, out _))
+            {
+                _shieldKey = null;
+                _payShield = UnitEquipmentAcquireMode.Craft;
+                changed = true;
+            }
+        }
+
+        if (_mountKey is not null)
+        {
+            var m = UnitMountCatalog.Find(_mountKey);
+            if (m is null || !UnitEquipmentTradeAccess.MeetsMount(m, ridingSkill, _availability, out _))
+            {
+                _mountKey = null;
+                _payMount = UnitEquipmentAcquireMode.Craft;
+                changed = true;
+            }
+        }
+
+        // Armor/shield change affects Agility penalties — rebuild before weapon checks.
+        if (changed)
+            return true;
+
+        var agility = _draft.EffectiveAgility;
+        var w1 = UnitWeaponCatalog.Find(_weapon1);
+        if (w1 is null || !UnitEquipmentTradeAccess.MeetsWeapon(w1, build, agility, _availability, out _))
+        {
+            _weapon1 = UnitEquipmentTradeAccess.FirstEligibleWeaponKey(build, agility, _availability) ?? "short-spears";
+            _payW1 = UnitEquipmentAcquireMode.Craft;
+            changed = true;
+        }
+
+        if (_weapon2 is not null)
+        {
+            var w2 = UnitWeaponCatalog.Find(_weapon2);
+            if (w2 is null
+                || string.Equals(_weapon2, _weapon1, StringComparison.OrdinalIgnoreCase)
+                || !UnitEquipmentTradeAccess.MeetsWeapon(w2, build, agility, _availability, out _))
+            {
+                _weapon2 = null;
+                _payW2 = UnitEquipmentAcquireMode.Craft;
+                changed = true;
+            }
+        }
+
+        return changed;
+    }
+
+    private void ApplyRaceSkillBonus(BaronyUnitDTO dto)
+    {
+        dto.SkillOtherSources ??= new Dictionary<string, List<UnitCombatModifierEntry>>(StringComparer.OrdinalIgnoreCase);
+        dto.SkillOther ??= new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        UnitRaceSkillBonus.ApplyPicks(
+            dto.SkillOtherSources,
+            dto.SkillOther,
+            UnitRaceCatalog.Find(dto.RaceKey),
+            _raceBonus1,
+            _raceBonus2);
+    }
+
+    private static void ClampBaseSkillsToCap(BaronyUnitDTO dto)
+    {
+        var cap = dto.MaxBaseSkillAtGraduation;
+        if (cap <= 0) return;
+        foreach (var def in UnitSkillTree.All.Where(d => d.IsBase))
+        {
+            if (dto.SkillBase.TryGetValue(def.Key, out var v) && v > cap)
+                dto.SkillBase[def.Key] = cap;
+        }
+    }
+
+    private static Dictionary<string, List<UnitCombatModifierEntry>> CloneNamedModifiers(
+        Dictionary<string, List<UnitCombatModifierEntry>>? source)
+    {
+        var copy = new Dictionary<string, List<UnitCombatModifierEntry>>(StringComparer.OrdinalIgnoreCase);
+        if (source is null) return copy;
+        foreach (var (key, list) in source)
+        {
+            copy[key] = list
+                .Select(m => new UnitCombatModifierEntry { Label = m.Label, Value = m.Value })
+                .ToList();
+        }
+        return copy;
+    }
+
+    private Task OnDraftSkillsChanged() => InvokeAsync(StateHasChanged);
+
+    private Task OnDraftXpChanged()
+    {
+        // Baseline must already exist from Recalc/Save — do not recapture after the raise.
+        _xpDirty = true;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private void SaveDraftXp()
+    {
+        _xpBaseline = DraftXpBaseline.Capture(_draft);
+        _xpDirty = false;
+    }
+
+    private void UndoDraftXp()
+    {
+        if (_xpBaseline is null) return;
+        _xpBaseline.Restore(_draft);
+        ApplyRaceSkillBonus(_draft);
+        _draft.CurrentHp = UnitStatHelper.Compute(_draft).MaxHp;
+        _xpDirty = false;
+    }
+
+    private async Task StartAsync()
+    {
+        if (_busy) return;
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _snackBar.Add("Name the unit first.", Severity.Warning);
+            return;
+        }
+
+        var race = UnitRaceCatalog.Find(_draft.RaceKey);
+        if (race.BonusBaseSkillPicks > 0)
+        {
+            var picks = new[] { _raceBonus1, _raceBonus2 }
+                .Where(k => !string.IsNullOrWhiteSpace(k))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            if (picks.Count < race.BonusBaseSkillPicks)
+            {
+                _snackBar.Add(
+                    $"Pick {race.BonusBaseSkillPicks} base skills for the {race.Name} race bonus (+{race.BonusBaseSkillAmount} Other each).",
+                    Severity.Warning);
+                return;
+            }
+        }
+
+        ApplyRaceSkillBonus(_draft);
+
+        _busy = true;
+        try
+        {
+            var result = await _baronyRepo.StartUnitTraining(new StartUnitTrainingRequest
+            {
+                BaronyId = BaronyId,
+                Name = _name.Trim(),
+                RecruitSelectionKey = _recruitKey,
+                TrainingTypeKey = _trainingKey,
+                RaceKey = _draft.RaceKey,
+                Weapon1Key = _weapon1,
+                Weapon2Key = _weapon2,
+                ArmorKey = _armorKey,
+                ShieldKey = _shieldKey,
+                MountKey = _mountKey,
+                Weapon1Quality = _quality,
+                Weapon1AcquireMode = _payW1,
+                Weapon2AcquireMode = _payW2,
+                ArmorAcquireMode = _payArmor,
+                ShieldAcquireMode = _payShield,
+                MountAcquireMode = _payMount,
+                AccelerateTurns = _accelerate,
+                DefenseSkillKey = _draft.DefenseSkillKey,
+                SkillBase = new Dictionary<string, int>(_draft.SkillBase, StringComparer.OrdinalIgnoreCase),
+                SkillOther = new Dictionary<string, int>(_draft.SkillOther, StringComparer.OrdinalIgnoreCase),
+                SkillOtherSources = CloneNamedModifiers(_draft.SkillOtherSources),
+                CombatOther = CloneNamedModifiers(_draft.CombatOther),
+                AttrOtherSources = CloneNamedModifiers(_draft.AttrOtherSources),
+                Build = _draft.Build,
+                Agility = _draft.Agility,
+                Will = _draft.Will,
+                Perception = _draft.Perception,
+                Discipline = _draft.Discipline,
+                RemainingPd = _draft.RemainingPd,
+                FreeAttributePoints = _draft.FreeAttributePoints,
+            });
+            _name = string.Empty;
+            _draft.SkillBase.Clear();
+            _draft.SkillOther.Clear();
+            _draft.SkillOtherSources.Clear();
+            _draft.CombatOther.Clear();
+            _xpDirty = false;
+            _xpBaseline = null;
+            _xpRecruitKey = string.Empty;
+            _xpTrainingKey = string.Empty;
+            Recalc();
+            await OnStarted.InvokeAsync(result);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private sealed class DraftXpBaseline
+    {
+        public int Build { get; init; }
+        public int Agility { get; init; }
+        public int Will { get; init; }
+        public int Perception { get; init; }
+        public int Discipline { get; init; }
+        public int RemainingPd { get; init; }
+        public int FreeAttributePoints { get; init; }
+        public Dictionary<string, int> SkillBase { get; init; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public static DraftXpBaseline Capture(BaronyUnitDTO u) => new()
+        {
+            Build = u.Build,
+            Agility = u.Agility,
+            Will = u.Will,
+            Perception = u.Perception,
+            Discipline = u.Discipline,
+            RemainingPd = u.RemainingPd,
+            FreeAttributePoints = u.FreeAttributePoints,
+            SkillBase = new Dictionary<string, int>(u.SkillBase, StringComparer.OrdinalIgnoreCase),
+        };
+
+        public void Restore(BaronyUnitDTO u)
+        {
+            u.Build = Build;
+            u.Agility = Agility;
+            u.Will = Will;
+            u.Perception = Perception;
+            u.Discipline = Discipline;
+            u.RemainingPd = RemainingPd;
+            u.FreeAttributePoints = FreeAttributePoints;
+            u.SkillBase.Clear();
+            foreach (var (k, v) in SkillBase)
+                u.SkillBase[k] = v;
+        }
+    }
+}

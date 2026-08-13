@@ -1,0 +1,133 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="barony-dialog">
+    <DialogContent>
+        <div class="barony-dialog-theme">
+        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+            Named bonuses toward combat totals. Only the summed value appears in the sheet;
+            source names show on hover and here.
+        </MudText>
+
+        <div class="court-other-list">
+            @for (var i = 0; i < _entries.Count; i++)
+            {
+                var index = i;
+                var entry = _entries[index];
+                <div class="court-other-row">
+                    <MudTextField @bind-Value="entry.Name"
+                                  Label="Source"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Class="court-other-row__name" />
+                    <MudSelect T="string"
+                               @bind-Value="entry.SkillKey"
+                               Label="Skill"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Dense="true"
+                               Class="court-other-row__skill">
+                        @foreach (var skill in CourtCombatCatalog.All)
+                        {
+                            <MudSelectItem Value="@skill.Key">@skill.NameEn</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudNumericField T="int"
+                                     @bind-Value="entry.Value"
+                                     Label="Value"
+                                     Variant="Variant.Outlined"
+                                     Margin="Margin.Dense"
+                                     HideSpinButtons="false"
+                                     Class="court-other-row__value" />
+                    <BaronyTooltip Text="Remove">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                       Size="Size.Small"
+                                       Color="Color.Error"
+                                       OnClick="@(() => Remove(index))" />
+                    </BaronyTooltip>
+                </div>
+            }
+        </div>
+
+        <MudButton Variant="Variant.Outlined"
+                   Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.Add"
+                   Class="mt-2"
+                   OnClick="Add">
+            Add source
+        </MudButton>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Class="baron-influence-save-btn" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public List<CourtCombatOtherSource> Sources { get; set; } = new();
+
+    private readonly List<CourtCombatOtherSource> _entries = new();
+
+    protected override void OnInitialized()
+    {
+        _entries.Clear();
+        foreach (var src in Sources ?? Enumerable.Empty<CourtCombatOtherSource>())
+        {
+            _entries.Add(new CourtCombatOtherSource
+            {
+                Name = src.Name,
+                SkillKey = src.SkillKey,
+                Value = src.Value,
+            });
+        }
+    }
+
+    private void Add()
+    {
+        _entries.Add(new CourtCombatOtherSource
+        {
+            Name = string.Empty,
+            SkillKey = CourtCombatCatalog.All[0].Key,
+            Value = 1,
+        });
+    }
+
+    private void Remove(int index)
+    {
+        if (index >= 0 && index < _entries.Count)
+            _entries.RemoveAt(index);
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        foreach (var entry in _entries)
+        {
+            if (string.IsNullOrWhiteSpace(entry.Name))
+            {
+                _snackBar.Add("Each source needs a name.", Severity.Warning);
+                return;
+            }
+            if (CourtCombatCatalog.Find(entry.SkillKey) is null)
+            {
+                _snackBar.Add("Pick a combat skill for each source.", Severity.Warning);
+                return;
+            }
+        }
+
+        var cleaned = _entries
+            .Where(e => e.Value != 0)
+            .Select(e => new CourtCombatOtherSource
+            {
+                Name = e.Name.Trim(),
+                SkillKey = CourtCombatCatalog.Find(e.SkillKey)!.Key,
+                Value = e.Value,
+            })
+            .ToList();
+
+        MudDialog.Close(DialogResult.Ok(cleaned));
+    }
+}

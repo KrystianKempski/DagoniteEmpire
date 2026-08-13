@@ -1,0 +1,285 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="court-person-dialog barony-dialog">
+    <DialogContent>
+        <div class="barony-dialog-theme">
+        <MudTextField @bind-Value="_name"
+                      Label="Name"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Required="true"
+                      Class="mb-2" />
+        <MudTextField @bind-Value="_description"
+                      Label="Description"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense"
+                      Lines="2"
+                      Class="mb-3" />
+
+        <MudText Typo="Typo.subtitle2" Class="mb-1">Main skills</MudText>
+        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+            Range 3–10 (Magic 0–10). Defaults start at 3 / Magic 0.
+        </MudText>
+        <div class="court-skill-table-wrap mb-3">
+            <table class="ppb-table ppb-table--lined court-skill-table court-skill-table--edit court-skill-table--main-row">
+                <thead>
+                    <tr>
+                        @foreach (var skill in CourtSkillCatalog.Main)
+                        {
+                            <th>
+                                <BaronyTooltip Text="@skill.NameEn">
+                                    <span>@(string.IsNullOrEmpty(skill.ShortEn) ? skill.NameEn : skill.ShortEn)</span>
+                                </BaronyTooltip>
+                            </th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        @foreach (var skill in CourtSkillCatalog.Main)
+                        {
+                            <td class="court-skill-table__val">
+                                <MudNumericField T="int"
+                                                 Value="@_main[skill.Key]"
+                                                 ValueChanged="v => SetMain(skill.Key, v)"
+                                                 Min="@(skill.Key == CourtMainSkill.Magic ? CourtSkillCatalog.MagicMin : CourtSkillCatalog.MainMin)"
+                                                 Max="@(skill.Key == CourtMainSkill.Magic ? CourtSkillCatalog.MagicMax : CourtSkillCatalog.MainMax)"
+                                                 Variant="Variant.Outlined"
+                                                 Margin="Margin.Dense"
+                                                 HideSpinButtons="false"
+                                                 Class="court-skill-num" />
+                            </td>
+                        }
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="d-flex align-center justify-space-between mb-1">
+            <MudText Typo="Typo.subtitle2">Secondary skills</MudText>
+            <MudButton Variant="Variant.Outlined"
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       Disabled="@(_addKey is not null || UnusedSecondaries.Count == 0)"
+                       OnClick="BeginAddSecondary">
+                Add secondary skill
+            </MudButton>
+        </div>
+        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+            Optional — typically 2–3. Range 0–6.
+        </MudText>
+
+        <div class="court-secondary-list">
+            @foreach (var entry in _secondary)
+            {
+                var info = CourtSkillCatalog.FindSecondary(entry.Key);
+                <div class="court-secondary-row">
+                    <BaronyTooltip Text="@(info?.NameEn ?? entry.Key)">
+                        <span class="court-secondary-row__name">@(info?.NameEn ?? entry.Key)</span>
+                    </BaronyTooltip>
+                    <MudNumericField T="int"
+                                     Value="@entry.Value"
+                                     ValueChanged="v => SetSecondary(entry.Key, v)"
+                                     Min="@CourtSkillCatalog.SecondaryMin"
+                                     Max="@CourtSkillCatalog.SecondaryMax"
+                                     Variant="Variant.Outlined"
+                                     Margin="Margin.Dense"
+                                     HideSpinButtons="false"
+                                     Class="court-skill-num court-skill-num--bare" />
+                    <BaronyTooltip Text="Remove">
+                        <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                       Size="Size.Small"
+                                       Color="Color.Error"
+                                       OnClick="@(() => RemoveSecondary(entry.Key))" />
+                    </BaronyTooltip>
+                </div>
+            }
+
+            @if (_addKey is not null)
+            {
+                <div class="court-secondary-row court-secondary-row--add">
+                    <MudSelect T="string"
+                               Value="_addKey"
+                               ValueChanged="v => _addKey = v"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Dense="true"
+                               Class="court-secondary-add__select court-skill-num--bare">
+                        @foreach (var skill in UnusedSecondaries)
+                        {
+                            <MudSelectItem Value="@skill.Key">@skill.NameEn</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <MudNumericField T="int"
+                                    @bind-Value="_addValue"
+                                    Min="@CourtSkillCatalog.SecondaryMin"
+                                    Max="@CourtSkillCatalog.SecondaryMax"
+                                    Variant="Variant.Outlined"
+                                    Margin="Margin.Dense"
+                                    HideSpinButtons="false"
+                                    Class="court-skill-num court-skill-num--bare" />
+                    <BaronyTooltip Text="Confirm">
+                        <MudIconButton Icon="@Icons.Material.Filled.Check"
+                                       Color="Color.Primary"
+                                       Size="Size.Small"
+                                       OnClick="ConfirmAddSecondary" />
+                    </BaronyTooltip>
+                    <BaronyTooltip Text="Cancel">
+                        <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                       Size="Size.Small"
+                                       OnClick="CancelAddSecondary" />
+                    </BaronyTooltip>
+                </div>
+            }
+            else if (_secondary.Count == 0)
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">No secondary skills yet.</MudText>
+            }
+        </div>
+
+        <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Computed Domain Skills</MudText>
+        <PpbSummaryChips Vector="@PreviewPpb" HideZero="false" ExcludeTreasury="true" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Filled" Class="baron-influence-save-btn" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public AvailableAdvisorDTO Advisor { get; set; } = new();
+
+    private string _name = string.Empty;
+    private string? _description;
+    private readonly Dictionary<string, int> _main = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<CourtSecondaryEntry> _secondary = new();
+    private string? _addKey;
+    private int _addValue = 1;
+
+    private List<CourtSkillInfo> UnusedSecondaries =>
+        CourtSkillCatalog.Secondary
+            .Where(s => _secondary.All(e => !string.Equals(e.Key, s.Key, StringComparison.OrdinalIgnoreCase))
+                        || string.Equals(s.Key, _addKey, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+    private PpbVector PreviewPpb => CourtPpbFormulas.ComputeTotal(BuildSheet());
+
+    protected override void OnInitialized()
+    {
+        _name = Advisor.Name;
+        _description = Advisor.Description;
+        var sheet = Advisor.Sheet ?? CourtCharacterSheet.CreateDefault();
+        sheet.Normalize();
+        foreach (var skill in CourtSkillCatalog.Main)
+            _main[skill.Key] = sheet.GetMain(skill.Key);
+        _secondary.Clear();
+        foreach (var entry in sheet.Secondary)
+            _secondary.Add(new CourtSecondaryEntry { Key = entry.Key, Value = entry.Value });
+    }
+
+    private void SetMain(string key, int value) =>
+        _main[key] = CourtSkillCatalog.ClampMain(key, value);
+
+    private void SetSecondary(string key, int value)
+    {
+        var entry = _secondary.FirstOrDefault(e => string.Equals(e.Key, key, StringComparison.OrdinalIgnoreCase));
+        if (entry is not null)
+            entry.Value = CourtSkillCatalog.ClampSecondary(value);
+    }
+
+    private void BeginAddSecondary()
+    {
+        var next = CourtSkillCatalog.Secondary
+            .FirstOrDefault(s => _secondary.All(e => !string.Equals(e.Key, s.Key, StringComparison.OrdinalIgnoreCase)));
+        if (next is null)
+            return;
+        _addKey = next.Key;
+        _addValue = 1;
+    }
+
+    private void ConfirmAddSecondary()
+    {
+        if (string.IsNullOrWhiteSpace(_addKey))
+            return;
+        if (_secondary.Any(e => string.Equals(e.Key, _addKey, StringComparison.OrdinalIgnoreCase)))
+        {
+            CancelAddSecondary();
+            return;
+        }
+        _secondary.Add(new CourtSecondaryEntry
+        {
+            Key = _addKey,
+            Value = CourtSkillCatalog.ClampSecondary(_addValue),
+        });
+        CancelAddSecondary();
+    }
+
+    private void CancelAddSecondary()
+    {
+        _addKey = null;
+        _addValue = 1;
+    }
+
+    private void RemoveSecondary(string key) =>
+        _secondary.RemoveAll(e => string.Equals(e.Key, key, StringComparison.OrdinalIgnoreCase));
+
+    private CourtCharacterSheet BuildSheet()
+    {
+        var existing = Advisor.Sheet ?? CourtCharacterSheet.CreateDefault();
+        var sheet = new CourtCharacterSheet
+        {
+            Main = new Dictionary<string, int>(_main, StringComparer.OrdinalIgnoreCase),
+            Secondary = _secondary
+                .Select(e => new CourtSecondaryEntry { Key = e.Key, Value = e.Value })
+                .ToList(),
+            MainOther = existing.MainOther
+                .Select(s => new CourtMainOtherSource
+                {
+                    Name = s.Name,
+                    SkillKey = s.SkillKey,
+                    Value = s.Value,
+                })
+                .ToList(),
+            DomainOther = existing.DomainOther
+                .Select(s => new CourtDomainOtherSource
+                {
+                    Name = s.Name,
+                    Additive = (s.Additive ?? new PpbVector()).Clone(),
+                })
+                .ToList(),
+            CombatOther = existing.CombatOther
+                .Select(s => new CourtCombatOtherSource
+                {
+                    Name = s.Name,
+                    SkillKey = s.SkillKey,
+                    Value = s.Value,
+                })
+                .ToList(),
+            CommanderXp = existing.CommanderXp,
+            UnlockedCommanderAbilities = existing.UnlockedCommanderAbilities.ToList(),
+        };
+        sheet.Normalize();
+        return sheet;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _snackBar.Add("Name is required.", Severity.Warning);
+            return;
+        }
+
+        var sheet = BuildSheet();
+        Advisor.Name = _name.Trim();
+        Advisor.Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim();
+        Advisor.Sheet = sheet;
+        Advisor.Skills = CourtPpbFormulas.ComputeTotal(sheet);
+        MudDialog.Close(DialogResult.Ok(Advisor));
+    }
+}

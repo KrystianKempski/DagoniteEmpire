@@ -1,0 +1,707 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<div class="march-map-canvas">
+    @if (_hoverTipVisible)
+    {
+        <div class="march-map-hover-tip" style="@($"left:{_hoverTipX}px;top:{_hoverTipY}px;")">
+            <MarchMapLordTipBody Lord="@_hoverTipLord"
+                                 PlaceLabel="@_hoverTipLabel"
+                                 IsPlayerSeat="@_hoverTipIsPlayerSeat"
+                                 Player="@PlayerBarony" />
+        </div>
+    }
+    <div class="march-map-viewport" @ref="_viewportRef"
+         @onmousemove="OnSvgMouseMove"
+         @onmouseup="OnSvgMouseUp"
+         @onmouseleave="OnViewportLeave">
+        <div class="march-map-scrollpad">
+            <div class="march-map-stage">
+                <div class="march-map-media" @ref="_mediaRef">
+                <img class="march-map-image"
+                     src="@Document.ImageUrl"
+                     alt="Eastern March map"
+                     draggable="false"
+                     @onerror="OnImageError" />
+                <svg class="march-map-overlay"
+                     viewBox="0 0 1000 1000"
+                     preserveAspectRatio="none"
+                     @ref="_svgRef"
+                     @onclick="OnSvgClick"
+                     @onmousemove="OnSvgMouseMove"
+                     @onmouseup="OnSvgMouseUp">
+                    @foreach (var route in Document.Routes)
+                    {
+                        var from = NodeById(route.FromNodeId);
+                        var to = NodeById(route.ToNodeId);
+                        if (from is null || to is null)
+                            continue;
+
+                        var isRiver = string.Equals(route.Kind, MarchRouteKind.River, StringComparison.OrdinalIgnoreCase);
+                        var active = IsRouteHighlighted(route);
+                        <line x1="@from.X" y1="@from.Y" x2="@to.X" y2="@to.Y"
+                              class="march-map-route-hit"
+                              @onclick:stopPropagation="true"
+                              @onclick="() => OnRouteClick(route)" />
+                        <line x1="@from.X" y1="@from.Y" x2="@to.X" y2="@to.Y"
+                              class="march-map-route @(isRiver ? "march-map-route--river" : "march-map-route--road") @(active ? "march-map-route--active" : "")"
+                              pointer-events="none" />
+                    }
+                    @{
+                        var overlayIndex = 0;
+                    }
+                    @foreach (var overlay in TradeRouteOverlays)
+                    {
+                        var offset = (overlayIndex % 5) - 2;
+                        overlayIndex++;
+                        for (var i = 0; i < overlay.NodeIds.Count - 1; i++)
+                        {
+                            var from = NodeById(overlay.NodeIds[i]);
+                            var to = NodeById(overlay.NodeIds[i + 1]);
+                            if (from is null || to is null)
+                                continue;
+                            var dx = to.X - from.X;
+                            var dy = to.Y - from.Y;
+                            var len = Math.Sqrt(dx * dx + dy * dy);
+                            if (len < 0.001)
+                                continue;
+                            var ox = (-dy / len) * offset * 2.2;
+                            var oy = (dx / len) * offset * 2.2;
+                            <line x1="@(from.X + ox)" y1="@(from.Y + oy)" x2="@(to.X + ox)" y2="@(to.Y + oy)"
+                                  class="march-map-trade-overlay"
+                                  style="@($"stroke:{overlay.Color}")"
+                                  pointer-events="none" />
+                        }
+                    }
+                    @if (DesignPathNodeIds.Count >= 2)
+                    {
+                        for (var i = 0; i < DesignPathNodeIds.Count - 1; i++)
+                        {
+                            var from = NodeById(DesignPathNodeIds[i]);
+                            var to = NodeById(DesignPathNodeIds[i + 1]);
+                            if (from is null || to is null)
+                                continue;
+                            <line x1="@from.X" y1="@from.Y" x2="@to.X" y2="@to.Y"
+                                  class="march-map-route march-map-route--design"
+                                  pointer-events="none" />
+                        }
+                    }
+                    @foreach (var node in Document.Nodes)
+                    {
+                        var lord = KnownLordsCatalog.ResolveLordForMapNode(node);
+                        var selected = string.Equals(_selectedNodeId, node.Id, StringComparison.OrdinalIgnoreCase);
+                        var connectHint = _connectFromNodeId is not null &&
+                                          string.Equals(_connectFromNodeId, node.Id, StringComparison.OrdinalIgnoreCase);
+                        var visual = MarchMapNodeKind.Visual(node.Kind);
+                        var isPlayerSeat = PlayerBaronyMarchSeats.IsPlayerSeat(node, PlayerSeatNodeId);
+                        var isBlocked = IsBlocked(node);
+                        var onDesign = DesignPathNodeIds.Any(id => string.Equals(id, node.Id, StringComparison.OrdinalIgnoreCase));
+                        var routeReachable = ActiveTool == MarchMapTool.DesignRoute && DesignRouteManualMode &&
+                                             DesignRouteReachableNodeIds.Any(id => string.Equals(id, node.Id, StringComparison.OrdinalIgnoreCase));
+                        var goodKeys = ShowProducedGoods
+                            ? GoodsKeysForNode(lord, isPlayerSeat)
+                            : Array.Empty<string>();
+                        <g class="march-map-marker @visual.MarkerClass @(isPlayerSeat ? "march-map-marker--player-seat" : "") @(isBlocked ? "march-map-marker--blocked" : "") @(onDesign ? "march-map-marker--design" : "") @(selected ? "march-map-marker--selected" : "") @(connectHint || routeReachable ? "march-map-marker--connect" : "")"
+                           transform="translate(@Fmt(node.X), @Fmt(node.Y))"
+                           @onclick:stopPropagation="true"
+                           @onclick="() => OnNodeClick(node)"
+                           @onmousedown="e => OnMarkerMouseDown(e, node)"
+                           @onmousedown:stopPropagation="true"
+                           @onpointerenter="e => ShowHoverTip(e, lord, node.Label, isPlayerSeat)"
+                           @onpointerleave="HideHoverTip"
+                           @onpointercancel="HideHoverTip">
+                            <circle r="@Fmt(visual.HitRadius)" class="march-map-marker__hit" />
+                            @if (goodKeys.Count > 0)
+                            {
+                                // FO uses comfortable CSS icon size; SVG scale shrinks without clipping.
+                                const double iconCss = 16;
+                                const double gapCss = 2;
+                                const double goodsScale = 0.28;
+                                var contentW = goodKeys.Count * iconCss + (goodKeys.Count - 1) * gapCss;
+                                var contentH = iconCss;
+                                var goodsBaseline = -(visual.DotRadius + 2.5);
+                                <g class="march-map-marker__goods-scale"
+                                   transform="translate(0, @Fmt(goodsBaseline)) scale(@Fmt(goodsScale))"
+                                   pointer-events="none">
+                                    <foreignObject x="@Fmt(-contentW / 2.0)"
+                                                   y="@Fmt(-contentH)"
+                                                   width="@Fmt(contentW)"
+                                                   height="@Fmt(contentH)"
+                                                   class="march-map-marker__goods-fo">
+                                        <div class="march-map-marker__goods" xmlns="http://www.w3.org/1999/xhtml">
+                                            @foreach (var goodKey in goodKeys)
+                                            {
+                                                var good = TradeGoodsCatalog.Find(goodKey);
+                                                <TradeGoodIcon GoodKey="@goodKey"
+                                                               Good="@good"
+                                                               Title="@(good?.Name ?? goodKey)"
+                                                               Class="march-map-marker__good-icon" />
+                                            }
+                                        </div>
+                                    </foreignObject>
+                                </g>
+                            }
+                            @if (isBlocked)
+                            {
+                                const double lockCss = 18;
+                                const double lockScale = 0.32;
+                                <g class="march-map-marker__lock-scale"
+                                   transform="translate(@Fmt(visual.DotRadius + 1), @Fmt(-(visual.DotRadius + 1))) scale(@Fmt(lockScale))"
+                                   pointer-events="none">
+                                    <foreignObject x="@Fmt(-lockCss / 2.0)"
+                                                   y="@Fmt(-lockCss / 2.0)"
+                                                   width="@Fmt(lockCss)"
+                                                   height="@Fmt(lockCss)"
+                                                   class="march-map-marker__lock-fo">
+                                        <BaronyTooltip Text="Trade blocked — no trade routes with this barony">
+                                            <div class="march-map-marker__lock" xmlns="http://www.w3.org/1999/xhtml">
+                                                <MudIcon Icon="@Icons.Material.Filled.Lock"
+                                                         Class="march-map-marker__lock-icon" />
+                                            </div>
+                                        </BaronyTooltip>
+                                    </foreignObject>
+                                </g>
+                            }
+                            <circle r="@Fmt(visual.DotRadius)" class="march-map-marker__dot" />
+                            <text y="@Fmt(visual.LabelYOffset)" text-anchor="middle" class="march-map-marker__label">@ShortLabel(node.Label)</text>
+                        </g>
+                    }
+                </svg>
+            </div>
+            </div>
+        </div>
+    </div>
+
+    @if (_imageMissing)
+    {
+        <div class="march-map-missing-image">
+            <MudAlert Severity="Severity.Info" Dense="true">
+                Map image not found at <code>@Document.ImageUrl</code>.
+            </MudAlert>
+        </div>
+    }
+
+    @if (CanEdit && _selectedNode is not null && _selectedRoute is null)
+    {
+        <div class="march-map-inspector barony-panel">
+            <MudText Typo="Typo.subtitle2" Class="mb-2">@_selectedNode.Label</MudText>
+            @{
+                var linked = KnownLordsCatalog.ResolveLordForMapNode(_selectedNode);
+            }
+            @if (linked is not null)
+            {
+                <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
+                    @linked.Name @linked.House · @linked.Title · Wealth @linked.Wealth
+                </MudText>
+            }
+            <MudTextField @bind-Value="_selectedNode.Label"
+                          Label="Name"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="mb-2"
+                          @bind-Value:after="OnNodeLabelChangedAsync" />
+            <MudSelect T="string"
+                       Label="Place type"
+                       Value="@MarchMapNodeKind.Normalize(_selectedNode.Kind)"
+                       ValueChanged="OnPlaceKindChanged"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Class="mb-2">
+                @foreach (var placeKind in MarchMapNodeKind.PlaceKinds)
+                {
+                    <MudSelectItem Value="@placeKind">@MarchMapNodeKind.Label(placeKind)</MudSelectItem>
+                }
+            </MudSelect>
+            <MudSelect T="string"
+                       Label="Linked lord"
+                       Value="_selectedNode.LordKey ?? string.Empty"
+                       ValueChanged="OnLordKeyChanged"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Class="mb-2"
+                       Clearable="true">
+                <MudSelectItem Value="@string.Empty">Auto (from place name)</MudSelectItem>
+                @foreach (var lord in KnownLordsCatalog.EasternMarch.OrderBy(l => l.Name))
+                {
+                    <MudSelectItem Value="@KnownLordsCatalog.LordKey(lord)">@KnownLordsCatalog.DisplayName(lord)</MudSelectItem>
+                }
+            </MudSelect>
+            @if (CanManageTrade)
+            {
+                <MudNumericField T="decimal?"
+                                 Label="Default toll (gold/turn)"
+                                 Value="_selectedNode.DefaultCustomsGoldPerTurn"
+                                 ValueChanged="OnDefaultCustomsChanged"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Min="0"
+                                 Class="mb-2"
+                                 HelperText="@($"Empty = {MarchMapTradePathfinder.DefaultCustomsGoldPerTurn:0}")" />
+                @if (!string.IsNullOrWhiteSpace(_selectedNode.LordKey) &&
+                     !PlayerBaronyMarchSeats.IsPlayerSeat(_selectedNode, PlayerSeatNodeId))
+                {
+                    <MudSwitch T="bool"
+                               Value="@IsBlocked(_selectedNode)"
+                               ValueChanged="OnBlockedToggled"
+                               Color="Color.Warning"
+                               Label="Block trade with this barony"
+                               Class="mb-2" />
+                }
+            }
+            <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text" OnClick="DeleteSelectedNode">Remove place</MudButton>
+        </div>
+    }
+
+    @if (!CanEdit && CanManageTrade && _selectedNode is not null && _selectedRoute is null && ActiveTool != MarchMapTool.DesignRoute)
+    {
+        <div class="march-map-inspector barony-panel">
+            <MudText Typo="Typo.subtitle2" Class="mb-2">@_selectedNode.Label</MudText>
+            @{
+                var mgLord = KnownLordsCatalog.ResolveLordForMapNode(_selectedNode);
+            }
+            @if (mgLord is not null)
+            {
+                <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
+                    @mgLord.Name @mgLord.House · Wealth @mgLord.Wealth
+                </MudText>
+            }
+            <MudNumericField T="decimal?"
+                             Label="Default toll (gold/turn)"
+                             Value="_selectedNode.DefaultCustomsGoldPerTurn"
+                             ValueChanged="OnDefaultCustomsChanged"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0"
+                             Class="mb-2"
+                             HelperText="@($"Empty = {MarchMapTradePathfinder.DefaultCustomsGoldPerTurn:0}")" />
+            @if (!string.IsNullOrWhiteSpace(_selectedNode.LordKey) &&
+                 !PlayerBaronyMarchSeats.IsPlayerSeat(_selectedNode, PlayerSeatNodeId))
+            {
+                <MudSwitch T="bool"
+                           Value="@IsBlocked(_selectedNode)"
+                           ValueChanged="OnBlockedToggled"
+                           Color="Color.Warning"
+                           Label="Block trade with this barony" />
+            }
+        </div>
+    }
+
+    @if (CanEdit && _selectedRoute is not null)
+    {
+        <div class="march-map-inspector barony-panel">
+            <MudText Typo="Typo.subtitle2" Class="mb-2">Trade link</MudText>
+            <MudText Typo="Typo.body2" Class="mb-3">@RouteLabel(_selectedRoute)</MudText>
+            <MudText Typo="Typo.caption" Class="mb-1">Route type</MudText>
+            <MudButtonGroup Variant="Variant.Outlined" Class="mb-3 march-map-route-type-buttons march-map-link-kind-group">
+                <MudButton Class="@RouteTypeButtonClass(MarchRouteKind.Road)"
+                           OnClick="() => SetRouteKind(MarchRouteKind.Road)">Road</MudButton>
+                <MudButton Class="@RouteTypeButtonClass(MarchRouteKind.River)"
+                           OnClick="() => SetRouteKind(MarchRouteKind.River)">River</MudButton>
+            </MudButtonGroup>
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
+                Tip: use <strong>Edit links</strong> and click a line, or pick type before <strong>Connect</strong>.
+            </MudText>
+            <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text" Class="mt-2" OnClick="DeleteSelectedRoute">Remove link</MudButton>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public MarchMapDocument Document { get; set; } = new();
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public bool CanManageTrade { get; set; }
+    [Parameter] public MarchMapTool ActiveTool { get; set; } = MarchMapTool.View;
+    [Parameter] public string ConnectRouteKind { get; set; } = MarchRouteKind.Road;
+    [Parameter] public string NewPlaceKind { get; set; } = MarchMapNodeKind.City;
+    [Parameter] public string? PlayerSeatNodeId { get; set; }
+    [Parameter] public MarchMapPlayerBaronyContext? PlayerBarony { get; set; }
+    [Parameter] public IReadOnlyCollection<string> BlockedLordKeys { get; set; } = Array.Empty<string>();
+    /// <summary>When true, produced goods icons are drawn above each place marker.</summary>
+    [Parameter] public bool ShowProducedGoods { get; set; } = true;
+    /// <summary>Goods keys for the player seat (produced / grantable).</summary>
+    [Parameter] public IReadOnlyCollection<string> PlayerProducedGoodKeys { get; set; } = Array.Empty<string>();
+    [Parameter] public IReadOnlyList<string> DesignPathNodeIds { get; set; } = Array.Empty<string>();
+    [Parameter] public bool DesignRouteManualMode { get; set; }
+    [Parameter] public IReadOnlyList<string> DesignRouteReachableNodeIds { get; set; } = Array.Empty<string>();
+    [Parameter] public IReadOnlyList<MarchMapTradeRouteOverlay> TradeRouteOverlays { get; set; } = Array.Empty<MarchMapTradeRouteOverlay>();
+    [Parameter] public EventCallback<MarchMapDocument> DocumentChanged { get; set; }
+    [Parameter] public EventCallback<MarchMapNode> NodeClicked { get; set; }
+    [Parameter] public EventCallback<BlockTradeToggleRequest> BlockTradeToggleRequested { get; set; }
+
+    private ElementReference _viewportRef;
+    private ElementReference _mediaRef;
+    private ElementReference _svgRef;
+    private IJSObjectReference? _wheelModule;
+
+    private string? _selectedNodeId;
+    private string? _selectedRouteId;
+    private string? _connectFromNodeId;
+    private string? _dragNodeId;
+    private bool _imageMissing;
+
+    private bool _hoverTipVisible;
+    private double _hoverTipX;
+    private double _hoverTipY;
+    private KnownLordEntry? _hoverTipLord;
+    private string _hoverTipLabel = "";
+    private bool _hoverTipIsPlayerSeat;
+
+    private MarchMapNode? _selectedNode =>
+        _selectedNodeId is null ? null : NodeById(_selectedNodeId);
+
+    private MarchMapRoute? _selectedRoute =>
+        _selectedRouteId is null ? null : Document.Routes.FirstOrDefault(r =>
+            string.Equals(r.Id, _selectedRouteId, StringComparison.OrdinalIgnoreCase));
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        try
+        {
+            _wheelModule = await JS.InvokeAsync<IJSObjectReference>("import", "./js/march-map.js?v=focus-zoom");
+
+            var seat = string.IsNullOrWhiteSpace(PlayerSeatNodeId)
+                ? null
+                : Document.Nodes.FirstOrDefault(n =>
+                    string.Equals(n.Id, PlayerSeatNodeId, StringComparison.OrdinalIgnoreCase));
+
+            if (seat is not null)
+                await _wheelModule.InvokeVoidAsync("attachWheelZoom", _viewportRef, _mediaRef, seat.X, seat.Y, 3.0);
+            else
+                await _wheelModule.InvokeVoidAsync("attachWheelZoom", _viewportRef, _mediaRef);
+        }
+        catch (JSException)
+        {
+            /* map pan/zoom optional — do not break the Blazor circuit */
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_wheelModule is null)
+            return;
+        try
+        {
+            await _wheelModule.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+            /* circuit already gone */
+        }
+        catch (ObjectDisposedException)
+        {
+            /* ignore */
+        }
+        finally
+        {
+            _wheelModule = null;
+        }
+    }
+
+    private MarchMapNode? NodeById(string id) =>
+        Document.Nodes.FirstOrDefault(n => string.Equals(n.Id, id, StringComparison.OrdinalIgnoreCase));
+
+    private static string ShortLabel(string label) =>
+        label.Length <= 20 ? label : label[..18] + "…";
+
+    private static string Fmt(double v) =>
+        v.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+
+    private void ShowHoverTip(PointerEventArgs e, KnownLordEntry? lord, string label, bool isPlayerSeat)
+    {
+        _hoverTipLord = lord;
+        _hoverTipLabel = label;
+        _hoverTipIsPlayerSeat = isPlayerSeat;
+        _hoverTipX = e.ClientX + 14;
+        _hoverTipY = e.ClientY + 14;
+        _hoverTipVisible = true;
+    }
+
+    private void HideHoverTip()
+    {
+        _hoverTipVisible = false;
+    }
+
+    private async Task OnViewportLeave()
+    {
+        HideHoverTip();
+        await EndDragAsync();
+    }
+
+    private string RouteLabel(MarchMapRoute route)
+    {
+        var a = NodeById(route.FromNodeId)?.Label ?? "?";
+        var b = NodeById(route.ToNodeId)?.Label ?? "?";
+        return $"{a} ↔ {b} ({MarchRouteKind.Label(route.Kind)})";
+    }
+
+    private bool IsRouteHighlighted(MarchMapRoute route) =>
+        _selectedRouteId is not null && string.Equals(route.Id, _selectedRouteId, StringComparison.OrdinalIgnoreCase);
+
+    private bool IsBlocked(MarchMapNode node) =>
+        !string.IsNullOrWhiteSpace(node.LordKey) &&
+        BlockedLordKeys.Contains(node.LordKey, StringComparer.OrdinalIgnoreCase);
+
+    private const int MaxGoodsIconsPerMarker = 6;
+
+    private IReadOnlyList<string> GoodsKeysForNode(KnownLordEntry? lord, bool isPlayerSeat)
+    {
+        IEnumerable<string> keys;
+        if (isPlayerSeat)
+        {
+            keys = PlayerProducedGoodKeys;
+        }
+        else if (lord is not null)
+        {
+            keys = KnownLordsCatalog.ProducedGoodKeys(lord);
+        }
+        else
+        {
+            return Array.Empty<string>();
+        }
+
+        return keys
+            .Where(k => !string.IsNullOrWhiteSpace(k) && TradeGoodsCatalog.Find(k) is not null)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(MaxGoodsIconsPerMarker)
+            .ToList();
+    }
+
+    private string RouteTypeButtonClass(string kind) =>
+        string.Equals(_selectedRoute?.Kind, kind, StringComparison.OrdinalIgnoreCase)
+            ? "march-map-route-type-buttons__active"
+            : "";
+
+    private void OnImageError() => _imageMissing = true;
+
+    private async Task OnSvgClick(MouseEventArgs e)
+    {
+        if (!CanEdit || ActiveTool != MarchMapTool.AddPlace)
+            return;
+
+        if (_wheelModule is not null && await _wheelModule.InvokeAsync<bool>("consumeDragPan", _viewportRef))
+            return;
+
+        var coords = await GetMapCoordsAsync(e.ClientX, e.ClientY);
+        var node = new MarchMapNode
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Label = "New place",
+            Kind = MarchMapNodeKind.Normalize(NewPlaceKind),
+            X = coords.X,
+            Y = coords.Y,
+        };
+        KnownLordsCatalog.ApplyKnownLordLinks(new[] { node });
+        Document.Nodes.Add(node);
+        _selectedNodeId = node.Id;
+        _selectedRouteId = null;
+        await NotifyChangedAsync();
+    }
+
+    private async Task OnNodeClick(MarchMapNode node)
+    {
+        if (ActiveTool == MarchMapTool.DesignRoute)
+        {
+            _selectedNodeId = node.Id;
+            _selectedRouteId = null;
+            await NodeClicked.InvokeAsync(node);
+            return;
+        }
+
+        if (ActiveTool == MarchMapTool.EditLinks)
+        {
+            _selectedNodeId = null;
+            return;
+        }
+
+        _selectedRouteId = null;
+
+        if (!CanEdit)
+        {
+            _selectedNodeId = node.Id;
+            return;
+        }
+
+        if (ActiveTool == MarchMapTool.Connect)
+        {
+            if (_connectFromNodeId is null)
+            {
+                _connectFromNodeId = node.Id;
+                _selectedNodeId = node.Id;
+                return;
+            }
+
+            if (string.Equals(_connectFromNodeId, node.Id, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            var route = new MarchMapRoute
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                FromNodeId = _connectFromNodeId,
+                ToNodeId = node.Id,
+                Kind = MarchRouteKind.Normalize(ConnectRouteKind),
+            };
+            if (!Document.Routes.Any(r =>
+                    (string.Equals(r.FromNodeId, route.FromNodeId, StringComparison.OrdinalIgnoreCase) &&
+                     string.Equals(r.ToNodeId, route.ToNodeId, StringComparison.OrdinalIgnoreCase)) ||
+                    (string.Equals(r.FromNodeId, route.ToNodeId, StringComparison.OrdinalIgnoreCase) &&
+                     string.Equals(r.ToNodeId, route.FromNodeId, StringComparison.OrdinalIgnoreCase))))
+            {
+                Document.Routes.Add(route);
+                _selectedRouteId = route.Id;
+                _selectedNodeId = null;
+            }
+
+            _connectFromNodeId = null;
+            await NotifyChangedAsync();
+            return;
+        }
+
+        _selectedNodeId = node.Id;
+    }
+
+    private void OnMarkerMouseDown(MouseEventArgs e, MarchMapNode node)
+    {
+        if (!CanEdit || ActiveTool != MarchMapTool.Move)
+            return;
+        _dragNodeId = node.Id;
+        _selectedNodeId = node.Id;
+        _selectedRouteId = null;
+    }
+
+    private async Task OnSvgMouseMove(MouseEventArgs e)
+    {
+        if (_dragNodeId is null || !CanEdit)
+            return;
+
+        var node = NodeById(_dragNodeId);
+        if (node is null)
+            return;
+
+        var coords = await GetMapCoordsAsync(e.ClientX, e.ClientY);
+        node.X = coords.X;
+        node.Y = coords.Y;
+        await NotifyChangedAsync();
+    }
+
+    private Task OnSvgMouseUp(MouseEventArgs _) => EndDragAsync();
+
+    private async Task EndDragAsync()
+    {
+        if (_dragNodeId is null)
+            return;
+        _dragNodeId = null;
+        await NotifyChangedAsync();
+    }
+
+    private async Task<(double X, double Y)> GetMapCoordsAsync(double clientX, double clientY)
+    {
+        if (_wheelModule is null)
+            return (500, 500);
+
+        var pt = await _wheelModule.InvokeAsync<MapPoint>("getMapCoords", _svgRef, clientX, clientY);
+        return (Math.Clamp(pt.X, 0, 1000), Math.Clamp(pt.Y, 0, 1000));
+    }
+
+    private void OnRouteClick(MarchMapRoute route)
+    {
+        if (!CanEdit || ActiveTool == MarchMapTool.AddPlace)
+            return;
+
+        _selectedRouteId = route.Id;
+        _selectedNodeId = null;
+        _connectFromNodeId = null;
+    }
+
+    private async Task SetRouteKind(string kind)
+    {
+        if (_selectedRoute is null)
+            return;
+        _selectedRoute.Kind = MarchRouteKind.Normalize(kind);
+        await NotifyChangedAsync();
+    }
+
+    private async Task DeleteSelectedNode()
+    {
+        if (_selectedNodeId is null)
+            return;
+
+        Document.Nodes.RemoveAll(n => string.Equals(n.Id, _selectedNodeId, StringComparison.OrdinalIgnoreCase));
+        Document.Routes.RemoveAll(r =>
+            string.Equals(r.FromNodeId, _selectedNodeId, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(r.ToNodeId, _selectedNodeId, StringComparison.OrdinalIgnoreCase));
+        _selectedNodeId = null;
+        await NotifyChangedAsync();
+    }
+
+    private async Task DeleteSelectedRoute()
+    {
+        if (_selectedRouteId is null)
+            return;
+        Document.Routes.RemoveAll(r => string.Equals(r.Id, _selectedRouteId, StringComparison.OrdinalIgnoreCase));
+        _selectedRouteId = null;
+        await NotifyChangedAsync();
+    }
+
+    private async Task OnNodeLabelChangedAsync()
+    {
+        if (_selectedNode is not null)
+            KnownLordsCatalog.ApplyKnownLordLinks(new[] { _selectedNode });
+        await NotifyChangedAsync();
+    }
+
+    private async Task OnLordKeyChanged(string value)
+    {
+        if (_selectedNode is null)
+            return;
+        _selectedNode.LordKey = string.IsNullOrWhiteSpace(value) ? null : value;
+        if (string.IsNullOrWhiteSpace(value))
+            KnownLordsCatalog.ApplyKnownLordLinks(new[] { _selectedNode });
+        await NotifyChangedAsync();
+    }
+
+    private async Task OnPlaceKindChanged(string kind)
+    {
+        if (_selectedNode is null)
+            return;
+        _selectedNode.Kind = MarchMapNodeKind.Normalize(kind);
+        await NotifyChangedAsync();
+    }
+
+    private async Task OnDefaultCustomsChanged(decimal? value)
+    {
+        if (_selectedNode is null)
+            return;
+        _selectedNode.DefaultCustomsGoldPerTurn = value is < 0m ? 0m : value;
+        await NotifyChangedAsync();
+    }
+
+    private async Task OnBlockedToggled(bool blocked)
+    {
+        if (_selectedNode?.LordKey is null)
+            return;
+
+        await BlockTradeToggleRequested.InvokeAsync(new BlockTradeToggleRequest
+        {
+            LordKey = _selectedNode.LordKey,
+            Block = blocked,
+        });
+    }
+
+    private Task NotifyChangedAsync() => DocumentChanged.InvokeAsync(Document);
+
+    private sealed record MapPoint(double X, double Y);
+
+    public enum MarchMapTool
+    {
+        View,
+        Move,
+        AddPlace,
+        Connect,
+        EditLinks,
+        DesignRoute,
+    }
+}

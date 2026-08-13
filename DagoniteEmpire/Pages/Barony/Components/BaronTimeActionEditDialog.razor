@@ -1,0 +1,107 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            <MudTextField @bind-Value="_name"
+                          Label="Action"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="baron-influence-field"
+                          Required="true"
+                          Disabled="@Action.IsSystem" />
+
+            <MudSelect T="string"
+                       @bind-Value="_kind"
+                       Label="Type"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Class="baron-influence-field"
+                       Dense="true"
+                       Disabled="@Action.IsSystem">
+                @foreach (var kind in KindOptions)
+                {
+                    <MudSelectItem Value="@kind">@kind</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudNumericField @bind-Value="_costJc"
+                             Label="Cost (BT)"
+                             HelperText="@CostHint"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Class="baron-influence-field"
+                             Min="0" />
+
+            <MudTextField @bind-Value="_description"
+                          Label="Description"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="2"
+                          Class="baron-influence-field" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public BaronTimeActionDTO Action { get; set; } = new();
+
+    private string _name = string.Empty;
+    private string _kind = BaronTimeActionKind.Other;
+    private int _costJc;
+    private string? _description;
+
+    private IEnumerable<string> KindOptions =>
+        Action.IsSystem
+            ? new[] { BaronTimeActionKind.Management }
+            : BaronTimeActionKind.All.Where(k => k != BaronTimeActionKind.Management);
+
+    private string CostHint =>
+        _kind == BaronTimeActionKind.Adventure
+            ? $"Weekly adventure ≈ {BaronTimeRules.WeeklyExpeditionJc} BT "
+              + $"(safe max {BaronTimeRules.MaxSafeExpeditionWeeks} weeks / {BaronTimeRules.MaxSafeExpeditionJc} BT)."
+            : _kind == BaronTimeActionKind.Hunt
+                ? $"Great Hunt: at least {BaronTimeSuggestedCosts.GreatHuntJc} BT + "
+                  + $"{BaronTimeSuggestedCosts.GreatHuntProduction} Production + {BaronTimeSuggestedCosts.GreatHuntGold} gold."
+            : _kind == BaronTimeActionKind.Management
+                ? $"Required each turn: {BaronTimeRules.RequiredManagementJc} BT."
+                : "BT spent on this action this turn.";
+
+    protected override void OnInitialized()
+    {
+        _name = Action.Name;
+        _kind = string.IsNullOrWhiteSpace(Action.Kind) ? BaronTimeActionKind.Other : Action.Kind;
+        _costJc = Action.CostJc;
+        _description = Action.Description;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _snackBar.Add("Action name is required.", Severity.Warning);
+            return;
+        }
+
+        if (!Action.IsSystem)
+        {
+            Action.Name = _name.Trim();
+            Action.Kind = string.IsNullOrWhiteSpace(_kind) ? BaronTimeActionKind.Other : _kind;
+        }
+
+        Action.CostJc = Math.Max(0, _costJc);
+        Action.Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim();
+        MudDialog.Close(DialogResult.Ok(Action));
+    }
+}

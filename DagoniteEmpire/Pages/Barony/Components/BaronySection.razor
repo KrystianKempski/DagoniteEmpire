@@ -1,0 +1,78 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@implements IDisposable
+
+<div class="barony-section @(IsOpen ? "barony-section--open" : "")">
+    <div class="barony-section__header" @onclick="Toggle">
+        <MudIcon Class="barony-section__chevron" Icon="@Icons.Material.Filled.ExpandMore" Size="Size.Small" />
+        <span class="barony-section__title">@Title</span>
+        @if (!IsOpen && Summary is not null)
+        {
+            <div class="barony-section__summary">
+                @Summary
+            </div>
+        }
+    </div>
+    @if (IsOpen)
+    {
+        <div class="barony-section__body">
+            @ChildContent
+        </div>
+    }
+</div>
+
+@code {
+    [CascadingParameter] public BaronyViewOptions? ViewOptions { get; set; }
+
+    [Parameter] public string Title { get; set; } = string.Empty;
+
+    /// <summary>Summary shown in header when the section is collapsed.</summary>
+    [Parameter] public RenderFragment? Summary { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// When set, overrides the global expand/collapse default for this section
+    /// (e.g. archive sections that should start collapsed).
+    /// </summary>
+    [Parameter] public bool? DefaultOpen { get; set; }
+
+    // null = no manual override (follows DefaultOpen / global default).
+    private bool? _userOverride;
+    private int _seenVersion = -1;
+
+    private bool IsOpen => _userOverride ?? DefaultOpen ?? (ViewOptions?.DefaultExpanded ?? true);
+
+    protected override void OnInitialized()
+    {
+        if (ViewOptions is not null)
+        {
+            ViewOptions.Changed += OnViewOptionsChanged;
+            _seenVersion = ViewOptions.Version;
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        // Reset manual override when global default state changes.
+        if (ViewOptions is not null && ViewOptions.Version != _seenVersion)
+        {
+            _userOverride = null;
+            _seenVersion = ViewOptions.Version;
+        }
+    }
+
+    private void Toggle() => _userOverride = !IsOpen;
+
+    private void OnViewOptionsChanged()
+    {
+        _userOverride = null;
+        _seenVersion = ViewOptions?.Version ?? _seenVersion;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        if (ViewOptions is not null)
+            ViewOptions.Changed -= OnViewOptionsChanged;
+    }
+}

@@ -1,0 +1,190 @@
+@page "/barony/trade-goods"
+@layout BaronyLayout
+@inherits BaronyPageBase
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+
+<PageTitle>Dagonite Empire | Trade</PageTitle>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading trade...</span>
+}
+else if (LoadError is not null)
+{
+    <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
+}
+else
+{
+    <BaronyPageHeader Title="Trade" HelpKey="trade-goods">
+        <Summary>
+            <span class="projects-summary">
+                <span class="projects-summary__item">@_availability.AvailableKeys.Count / @TradeGoodsCatalog.All.Count available</span>
+                <span class="projects-summary__item">@_availability.ProducedKeys.Count produced</span>
+                <span class="projects-summary__item">@_availability.TreatyReceivedKeys.Count from trade</span>
+            </span>
+        </Summary>
+    </BaronyPageHeader>
+
+    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+        Goods are available when produced by a city building or terrain improvement, or received via a trade treaty.
+        Only locally produced goods (or MG overrides) can be granted in treaties — treaty imports cannot be re-exported.
+        Available goods, luxury access, route economy, and treaty gold (customs / sweeteners) all feed Domain Panel → Decrees and Technologies.
+    </MudText>
+
+    <TradeGoodsPpbSummarySection Selected="@AvailableGoods"
+                                 TreatyGoods="@_noExtraTreatyGoods"
+                                 TreatyRouteEconomyBonus="@_treatyRouteEconomy"
+                                 TreatyGoldOutflowPerTurn="@_treatyGoldOutflow"
+                                 LuxuryAccessKey="@_luxuryKey" />
+
+    <TradeTreatiesSection BaronyId="@BaronyId"
+                          Treaties="@_treaties"
+                          BaronyAvailableGoodKeys="@_availability.GrantableKeys"
+                          BorderLordKeys="@_borderLordKeys"
+                          CanEdit="@CanEdit"
+                          TreatiesChanged="OnTreatiesChangedAsync" />
+
+    <LuxuryGoodsAccessSection SelectedKey="@_luxuryKey"
+                              CanEdit="@CanManageAsMg"
+                              SelectedKeyChanged="OnLuxuryKeyChangedAsync" />
+
+    @foreach (var tradeSection in TradeGoodSection.All)
+    {
+        var items = TradeGoodsCatalog.BySection(tradeSection.Key).ToList();
+        if (items.Count == 0)
+            continue;
+
+        <TradeGoodsSection SectionKey="@tradeSection.Key"
+                           SectionLabel="@tradeSection.LabelEn"
+                           Items="@items"
+                           Availability="@_availability"
+                           CanOverride="@CanManageAsMg"
+                           OverrideDisabled="@_saving"
+                           OnOverrideToggle="OnOverrideToggleAsync" />
+    }
+}
+
+@code {
+    private TradeGoodAvailabilitySnapshot _availability = new();
+    private string _luxuryKey = LuxuryGoodsAccessCatalog.DefaultKey;
+    private List<BaronyTradeTreaty> _treaties = new();
+    private HashSet<string> _borderLordKeys = new(StringComparer.OrdinalIgnoreCase);
+    private bool _saving;
+    private readonly IReadOnlyList<TradeGoodEntry> _noExtraTreatyGoods = Array.Empty<TradeGoodEntry>();
+
+    private IReadOnlyList<TradeGoodEntry> AvailableGoods =>
+        TradeGoodsCatalog.All.Where(g => _availability.AvailableKeys.Contains(g.Key)).ToList();
+
+    private decimal _treatyRouteEconomy => TradeTreatyCalculator.TotalRouteEconomyBonus(_treaties);
+    private decimal _treatyGoldOutflow => TradeTreatyCalculator.TotalGoldOutflowPerTurn(_treaties);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBaronyAsync();
+        if (Barony is null)
+            return;
+
+        await ReloadAvailabilityAsync();
+        _luxuryKey = await _baronyRepo.GetLuxuryGoodsAccessKey(Barony.Id);
+        _treaties = await _baronyRepo.GetTradeTreaties(Barony.Id);
+        _borderLordKeys = await LoadBorderLordKeysAsync(Barony.Id);
+    }
+
+    private async Task ReloadAvailabilityAsync()
+    {
+        if (Barony is null)
+            return;
+        _availability = await _baronyRepo.GetTradeGoodAvailability(Barony.Id);
+    }
+
+    private async Task<HashSet<string>> LoadBorderLordKeysAsync(int baronyId)
+    {
+        var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var relations = await _baronyRepo.GetRelations(baronyId);
+        foreach (var rel in relations.Where(r => string.Equals(r.Category, RelationCategory.Neighbors, StringComparison.OrdinalIgnoreCase)))
+        {
+            var key = KnownLordsCatalog.MatchLordKeyFromRelationName(rel.Name);
+            if (key is not null)
+                keys.Add(key);
+        }
+
+        return keys;
+    }
+
+    private async Task OnTreatiesChangedAsync(IReadOnlyList<BaronyTradeTreaty> treaties)
+    {
+        if (!CanEdit || Barony is null || _saving)
+            return;
+
+        _saving = true;
+        try
+        {
+            await _baronyRepo.SaveTradeTreaties(Barony.Id, treaties);
+            _treaties = await _baronyRepo.GetTradeTreaties(Barony.Id);
+            await ReloadAvailabilityAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save trade treaties: " + ex.Message, Severity.Error);
+            _treaties = await _baronyRepo.GetTradeTreaties(Barony.Id);
+            await ReloadAvailabilityAsync();
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task OnLuxuryKeyChangedAsync(string key)
+    {
+        if (!CanManageAsMg || Barony is null || _saving)
+            return;
+
+        _luxuryKey = LuxuryGoodsAccessCatalog.Find(key).Key;
+        _saving = true;
+        try
+        {
+            await _baronyRepo.SetLuxuryGoodsAccessKey(Barony.Id, _luxuryKey);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save luxury goods access: " + ex.Message, Severity.Error);
+            _luxuryKey = await _baronyRepo.GetLuxuryGoodsAccessKey(Barony.Id);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task OnOverrideToggleAsync((string Key, bool Enabled) args)
+    {
+        if (!CanManageAsMg || Barony is null || _saving)
+            return;
+
+        var overrides = new HashSet<string>(_availability.OverrideKeys, StringComparer.OrdinalIgnoreCase);
+        if (args.Enabled)
+            overrides.Add(args.Key);
+        else
+            overrides.Remove(args.Key);
+
+        _saving = true;
+        try
+        {
+            await _baronyRepo.SetTradeGoodMgOverrideKeys(Barony.Id, overrides);
+            await ReloadAvailabilityAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save trade good override: " + ex.Message, Severity.Error);
+            await ReloadAvailabilityAsync();
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

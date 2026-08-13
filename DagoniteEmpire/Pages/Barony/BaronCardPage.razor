@@ -1,0 +1,117 @@
+@page "/barony/character-card"
+@layout BaronyLayout
+@inherits BaronyPageBase
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+@inject ICharacterRepository _characterRepo
+
+<PageTitle>Dagonite Empire | Baron</PageTitle>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading baron card...</span>
+}
+else if (LoadError is not null)
+{
+    <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
+}
+else if (Barony is not null)
+{
+    <BaronyPageHeader Title="Baron" HelpKey="character-card" />
+
+    <BaronInfluenceSection Barony="@Barony"
+                           Character="@_character"
+                           CustomModifiers="@_customModifiers"
+                           TimeActions="@_timeActions"
+                           CanEdit="@CanManageAsMg"
+                           OnChanged="ReloadAsync" />
+
+    <BaronPhpSection Barony="@Barony"
+                     Seat="@_seat"
+                     PurposeTemplates="@_purposeTemplates"
+                     CustomSources="@_phpSources"
+                     Artifacts="@_artifacts"
+                     Audiences="@_audiences"
+                     CanEdit="@CanManageAsMg"
+                     OnChanged="ReloadAsync" />
+
+    <BaronTimeSection Barony="@Barony"
+                      Character="@_character"
+                      Actions="@_timeActions"
+                      Modifiers="@_timeModifiers"
+                      CanEdit="@CanEdit"
+                      OnChanged="ReloadAsync" />
+
+    <BaronArtifactsSection Barony="@Barony"
+                           Seat="@_seat"
+                           Artifacts="@_artifacts"
+                           CanEdit="@CanManageAsMg"
+                           OnChanged="ReloadAsync" />
+
+    <BaronReputationEffectsSection PrestigeScore="@Barony.Prestige"
+                                   HonorScore="@Barony.Honor"
+                                   FearScore="@Barony.Fear" />
+}
+
+@code {
+    private CharacterDTO? _character;
+    private List<BaronInfluenceModifierDTO> _customModifiers = new();
+    private List<BaronPhpSourceDTO> _phpSources = new();
+    private List<BaronArtifactDTO> _artifacts = new();
+    private List<BaronAudienceDTO> _audiences = new();
+    private List<BaronTimeActionDTO> _timeActions = new();
+    private List<BaronTimeModifierDTO> _timeModifiers = new();
+    private BaronySeatDTO? _seat;
+    private List<SeatPurposeTemplateDTO> _purposeTemplates = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBaronyAsync();
+        if (Barony is null)
+            return;
+
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (Barony is null)
+            return;
+
+        _character = await _characterRepo.GetById(Barony.CharacterId, fullIncludes: true);
+        Barony = await _baronyRepo.GetById(Barony.Id) ?? Barony;
+        _customModifiers = await _baronyRepo.GetBaronInfluenceModifiers(Barony.Id);
+        _phpSources = await _baronyRepo.GetBaronPhpSources(Barony.Id);
+        _artifacts = await _baronyRepo.GetBaronArtifacts(Barony.Id);
+        _audiences = await _baronyRepo.GetAudiences(Barony.Id);
+        await _baronyRepo.EnsureBaronTimeDefaults(Barony.Id);
+        _timeActions = await _baronyRepo.GetBaronTimeActions(Barony.Id);
+        _timeModifiers = await _baronyRepo.GetBaronTimeModifiers(Barony.Id);
+        _seat = await _baronyRepo.EnsureSeat(Barony.Id);
+        _purposeTemplates = await _baronyRepo.GetSeatPurposeTemplates(Barony.Id);
+
+        await PersistPhpTotalsAsync();
+        StateHasChanged();
+    }
+
+    /// <summary>Write summed Prestige/Honor/Fear into Barony so Influence and Domain Panel stay in sync.</summary>
+    private async Task PersistPhpTotalsAsync()
+    {
+        if (Barony is null)
+            return;
+
+        var seat = BaronyCalc.SeatPhpContribution(_seat, _purposeTemplates);
+        var items = BaronyCalc.ArtifactsPhpContribution(_artifacts, _seat);
+        var adventures = BaronyCalc.AdventuresPhpContribution(_audiences, _phpSources);
+        var total = BaronyCalc.SumPhpRows(BaronyCalc.BuildPhpRows(seat, items, _phpSources, adventures));
+
+        if (Barony.Prestige == total.Prestige
+            && Barony.Honor == total.Honor
+            && Barony.Fear == total.Fear)
+            return;
+
+        Barony.Prestige = total.Prestige;
+        Barony.Honor = total.Honor;
+        Barony.Fear = total.Fear;
+        Barony = await _baronyRepo.UpdateBarony(Barony);
+    }
+}

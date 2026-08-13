@@ -1,0 +1,233 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog" ContentClass="baron-influence-dialog-content" ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            <MudTextField @bind-Value="_title"
+                          Label="Thread title"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="baron-influence-field"
+                          Required="true" />
+
+            <MudSelect T="string"
+                       Value="_recipientKey"
+                       ValueChanged="OnRecipientChanged"
+                       Label="@(IsInbound ? "Sender" : "Recipient")"
+                       HelperText="Pick from Relations or Lords, or choose Other to type a name and title"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Dense="true"
+                       Class="baron-influence-field">
+                <MudSelectItem Value="@OtherRecipientKey">Other</MudSelectItem>
+                @foreach (var option in _recipientOptions)
+                {
+                    <MudSelectItem Value="@option.Key">@option.Label</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudTextField @bind-Value="_correspondentName"
+                          Label="@(IsInbound ? "Sender name" : "Recipient name")"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="baron-influence-field"
+                          ReadOnly="@(!IsCustomRecipient)"
+                          Required="true" />
+
+            <MudTextField @bind-Value="_correspondentTitle"
+                          Label="Title"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="baron-influence-field"
+                          ReadOnly="@(!IsCustomRecipient)" />
+
+            <MudSelect T="string"
+                       @bind-Value="_replyRegion"
+                       Label="Correspondent region"
+                       HelperText="@RegionHelperText"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Dense="true"
+                       Class="baron-influence-field">
+                @foreach (var region in BaronLetterReplyRegion.All)
+                {
+                    <MudSelectItem Value="@region">@region</MudSelectItem>
+                }
+            </MudSelect>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="CreateAsync" Disabled="@_busy">
+            Create thread
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public BaronyDTO Barony { get; set; } = new();
+    [Parameter] public List<BaronyRelationDTO> Relations { get; set; } = new();
+    [Parameter] public bool IsInbound { get; set; }
+
+    [Inject] private IBaronyRepository _baronyRepo { get; set; } = default!;
+
+    private const string OtherRecipientKey = "other";
+
+    private sealed record LetterRecipientOption(
+        string Key,
+        string Label,
+        int? RelationId,
+        string Name,
+        string? Title,
+        string? Category,
+        string ReplyRegion);
+
+    private string _title = string.Empty;
+    private string _recipientKey = OtherRecipientKey;
+    private int? _relationId;
+    private string _correspondentName = string.Empty;
+    private string? _correspondentTitle;
+    private string? _correspondentCategory;
+    private string _replyRegion = BaronLetterReplyRegion.EasternMarch;
+    private bool _busy;
+    private List<LetterRecipientOption> _recipientOptions = new();
+
+    private bool IsCustomRecipient => string.Equals(_recipientKey, OtherRecipientKey, StringComparison.Ordinal);
+
+    private string RegionHelperText =>
+        $"Max {BaronLetterRules.MaxInboundFromCorrespondent(_replyRegion)} inbound letter(s)/turn from this person (to the baron)";
+
+    protected override void OnParametersSet() => BuildRecipientOptions();
+
+    private void BuildRecipientOptions()
+    {
+        var options = new List<LetterRecipientOption>();
+        var coveredLordKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var rel in Relations.OrderBy(r => r.Name))
+        {
+            var lordKey = KnownLordsCatalog.MatchLordKeyFromRelationName(rel.Name);
+            if (lordKey is not null)
+                coveredLordKeys.Add(lordKey);
+
+            options.Add(new LetterRecipientOption(
+                Key: $"relation:{rel.Id}",
+                Label: FormatRelationLabel(rel),
+                RelationId: rel.Id,
+                Name: rel.Name,
+                Title: string.IsNullOrWhiteSpace(rel.Title) ? null : rel.Title,
+                Category: rel.Category,
+                ReplyRegion: BaronLetterReplyRegion.EasternMarch));
+        }
+
+        foreach (var lord in KnownLordsCatalog.EasternMarch.OrderBy(l => l.Name))
+        {
+            var lordKey = KnownLordsCatalog.LordKey(lord);
+            if (coveredLordKeys.Contains(lordKey))
+                continue;
+
+            options.Add(new LetterRecipientOption(
+                Key: $"lord:{lordKey}",
+                Label: KnownLordsCatalog.DisplayName(lord),
+                RelationId: null,
+                Name: $"{lord.Name} {lord.House}",
+                Title: lord.Title,
+                Category: RelationCategory.Neighbors,
+                ReplyRegion: BaronLetterReplyRegion.EasternMarch));
+        }
+
+        _recipientOptions = options
+            .OrderBy(o => o.Label, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static string FormatRelationLabel(BaronyRelationDTO rel) =>
+        string.IsNullOrWhiteSpace(rel.Title) ? rel.Name : $"{rel.Name} — {rel.Title}";
+
+    private Task OnRecipientChanged(string recipientKey)
+    {
+        _recipientKey = recipientKey;
+
+        if (IsCustomRecipient)
+        {
+            _relationId = null;
+            _correspondentCategory = null;
+            _correspondentName = string.Empty;
+            _correspondentTitle = null;
+            return Task.CompletedTask;
+        }
+
+        var option = _recipientOptions.FirstOrDefault(o => o.Key == recipientKey);
+        if (option is null)
+            return Task.CompletedTask;
+
+        _relationId = option.RelationId;
+        _correspondentName = option.Name;
+        _correspondentTitle = option.Title;
+        _correspondentCategory = option.Category;
+        _replyRegion = option.ReplyRegion;
+        return Task.CompletedTask;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task CreateAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_title))
+        {
+            _snackBar.Add("Thread title is required.", Severity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_correspondentName))
+        {
+            _snackBar.Add(IsInbound ? "Sender name is required." : "Recipient name is required.", Severity.Warning);
+            return;
+        }
+
+        if (_busy) return;
+        _busy = true;
+        try
+        {
+            var thread = await _baronyRepo.SaveLetterThread(new BaronLetterThreadDTO
+            {
+                BaronyId = Barony.Id,
+                Title = _title.Trim(),
+                RelationId = _relationId,
+                CorrespondentName = _correspondentName.Trim(),
+                CorrespondentTitle = string.IsNullOrWhiteSpace(_correspondentTitle) ? null : _correspondentTitle.Trim(),
+                CorrespondentCategory = _correspondentCategory,
+                ReplyRegion = _replyRegion,
+            });
+
+            // Seed an empty draft so the composer has something to edit immediately.
+            var draft = await _baronyRepo.SaveLetterMessage(new BaronLetterMessageDTO
+            {
+                ThreadId = thread.Id,
+                BodyHtml = "<p></p>",
+                Status = BaronLetterStatus.Draft,
+                IsInbound = IsInbound,
+                TurnNumber = Barony.TurnNumber,
+                Year = Barony.Year,
+                Month = Barony.Month,
+                Season = Barony.Season,
+                SeenByBaron = true,
+                SeenByGm = true,
+            });
+
+            thread.Messages = new List<BaronLetterMessageDTO> { draft };
+            MudDialog.Close(DialogResult.Ok(thread));
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not create thread: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

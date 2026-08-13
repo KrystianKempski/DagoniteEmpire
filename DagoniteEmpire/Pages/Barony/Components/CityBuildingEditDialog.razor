@@ -1,0 +1,191 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog">
+            @if (IsCoreBuilding)
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                    Fixed city building. Changes apply only to this barony. Use Reset to restore the default.
+                </MudText>
+            }
+            else
+            {
+                <MudTabs @bind-ActivePanelIndex="_tabIndex" Class="mb-3">
+                    <MudTabPanel Text="From catalog">
+                        <MudSelect T="int?"
+                                   Label="Building template"
+                                   Value="@_selectedTemplateId"
+                                   ValueChanged="OnTemplateSelected"
+                                   Variant="Variant.Outlined"
+                                   Margin="Margin.Dense"
+                                   Clearable="true"
+                                   Placeholder="Choose a building…"
+                                   Class="baron-influence-field">
+                            @foreach (var template in Catalog)
+                            {
+                                <MudSelectItem T="int?" Value="@template.Id">@template.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
+                            Pick a catalog entry below. To change values, switch to the Custom tab.
+                        </MudText>
+                    </MudTabPanel>
+                    <MudTabPanel Text="Custom">
+                        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                            Edit name, description, and PPB freely. The name must not match any catalog template.
+                        </MudText>
+                    </MudTabPanel>
+                </MudTabs>
+            }
+
+            <div class="@(!IsCoreBuilding && IsCatalogTab ? "city-building-fields--readonly" : "")">
+                <MudTextField @bind-Value="_name"
+                              Label="Name"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Required="true"
+                              Disabled="@(!IsCoreBuilding && IsCatalogTab)"
+                              Class="baron-influence-field" />
+                <MudTextField @bind-Value="_description"
+                              Label="Description"
+                              HelperText="Shown as a tooltip in the building list."
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Lines="3"
+                              Disabled="@(!IsCoreBuilding && IsCatalogTab)"
+                              Class="baron-influence-field" />
+                <PpbVectorEditor @bind-Value="_additive" Title="PPB additive (+)" Compact="true" ReadOnly="@(!IsCoreBuilding && IsCatalogTab)" />
+                <PpbVectorEditor @bind-Value="_percent" Title="PPB percent (%)" Compact="true" Percent="true" ReadOnly="@(!IsCoreBuilding && IsCatalogTab)" />
+            </div>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        @if (IsCoreBuilding && Building.Id > 0 && OnReset.HasDelegate)
+        {
+            <MudButton Variant="Variant.Outlined" Color="Color.Warning" OnClick="ResetAsync">Reset to default</MudButton>
+        }
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public BaronyBuildingDTO Building { get; set; } = new();
+    [Parameter] public IReadOnlyList<BuildingTemplateDTO> Catalog { get; set; } = Array.Empty<BuildingTemplateDTO>();
+    [Parameter] public bool IsCoreBuilding { get; set; }
+    [Parameter] public EventCallback OnReset { get; set; }
+
+    private int _tabIndex;
+    private int? _selectedTemplateId;
+    private string _name = string.Empty;
+    private string? _description;
+    private PpbVector _additive = new();
+    private PpbVector _percent = new();
+
+    private bool IsCatalogTab => !IsCoreBuilding && _tabIndex == 0;
+
+    protected override void OnInitialized()
+    {
+        _name = Building.Name;
+        _description = Building.Description;
+        _additive = Building.Additive.Clone();
+        _percent = Building.Percent.Clone();
+        _selectedTemplateId = Building.TemplateId;
+        _tabIndex = Building.TemplateId is > 0 ? 0 : 1;
+    }
+
+    private void OnTemplateSelected(int? templateId)
+    {
+        _selectedTemplateId = templateId;
+        if (templateId is null or <= 0)
+            return;
+
+        ApplyTemplate(Catalog.FirstOrDefault(t => t.Id == templateId));
+    }
+
+    private void ApplyTemplate(BuildingTemplateDTO? template)
+    {
+        if (template is null)
+            return;
+
+        _name = template.Name;
+        _description = template.Description;
+        _additive = template.EffectAdditive.Clone();
+        _percent = template.EffectPercent.Clone();
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task ResetAsync()
+    {
+        await OnReset.InvokeAsync();
+        MudDialog.Cancel();
+    }
+
+    private void Save()
+    {
+        if (IsCoreBuilding)
+        {
+            if (string.IsNullOrWhiteSpace(_name))
+            {
+                _snackBar.Add("Building name is required.", Severity.Warning);
+                return;
+            }
+
+            Building.TemplateId = null;
+        }
+        else if (IsCatalogTab)
+        {
+            if (_selectedTemplateId is null or <= 0)
+            {
+                _snackBar.Add("Please select a building from the catalog.", Severity.Warning);
+                return;
+            }
+
+            var template = Catalog.FirstOrDefault(t => t.Id == _selectedTemplateId);
+            if (template is null)
+            {
+                _snackBar.Add("Selected catalog entry was not found.", Severity.Warning);
+                return;
+            }
+
+            ApplyTemplate(template);
+            Building.TemplateId = template.Id;
+            Building.CoreKey = null;
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(_name))
+            {
+                _snackBar.Add("Building name is required.", Severity.Warning);
+                return;
+            }
+
+            if (NameMatchesCatalogTemplate(_name))
+            {
+                _snackBar.Add("Custom building name cannot match a catalog template. Use the catalog tab or choose a different name.", Severity.Warning);
+                return;
+            }
+
+            Building.TemplateId = null;
+            Building.CoreKey = null;
+        }
+
+        Building.Name = _name.Trim();
+        Building.Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim();
+        Building.Additive = _additive.Clone();
+        Building.Percent = _percent.Clone();
+        Building.Kind = BuildingKind.Building;
+
+        MudDialog.Close(DialogResult.Ok(Building));
+    }
+
+    private bool NameMatchesCatalogTemplate(string name)
+        => Catalog.Any(t => string.Equals(t.Name, name.Trim(), StringComparison.OrdinalIgnoreCase));
+}

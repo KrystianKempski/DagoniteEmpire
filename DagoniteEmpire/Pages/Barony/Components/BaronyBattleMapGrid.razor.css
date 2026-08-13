@@ -1,0 +1,295 @@
+.bbm-grid-root {
+    --bbm-cell: 64px;
+    width: 100%;
+}
+
+.bbm-scroll {
+    position: relative;
+    width: 100%;
+    max-height: calc(100vh - 11rem);
+    overflow: auto;
+    border: 1px solid var(--barony-border, #d9cfb8);
+    background: var(--barony-surface, #fbf8f1);
+}
+
+.bbm-cursor-pos {
+    position: absolute;
+    right: 6px;
+    top: 6px;
+    z-index: 5;
+    pointer-events: none;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    background: rgba(47, 42, 36, 0.75);
+    color: #fbf8f1;
+    font-family: monospace;
+}
+
+.bbm-labeled-grid {
+    display: grid;
+    grid-template-areas:
+        "corner cols"
+        "rows map";
+    grid-template-columns: 32px max-content;
+    width: fit-content;
+    padding: 4px 4px 4px 0;
+}
+
+.bbm-corner {
+    grid-area: corner;
+    width: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+    box-sizing: border-box;
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 4;
+    background: var(--barony-surface, #fbf8f1);
+}
+
+.bbm-col-labels {
+    grid-area: cols;
+    display: grid;
+    gap: 1px;
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: var(--barony-surface, #fbf8f1);
+    padding-bottom: 2px;
+}
+
+.bbm-row-labels {
+    grid-area: rows;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: 32px !important;
+    min-width: 32px !important;
+    max-width: 32px !important;
+    box-sizing: border-box;
+    align-items: stretch;
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background: var(--barony-surface, #fbf8f1);
+    overflow: visible;
+}
+
+.bbm-axis-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--barony-muted, #6f6656);
+    user-select: none;
+    box-sizing: border-box;
+    font-variant-numeric: tabular-nums;
+    /* Do NOT use bare .row / .col — Bootstrap .row has negative margins. */
+}
+
+.bbm-axis-label--col {
+    width: var(--bbm-cell);
+    text-align: center;
+}
+
+.bbm-axis-label--row {
+    flex: 0 0 var(--bbm-cell);
+    height: var(--bbm-cell);
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0 6px 0 0;
+    text-align: right;
+    line-height: var(--bbm-cell);
+    overflow: hidden;
+}
+
+.bbm-grid {
+    grid-area: map;
+    display: grid;
+    gap: 1px;
+    background: var(--barony-border, #d9cfb8);
+    box-shadow: inset 0 0 0 1px var(--barony-border, #d9cfb8);
+    width: max-content;
+}
+
+.bbm-cell {
+    position: relative;
+    width: var(--bbm-cell);
+    height: var(--bbm-cell);
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f3eee2;
+    overflow: hidden;
+    user-select: none;
+}
+
+.bbm-cell.interactive {
+    cursor: pointer;
+}
+
+.bbm-cell.interactive:hover {
+    outline: 2px solid var(--barony-accent, #9c7a33);
+    outline-offset: -2px;
+}
+
+.bbm-cell.selected {
+    outline: 2px solid #c45c26;
+    outline-offset: -2px;
+}
+
+.bbm-cell.has-large-token {
+    overflow: visible;
+    z-index: 3;
+}
+
+.bbm-range {
+    position: absolute;
+    inset: 0;
+    background: rgba(156, 122, 51, 0.28);
+    box-shadow: inset 0 0 0 1px rgba(156, 122, 51, 0.55);
+    pointer-events: none;
+    z-index: 0;
+}
+
+.bbm-terrain {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 0;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: rgba(47, 42, 36, 0.4);
+}
+
+.bbm-terrain--deploy {
+    background: rgba(70, 130, 80, 0.22);
+    box-shadow: inset 0 0 0 1px rgba(70, 130, 80, 0.35);
+}
+
+.bbm-terrain--difficult {
+    background: rgba(139, 110, 60, 0.12);
+}
+
+.bbm-terrain--impassable {
+    background: rgba(60, 50, 40, 0.28);
+}
+
+.bbm-cell-text {
+    position: relative;
+    z-index: 2;
+    font-size: 0.55rem;
+    font-weight: 700;
+    text-align: center;
+    line-height: 1;
+    pointer-events: none;
+}
+
+.bbm-token {
+    position: absolute;
+    z-index: 2;
+    inset: 8%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    border: 2px solid var(--barony-accent, #9c7a33);
+    background: var(--barony-surface, #fbf8f1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.bbm-token.enemy {
+    border-color: #8b3a3a;
+}
+
+.bbm-token.selected {
+    box-shadow: 0 0 0 2px #c45c26;
+}
+
+.bbm-token.active-turn {
+    box-shadow: 0 0 0 2px #2f6b4f, 0 0 8px rgba(47, 107, 79, 0.45);
+}
+
+.bbm-token.large {
+    top: 0;
+    left: 0;
+    width: var(--bbm-footprint);
+    height: var(--bbm-footprint);
+    inset: auto;
+}
+
+.bbm-token-icon {
+    width: 58%;
+    height: 58%;
+    object-fit: contain;
+}
+
+.bbm-token-fallback {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--barony-ink, #2f2a24);
+}
+
+.bbm-token-label {
+    display: block !important;
+    max-width: 100%;
+    padding: 0 1px;
+    font-size: 0.88rem !important;
+    line-height: 1;
+    font-weight: 700;
+    color: var(--barony-ink, #2f2a24);
+    text-align: center;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    word-break: break-word !important;
+    overflow-wrap: anywhere !important;
+    hyphens: auto;
+}
+
+.bbm-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 6px;
+    font-size: 0.72rem;
+    color: var(--barony-muted, #6f6656);
+}
+
+.bbm-legend__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.bbm-legend__swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+.bbm-legend__swatch--range {
+    background: rgba(156, 122, 51, 0.35);
+    box-shadow: inset 0 0 0 1px rgba(156, 122, 51, 0.55);
+}
+
+.bbm-legend__swatch--deploy {
+    background: rgba(70, 130, 80, 0.35);
+}
+
+.bbm-legend__swatch--difficult {
+    background: rgba(139, 110, 60, 0.35);
+}
+
+.bbm-legend__swatch--impassable {
+    background: rgba(60, 50, 40, 0.4);
+}

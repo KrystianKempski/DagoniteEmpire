@@ -1,0 +1,171 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<table class="ppb-table ppb-table--source ppb-table--office ppb-table--lined @(ShowCost ? null : "ppb-table--office-no-cost") @ExtraClass">
+    <colgroup>
+        <col class="offices-label-col" />
+        @foreach (var _ in SkillColumns)
+        {
+            <col class="offices-ppb-col" />
+        }
+        @if (ShowCost)
+        {
+            <col class="offices-trailing-col" />
+        }
+    </colgroup>
+    <thead>
+        <tr>
+            <th class="ppb-row-label source-col">Source</th>
+            @foreach (var info in SkillColumns)
+            {
+                var inactive = IsColumnInactive(info.Key);
+                <th class="@HeaderClass(inactive)">
+                    <BaronyTooltip Title="@(inactive ? info.NameEn : null)" Text="@HeaderTitle(info, inactive)">
+                        @PpbShort(info.Key)
+                    </BaronyTooltip>
+                </th>
+            }
+            @if (ShowCost)
+            {
+                <th class="office-cost-col">Cost</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var row in Rows)
+        {
+            <tr class="@(row.IsSystem ? "source-row--system" : "")">
+                <td class="ppb-row-label source-col">
+                    <div class="source-cell">
+                        @if (!string.IsNullOrWhiteSpace(row.Description))
+                        {
+                            <BaronyTooltip Title="Description" Text="@row.Description">
+                                <span class="source-cell__name">@row.Source</span>
+                            </BaronyTooltip>
+                        }
+                        else
+                        {
+                            <BaronyTooltip Text="@RowTitle(row)">
+                                <span class="source-cell__name">@row.Source</span>
+                            </BaronyTooltip>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(row.Formula))
+                        {
+                            <MudIcon Icon="@Icons.Material.Outlined.Functions" Size="Size.Small" Style="vertical-align:text-bottom;opacity:.6;" />
+                        }
+                        @if ((CanEdit && !row.IsSystem) || (CanEditOther && row.SystemKind == AdvisorInfluenceSystemKind.Other))
+                        {
+                            <span class="source-cell__actions">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OnEdit.InvokeAsync(row))" />
+                                @if (CanEdit && !row.IsSystem)
+                                {
+                                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => OnDelete.InvokeAsync(row))" />
+                                }
+                            </span>
+                        }
+                    </div>
+                </td>
+                @foreach (var info in SkillColumns)
+                {
+                    var inactive = IsColumnInactive(info.Key);
+                    var tip = CellTooltip?.Invoke(row, info.Key);
+                    <td class="@CellClass(info.Key, row.Values[info.Key], inactive)">
+                        @if (tip is not null)
+                        {
+                            <BaronyTooltip Title="@info.NameEn" Text="@tip">
+                                <span>@Fmt(row.Values[info.Key])</span>
+                            </BaronyTooltip>
+                        }
+                        else
+                        {
+                            @Fmt(row.Values[info.Key])
+                        }
+                    </td>
+                }
+                @if (ShowCost)
+                {
+                    <td class="office-cost-col @CostClass(row.Cost)">@FmtCost(row.Cost)</td>
+                }
+            </tr>
+        }
+        @if (Summary is not null)
+        {
+            <tr class="ppb-summary-row">
+                <td class="ppb-row-label">@SummaryLabel</td>
+                @foreach (var info in SkillColumns)
+                {
+                    var v = Summary[info.Key];
+                    <td class="@PpbCellStyle.ValueClass(info.Key, v)"><b>@Fmt(v)</b></td>
+                }
+                @if (ShowCost)
+                {
+                    <td class="office-cost-col @CostClass(SummaryCost)"><b>@FmtCost(SummaryCost)</b></td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter] public IEnumerable<AdvisorInfluenceRow> Rows { get; set; } = Array.Empty<AdvisorInfluenceRow>();
+    [Parameter] public PpbVector? Summary { get; set; }
+    [Parameter] public decimal SummaryCost { get; set; }
+    [Parameter] public string SummaryLabel { get; set; } = "Σ total";
+    [Parameter] public IReadOnlySet<Ppb>? SignificantSkills { get; set; }
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public bool CanEditOther { get; set; }
+    [Parameter] public bool ShowCost { get; set; } = true;
+    [Parameter] public string? ExtraClass { get; set; }
+    [Parameter] public EventCallback<AdvisorInfluenceRow> OnEdit { get; set; }
+    [Parameter] public EventCallback<AdvisorInfluenceRow> OnDelete { get; set; }
+    [Parameter] public Func<AdvisorInfluenceRow, Ppb, string?>? CellTooltip { get; set; }
+
+    private static IEnumerable<PpbInfo> SkillColumns
+        => PpbCatalog.All.Where(p => p.Key != Ppb.Treasury);
+
+    private static string RowTitle(AdvisorInfluenceRow row)
+    {
+        if (string.IsNullOrWhiteSpace(row.Formula))
+            return row.Source;
+        return $"{row.Source} | {row.Formula}";
+    }
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        _ => p.ToString(),
+    };
+
+    private static string Fmt(decimal v) => PpbFormat.Additive(v);
+
+    private static string FmtCost(decimal cost)
+        => PpbFormat.Round(cost) == 0m ? "·" : PpbFormat.Number(cost);
+
+    private static string CellClass(Ppb key, decimal v, bool inactive)
+    {
+        var valueClass = PpbCellStyle.ValueClass(key, v);
+        return inactive ? $"{valueClass} ppb-cell-inactive" : valueClass;
+    }
+
+    private bool IsColumnInactive(Ppb key)
+        => SignificantSkills is { Count: > 0 } && !SignificantSkills.Contains(key);
+
+    private static string HeaderClass(bool inactive)
+        => inactive ? "ppb-col-inactive" : string.Empty;
+
+    private static string? HeaderTitle(PpbInfo info, bool inactive)
+        => inactive ? "Not significant for this office" : info.NameEn;
+
+    private static string CostClass(decimal cost)
+        => cost > 0m ? "ppb-cell-neg" : "ppb-cell-zero";
+}

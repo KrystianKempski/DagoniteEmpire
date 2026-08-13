@@ -1,0 +1,504 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IBaronyRepository _baronyRepo
+@inject ISnackbar _snackBar
+@inject IDialogService _dialogService
+
+<BaronySection Title="City and Buildings">
+    <Summary>
+        <PpbSummaryChips Vector="@Glance" />
+    </Summary>
+    <ChildContent>
+        <div style="overflow-x:auto;">
+            <table class="ppb-table ppb-table--advisors ppb-table--city-buildings ppb-table--lined">
+                <colgroup>
+                    <col class="city-building-col-name" />
+                    <col class="city-building-col-pop" />
+                    @foreach (var _ in PpbCatalog.All)
+                    {
+                        <col class="ppb-pair-col" />
+                        <col class="ppb-pair-col" />
+                    }
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th rowspan="2" class="ppb-row-label city-building-col-name">Name</th>
+                        <th class="city-building-col-pop">
+                            <BaronyTooltip Text="Population (additive)">Pop</BaronyTooltip>
+                        </th>
+                        @foreach (var info in PpbCatalog.All)
+                        {
+                            <th colspan="2"><BaronyTooltip Text="@info.NameEn">@PpbShort(info.Key)</BaronyTooltip></th>
+                        }
+                    </tr>
+                    <tr>
+                        <th class="ppb-subcol ppb-subcol--add city-building-col-pop">+</th>
+                        @foreach (var _ in PpbCatalog.All)
+                        {
+                            <th class="ppb-subcol ppb-subcol--add">+</th>
+                            <th class="ppb-subcol ppb-subcol--pct">%</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var core in CoreBuildings)
+                    {
+                        <tr class="city-building-row--core">
+                            <td class="city-building-col-name">
+                                <div class="city-building-name-cell">
+                                    <BaronyTooltip Title="Description" Text="@core.Description">
+                                        <span class="city-building-name-text">@(string.IsNullOrWhiteSpace(core.Name) ? "—" : core.Name)</span>
+                                    </BaronyTooltip>
+                                    @if (CanManage)
+                                    {
+                                        <span class="city-building-name-actions">
+                                            <BaronyTooltip Text="Edit core building">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                               Size="Size.Small"
+                                                               OnClick="@(() => EditCoreBuildingAsync(core))" />
+                                            </BaronyTooltip>
+                                        </span>
+                                    }
+                                </div>
+                            </td>
+                            <td class="@PopulationCellClass(core.Population)">@FmtAdd(core.Population)</td>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <td class="@PpbCellStyle.ValueClass(info.Key,core.Additive[info.Key])">@FmtAdd(core.Additive[info.Key])</td>
+                                <td class="@PpbCellStyle.ValueClass(info.Key,core.Percent[info.Key])">@FmtPct(core.Percent[info.Key])</td>
+                            }
+                        </tr>
+                    }
+
+                    @if (LordsSeatRow is { } seatRow)
+                    {
+                        <tr class="city-building-row--lords-seat">
+                            <td class="city-building-col-name">
+                                <div class="city-building-name-cell">
+                                    <BaronyTooltip Title="Lord's Seat" Text="@(seatRow.Note ?? seatRow.Formula)">
+                                        <a class="city-building-name-text city-building-name-text--link" href="/barony/lords-seat">@seatRow.Label</a>
+                                    </BaronyTooltip>
+                                </div>
+                            </td>
+                            <td class="@PopulationCellClass(0)">@FmtAdd(0)</td>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <td class="@PpbCellStyle.ValueClass(info.Key, seatRow.Additive[info.Key])">@FmtAdd(seatRow.Additive[info.Key])</td>
+                                <td class="@PpbCellStyle.ValueClass(info.Key, seatRow.Percent[info.Key])">@FmtPct(seatRow.Percent[info.Key])</td>
+                            }
+                        </tr>
+                    }
+
+                    @foreach (var town in Towns)
+                    {
+                        var inactive = !town.IsActive;
+                        <tr class="@(inactive ? "city-building-row--inactive" : null)">
+                            <td class="city-building-col-name">
+                                <div class="city-building-name-cell">
+                                    <BaronyTooltip Title="Description" Text="@TownNameTooltip(town)">
+                                        <span class="city-building-name-text">@BaronyCalc.TownPopulationLabel(town)</span>
+                                    </BaronyTooltip>
+                                    @if (CanManage)
+                                    {
+                                        <span class="city-building-name-actions">
+                                            <BaronyTooltip Text="Edit town">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                               Size="Size.Small"
+                                                               OnClick="@(() => EditTownAsync(town))" />
+                                            </BaronyTooltip>
+                                        </span>
+                                    }
+                                </div>
+                            </td>
+                            <td class="@PopulationCellClass(town.Population, CanManage && !inactive)"
+                                @onclick="@(() => EditTownPopulationAsync(town))">
+                                <BaronyTooltip Text="Population — settlement size used in town PPB formulas.">
+                                    <span>@FmtAdd(town.Population)</span>
+                                </BaronyTooltip>
+                            </td>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <td class="@PpbCellStyle.ValueClass(info.Key,town.Additive[info.Key])">
+                                    @{
+                                        var tip = TownPpbFormulas.ExplainAdditive(info.Key);
+                                    }
+                                    @if (tip is not null)
+                                    {
+                                        <BaronyTooltip Title="@info.NameEn" Text="@tip">
+                                            <span>@FmtAdd(town.Additive[info.Key])</span>
+                                        </BaronyTooltip>
+                                    }
+                                    else
+                                    {
+                                        @FmtAdd(town.Additive[info.Key])
+                                    }
+                                </td>
+                                <td class="@PpbCellStyle.ValueClass(info.Key,town.Percent[info.Key])">@FmtPct(town.Percent[info.Key])</td>
+                            }
+                        </tr>
+                    }
+
+                    @foreach (var building in ExtraBuildings)
+                    {
+                        <tr>
+                            <td class="city-building-col-name">
+                                <div class="city-building-name-cell">
+                                    <BaronyTooltip Title="Description" Text="@building.Description">
+                                        <span class="city-building-name-text">@(string.IsNullOrWhiteSpace(building.Name) ? "—" : building.Name)</span>
+                                    </BaronyTooltip>
+                                    @if (CanManage)
+                                    {
+                                        <span class="city-building-name-actions">
+                                            <BaronyTooltip Text="Edit building">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                               Size="Size.Small"
+                                                               OnClick="@(() => EditBuildingAsync(building))" />
+                                            </BaronyTooltip>
+                                            <BaronyTooltip Text="Remove building">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                               Size="Size.Small"
+                                                               Color="Color.Error"
+                                                               OnClick="@(() => DeleteBuildingAsync(building))" />
+                                            </BaronyTooltip>
+                                        </span>
+                                    }
+                                </div>
+                            </td>
+                            <td class="@PopulationCellClass(building.Population)">@FmtAdd(building.Population)</td>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <td class="@PpbCellStyle.ValueClass(info.Key,building.Additive[info.Key])">@FmtAdd(building.Additive[info.Key])</td>
+                                <td class="@PpbCellStyle.ValueClass(info.Key,building.Percent[info.Key])">@FmtPct(building.Percent[info.Key])</td>
+                            }
+                        </tr>
+                    }
+
+                    <tr class="ppb-summary-row">
+                        <td class="ppb-row-label city-building-col-name">Σ section</td>
+                        <td class="@PopulationCellClass(PopulationSum)"><b>@FmtAdd(PopulationSum)</b></td>
+                        @foreach (var info in PpbCatalog.All)
+                        {
+                            <td class="@PpbCellStyle.ValueClass(info.Key,AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>
+                            <td class="@PpbCellStyle.ValueClass(info.Key,PercentSum[info.Key])"><b>@FmtPct(PercentSum[info.Key])</b></td>
+                        }
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        @if (CanManage)
+        {
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <MudButton Variant="Variant.Outlined"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="AddBuildingAsync">
+                    Add Building
+                </MudButton>
+            </div>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public int BaronyId { get; set; }
+    [Parameter] public List<BaronyBuildingDTO> SavedBuildings { get; set; } = new();
+    [Parameter] public List<TerrainImprovementDTO> Improvements { get; set; } = new();
+    [Parameter] public BaronySeatDTO? Seat { get; set; }
+    [Parameter] public List<SeatPurposeTemplateDTO> PurposeTemplates { get; set; } = new();
+    [Parameter] public List<BuildingTemplateDTO> Catalog { get; set; } = new();
+    [Parameter] public bool CanManage { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private IReadOnlyList<BaronyBuildingDTO> CoreBuildings =>
+        BaronyCalc.EffectiveCoreCityBuildings(BaronyId, SavedBuildings, Catalog);
+
+    private IEnumerable<BaronyBuildingDTO> ExtraBuildings =>
+        BaronyCalc.ExtraCityBuildings(SavedBuildings);
+
+    private PpbModifierRow? LordsSeatRow =>
+        Seat is null
+            ? null
+            : BaronyCalc.LordsSeatSummaryRow(Seat.Rooms, BaronyCalc.PurposeLookup(PurposeTemplates));
+
+    private List<TerrainImprovementDTO> Towns =>
+        Improvements.Where(BaronyCalc.IsTown)
+            .OrderBy(BaronyCalc.TownPopulationLabel, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private PpbVector AdditiveSum => BaronyCalc.SumCityBuildings(BaronyId, SavedBuildings, Improvements, Seat, PurposeTemplates);
+    private PpbVector PercentSum => BaronyCalc.SumCityBuildingsPercent(BaronyId, SavedBuildings, Improvements, Seat, PurposeTemplates);
+    private PpbVector Glance => BaronyCalc.SectionGlance(BaronyCalc.CityBuildingSectionRows(BaronyId, SavedBuildings, Improvements, Seat, PurposeTemplates));
+    private int PopulationSum => BaronyCalc.SumCityPopulation(BaronyId, SavedBuildings, Improvements);
+
+    private static string? TownNameTooltip(TerrainImprovementDTO town)
+    {
+        var parts = new List<string> { TownPpbFormulas.CatalogDescription };
+        if (!town.IsActive)
+        {
+            parts.Add(string.IsNullOrWhiteSpace(town.InactiveReason)
+                ? "Inactive — excluded from totals."
+                : town.InactiveReason.Trim());
+        }
+
+        return string.Join("\n\n", parts);
+    }
+
+    private async Task EditTownPopulationAsync(TerrainImprovementDTO town)
+    {
+        if (!CanManage || town.Id <= 0 || !town.IsActive)
+            return;
+
+        var parameters = new DialogParameters<PopulationEditDialog>
+        {
+            { x => x.TargetName, BaronyCalc.TownPopulationLabel(town) },
+            { x => x.Value, town.Population },
+        };
+
+        var dialog = await _dialogService.ShowAsync<PopulationEditDialog>(
+            "Population",
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.ExtraSmall,
+                FullWidth = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not int population)
+            return;
+
+        var draft = CloneImprovement(town);
+        draft.Population = population;
+
+        try
+        {
+            await _baronyRepo.SaveImprovement(draft);
+            _snackBar.Add("Town population updated.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save town: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task EditTownAsync(TerrainImprovementDTO town)
+    {
+        if (!CanManage || town.Id <= 0)
+            return;
+
+        var draft = CloneImprovement(town);
+        var parameters = new DialogParameters<TownEditDialog>
+        {
+            { x => x.Improvement, draft },
+        };
+
+        var dialog = await _dialogService.ShowAsync<TownEditDialog>(
+            "Edit town",
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.ExtraSmall,
+                FullWidth = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not TerrainImprovementDTO saved)
+            return;
+
+        try
+        {
+            await _baronyRepo.SaveImprovement(saved);
+            _snackBar.Add("Town updated.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save town: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private static TerrainImprovementDTO CloneImprovement(TerrainImprovementDTO source) => new()
+    {
+        Id = source.Id,
+        BaronyId = source.BaronyId,
+        TileId = source.TileId,
+        TemplateId = source.TemplateId,
+        Name = source.Name,
+        Description = source.Description,
+        FormulaText = source.FormulaText,
+        IconUrl = source.IconUrl,
+        IsActive = source.IsActive,
+        InactiveReason = source.InactiveReason,
+        Population = source.Population,
+        HasPalisade = source.HasPalisade,
+        Additive = source.Additive.Clone(),
+        Percent = source.Percent.Clone(),
+    };
+
+    private async Task AddBuildingAsync()
+    {
+        await OpenBuildingDialog(new BaronyBuildingDTO
+        {
+            BaronyId = BaronyId,
+            Kind = BuildingKind.Building,
+        }, isNew: true);
+    }
+
+    private Task EditBuildingAsync(BaronyBuildingDTO building)
+        => OpenBuildingDialog(CloneBuilding(building), isNew: false, isCore: false);
+
+    private Task EditCoreBuildingAsync(BaronyBuildingDTO building)
+        => OpenBuildingDialog(CloneBuilding(building), isNew: building.Id <= 0, isCore: true);
+
+    private async Task OpenBuildingDialog(BaronyBuildingDTO draft, bool isNew, bool isCore = false)
+    {
+        var coreKey = draft.CoreKey;
+        var parameters = new DialogParameters<CityBuildingEditDialog>
+        {
+            { x => x.Building, draft },
+            { x => x.Catalog, Catalog },
+            { x => x.IsCoreBuilding, isCore },
+            { x => x.OnReset, EventCallback.Factory.Create(this, () => ResetCoreBuildingAsync(draft)) },
+        };
+
+        var dialog = await _dialogService.ShowAsync<CityBuildingEditDialog>(
+            isCore ? "Edit core building" : (isNew ? "Add Building" : "Edit Building"),
+            parameters,
+            DialogOptions());
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronyBuildingDTO saved)
+            return;
+
+        if (string.IsNullOrWhiteSpace(saved.Name))
+        {
+            _snackBar.Add("Building name is required.", Severity.Warning);
+            return;
+        }
+
+        saved.BaronyId = BaronyId;
+        if (isCore)
+        {
+            saved.CoreKey = coreKey ?? saved.CoreKey;
+            saved.Kind = BuildingKind.Building;
+            if (saved.TemplateId is null or <= 0)
+            {
+                var catalogName = CoreCityBuildingKey.CatalogName(saved.CoreKey ?? "");
+                var match = Catalog.FirstOrDefault(t =>
+                    string.Equals(t.Name, catalogName, StringComparison.OrdinalIgnoreCase));
+                if (match is not null)
+                    saved.TemplateId = match.Id;
+            }
+        }
+
+        try
+        {
+            await _baronyRepo.SaveBuilding(saved);
+            _snackBar.Add(isCore ? "Core building updated." : (isNew ? "Building added." : "Building updated."), Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save building: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task ResetCoreBuildingAsync(BaronyBuildingDTO building)
+    {
+        if (string.IsNullOrWhiteSpace(building.CoreKey))
+            return;
+
+        var catalogName = CoreCityBuildingKey.CatalogName(building.CoreKey);
+        var template = Catalog.FirstOrDefault(t =>
+            string.Equals(t.Name, catalogName, StringComparison.OrdinalIgnoreCase));
+        if (template is null)
+        {
+            _snackBar.Add($"Catalog entry “{catalogName}” not found.", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            if (building.Id > 0)
+                await _baronyRepo.DeleteBuilding(building.Id);
+
+            var restored = BaronyCalc.FromStarterCatalogTemplate(BaronyId, building.CoreKey, template);
+            await _baronyRepo.SaveBuilding(restored);
+            _snackBar.Add("Core building restored from catalog.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not reset building: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DeleteBuildingAsync(BaronyBuildingDTO building)
+    {
+        if (building.Id <= 0 || !string.IsNullOrWhiteSpace(building.CoreKey))
+            return;
+
+        try
+        {
+            await _baronyRepo.DeleteBuilding(building.Id);
+            _snackBar.Add("Building removed.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not remove building: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private static BaronyBuildingDTO CloneBuilding(BaronyBuildingDTO source) => new()
+    {
+        Id = source.Id,
+        BaronyId = source.BaronyId,
+        TemplateId = source.TemplateId,
+        CoreKey = source.CoreKey,
+        Name = source.Name,
+        Kind = source.Kind,
+        Description = source.Description,
+        Additive = source.Additive.Clone(),
+        Percent = source.Percent.Clone(),
+        Population = source.Population,
+    };
+
+    private static DialogOptions DialogOptions() => new()
+    {
+        MaxWidth = MaxWidth.False,
+        FullWidth = false,
+        CloseOnEscapeKey = true,
+    };
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        Ppb.Treasury => "Gold",
+        _ => p.ToString(),
+    };
+
+    private static string FmtAdd(decimal v) => PpbFormat.Additive(v);
+    private static string FmtPct(decimal v) => PpbFormat.Percent(v);
+
+    private static string PopulationCellClass(int population, bool editable = false)
+    {
+        var cls = "city-building-col-pop " + PpbCellStyle.ValueClassStandard(population);
+        if (editable)
+            cls += " city-building-col-pop--editable";
+        return cls;
+    }
+}

@@ -1,0 +1,119 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog relation-edit-dialog relation-modifiers-dialog">
+            <MudText Typo="Typo.subtitle2" Class="mb-1">@PersonName</MudText>
+            <div class="relation-modifiers__header mb-2">
+                <span class="relation-modifiers__title">Attitude modifiers</span>
+                <span class="relation-modifiers__sum @AttitudeSumClass">
+                    Sum: @FormatAttitude(AttitudeSum) (@RelationCategory.AttitudeLabel(AttitudeSum))
+                </span>
+            </div>
+
+            @if (_modifiers.Count == 0)
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">No modifiers yet.</MudText>
+            }
+            else
+            {
+                @for (var i = 0; i < _modifiers.Count; i++)
+                {
+                    var index = i;
+                    <div class="relation-modifiers__row">
+                        <MudTextField @bind-Value="_modifiers[index].Description"
+                                      Label="Description"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Class="baron-influence-field relation-modifiers__desc" />
+                        <MudNumericField T="int"
+                                         @bind-Value="_modifiers[index].Value"
+                                         Label="Value"
+                                         Variant="Variant.Outlined"
+                                         Margin="Margin.Dense"
+                                         Class="baron-influence-field relation-modifiers__value" />
+                        <BaronyTooltip Text="Remove modifier">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Size="Size.Small"
+                                           Color="Color.Error"
+                                           OnClick="@(() => RemoveModifier(index))" />
+                        </BaronyTooltip>
+                    </div>
+                }
+            }
+
+            <MudButton Variant="Variant.Outlined"
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       Class="mt-1"
+                       OnClick="AddModifier">
+                Add modifier
+            </MudButton>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string PersonName { get; set; } = string.Empty;
+    [Parameter] public List<BaronyRelationModifierDTO> Modifiers { get; set; } = new();
+
+    private List<ModifierRow> _modifiers = new();
+
+    private int AttitudeSum => Math.Clamp(_modifiers.Sum(m => m.Value), -200, 200);
+    private string AttitudeSumClass =>
+        AttitudeSum > 0 ? "relations-attitude--pos"
+        : AttitudeSum < 0 ? "relations-attitude--neg"
+        : "";
+
+    protected override void OnInitialized()
+    {
+        _modifiers = (Modifiers ?? new())
+            .OrderBy(m => m.SortOrder)
+            .Select(m => new ModifierRow
+            {
+                Description = m.Description ?? "",
+                Value = m.Value,
+            }).ToList();
+    }
+
+    private void AddModifier() => _modifiers.Add(new ModifierRow());
+
+    private void RemoveModifier(int index)
+    {
+        if (index < 0 || index >= _modifiers.Count)
+            return;
+        _modifiers.RemoveAt(index);
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        var result = _modifiers
+            .Select((m, i) => new BaronyRelationModifierDTO
+            {
+                Description = (m.Description ?? "").Trim(),
+                Value = m.Value,
+                SortOrder = i,
+            }).ToList();
+
+        MudDialog.Close(DialogResult.Ok(result));
+    }
+
+    private static string FormatAttitude(int attitude) =>
+        attitude > 0 ? $"+{attitude}" : attitude.ToString();
+
+    private sealed class ModifierRow
+    {
+        public string Description { get; set; } = string.Empty;
+        public int Value { get; set; }
+    }
+}

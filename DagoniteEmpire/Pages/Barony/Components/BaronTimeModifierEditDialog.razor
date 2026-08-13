@@ -1,0 +1,67 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            <MudTextField @bind-Value="_source"
+                          Label="Source"
+                          HelperText="e.g. Illness, Blessing, Decree…"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="baron-influence-field"
+                          Required="true" />
+            <MudNumericField @bind-Value="_percent"
+                             Label="Percent"
+                             HelperText="Applied to base BT. Positive increases the pool, negative reduces it."
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Class="baron-influence-field" />
+            <MudTextField @bind-Value="_description"
+                          Label="Description"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="2"
+                          Class="baron-influence-field" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public BaronTimeModifierDTO Modifier { get; set; } = new();
+
+    private string _source = string.Empty;
+    private decimal _percent;
+    private string? _description;
+
+    protected override void OnInitialized()
+    {
+        _source = Modifier.Source;
+        _percent = Modifier.Percent;
+        _description = Modifier.Description;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(_source))
+        {
+            _snackBar.Add("Source is required.", Severity.Warning);
+            return;
+        }
+
+        Modifier.Source = _source.Trim();
+        Modifier.Percent = _percent;
+        Modifier.Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim();
+        MudDialog.Close(DialogResult.Ok(Modifier));
+    }
+}

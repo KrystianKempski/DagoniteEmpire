@@ -1,0 +1,254 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<table class="ppb-table ppb-table--advisors ppb-table--catalog ppb-table--lined">
+    <thead>
+        <tr>
+            <th rowspan="2" class="catalog-col-name catalog-th--sortable @SortClass(SortName)" @onclick="() => ToggleSort(SortName)">
+                Name<span class="catalog-sort-indicator">@SortIndicator(SortName)</span>
+            </th>
+            <th rowspan="2" class="catalog-col-lordship catalog-th--sortable @SortClass(SortLordship)" @onclick="() => ToggleSort(SortLordship)">
+                <BaronyTooltip Text="Required lordship authority level">
+                    <span>Lordship<span class="catalog-sort-indicator">@SortIndicator(SortLordship)</span></span>
+                </BaronyTooltip>
+            </th>
+            <th rowspan="2" class="catalog-col-kind catalog-th--sortable @SortClass(SortType)" @onclick="() => ToggleSort(SortType)">
+                Type<span class="catalog-sort-indicator">@SortIndicator(SortType)</span>
+            </th>
+            <th rowspan="2" class="catalog-col-cost catalog-th--sortable @SortClass(SortProdCost)" @onclick="() => ToggleSort(SortProdCost)">
+                <BaronyTooltip Text="Production cost">
+                    <span>Prod.<span class="catalog-sort-indicator">@SortIndicator(SortProdCost)</span></span>
+                </BaronyTooltip>
+            </th>
+            <th rowspan="2" class="catalog-col-cost catalog-th--sortable @SortClass(SortGoldCost)" @onclick="() => ToggleSort(SortGoldCost)">
+                <BaronyTooltip Text="Gold cost">
+                    <span>Gold<span class="catalog-sort-indicator">@SortIndicator(SortGoldCost)</span></span>
+                </BaronyTooltip>
+            </th>
+            <th rowspan="2" class="catalog-col-desc">Description</th>
+            @foreach (var info in PpbCatalog.All)
+            {
+                var sortKey = PpbSortKey(info.Key);
+                <th colspan="2" class="catalog-th--sortable @SortClass(sortKey)" @onclick="() => ToggleSort(sortKey)">
+                    <BaronyTooltip Text="@info.NamePl">
+                        <span>@PpbShort(info.Key)<span class="catalog-sort-indicator">@SortIndicator(sortKey)</span></span>
+                    </BaronyTooltip>
+                </th>
+            }
+        </tr>
+        <tr>
+            @foreach (var _ in PpbCatalog.All)
+            {
+                <th class="ppb-subcol ppb-subcol--add">+</th>
+                <th class="ppb-subcol ppb-subcol--pct">%</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in SortedItems)
+        {
+            <tr>
+                <td class="catalog-col-name catalog-cell-name">
+                    <div class="catalog-name-cell">
+                        <span class="catalog-name-cell__text">@item.Name</span>
+                        <span class="catalog-name-cell__actions">
+                            @if (CanProposeBuild && IsCityBuilding(item))
+                            {
+                                <BaronyTooltip Text="Start building project">
+                                    <button type="button"
+                                            class="catalog-name-cell__build"
+                                            @onclick="() => ProposeBuildAsync(item)"
+                                            @onclick:stopPropagation="true">
+                                        <img src="/icons/hammer.svg" alt="" class="catalog-name-cell__build-icon" />
+                                    </button>
+                                </BaronyTooltip>
+                            }
+                            @if (CanManageCatalog && item.IsCustom)
+                            {
+                                <BaronyTooltip Text="Edit catalog entry">
+                                    <button type="button"
+                                            class="catalog-name-cell__build catalog-name-cell__build--edit"
+                                            @onclick="() => EditTemplateAsync(item)"
+                                            @onclick:stopPropagation="true">
+                                        <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
+                                    </button>
+                                </BaronyTooltip>
+                                <BaronyTooltip Text="Delete catalog entry">
+                                    <button type="button"
+                                            class="catalog-name-cell__build catalog-name-cell__build--delete"
+                                            @onclick="() => DeleteTemplateAsync(item)"
+                                            @onclick:stopPropagation="true">
+                                        <MudIcon Icon="@Icons.Material.Filled.Delete" Size="Size.Small" />
+                                    </button>
+                                </BaronyTooltip>
+                            }
+                        </span>
+                    </div>
+                </td>
+                <td class="catalog-col-lordship">@FmtLevel(item.RequiredLordshipLevel)</td>
+                <td class="catalog-col-kind">@TypeLabel(item.Kind)</td>
+                <td class="catalog-col-cost">@FmtCost(item.ProductionCost)</td>
+                <td class="catalog-col-cost">@FmtCost(item.GoldCost)</td>
+                <td class="catalog-col-desc">
+                    @if (string.IsNullOrWhiteSpace(item.Description))
+                    {
+                        <span class="ppb-cell-zero">·</span>
+                    }
+                    else
+                    {
+                        <BaronyTooltip Text="@item.Description" Class="catalog-desc">
+                            @foreach (var line in DescriptionLines(item.Description))
+                            {
+                                if (line.StartsWith("Produces ", StringComparison.Ordinal))
+                                {
+                                    <div class="catalog-desc__produces"><strong>@line</strong></div>
+                                }
+                                else if (line.StartsWith("Requires trade access", StringComparison.Ordinal))
+                                {
+                                    <div class="catalog-desc__requires"><strong>@line</strong></div>
+                                }
+                                else
+                                {
+                                    <div class="catalog-desc__body">@line</div>
+                                }
+                            }
+                        </BaronyTooltip>
+                    }
+                </td>
+                @foreach (var info in PpbCatalog.All)
+                {
+                    <td class="@PpbCellStyle.ValueClass(info.Key, item.EffectAdditive[info.Key])">@FmtAdd(item.EffectAdditive[info.Key])</td>
+                    <td class="@PpbCellStyle.ValueClass(info.Key, item.EffectPercent[info.Key])">@FmtPct(item.EffectPercent[info.Key])</td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private const string SortName = "name";
+    private const string SortLordship = "lordship";
+    private const string SortType = "type";
+    private const string SortProdCost = "prodcost";
+    private const string SortGoldCost = "goldcost";
+
+    [Parameter] public IEnumerable<BuildingTemplateDTO> Items { get; set; } = Array.Empty<BuildingTemplateDTO>();
+    [Parameter] public bool CanProposeBuild { get; set; }
+    [Parameter] public bool CanManageCatalog { get; set; }
+    [Parameter] public EventCallback<BuildingTemplateDTO> OnProposeBuild { get; set; }
+    [Parameter] public EventCallback<BuildingTemplateDTO> OnEditTemplate { get; set; }
+    [Parameter] public EventCallback<BuildingTemplateDTO> OnDeleteTemplate { get; set; }
+
+    private string _sortKey = SortName;
+    private bool _sortDesc;
+
+    private IEnumerable<BuildingTemplateDTO> SortedItems => ApplySort(Items);
+
+    private static bool IsCityBuilding(BuildingTemplateDTO item) =>
+        string.Equals(item.Kind, BuildingKind.Building, StringComparison.OrdinalIgnoreCase);
+
+    private Task ProposeBuildAsync(BuildingTemplateDTO item) => OnProposeBuild.InvokeAsync(item);
+    private Task EditTemplateAsync(BuildingTemplateDTO item) => OnEditTemplate.InvokeAsync(item);
+    private Task DeleteTemplateAsync(BuildingTemplateDTO item) => OnDeleteTemplate.InvokeAsync(item);
+
+    private static string PpbSortKey(Ppb p) => $"ppb:{p}";
+
+    private void ToggleSort(string key)
+    {
+        if (_sortKey == key)
+            _sortDesc = !_sortDesc;
+        else
+        {
+            _sortKey = key;
+            _sortDesc = false;
+        }
+    }
+
+    private string SortClass(string key)
+        => _sortKey == key ? "catalog-th--sorted" : "";
+
+    private string SortIndicator(string key)
+    {
+        if (_sortKey != key)
+            return "";
+        return _sortDesc ? " ▼" : " ▲";
+    }
+
+    private IEnumerable<BuildingTemplateDTO> ApplySort(IEnumerable<BuildingTemplateDTO> items)
+    {
+        if (_sortKey.StartsWith("ppb:", StringComparison.Ordinal))
+        {
+            if (!Enum.TryParse<Ppb>(_sortKey["ppb:".Length..], out var ppb))
+                return items.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase);
+            return SortByPpb(items, ppb, _sortDesc);
+        }
+
+        return _sortKey switch
+        {
+            SortLordship => _sortDesc
+                ? items.OrderByDescending(x => x.RequiredLordshipLevel).ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+                : items.OrderBy(x => x.RequiredLordshipLevel).ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase),
+            SortType => _sortDesc
+                ? items.OrderByDescending(x => x.Kind, StringComparer.OrdinalIgnoreCase).ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+                : items.OrderBy(x => x.Kind, StringComparer.OrdinalIgnoreCase).ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase),
+            SortProdCost => _sortDesc
+                ? items.OrderByDescending(x => x.ProductionCost).ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+                : items.OrderBy(x => x.ProductionCost).ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase),
+            SortGoldCost => _sortDesc
+                ? items.OrderByDescending(x => x.GoldCost).ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+                : items.OrderBy(x => x.GoldCost).ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase),
+            _ => _sortDesc
+                ? items.OrderByDescending(x => x.Name, StringComparer.OrdinalIgnoreCase)
+                : items.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase),
+        };
+    }
+
+    private static IEnumerable<BuildingTemplateDTO> SortByPpb(IEnumerable<BuildingTemplateDTO> items, Ppb ppb, bool desc)
+    {
+        decimal Add(BuildingTemplateDTO x) => x.EffectAdditive[ppb];
+        decimal Pct(BuildingTemplateDTO x) => x.EffectPercent[ppb];
+
+        return desc
+            ? items.OrderByDescending(Add).ThenByDescending(Pct).ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase)
+            : items.OrderBy(Add).ThenBy(Pct).ThenBy(x => x.Name, StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static IEnumerable<string> DescriptionLines(string description)
+    {
+        foreach (var line in description.Replace("\r\n", "\n").Split('\n'))
+        {
+            var t = line.Trim();
+            if (t.Length > 0)
+                yield return t;
+        }
+    }
+
+    private static string TypeLabel(string? kind)
+        => string.IsNullOrWhiteSpace(kind) ? "·" : kind;
+
+    private static string FmtLevel(int level)
+        => level <= 0 ? "·" : level.ToString();
+
+    private static string FmtCost(decimal cost)
+        => PpbFormat.Round(cost) == 0m ? "·" : PpbFormat.Number(cost);
+
+    private static string FmtAdd(decimal v) => PpbFormat.Additive(v);
+    private static string FmtPct(decimal v) => PpbFormat.Percent(v);
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        Ppb.Treasury => "Gold",
+        _ => p.ToString(),
+    };
+}

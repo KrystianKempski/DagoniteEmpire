@@ -1,0 +1,66 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog">
+            <MudTextField @bind-Value="_name"
+                          Label="Name"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Required="true"
+                          Class="baron-influence-field" />
+            <MudTextField @bind-Value="_description"
+                          Label="Description"
+                          HelperText="Optional description shown on name hover."
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="3"
+                          Class="baron-influence-field" />
+            <PpbVectorEditor @bind-Value="_additive" Title="PPB additive (+)" Compact="true" />
+            <PpbVectorEditor @bind-Value="_percent" Title="PPB percent (%)" Compact="true" Percent="true" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public DecreeDTO Decree { get; set; } = new();
+
+    private string _name = string.Empty;
+    private string? _description;
+    private PpbVector _additive = new();
+    private PpbVector _percent = new();
+
+    protected override void OnInitialized()
+    {
+        _name = Decree.Name;
+        _description = Decree.Description;
+        _additive = Decree.Additive.Clone();
+        _percent = Decree.Percent.Clone();
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _snackBar.Add("Name is required.", Severity.Warning);
+            return;
+        }
+
+        Decree.Name = _name.Trim();
+        Decree.Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim();
+        Decree.Additive = _additive.Clone();
+        Decree.Percent = _percent.Clone();
+        MudDialog.Close(DialogResult.Ok(Decree));
+    }
+}

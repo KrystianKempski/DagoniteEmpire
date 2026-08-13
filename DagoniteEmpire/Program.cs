@@ -18,6 +18,8 @@ using DA_Models.CharacterModels;
 using DA_Models.ChatModels;
 using MudBlazor;
 using DA_Business.Repository.ChatRepos;
+using DA_Business.Repository.BaronyRepos;
+using DA_Business.Repository.MarchMapRepos;
 using DA_Business.Services.Interfaces;
 using DA_Business.Services;
 using Cropper.Blazor.Extensions;
@@ -92,6 +94,9 @@ public class Program
                                         npgsqlOptions.EnableRetryOnFailure();
                                         npgsqlOptions.UseVector(); // Enable pgvector for SCRIBE
                                     });
+            // Hand-written SQL migrations update the snapshot; ignore EF's strict model-diff check.
+            options.ConfigureWarnings(w =>
+                w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
             if (builder.Environment.IsDevelopment())
             {
                 options.EnableDetailedErrors();
@@ -147,7 +152,13 @@ public class Program
         builder.Services.AddScoped<IBattlePhaseRepository, BattlePhaseRepository>();
         builder.Services.AddScoped<IBattleMapRepository, BattleMapRepository>();
         builder.Services.AddScoped<IBattleEventRepository, BattleEventRepository>();
+        builder.Services.AddScoped<IBaronyRepository, BaronyRepository>();
+        builder.Services.AddScoped<IBaronyBattleMapRepository, BaronyBattleMapRepository>();
+        builder.Services.AddScoped<IBaronyPlayerNoteRepository, BaronyPlayerNoteRepository>();
+        builder.Services.AddScoped<IMarchMapRepository, MarchMapRepository>();
         builder.Services.AddScoped<IUserService, UserService>();
+        builder.Services.AddScoped<IDemoBaronyService, DemoBaronyService>();
+        builder.Services.AddHostedService<DemoSessionSweeper>();
         builder.Services.AddScoped<ICampaignSummaryService, CampaignSummaryService>();
         builder.Services.AddScoped<CallbackService>();
         builder.Services.AddScoped<IFileUpload, FileUpload>();

@@ -1,0 +1,73 @@
+@namespace DagoniteEmpire.Pages.Barony
+@inherits LayoutComponentBase
+@layout DagoniteEmpire.Shared.MainLayout
+@inject NavigationManager NavigationManager
+
+<div class="barony-scope @(IsDomainPanel ? "barony-scope--domain-panel" : "") @(IsBuildingsCatalog ? "barony-scope--buildings-catalog" : "") @(IsMarchMap ? "barony-scope--march-map" : "") @(IsBattleMap ? "barony-scope--battle-map" : "")">
+    <DemoModeBanner />
+    <CascadingValue Value="@_viewOptions">
+        @* Fill wrapper only for full-viewport map pages — plain pages stay unwrapped. *@
+        @if (IsMarchMap || IsBattleMap)
+        {
+            <div class="barony-scope-body--fill">
+                <BaronyResourceHud />
+                @Body
+                <AuthorizeView Roles="@(SD.Role_DukePlayer + "," + SD.Role_Admin + "," + SD.Role_GameMaster)">
+                    <Authorized>
+                        <BaronLetterInboxFab />
+                    </Authorized>
+                </AuthorizeView>
+                <AuthorizeView Roles="@SD.Role_DukePlayer">
+                    <Authorized>
+                        <BaronReminderFab />
+                    </Authorized>
+                </AuthorizeView>
+            </div>
+        }
+        else
+        {
+            <BaronyResourceHud />
+            @Body
+            <AuthorizeView Roles="@(SD.Role_DukePlayer + "," + SD.Role_Admin + "," + SD.Role_GameMaster)">
+                <Authorized>
+                    <BaronLetterInboxFab />
+                </Authorized>
+            </AuthorizeView>
+            <AuthorizeView Roles="@SD.Role_DukePlayer">
+                <Authorized>
+                    <BaronReminderFab />
+                </Authorized>
+            </AuthorizeView>
+        }
+    </CascadingValue>
+
+    <AuthorizeView Roles="@BaronRoles">
+        <Authorized>
+            <BaronyCardTabs />
+        </Authorized>
+    </AuthorizeView>
+</div>
+
+@code {
+    private const string BaronRoles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer;
+
+    private readonly BaronyViewOptions _viewOptions = new();
+
+    private string CurrentPath
+    {
+        get
+        {
+            var relative = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+            var pathOnly = relative.Split('?', '#')[0].TrimEnd('/');
+            return pathOnly.Length == 0 ? "/" : "/" + pathOnly;
+        }
+    }
+
+    private bool IsDomainPanel => CurrentPath == "/barony";
+
+    private bool IsBuildingsCatalog => CurrentPath == "/barony/buildings";
+
+    private bool IsMarchMap => CurrentPath == "/barony/march-map";
+
+    private bool IsBattleMap => CurrentPath == "/barony/battle-map";
+}

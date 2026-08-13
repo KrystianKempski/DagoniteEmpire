@@ -1,0 +1,196 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<BaronySection Title="Baron and Advisors">
+    <Summary>
+        <PpbSummaryChips Vector="@Glance" />
+    </Summary>
+    <ChildContent>
+        @if (AdvisorList.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No baron or advisors assigned yet.</MudText>
+        }
+        else
+        {
+            <div style="overflow-x:auto;">
+                <table class="ppb-table ppb-table--advisors ppb-table--lined">
+                    <colgroup>
+                        <col class="advisor-col-role" />
+                        <col class="advisor-col-name" />
+                        @foreach (var _ in PpbCatalog.All)
+                        {
+                            <col class="ppb-pair-col" />
+                            <col class="ppb-pair-col" />
+                        }
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th rowspan="2" class="ppb-row-label advisor-col-role">Role</th>
+                            <th rowspan="2" class="ppb-row-label advisor-col-name">Name</th>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <th colspan="2"><BaronyTooltip Text="@info.NameEn">@PpbShort(info.Key)</BaronyTooltip></th>
+                            }
+                        </tr>
+                        <tr>
+                            @foreach (var _ in PpbCatalog.All)
+                            {
+                                <th class="ppb-subcol ppb-subcol--add">+</th>
+                                <th class="ppb-subcol ppb-subcol--pct">%</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var advisor in AdvisorList)
+                        {
+                            <tr class="@(advisor.IsBaron ? "advisor-row--baron" : "")">
+                                <td class="ppb-row-label advisor-col-role">
+                                    @if (advisor.IsBaron)
+                                    {
+                                        <BaronyTooltip Title="Baron" Text="@BaronSkillPpbFormulas.BaronAdvisorNameTooltip">
+                                            <span>@BaronyCalc.AdvisorRoleLabel(advisor)</span>
+                                        </BaronyTooltip>
+                                    }
+                                    else
+                                    {
+                                        var officeTip = OfficeTooltip(advisor);
+                                        @if (!string.IsNullOrWhiteSpace(officeTip))
+                                        {
+                                            <BaronyTooltip Title="@BaronyCalc.AdvisorRoleLabel(advisor)" Text="@officeTip">
+                                                <span>
+                                                    @BaronyCalc.AdvisorRoleLabel(advisor)
+                                                    @if (!string.IsNullOrWhiteSpace(advisor.FormulaText))
+                                                    {
+                                                        <MudIcon Icon="@Icons.Material.Outlined.Functions" Size="Size.Small" Class="ml-1" Style="vertical-align:text-bottom;opacity:.6;" />
+                                                    }
+                                                </span>
+                                            </BaronyTooltip>
+                                        }
+                                        else
+                                        {
+                                            <span>
+                                                @BaronyCalc.AdvisorRoleLabel(advisor)
+                                                @if (!string.IsNullOrWhiteSpace(advisor.FormulaText))
+                                                {
+                                                    <MudIcon Icon="@Icons.Material.Outlined.Functions" Size="Size.Small" Class="ml-1" Style="vertical-align:text-bottom;opacity:.6;" />
+                                                }
+                                            </span>
+                                        }
+                                    }
+                                </td>
+                                <td class="advisor-col-name">
+                                    @if (advisor.IsBaron)
+                                    {
+                                        <BaronyTooltip Title="Baron" Text="@BaronSkillPpbFormulas.BaronAdvisorNameTooltip">
+                                            <span>@DisplayName(advisor)</span>
+                                        </BaronyTooltip>
+                                    }
+                                    else
+                                    {
+                                        var personTip = BaronyCalc.ResolvePersonDescription(advisor);
+                                        @if (!string.IsNullOrWhiteSpace(personTip))
+                                        {
+                                            <BaronyTooltip Title="@DisplayName(advisor)" Text="@personTip">
+                                                <span>@DisplayName(advisor)</span>
+                                            </BaronyTooltip>
+                                        }
+                                        else
+                                        {
+                                            @DisplayName(advisor)
+                                        }
+                                    }
+                                </td>
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    var add = advisor.Additive[info.Key];
+                                    var pct = advisor.Percent[info.Key];
+                                    var addTip = advisor.IsBaron
+                                        ? BaronSkillPpbFormulas.ExplainAdvisorAdditive(info.Key)
+                                        : BaronyCalc.ExplainOfficeAdvisorAdditive(advisor, info.Key);
+                                    var pctTip = advisor.IsBaron
+                                        ? BaronSkillPpbFormulas.ExplainAdvisorPercent(info.Key)
+                                        : BaronyCalc.ExplainOfficeAdvisorPercent(advisor, info.Key);
+                                    <td class="@PpbCellStyle.ValueClass(info.Key, add)">
+                                        @if (addTip is not null)
+                                        {
+                                            <BaronyTooltip Title="@info.NameEn" Text="@addTip">
+                                                <span>@FmtAdd(add)</span>
+                                            </BaronyTooltip>
+                                        }
+                                        else
+                                        {
+                                            @FmtAdd(add)
+                                        }
+                                    </td>
+                                    <td class="@PpbCellStyle.ValueClass(info.Key, pct)">
+                                        @if (pctTip is not null)
+                                        {
+                                            <BaronyTooltip Title="@info.NameEn" Text="@pctTip">
+                                                <span>@FmtPct(pct)</span>
+                                            </BaronyTooltip>
+                                        }
+                                        else
+                                        {
+                                            @FmtPct(pct)
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                        <tr class="ppb-summary-row">
+                            <td class="ppb-row-label" colspan="2">Σ section</td>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <td class="@PpbCellStyle.ValueClass(info.Key, AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>
+                                <td class="@PpbCellStyle.ValueClass(info.Key, PercentSum[info.Key])"><b>@FmtPct(PercentSum[info.Key])</b></td>
+                            }
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public IEnumerable<AdvisorDTO>? Advisors { get; set; }
+
+    private List<AdvisorDTO> AdvisorList => BaronyCalc.OrderAdvisors(Advisors);
+    private PpbVector AdditiveSum => BaronyCalc.SumAdvisorAdditive(AdvisorList);
+    private PpbVector PercentSum => BaronyCalc.SumAdvisorPercent(AdvisorList);
+    private PpbVector Glance => BaronyCalc.SectionGlance(BaronyCalc.AdvisorRows(AdvisorList));
+
+    private static string DisplayName(AdvisorDTO advisor)
+        => string.IsNullOrWhiteSpace(advisor.PersonName) ? "Unassigned" : advisor.PersonName;
+
+    private static string OfficeTooltip(AdvisorDTO advisor)
+    {
+        var parts = new List<string>();
+        var office = BaronyCalc.ResolveOfficeDescription(advisor);
+        if (!string.IsNullOrWhiteSpace(office))
+            parts.Add(office);
+        if (!string.IsNullOrWhiteSpace(advisor.FormulaText))
+            parts.Add(advisor.FormulaText);
+        return parts.Count == 0 ? string.Empty : string.Join("\n\n", parts);
+    }
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        Ppb.Treasury => "Gold",
+        _ => p.ToString(),
+    };
+
+    private static string FmtAdd(decimal v) => PpbFormat.Additive(v);
+    private static string FmtPct(decimal v) => PpbFormat.Percent(v);
+}

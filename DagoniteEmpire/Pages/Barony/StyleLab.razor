@@ -1,0 +1,101 @@
+@page "/barony/style-lab"
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+
+<PageTitle>Dagonite Empire | Barony Style Lab</PageTitle>
+
+<div class="barony-scope">
+    <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="px-0">
+        <h1 class="barony-page-title">Barony Style Lab</h1>
+        <MudText Class="mb-4" Style="color:var(--barony-muted);">
+            PPB table variants and a generic Barony Card. After selection, one variant can be set as default.
+        </MudText>
+
+        <MudGrid>
+            <MudItem xs="12">
+                <div class="barony-card mb-4">
+                    <div class="barony-card__title">Variant A - zebra</div>
+                    <PpbTable Rows="@_rows" Summary="@_summary" TableClass="ppb-table--zebra" />
+                </div>
+            </MudItem>
+
+            <MudItem xs="12">
+                <div class="barony-card mb-4">
+                    <div class="barony-card__title">Variant B - lines + hover</div>
+                    <PpbTable Rows="@_rows" Summary="@_summary" TableClass="ppb-table--lined" />
+                </div>
+            </MudItem>
+
+            <MudItem xs="12">
+                <div class="barony-card mb-4">
+                    <div class="barony-card__title">Variant C - compact</div>
+                    <PpbTable Rows="@_rows" Summary="@_summary" TableClass="ppb-table--compact" />
+                </div>
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <div class="barony-card mb-4">
+                    <div class="barony-card__title">Collapsible Section (preview)</div>
+                    <CascadingValue Value="@_viewOptions">
+                        <MudSwitch T="bool" @bind-Value="_defaultExpanded" Color="Color.Default" Label="Expanded by default" Class="mb-2" />
+                        <BaronySection Title="City and Buildings">
+                            <Summary>
+                                <PpbSummaryChips Vector="@_summary" />
+                            </Summary>
+                            <ChildContent>
+                                <PpbTable Rows="@_rows" Summary="@_summary" TableClass="ppb-table--zebra" />
+                            </ChildContent>
+                        </BaronySection>
+                    </CascadingValue>
+                </div>
+            </MudItem>
+
+            <MudItem xs="12" md="6">
+                <div class="barony-card mb-4">
+                    <div class="barony-card__title">Barony Card - example</div>
+                    <div class="barony-stat"><span class="barony-stat__label">Year / Season</span><span class="barony-stat__value">627 / Summer</span></div>
+                    <div class="barony-stat"><span class="barony-stat__label">Turn</span><span class="barony-stat__value">7</span></div>
+                    <div class="barony-stat"><span class="barony-stat__label">Treasury Gold</span><span class="barony-stat__value">1 240</span></div>
+                    <div class="barony-stat"><span class="barony-stat__label">Unrest</span><span class="barony-stat__value">3</span></div>
+                    <div class="barony-stat"><span class="barony-stat__label">Barony Size</span><span class="barony-stat__value">18 tiles</span></div>
+                    <div class="barony-stat"><span class="barony-stat__label">Food Growth</span><span class="barony-stat__value">+12</span></div>
+                </div>
+            </MudItem>
+        </MudGrid>
+    </MudContainer>
+</div>
+
+@code {
+    private readonly BaronyViewOptions _viewOptions = new();
+    private bool _defaultExpanded = true;
+
+    private List<PpbModifierRow> _rows = new();
+    private PpbVector _summary = new();
+
+    protected override void OnParametersSet()
+    {
+        _viewOptions.DefaultExpanded = _defaultExpanded;
+    }
+
+    protected override void OnInitialized()
+    {
+        var townHall = new PpbModifierRow { Label = "Town Hall", Formula = "Core administrative building" };
+        townHall.Additive[Ppb.Loyalty] = 2;
+        townHall.Additive[Ppb.Law] = 1;
+        townHall.Additive[Ppb.Treasury] = -5;
+
+        var market = new PpbModifierRow { Label = "Market" };
+        market.Additive[Ppb.Economy] = 3;
+        market.Percent[Ppb.Treasury] = 10;
+        market.Additive[Ppb.Culture] = -1;
+
+        var temple = new PpbModifierRow { Label = "Temple" };
+        temple.Additive[Ppb.Stability] = 2;
+        temple.Additive[Ppb.Culture] = 2;
+        temple.Additive[Ppb.Corruption] = -1;
+
+        _rows = new List<PpbModifierRow> { townHall, market, temple };
+
+        _summary = PpbVector.Sum(_rows.Select(r => r.Additive));
+        _summary.AddInPlace(PpbVector.Sum(_rows.Select(r => r.Percent)));
+    }
+}

@@ -1,0 +1,141 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            <MudSelect T="int"
+                       Label="Assigned person"
+                       Value="_selectedAvailableId"
+                       ValueChanged="OnAvailableChanged"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Class="baron-influence-field">
+                <MudSelectItem Value="0">Nobody</MudSelectItem>
+                @foreach (var person in SelectableAvailableAdvisors)
+                {
+                    <MudSelectItem Value="@person.Id">@person.Name</MudSelectItem>
+                }
+            </MudSelect>
+            @if (SelectedPerson is not null && !string.IsNullOrWhiteSpace(SelectedPerson.Description))
+            {
+                <MudText Typo="Typo.body2" Class="advisor-profile-description mt-2">
+                    @SelectedPerson.Description
+                </MudText>
+            }
+            @if (AllowTitleEdit)
+            {
+                <MudTextField @bind-Value="_title"
+                              Label="Office title"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Class="baron-influence-field mt-2"
+                              Required="true" />
+            }
+            @if (AllowUpkeepEdit)
+            {
+                <MudNumericField T="decimal"
+                                 @bind-Value="_upkeepGold"
+                                 Label="Upkeep cost (gold / turn)"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Min="0"
+                                 Class="baron-influence-field mt-2" />
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public AdvisorDTO Advisor { get; set; } = new();
+    [Parameter] public bool AllowTitleEdit { get; set; }
+    /// <summary>MG/Admin only — baron only assigns / dismisses people.</summary>
+    [Parameter] public bool AllowUpkeepEdit { get; set; }
+    [Parameter] public List<AvailableAdvisorDTO> AvailableAdvisors { get; set; } = new();
+    [Parameter] public HashSet<int> OccupiedAvailableAdvisorIds { get; set; } = new();
+
+    private string _title = string.Empty;
+    private decimal _upkeepGold;
+    private int _selectedAvailableId;
+
+    private IEnumerable<AvailableAdvisorDTO> SelectableAvailableAdvisors =>
+        AvailableAdvisors
+            .Where(a => !OccupiedAvailableAdvisorIds.Contains(a.Id) || a.Id == Advisor.AvailableAdvisorId)
+            .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase);
+
+    private AvailableAdvisorDTO? SelectedPerson =>
+        _selectedAvailableId > 0
+            ? AvailableAdvisors.FirstOrDefault(a => a.Id == _selectedAvailableId)
+            : null;
+
+    protected override void OnInitialized()
+    {
+        _selectedAvailableId = Advisor.AvailableAdvisorId ?? 0;
+        _title = Advisor.Title;
+        _upkeepGold = Advisor.UpkeepGold;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (AllowTitleEdit && string.IsNullOrWhiteSpace(_title))
+        {
+            _snackBar.Add("Office title is required.", Severity.Warning);
+            return;
+        }
+
+        if (AllowUpkeepEdit)
+            Advisor.UpkeepGold = _upkeepGold;
+        if (AllowTitleEdit)
+            Advisor.Title = _title.Trim();
+
+        if (_selectedAvailableId <= 0)
+        {
+            Advisor.PersonName = string.Empty;
+            Advisor.PersonDescription = null;
+            Advisor.Skills = new PpbVector();
+            Advisor.AvailableAdvisorId = null;
+        }
+        else if (SelectedPerson is not null)
+        {
+            Advisor.PersonName = SelectedPerson.Name;
+            Advisor.PersonDescription = SelectedPerson.Description;
+            Advisor.Skills = SelectedPerson.Skills.Clone();
+            Advisor.Skills[Ppb.Treasury] = 0m;
+            Advisor.AvailableAdvisorId = SelectedPerson.Id;
+        }
+
+        // Keep / restore office flavor — never replace with the person's bio.
+        var catalog = OfficeDescriptions.For(Advisor.OfficeType);
+        if (catalog is not null)
+            Advisor.Description = catalog;
+
+        MudDialog.Close(DialogResult.Ok(Advisor));
+    }
+
+    private void OnAvailableChanged(int id)
+    {
+        _selectedAvailableId = id;
+        if (id <= 0)
+        {
+            Advisor.Skills = new PpbVector();
+            return;
+        }
+
+        var selected = AvailableAdvisors.FirstOrDefault(a => a.Id == id);
+        if (selected is null)
+            return;
+
+        Advisor.Skills = selected.Skills.Clone();
+        Advisor.Skills[Ppb.Treasury] = 0m;
+    }
+}

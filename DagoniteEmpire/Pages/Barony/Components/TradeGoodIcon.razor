@@ -1,0 +1,61 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+@if (string.IsNullOrWhiteSpace(Title))
+{
+    @IconMarkup
+}
+else
+{
+    <BaronyTooltip Text="@Title">
+        @IconMarkup
+    </BaronyTooltip>
+}
+
+@code {
+    [Parameter] public string? GoodKey { get; set; }
+    [Parameter] public TradeGoodEntry? Good { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private TradeGoodEntry? Resolved => Good ?? TradeGoodsCatalog.Find(GoodKey);
+
+    private string? ResolvedKey => Resolved?.Key ?? GoodKey;
+
+    private bool NeedsOutline => TradeGoodsCatalog.NeedsDarkOutline(ResolvedKey);
+
+    private bool UsesBakedStroke => TradeGoodsCatalog.UsesBakedStrokeIcon(ResolvedKey);
+
+    private string ResolvedIconUrl =>
+        Resolved?.IconUrl ?? TradeGoodsCatalog.IconUrl(GoodKey);
+
+    private string IconStyle
+    {
+        get
+        {
+            var icon = ResolvedIconUrl;
+            var color = Resolved?.ColorHex ?? TradeGoodsCatalog.ColorHex(GoodKey);
+            return $"--resource-color:{color};" +
+                   $"-webkit-mask-image:url('{icon}');" +
+                   $"mask-image:url('{icon}');";
+        }
+    }
+
+    private RenderFragment IconMarkup => __builder =>
+    {
+        if (UsesBakedStroke)
+        {
+            <img class="trade-good-icon trade-good-icon--img @Class"
+                 src="@ResolvedIconUrl"
+                 alt=""
+                 aria-hidden="true"
+                 aria-label="@Title" />
+        }
+        else
+        {
+            <span class="trade-good-icon @(NeedsOutline ? "resource-icon--dark-outline" : null) @Class"
+                  style="@IconStyle"
+                  aria-hidden="true"
+                  aria-label="@Title"></span>
+        }
+    };
+}

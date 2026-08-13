@@ -1,0 +1,113 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<table class="ppb-table ppb-table--source ppb-table--lined">
+    <thead>
+        <tr>
+            <th class="ppb-row-label source-col">Source</th>
+            @foreach (var info in SkillColumns)
+            {
+                <th><BaronyTooltip Text="@info.NameEn">@PpbShort(info.Key)</BaronyTooltip></th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var row in Rows)
+        {
+            <tr class="@(row.IsSystem ? "source-row--system" : "")">
+                <td class="ppb-row-label source-col">
+                    <div class="source-cell">
+                        @if (!string.IsNullOrWhiteSpace(row.Description))
+                        {
+                            <BaronyTooltip Title="Description" Text="@row.Description">
+                                <span class="source-cell__name">@row.Source</span>
+                            </BaronyTooltip>
+                        }
+                        else
+                        {
+                            <BaronyTooltip Text="@RowTitle(row)">
+                                <span class="source-cell__name">@row.Source</span>
+                            </BaronyTooltip>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(row.Formula))
+                        {
+                            <MudIcon Icon="@Icons.Material.Outlined.Functions" Size="Size.Small" Style="vertical-align:text-bottom;opacity:.6;" />
+                        }
+                        @if (!row.IsSystem && CanEdit)
+                        {
+                            <span class="source-cell__actions">
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => OnEdit.InvokeAsync(row))" />
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => OnDelete.InvokeAsync(row))" />
+                            </span>
+                        }
+                    </div>
+                </td>
+                @foreach (var info in SkillColumns)
+                {
+                    var tip = row.ValueTooltip?.Invoke(info.Key);
+                    <td class="@PpbCellStyle.ValueClass(info.Key, row.Values[info.Key])">
+                        @if (tip is not null)
+                        {
+                            <BaronyTooltip Title="@info.NameEn" Text="@tip">
+                                <span>@Fmt(row.Values[info.Key])</span>
+                            </BaronyTooltip>
+                        }
+                        else
+                        {
+                            @Fmt(row.Values[info.Key])
+                        }
+                    </td>
+                }
+            </tr>
+        }
+        @if (Summary is not null)
+        {
+            <tr class="ppb-summary-row">
+                <td class="ppb-row-label">@SummaryLabel</td>
+                @foreach (var info in SkillColumns)
+                {
+                    var v = Summary[info.Key];
+                    <td class="@PpbCellStyle.ValueClass(info.Key, v)"><b>@Fmt(v)</b></td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter] public IEnumerable<BaronInfluenceRow> Rows { get; set; } = Array.Empty<BaronInfluenceRow>();
+    [Parameter] public PpbVector? Summary { get; set; }
+    [Parameter] public string SummaryLabel { get; set; } = "Σ total";
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public EventCallback<BaronInfluenceRow> OnEdit { get; set; }
+    [Parameter] public EventCallback<BaronInfluenceRow> OnDelete { get; set; }
+
+    private static IEnumerable<PpbInfo> SkillColumns
+        => PpbCatalog.All.Where(p => p.Key != Ppb.Treasury);
+
+    private static string RowTitle(BaronInfluenceRow row)
+    {
+        if (string.IsNullOrWhiteSpace(row.Formula))
+            return row.Source;
+        return $"{row.Source} | {row.Formula}";
+    }
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        Ppb.Treasury => "Gold",
+        _ => p.ToString(),
+    };
+
+    private static string Fmt(decimal v) => PpbFormat.Additive(v);
+}

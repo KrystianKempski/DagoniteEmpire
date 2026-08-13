@@ -1,0 +1,60 @@
+@page "/barony/relations"
+@layout BaronyLayout
+@inherits BaronyPageBase
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+
+<PageTitle>Dagonite Empire | Relations</PageTitle>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading relations...</span>
+}
+else if (LoadError is not null)
+{
+    <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
+}
+else if (_overview is not null)
+{
+    <BaronyPageHeader Title="Relations" HelpKey="relations">
+        <Summary>
+            <span class="projects-summary">
+                <span class="projects-summary__item">@_relations.Count contact@(_relations.Count == 1 ? "" : "s")</span>
+            </span>
+        </Summary>
+    </BaronyPageHeader>
+
+    @foreach (var category in RelationCategory.All)
+    {
+        <RelationsSection BaronyId="@BaronyId"
+                          Category="@category"
+                          Relations="@_relations"
+                          CanEdit="@CanEdit"
+                          CanManage="@CanManageAsMg"
+                          OnChanged="ReloadAsync" />
+    }
+}
+
+@code {
+    private BaronyOverviewDTO? _overview;
+    private List<BaronyRelationDTO> _relations = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBaronyAsync();
+        if (Barony is null)
+            return;
+
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (Barony is null)
+            return;
+
+        _overview = await _baronyRepo.GetOverview(Barony.Id);
+        _relations = _overview?.Relations ?? new List<BaronyRelationDTO>();
+        NotifyResourceHud();
+        await InvokeAsync(StateHasChanged);
+    }
+}

@@ -1,0 +1,103 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IBaronyRepository _baronyRepo
+@inject IUserService _userService
+@inject IDialogService _dialogService
+@inject NavigationManager _navigationManager
+@inject ISnackbar _snackBar
+
+@if (_visible)
+{
+    <BaronyTooltip Text="Switch barony">
+        <button type="button"
+                class="barony-meta-bar__name barony-meta-bar__name--switch"
+                @onclick="OpenSwitchDialogAsync">
+        @(_selected?.Name ?? "Select barony")
+        </button>
+    </BaronyTooltip>
+}
+
+@code {
+    private bool _visible;
+    private List<BaronyListItemDTO> _baronies = new();
+    private BaronyListItemDTO? _selected;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userInfo = await _userService.GetUserInfo();
+        // Hidden demo accounts must never reach real baronies, even when they carry the GM role.
+        _visible = userInfo?.IsAdminOrMG == true && !SD.IsDemoUserName(userInfo?.UserName);
+        if (!_visible)
+            return;
+
+        await ReloadAsync(userInfo?.SelectedCharacter?.Id);
+
+        if (_baronies.Count > 0)
+        {
+            var charId = userInfo?.SelectedCharacter?.Id ?? 0;
+            var hasValidSelection = charId > 0 && _baronies.Any(b => b.CharacterId == charId);
+            if (!hasValidSelection)
+            {
+                _selected = _baronies[0];
+                await _userService.SetSelectedCharId(_selected.CharacterId);
+            }
+        }
+    }
+
+    private async Task ReloadAsync(int? selectedCharacterId)
+    {
+        try
+        {
+            _baronies = await _baronyRepo.GetAllSummaries();
+            _selected = selectedCharacterId is > 0
+                ? _baronies.FirstOrDefault(b => b.CharacterId == selectedCharacterId)
+                : _baronies.FirstOrDefault();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Failed to load baronies: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task OpenSwitchDialogAsync()
+    {
+        var parameters = new DialogParameters<BaronySwitchDialog>
+        {
+            { x => x.Baronies, _baronies },
+            { x => x.CurrentCharacterId, _selected?.CharacterId ?? 0 },
+        };
+
+        var dialog = await _dialogService.ShowAsync<BaronySwitchDialog>(
+            "Switch barony",
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronyListItemDTO picked)
+            return;
+
+        await OnBaronyChangedAsync(picked);
+    }
+
+    private async Task OnBaronyChangedAsync(BaronyListItemDTO barony)
+    {
+        if (_selected is not null && barony.CharacterId == _selected.CharacterId)
+            return;
+
+        _selected = barony;
+        try
+        {
+            await _userService.SetSelectedCharId(barony.CharacterId);
+            var uri = _navigationManager.Uri;
+            _navigationManager.NavigateTo(uri, forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Failed to switch barony: " + ex.Message, Severity.Error);
+        }
+    }
+}

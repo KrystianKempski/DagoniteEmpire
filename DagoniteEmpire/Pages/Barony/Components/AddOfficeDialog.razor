@@ -1,0 +1,80 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            <MudTextField @bind-Value="_title"
+                          Label="Office title"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="baron-influence-field"
+                          Required="true" />
+            <MudTextField @bind-Value="_personName"
+                          Label="Advisor name"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="baron-influence-field" />
+            <MudTextField @bind-Value="_description"
+                          Label="Office description"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="3"
+                          Class="baron-influence-field" />
+            <MudNumericField T="decimal"
+                             @bind-Value="_upkeepGold"
+                             Label="Upkeep cost (gold / turn)"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0"
+                             Class="baron-influence-field" />
+            <SignificantSkillsPicker @bind-Selected="_significantSkills" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public int BaronyId { get; set; }
+
+    private string _title = string.Empty;
+    private string _personName = "Unassigned";
+    private string? _description;
+    private decimal _upkeepGold;
+    private List<Ppb> _significantSkills = new();
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(_title))
+        {
+            _snackBar.Add("Office title is required.", Severity.Warning);
+            return;
+        }
+
+        if (_significantSkills.Count == 0)
+        {
+            _snackBar.Add("Select at least one significant skill.", Severity.Warning);
+            return;
+        }
+
+        MudDialog.Close(DialogResult.Ok(new AdvisorDTO
+        {
+            BaronyId = BaronyId,
+            OfficeType = OfficeType.Custom,
+            Title = _title.Trim(),
+            PersonName = string.IsNullOrWhiteSpace(_personName) ? "Unassigned" : _personName.Trim(),
+            Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim(),
+            UpkeepGold = _upkeepGold,
+            SignificantSkills = _significantSkills.ToList(),
+        }));
+    }
+}

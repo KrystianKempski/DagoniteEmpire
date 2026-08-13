@@ -1,0 +1,36 @@
+@page "/demo/enter"
+@using DA_Business.Services.Interfaces
+@using DA_Common
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@attribute [Authorize]
+@inject IUserService UserService
+@inject ProtectedSessionStorage SessionStorage
+@inject NavigationManager Nav
+
+<div class="d-flex flex-column align-center justify-center" style="min-height: 60vh; gap: 1rem;">
+    <MudProgressCircular Indeterminate="true" Size="Size.Large" />
+    <MudText Typo="Typo.h6">Preparing your demo barony…</MudText>
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "t")] public string? Token { get; set; }
+    [SupplyParameterFromQuery(Name = "c")] public int CharId { get; set; }
+
+    private bool _done;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _done)
+            return;
+        _done = true;
+
+        if (CharId > 0)
+            await UserService.SetSelectedCharId(CharId);
+
+        if (!string.IsNullOrWhiteSpace(Token))
+            await SessionStorage.SetAsync(ProtectedStorageKeys.DemoToken, Token);
+
+        Nav.NavigateTo("/barony", forceLoad: false);
+    }
+}

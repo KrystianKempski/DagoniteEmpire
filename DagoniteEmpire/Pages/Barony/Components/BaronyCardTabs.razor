@@ -1,0 +1,381 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@implements IAsyncDisposable
+@using DA_Business.Repository.BaronyRepos
+@using DA_Business.Services.Interfaces
+@using DA_Models.ChatModels
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager _navigationManager
+@inject IUserService _userService
+@inject IBaronyRepository _baronyRepo
+@inject IBaronyBattleMapRepository _battleMapRepo
+
+<nav class="barony-tabbar"
+     aria-label="Barony tabs"
+     @ondragover="OnNavDragOver"
+     @ondragover:preventDefault>
+    @foreach (var tab in _orderedTabs)
+    {
+        var key = tab.Key;
+        <BaronyTooltip Text="Hold and drag to reorder">
+        <div role="link"
+             tabindex="0"
+             draggable="true"
+             class="barony-tabbar__tab @(IsActive(tab.Href) ? "barony-tabbar__tab--active" : "") @(_dragKey == key ? "barony-tabbar__tab--dragging" : "") @(_dropTargetKey == key ? "barony-tabbar__tab--drop-target" : "")"
+             @ondragstart="e => OnDragStart(e, key)"
+             @ondragenter="e => OnDragEnter(e, key)"
+             @ondragleave="() => OnDragLeave(key)"
+             @ondragover="e => OnItemDragOver(e, key)"
+             @ondragover:preventDefault
+             @ondrop="e => OnDrop(e, key)"
+             @ondrop:preventDefault
+             @ondragend="OnDragEndAsync"
+             @onclick="() => OnTabActivate(tab.Href)"
+             @onkeydown="e => OnTabKeyDown(e, tab.Href)">
+            @if (!string.IsNullOrEmpty(tab.SvgIcon))
+            {
+                <img src="@tab.SvgIcon"
+                     class="barony-tabbar__svg-icon @(tab.Key == "relations" ? "barony-tabbar__svg-icon--lg" : "")"
+                     alt="" />
+            }
+            else if (!string.IsNullOrEmpty(tab.Icon))
+            {
+                var mudIcon = tab.Icon;
+                <MudIcon Icon="@mudIcon" Size="Size.Small" />
+            }
+            @tab.Label
+        </div>
+        </BaronyTooltip>
+    }
+</nav>
+
+@code {
+    private sealed record TabItem(string Key, string Label, string Href, string? Icon = null, string? SvgIcon = null);
+
+    private static readonly TabItem[] DefaultTabs =
+    {
+        new("domain", "Domain Panel", "/barony", Icons.Material.Filled.Dashboard),
+        new("resources", "Resources", "/barony/resources", SvgIcon: "/" + MyIcon.WoodenCrate),
+        new("budget", "Budget", "/barony/budget", SvgIcon: "/" + MyIcon.TwoCoins),
+        new("projects", "Projects", "/barony/projects", SvgIcon: "/" + MyIcon.GearHammer),
+        new("army", "Army", "/barony/army", Icons.Material.Filled.Shield),
+        new("battle-map", "Battle", "/barony/battle-map", SvgIcon: "/" + MyIcon.AxeSword),
+        new("buildings", "Buildings", "/barony/buildings", SvgIcon: "/" + MyIcon.WoodCabinBlack),
+        new("offices", "Court", "/barony/offices", SvgIcon: "/" + MyIcon.People),
+        new("terrain", "Terrain", "/barony/terrain", SvgIcon: "/" + MyIcon.WindmillBlack),
+        new("character-card", "Baron", "/barony/character-card", SvgIcon: "/" + MyIcon.JewelCrown),
+        new("letters", "Letters", "/barony/letters", SvgIcon: "/" + MyIcon.WaxSeal),
+        new("audiences", "Audiences", "/barony/audiences", SvgIcon: "/" + MyIcon.TiedScroll),
+        new("lords-seat", "Lord's Seat", "/barony/lords-seat", Icons.Material.Filled.Castle),
+        new("relations", "Relations", "/barony/relations", SvgIcon: "/" + MyIcon.ShakingHands),
+        new("known-lords", "Lords", "/barony/known-lords", SvgIcon: "/" + MyIcon.VerticalBanner),
+        new("march-map", "March map", "/barony/march-map", SvgIcon: "/" + MyIcon.Compass),
+        new("trade-goods", "Trade", "/barony/trade-goods", SvgIcon: "/" + MyIcon.Trade),
+        new("notes", "Notes", "/barony/notes", SvgIcon: "/" + MyIcon.Quill),
+    };
+
+    private List<TabItem> _orderedTabs = DefaultTabs.ToList();
+    private string? _dragKey;
+    private string? _dropTargetKey;
+    private string? _lastHoverKey;
+    private bool _orderChanged;
+    private bool _suppressNextClick;
+    private bool _showBattleMapTab = true;
+    private bool _showNotesTab;
+    private HubConnection? _hubConnection;
+    private int _baronyId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _navigationManager.LocationChanged += OnLocationChanged;
+        await LoadBattleMapVisibilityAsync();
+        await LoadOrderAsync();
+        await InitializeSignalRAsync();
+    }
+
+    private async Task InitializeSignalRAsync()
+    {
+        if (_baronyId <= 0)
+            return;
+        try
+        {
+            _hubConnection = new HubConnectionBuilder()
+                .WithUrl(_navigationManager.ToAbsoluteUri(ChatHub.HubUrl))
+                .WithAutomaticReconnect()
+                .Build();
+            _hubConnection.On<int>("BaronyBattleMapUpdated", OnBattleMapUpdated);
+            if (_hubConnection.State == HubConnectionState.Disconnected)
+                await _hubConnection.StartAsync();
+        }
+        catch
+        {
+            // Tab visibility refresh is best-effort; page reload still works.
+        }
+    }
+
+    private async Task OnBattleMapUpdated(int baronyId)
+    {
+        if (baronyId != _baronyId)
+            return;
+        await InvokeAsync(async () =>
+        {
+            await LoadBattleMapVisibilityAsync();
+            _orderedTabs = ApplySavedOrder(await SafeGetTabOrderJson());
+            StateHasChanged();
+        });
+    }
+
+    private async Task LoadBattleMapVisibilityAsync()
+    {
+        try
+        {
+            var user = await _userService.GetUserInfo();
+            if (user?.IsAdminOrMG == true)
+            {
+                // Notes are the baron player's private space; the MG never sees the tab.
+                _showBattleMapTab = true;
+                _showNotesTab = false;
+                return;
+            }
+
+            var characterId = user?.SelectedCharacter?.Id ?? 0;
+            if (characterId <= 0 || characterId == -1)
+            {
+                _showBattleMapTab = false;
+                _showNotesTab = false;
+                return;
+            }
+
+            var barony = await _baronyRepo.GetByCharacterId(characterId);
+            if (barony is null)
+            {
+                _showBattleMapTab = false;
+                _showNotesTab = false;
+                _baronyId = 0;
+                return;
+            }
+
+            _baronyId = barony.Id;
+            _showNotesTab = true;
+            _showBattleMapTab = await _battleMapRepo.IsActive(barony.Id);
+        }
+        catch
+        {
+            _showBattleMapTab = false;
+            _showNotesTab = false;
+        }
+    }
+
+    private IEnumerable<TabItem> VisibleDefaultTabs =>
+        DefaultTabs.Where(t => (t.Key != "battle-map" || _showBattleMapTab)
+                               && (t.Key != "notes" || _showNotesTab));
+
+    private async Task LoadOrderAsync()
+    {
+        try
+        {
+            var json = await _userService.GetBaronyTabOrderJson();
+            _orderedTabs = ApplySavedOrder(json);
+        }
+        catch
+        {
+            _orderedTabs = VisibleDefaultTabs.ToList();
+        }
+    }
+
+    private List<TabItem> ApplySavedOrder(string? json)
+    {
+        var visible = VisibleDefaultTabs.ToList();
+        var byKey = visible.ToDictionary(t => t.Key, StringComparer.Ordinal);
+        var result = new List<TabItem>();
+
+        if (!string.IsNullOrWhiteSpace(json))
+        {
+            try
+            {
+                var keys = System.Text.Json.JsonSerializer.Deserialize<List<string>>(json);
+                if (keys is not null)
+                {
+                    foreach (var key in keys)
+                    {
+                        if (byKey.Remove(key, out var tab))
+                            result.Add(tab);
+                    }
+                }
+            }
+            catch
+            {
+                // fall through
+            }
+        }
+
+        foreach (var tab in visible)
+        {
+            if (byKey.Remove(tab.Key, out var leftover))
+                result.Add(leftover);
+        }
+
+        return result.Count > 0 ? result : visible;
+    }
+
+    private async Task PersistOrderAsync()
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(_orderedTabs.Select(t => t.Key).ToList());
+        try
+        {
+            await _userService.SetBaronyTabOrderJson(json);
+        }
+        catch
+        {
+            // Ignore persistence failures.
+        }
+    }
+
+    private void OnDragStart(DragEventArgs e, string key)
+    {
+        _dragKey = key;
+        _dropTargetKey = null;
+        _lastHoverKey = null;
+        _orderChanged = false;
+        _suppressNextClick = false;
+        e.DataTransfer.EffectAllowed = "move";
+    }
+
+    private void OnNavDragOver(DragEventArgs e) => e.DataTransfer.DropEffect = "move";
+
+    private void RememberHover(string key)
+    {
+        if (_dragKey is null || _dragKey == key)
+            return;
+        _dropTargetKey = key;
+        _lastHoverKey = key;
+    }
+
+    private void OnItemDragOver(DragEventArgs e, string key)
+    {
+        e.DataTransfer.DropEffect = "move";
+        RememberHover(key);
+    }
+
+    private void OnDragEnter(DragEventArgs e, string key)
+    {
+        e.DataTransfer.DropEffect = "move";
+        RememberHover(key);
+    }
+
+    private void OnDragLeave(string key)
+    {
+        // Only clear highlight — keep _lastHoverKey for dragend fallback.
+        if (_dropTargetKey == key)
+            _dropTargetKey = null;
+    }
+
+    private void OnDrop(DragEventArgs e, string targetKey)
+    {
+        _lastHoverKey = targetKey;
+        ApplyMove(_dragKey, targetKey);
+        _suppressNextClick = true;
+    }
+
+    private void ApplyMove(string? dragKey, string? targetKey)
+    {
+        if (dragKey is null || targetKey is null)
+            return;
+        if (MoveTab(dragKey, targetKey))
+            _orderChanged = true;
+    }
+
+    /// <summary>
+    /// Moves <paramref name="dragKey"/> to the slot of <paramref name="targetKey"/>.
+    /// </summary>
+    private bool MoveTab(string dragKey, string targetKey)
+    {
+        if (string.Equals(dragKey, targetKey, StringComparison.Ordinal))
+            return false;
+
+        var from = _orderedTabs.FindIndex(t => t.Key == dragKey);
+        var to = _orderedTabs.FindIndex(t => t.Key == targetKey);
+        if (from < 0 || to < 0 || from == to)
+            return false;
+
+        var item = _orderedTabs[from];
+        _orderedTabs.RemoveAt(from);
+        // Do not decrement `to` when moving right — that would no-op on an adjacent tab.
+        _orderedTabs.Insert(to, item);
+        return true;
+    }
+
+    private async Task OnDragEndAsync()
+    {
+        // Browsers / Blazor sometimes skip drop; commit using last hover target.
+        if (!_orderChanged)
+            ApplyMove(_dragKey, _lastHoverKey);
+
+        if (_orderChanged)
+        {
+            _suppressNextClick = true;
+            await PersistOrderAsync();
+        }
+
+        _dragKey = null;
+        _dropTargetKey = null;
+        _lastHoverKey = null;
+        _orderChanged = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void OnTabActivate(string href)
+    {
+        if (_suppressNextClick)
+        {
+            _suppressNextClick = false;
+            return;
+        }
+
+        if (!IsActive(href))
+            _navigationManager.NavigateTo(href);
+    }
+
+    private void OnTabKeyDown(KeyboardEventArgs e, string href)
+    {
+        if (e.Key is "Enter" or " ")
+            OnTabActivate(href);
+    }
+
+    private bool IsActive(string href)
+    {
+        var current = "/" + _navigationManager.ToBaseRelativePath(_navigationManager.Uri);
+        var path = current.Split('?')[0].TrimEnd('/');
+        if (path.Length == 0)
+            path = "/";
+
+        if (href == "/barony")
+            return path == "/barony";
+
+        return path == href;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) =>
+        InvokeAsync(async () =>
+        {
+            await LoadBattleMapVisibilityAsync();
+            _orderedTabs = ApplySavedOrder(
+                await SafeGetTabOrderJson());
+            StateHasChanged();
+        });
+
+    private async Task<string?> SafeGetTabOrderJson()
+    {
+        try { return await _userService.GetBaronyTabOrderJson(); }
+        catch { return null; }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _navigationManager.LocationChanged -= OnLocationChanged;
+        if (_hubConnection is not null)
+        {
+            try { await _hubConnection.DisposeAsync(); }
+            catch { /* ignore */ }
+        }
+    }
+}

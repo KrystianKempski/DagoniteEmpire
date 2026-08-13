@@ -1,0 +1,119 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@implements IAsyncDisposable
+@inject IUserService _userService
+@inject IBaronyRepository _baronyRepo
+@inject IBaronyPlayerNoteRepository _notesRepo
+@inject NavigationManager _nav
+
+@if (_visible && _dueCount > 0)
+{
+    <div class="baron-letter-inbox-fab baron-letter-inbox-fab--reminder">
+        <MudBadge Content="@_dueCount" Color="Color.Error" Overlap="true" Bordered="true">
+            <BaronyTooltip Text="@($"Reminders due: {_dueCount}")">
+                <button type="button"
+                        class="baron-letter-inbox-fab__btn"
+                        @onclick="OpenRemindersAsync">
+                    <img src="@($"/{MyIcon.NoTurn}")" alt="" class="baron-letter-inbox-fab__icon" />
+                </button>
+            </BaronyTooltip>
+        </MudBadge>
+    </div>
+}
+
+@code {
+    private bool _visible;
+    private int _baronyId;
+    private int _dueCount;
+    private CancellationTokenSource? _cts;
+    private PeriodicTimer? _timer;
+    private Task? _loop;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var user = await _userService.GetUserInfo();
+        var asGm = user?.IsAdminOrMG == true
+            || user?.Role == SD.Role_Admin
+            || user?.Role == SD.Role_GameMaster;
+        // Notes (and therefore reminders) are a player-only space.
+        _visible = user?.Role == SD.Role_DukePlayer && !asGm;
+        if (!_visible)
+            return;
+
+        _cts = new CancellationTokenSource();
+        _timer = new PeriodicTimer(TimeSpan.FromSeconds(45));
+        _loop = PollLoopAsync(_cts.Token);
+        _nav.LocationChanged += OnLocationChanged;
+
+        await RefreshAsync();
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e) =>
+        _ = InvokeAsync(RefreshAsync);
+
+    private async Task PollLoopAsync(CancellationToken ct)
+    {
+        try
+        {
+            while (await _timer!.WaitForNextTickAsync(ct))
+                await InvokeAsync(RefreshAsync);
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private async Task RefreshAsync()
+    {
+        if (!_visible)
+            return;
+
+        try
+        {
+            if (_baronyId <= 0)
+            {
+                var user = await _userService.GetUserInfo();
+                var characterId = user?.SelectedCharacter?.Id ?? 0;
+                if (characterId <= 0)
+                {
+                    _dueCount = 0;
+                    StateHasChanged();
+                    return;
+                }
+
+                var barony = await _baronyRepo.GetByCharacterId(characterId);
+                if (barony is null)
+                {
+                    _dueCount = 0;
+                    StateHasChanged();
+                    return;
+                }
+
+                _baronyId = barony.Id;
+            }
+
+            _dueCount = await _notesRepo.GetDueReminderCount(_baronyId);
+            StateHasChanged();
+        }
+        catch
+        {
+            // Keep last known count on transient errors.
+        }
+    }
+
+    private void OpenRemindersAsync() => _nav.NavigateTo("/barony/notes?tab=reminders");
+
+    public async ValueTask DisposeAsync()
+    {
+        _nav.LocationChanged -= OnLocationChanged;
+        if (_cts is not null)
+        {
+            await _cts.CancelAsync();
+            _cts.Dispose();
+        }
+
+        _timer?.Dispose();
+        if (_loop is not null)
+        {
+            try { await _loop; }
+            catch (OperationCanceledException) { }
+        }
+    }
+}

@@ -1,0 +1,30 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+@if (_marks.Count > 0)
+{
+    <span class="character-mark-badges">
+        @foreach (var mark in _marks)
+        {
+            if (mark.ToMark() is not BaronyCharacterMark parsed)
+                continue;
+
+            <BaronyTooltip Text="@BaronyCharacterMarkCatalog.Tooltip(parsed)">
+                <MudIcon Icon="@CharacterMarkIcons.MaterialIcon(parsed.IconKey)"
+                         Size="Size.Small"
+                         Class="character-mark-badge"
+                         Style="@($"color:{BaronyCharacterMarkCatalog.ColorHex(parsed.ColorKey)}")" />
+            </BaronyTooltip>
+        }
+    </span>
+}
+
+@code {
+    [Parameter] public IReadOnlyList<BaronyCharacterMarkDTO>? Marks { get; set; }
+
+    private IReadOnlyList<BaronyCharacterMarkDTO> _marks = Array.Empty<BaronyCharacterMarkDTO>();
+
+    protected override void OnParametersSet()
+    {
+        _marks = BaronyCharacterMarkDTO.NormalizeList(Marks);
+    }
+}

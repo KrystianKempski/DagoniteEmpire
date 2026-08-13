@@ -1,0 +1,316 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IBaronyRepository _baronyRepo
+@inject ISnackbar _snackBar
+@inject IDialogService _dialogService
+
+<BaronySection Title="Decrees and Technologies">
+    <Summary>
+        <PpbSummaryChips Vector="@Glance" />
+    </Summary>
+    <ChildContent>
+        @if (Decrees.Count == 0 && TradeGoodRows.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                No decrees, technologies, or trade-good bonuses yet.
+                @if (CanManage)
+                {
+                    <text> Add a decree below.</text>
+                }
+            </MudText>
+        }
+        else
+        {
+            <div style="overflow-x:auto;">
+                <table class="ppb-table ppb-table--advisors ppb-table--city-buildings ppb-table--decrees ppb-table--lined">
+                    <colgroup>
+                        <col class="city-building-col-name" />
+                        <col class="decree-col-active" />
+                        @foreach (var _ in PpbCatalog.All)
+                        {
+                            <col class="ppb-pair-col" />
+                            <col class="ppb-pair-col" />
+                        }
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th rowspan="2" class="ppb-row-label city-building-col-name">Name</th>
+                            <th rowspan="2" class="decree-col-active">
+                                <BaronyTooltip Title="Active" Text="When checked, this row’s PPB is included in totals">Active</BaronyTooltip>
+                            </th>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <th colspan="2"><BaronyTooltip Text="@info.NameEn">@PpbShort(info.Key)</BaronyTooltip></th>
+                            }
+                        </tr>
+                        <tr>
+                            @foreach (var _ in PpbCatalog.All)
+                            {
+                                <th class="ppb-subcol ppb-subcol--add">+</th>
+                                <th class="ppb-subcol ppb-subcol--pct">%</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in OrderedDecrees)
+                        {
+                            var inactive = !item.IsActive;
+                            <tr class="@(inactive ? "decree-row--inactive" : null)">
+                                <td class="city-building-col-name">
+                                    <div class="city-building-name-cell">
+                                        <BaronyTooltip Title="Description" Text="@NameTooltip(item)">
+                                            <span class="city-building-name-text">@item.Name</span>
+                                        </BaronyTooltip>
+                                        @if (CanManage)
+                                        {
+                                            <span class="city-building-name-actions">
+                                                <BaronyTooltip Text="Edit decree">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                                   Size="Size.Small"
+                                                                   OnClick="@(() => EditAsync(item))" />
+                                                </BaronyTooltip>
+                                                <BaronyTooltip Text="Remove decree">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                                   Size="Size.Small"
+                                                                   Color="Color.Error"
+                                                                   OnClick="@(() => DeleteAsync(item))" />
+                                                </BaronyTooltip>
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="decree-col-active">
+                                    <div class="decree-active-cell">
+                                        <MudCheckBox T="bool"
+                                                     Value="@item.IsActive"
+                                                     ValueChanged="@(v => ToggleActiveAsync(item, v))"
+                                                     Disabled="@(!CanToggleActive)"
+                                                     Size="Size.Small"
+                                                     Dense="true"
+                                                     Color="Color.Primary"
+                                                     Class="decree-active-checkbox" />
+                                    </div>
+                                </td>
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    <td class="@PpbCellClass(info.Key, item.Additive[info.Key], inactive)">@FmtAdd(item.Additive[info.Key])</td>
+                                    <td class="@PpbCellClass(info.Key, item.Percent[info.Key], inactive)">@FmtPct(item.Percent[info.Key])</td>
+                                }
+                            </tr>
+                        }
+
+                        @foreach (var row in TradeGoodRows)
+                        {
+                            <tr>
+                                <td class="city-building-col-name">
+                                    <div class="city-building-name-cell">
+                                        <BaronyTooltip Title="@row.Label" Text="@(row.Note ?? "Trade goods / luxury — always active")">
+                                            <span class="city-building-name-text">@row.Label</span>
+                                        </BaronyTooltip>
+                                    </div>
+                                </td>
+                                <td class="decree-col-active">
+                                    <div class="decree-active-cell">
+                                        <BaronyTooltip Text="Always active">
+                                            <MudCheckBox T="bool"
+                                                         Value="true"
+                                                         Disabled="true"
+                                                         ReadOnly="true"
+                                                         Size="Size.Small"
+                                                         Dense="true"
+                                                         Color="Color.Primary"
+                                                         Class="decree-active-checkbox" />
+                                        </BaronyTooltip>
+                                    </div>
+                                </td>
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    <td class="@PpbCellClass(info.Key, row.Additive[info.Key], inactive: false)">@FmtAdd(row.Additive[info.Key])</td>
+                                    <td class="@PpbCellClass(info.Key, row.Percent[info.Key], inactive: false)">@FmtPct(row.Percent[info.Key])</td>
+                                }
+                            </tr>
+                        }
+
+                        <tr class="ppb-summary-row">
+                            <td class="ppb-row-label city-building-col-name">Σ section</td>
+                            <td class="decree-col-active decree-col-active--summary"></td>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <td class="@SummaryCellClass(info.Key, AdditiveSum[info.Key])">@FmtAdd(AdditiveSum[info.Key])</td>
+                                <td class="@SummaryCellClass(info.Key, PercentSum[info.Key])">@FmtPct(PercentSum[info.Key])</td>
+                            }
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        @if (CanManage)
+        {
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                <MudButton Variant="Variant.Outlined"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="AddAsync">
+                    Add Decree / Technology
+                </MudButton>
+            </div>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public int BaronyId { get; set; }
+    [Parameter] public List<DecreeDTO> Decrees { get; set; } = new();
+    [Parameter] public List<PpbModifierRow> TradeGoodRows { get; set; } = new();
+    [Parameter] public bool CanManage { get; set; }
+    [Parameter] public bool CanToggleActive { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private List<DecreeDTO> OrderedDecrees =>
+        Decrees.OrderBy(d => d.Name, StringComparer.OrdinalIgnoreCase).ToList();
+
+    private IEnumerable<DecreeDTO> ActiveDecrees => Decrees.Where(d => d.IsActive);
+
+    private PpbVector AdditiveSum =>
+        PpbVector.Sum(ActiveDecrees.Select(d => d.Additive).Concat(TradeGoodRows.Select(r => r.Additive)));
+
+    private PpbVector PercentSum =>
+        PpbVector.Sum(ActiveDecrees.Select(d => d.Percent).Concat(TradeGoodRows.Select(r => r.Percent)));
+
+    private PpbVector Glance =>
+        BaronyCalc.SectionGlance(
+            BaronyCalc.DecreeRows(Decrees).Concat(TradeGoodRows));
+
+    private static string? NameTooltip(DecreeDTO item) =>
+        string.IsNullOrWhiteSpace(item.Description) ? null : item.Description.Trim();
+
+    private async Task AddAsync()
+    {
+        var draft = new DecreeDTO
+        {
+            BaronyId = BaronyId,
+            IsActive = true,
+        };
+        await OpenEditAsync(draft, isNew: true);
+    }
+
+    private async Task EditAsync(DecreeDTO item) => await OpenEditAsync(Clone(item), isNew: false);
+
+    private async Task OpenEditAsync(DecreeDTO draft, bool isNew)
+    {
+        var parameters = new DialogParameters<DecreeEditDialog>
+        {
+            { x => x.Decree, draft },
+        };
+
+        var dialog = await _dialogService.ShowAsync<DecreeEditDialog>(
+            isNew ? "Add Decree / Technology" : "Edit Decree / Technology",
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not DecreeDTO saved)
+            return;
+
+        try
+        {
+            await _baronyRepo.SaveDecree(saved);
+            _snackBar.Add(isNew ? "Decree added." : "Decree updated.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save decree: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DeleteAsync(DecreeDTO item)
+    {
+        var confirm = await _dialogService.ShowMessageBoxAsync(
+            "Remove decree",
+            $"Remove “{item.Name}”?",
+            yesText: "Remove",
+            cancelText: "Cancel");
+        if (confirm != true)
+            return;
+
+        try
+        {
+            await _baronyRepo.DeleteDecree(item.Id);
+            _snackBar.Add("Decree removed.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not remove decree: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task ToggleActiveAsync(DecreeDTO item, bool isActive)
+    {
+        if (!CanToggleActive || item.IsActive == isActive)
+            return;
+
+        var previous = item.IsActive;
+        item.IsActive = isActive;
+        try
+        {
+            await _baronyRepo.SaveDecree(Clone(item));
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            item.IsActive = previous;
+            _snackBar.Add("Could not update active state: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private static DecreeDTO Clone(DecreeDTO source) => new()
+    {
+        Id = source.Id,
+        BaronyId = source.BaronyId,
+        Name = source.Name,
+        Description = source.Description,
+        FormulaText = source.FormulaText,
+        IsActive = source.IsActive,
+        Additive = source.Additive.Clone(),
+        Percent = source.Percent.Clone(),
+    };
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        Ppb.Treasury => "Gold",
+        _ => p.ToString(),
+    };
+
+    private static string FmtAdd(decimal v) => PpbFormat.Additive(v);
+    private static string FmtPct(decimal v) => PpbFormat.Percent(v);
+
+    private static string PpbCellClass(Ppb key, decimal v, bool inactive)
+    {
+        var valueClass = PpbCellStyle.ValueClass(key, v);
+        return inactive ? $"{valueClass} ppb-cell-inactive ppb-cell-struck" : valueClass;
+    }
+
+    private static string SummaryCellClass(Ppb key, decimal v)
+    {
+        var valueClass = PpbCellStyle.ValueClass(key, v);
+        return v == 0m ? $"{valueClass} ppb-cell-zero" : valueClass;
+    }
+}

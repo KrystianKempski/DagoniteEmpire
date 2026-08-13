@@ -1,0 +1,39 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<div class="terrain-brush">
+    <MudText Typo="Typo.caption" Class="terrain-brush__hint">
+        Click or drag on the map to paint. Unknown clears fertility. Mountains cannot receive fertility.
+    </MudText>
+    <div class="terrain-brush__body">
+        <div class="terrain-brush__options">
+            <BaronyTooltip Text="Unknown fertility">
+                <button type="button"
+                        class="terrain-fertility-swatch terrain-fertility-swatch--unknown @(Value == TerrainFertility.Unknown ? "terrain-fertility-swatch--selected" : "")"
+                        style="background-color: @TerrainMapVisuals.UnknownFertilityColor"
+                        aria-label="Unknown fertility"
+                        @onclick="() => SelectValue(TerrainFertility.Unknown)">
+                </button>
+            </BaronyTooltip>
+            @for (var value = TerrainFertility.Min; value <= TerrainFertility.Max; value++)
+            {
+                var v = value;
+                <BaronyTooltip Title="@v.ToString()" Text="@TerrainFertility.DisplayName(v)">
+                    <button type="button"
+                            class="terrain-fertility-swatch @(v == Value ? "terrain-fertility-swatch--selected" : "")"
+                            style="background-color: @TerrainMapVisuals.FertilityColorForValue(v)"
+                            aria-label="@($"{v} — {TerrainFertility.DisplayName(v)}")"
+                            @onclick="() => SelectValue(v)">
+                        @v
+                    </button>
+                </BaronyTooltip>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Value { get; set; } = 3;
+    [Parameter] public EventCallback<int> ValueChanged { get; set; }
+
+    private Task SelectValue(int value) => ValueChanged.InvokeAsync(value);
+}

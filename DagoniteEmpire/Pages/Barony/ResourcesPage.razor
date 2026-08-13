@@ -1,0 +1,468 @@
+@page "/barony/resources"
+@layout BaronyLayout
+@inherits BaronyPageBase
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+@inject ICharacterRepository _characterRepo
+@inject IDialogService _dialogService
+@inject ISnackbar _snackBar
+
+<PageTitle>Dagonite Empire | Barony Resources</PageTitle>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading...</span>
+}
+else if (LoadError is not null)
+{
+    <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
+}
+else if (_overview is not null)
+{
+    <BaronyPageHeader Title="Resources" HelpKey="resources" />
+
+    <BaronySection Title="Current Resource Stocks">
+        <Summary>
+            <PpbSummaryChips Vector="@_stocksGlance" Columns="@ResourceCatalog.All" />
+        </Summary>
+        <ChildContent>
+            <ResourceStocksHero Stocks="@_stocksGlance" />
+        </ChildContent>
+    </BaronySection>
+
+    <BaronySection Title="Expected Income This Turn">
+        <Summary>
+            <PpbSummaryChips Vector="@_expectedGlance" Columns="@ResourceCatalog.All" />
+        </Summary>
+        <ChildContent>
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                Domain Panel grand total for cumulative resources.
+                Gold already subtracts liege tribute (Budget Fief expense: gross income × tribute %).
+                Applied to stocks on Resolve Turn. Audience grants land immediately under Resource Balance.
+            </MudText>
+            <div style="overflow-x:auto;">
+                <ResourceVectorTable Rows="@_expectedRows" NameHeader="Source" />
+            </div>
+        </ChildContent>
+    </BaronySection>
+
+    <BaronySection Title="Resource Balance">
+        <Summary>
+            <PpbSummaryChips Vector="@_balanceSum" Columns="@ResourceCatalog.All" />
+        </Summary>
+        <ChildContent>
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                Σ is the sum of every row below and must match Current Resource Stocks / HUD.
+                Audience grants are added to stocks as soon as they are awarded.
+                On Resolve Turn the ledger is cleared: opening stock + Domain Panel income + grants from projects
+                completed that resolve; mid-turn allocations and Add Source rows live only until the next Resolve.
+            </MudText>
+            <div style="overflow-x:auto;">
+                <ResourceVectorTable Rows="@_balanceRows"
+                                    Summary="@_balanceSum"
+                                    SummaryLabel="Σ balance"
+                                    NameHeader="Source"
+                                    OnEdit="EditBalanceRowAsync"
+                                    OnDelete="DeleteBalanceRowAsync" />
+            </div>
+            @if (CanManageAsMg)
+            {
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <MudButton Variant="Variant.Outlined"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="AddSourceAsync">
+                        Add Source
+                    </MudButton>
+                </div>
+            }
+        </ChildContent>
+    </BaronySection>
+}
+
+@code {
+    private BaronyOverviewDTO? _overview;
+    private PpbVector _expectedIncome = new();
+    private List<ResourceTableRow> _expectedRows = new();
+    private List<ResourceTableRow> _balanceRows = new();
+    private PpbVector _balanceSum = new();
+    private PpbVector _stocksGlance = new();
+    private PpbVector _expectedGlance = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBaronyAsync();
+        if (Barony is null)
+            return;
+
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (Barony is null)
+            return;
+
+        _overview = await _baronyRepo.GetOverview(Barony.Id);
+        if (_overview is null)
+            return;
+
+        var character = await _characterRepo.GetById(Barony.CharacterId, fullIncludes: true);
+        var baronModifiers = await _baronyRepo.GetBaronInfluenceModifiers(Barony.Id);
+        var advisorModifiers = await _baronyRepo.GetAdvisorInfluenceModifiers(Barony.Id);
+        await _baronyRepo.EnsureBaronTimeDefaults(Barony.Id);
+        var managementJc = BaronyCalc.ManagementJcSpent(await _baronyRepo.GetBaronTimeActions(Barony.Id));
+        _expectedIncome = BaronyCalc.ExpectedResourceIncome(
+            _overview, character, baronModifiers, advisorModifiers, managementJc);
+
+        await EnsureAudienceGrantsInStocksAsync();
+        BuildTables();
+        NotifyResourceHud();
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Older audience grants lived only in Expected Income. Credit them into stocks once
+    /// so Resource Balance Σ matches HUD after moving Audiences into the balance ledger.
+    /// </summary>
+    private async Task EnsureAudienceGrantsInStocksAsync()
+    {
+        if (_overview is null)
+            return;
+
+        var prevStock = ResourceCatalog.Slice(_overview.Barony.PreviousTurnStock);
+        // Need a known opening stock; otherwise we cannot tell if grants are already in stocks.
+        if (prevStock.IsEmpty)
+            return;
+
+        BaronyCalc.AudienceCumulativeTotals(
+            _overview.Audiences, _overview.Barony.TurnNumber, out var audienceAdd, out _);
+        BaronyCalc.AdventureCumulativeTotals(
+            _overview.Events, _overview.Barony.TurnNumber, out var adventureAdd, out _);
+        var turnGrants = ResourceCatalog.Slice(audienceAdd + adventureAdd);
+        if (turnGrants.IsEmpty)
+            return;
+
+        var stocks = ResourceCatalog.Slice(_overview.Barony.ResourceStocks);
+        var prevIncome = ResourceCatalog.Slice(_overview.Barony.PreviousTurnIncome);
+        var projectCosts = ProjectCosts();
+        var sourcesSum = ResourceCatalog.Slice(
+            PpbVector.Sum(_overview.ResourceSources.Select(s => ResourceCatalog.Slice(s.Additive))));
+
+        var withoutGrants = ResourceCatalog.Slice(prevStock + prevIncome + sourcesSum + projectCosts);
+        var withGrants = ResourceCatalog.Slice(withoutGrants + turnGrants);
+
+        if (ResourceVectorsEqual(stocks, withGrants) || !ResourceVectorsEqual(stocks, withoutGrants))
+            return;
+
+        await ApplyStockDeltaAsync(turnGrants);
+    }
+
+    private static bool ResourceVectorsEqual(PpbVector a, PpbVector b)
+    {
+        foreach (var info in ResourceCatalog.All)
+        {
+            if (PpbFormat.Round(a[info.Key]) != PpbFormat.Round(b[info.Key]))
+                return false;
+        }
+        return true;
+    }
+
+    private void BuildTables()
+    {
+        if (_overview is null)
+            return;
+
+        var stocks = ResourceCatalog.Slice(_overview.Barony.ResourceStocks);
+        var prevIncome = ResourceCatalog.Slice(_overview.Barony.PreviousTurnIncome);
+        var projectCosts = ProjectCosts();
+        var sourcesSum = ResourceCatalog.Slice(
+            PpbVector.Sum(_overview.ResourceSources.Select(s => ResourceCatalog.Slice(s.Additive))));
+
+        var prevStock = ResourceCatalog.Slice(_overview.Barony.PreviousTurnStock);
+        BaronyCalc.AudienceCumulativeTotals(
+            _overview.Audiences, _overview.Barony.TurnNumber, out var audienceAdd, out _);
+        var audienceGrants = ResourceCatalog.Slice(audienceAdd);
+        BaronyCalc.AdventureCumulativeTotals(
+            _overview.Events, _overview.Barony.TurnNumber, out var adventureAdd, out _);
+        var adventureGrants = ResourceCatalog.Slice(adventureAdd);
+
+        // First load / pre-migration: derive opening stock so Σ still matches HUD.
+        if (prevStock.IsEmpty && (!stocks.IsEmpty || !prevIncome.IsEmpty || !sourcesSum.IsEmpty
+            || !audienceGrants.IsEmpty || !adventureGrants.IsEmpty))
+        {
+            prevStock = ResourceCatalog.Subtract(stocks, prevIncome);
+            prevStock = ResourceCatalog.Subtract(prevStock, sourcesSum);
+            prevStock = ResourceCatalog.Subtract(prevStock, projectCosts);
+            prevStock = ResourceCatalog.Subtract(prevStock, audienceGrants);
+            prevStock = ResourceCatalog.Subtract(prevStock, adventureGrants);
+        }
+
+        _stocksGlance = stocks;
+        _expectedGlance = _expectedIncome;
+
+        _expectedRows = new List<ResourceTableRow>
+        {
+            new()
+            {
+                Label = "Domain Panel grand total",
+                Description = "Expected cumulative PPB when the turn ends. Gold already subtracts liege tribute (Budget Fief).",
+                Values = _expectedIncome,
+                IsSystem = true,
+            },
+        };
+
+        var canEditStartStock = CanManageAsMg;
+        _balanceRows = new List<ResourceTableRow>
+        {
+            new()
+            {
+                Label = "Stock from previous turn",
+                Description = canEditStartStock
+                    ? "Snapshot at last Resolve Turn (before income and project grants). Editable by GM."
+                    : "Stocks carried in at the start of this turn (before income).",
+                Values = prevStock,
+                IsSystem = true,
+                CanEdit = canEditStartStock,
+            },
+            new()
+            {
+                Label = "Income from previous turn",
+                Description = "Domain Panel / Budget expected income applied at last Resolve Turn.",
+                Values = prevIncome,
+                IsSystem = true,
+            },
+        };
+
+        foreach (var src in _overview.ResourceSources.OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            _balanceRows.Add(new ResourceTableRow
+            {
+                Label = src.Name,
+                Description = src.Description,
+                Values = ResourceCatalog.Slice(src.Additive),
+                SourceId = src.Id,
+                CanEdit = CanManageAsMg,
+                CanDelete = CanManageAsMg,
+            });
+        }
+
+        if (!audienceGrants.IsEmpty)
+        {
+            _balanceRows.Add(new ResourceTableRow
+            {
+                Label = BaronAudiencePpb.SummaryRowName,
+                Description = "Cumulative resources granted through audiences this turn — already in Current Resource Stocks.",
+                Values = audienceGrants,
+                IsSystem = true,
+            });
+        }
+
+        if (!adventureGrants.IsEmpty)
+        {
+            _balanceRows.Add(new ResourceTableRow
+            {
+                Label = BaronAdventurePpb.SummaryRowName,
+                Description = "Cumulative resources granted through campaign adventures this turn — already in Current Resource Stocks.",
+                Values = adventureGrants,
+                IsSystem = true,
+            });
+        }
+
+        if (!projectCosts.IsEmpty)
+        {
+            _balanceRows.Add(new ResourceTableRow
+            {
+                Label = "Project costs",
+                Description = "Resources already allocated to open projects this turn (left your stocks).",
+                Values = projectCosts,
+                IsSystem = true,
+            });
+        }
+
+        // Σ = every balance row → must equal current stocks (HUD).
+        _balanceSum = ResourceCatalog.Slice(
+            prevStock + prevIncome + sourcesSum + audienceGrants + adventureGrants + projectCosts);
+    }
+
+    private PpbVector ProjectCosts()
+    {
+        var v = new PpbVector();
+        if (_overview is null)
+            return v;
+
+        foreach (var p in _overview.Projects)
+        {
+            var impact = p.ResourcesBalanceImpact();
+            foreach (var info in ResourceCatalog.All)
+                v[info.Key] += impact[info.Key];
+        }
+
+        return v;
+    }
+
+    private async Task EditBalanceRowAsync(ResourceTableRow row)
+    {
+        if (row.SourceId is int id)
+        {
+            var src = _overview?.ResourceSources.FirstOrDefault(s => s.Id == id);
+            if (src is null)
+                return;
+            await OpenSourceDialogAsync(CloneSource(src), isNew: false);
+            return;
+        }
+
+        if (row.Label == "Stock from previous turn")
+            await EditPreviousTurnStockAsync();
+    }
+
+    private async Task EditPreviousTurnStockAsync()
+    {
+        if (_overview is null || !CanManageAsMg)
+            return;
+
+        var prevIncome = ResourceCatalog.Slice(_overview.Barony.PreviousTurnIncome);
+        var oldOpening = ResourceCatalog.Slice(_overview.Barony.PreviousTurnStock);
+        if (oldOpening.IsEmpty)
+        {
+            var stocksNow = ResourceCatalog.Slice(_overview.Barony.ResourceStocks);
+            var sourcesSum = ResourceCatalog.Slice(
+                PpbVector.Sum(_overview.ResourceSources.Select(s => ResourceCatalog.Slice(s.Additive))));
+            var projectCosts = ProjectCosts();
+            BaronyCalc.AudienceCumulativeTotals(
+                _overview.Audiences, _overview.Barony.TurnNumber, out var audienceAdd, out _);
+            BaronyCalc.AdventureCumulativeTotals(
+                _overview.Events, _overview.Barony.TurnNumber, out var adventureAdd, out _);
+            var turnGrants = ResourceCatalog.Slice(audienceAdd + adventureAdd);
+            oldOpening = ResourceCatalog.Subtract(stocksNow, prevIncome);
+            oldOpening = ResourceCatalog.Subtract(oldOpening, sourcesSum);
+            oldOpening = ResourceCatalog.Subtract(oldOpening, projectCosts);
+            oldOpening = ResourceCatalog.Subtract(oldOpening, turnGrants);
+        }
+
+        var parameters = new DialogParameters<PreviousTurnIncomeEditDialog>
+        {
+            { x => x.Values, oldOpening },
+        };
+
+        var dialog = await _dialogService.ShowAsync<PreviousTurnIncomeEditDialog>(
+            "Edit stock from previous turn",
+            parameters,
+            new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not PpbVector saved)
+            return;
+
+        try
+        {
+            var newOpening = ResourceCatalog.Slice(saved);
+            var delta = ResourceCatalog.Subtract(newOpening, oldOpening);
+            var stocks = ResourceCatalog.Slice(_overview.Barony.ResourceStocks);
+            stocks.AddInPlace(delta);
+
+            _overview.Barony.PreviousTurnStock = newOpening;
+            _overview.Barony.ResourceStocks = stocks;
+            _overview.Barony.FoodInGranaries = stocks[Ppb.Food];
+            _overview.Barony.TreasuryGold = stocks[Ppb.Treasury];
+            await _baronyRepo.UpdateBarony(_overview.Barony);
+            _snackBar.Add("Stock saved.", Severity.Success);
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task AddSourceAsync()
+    {
+        if (_overview is null || !CanManageAsMg)
+            return;
+
+        await OpenSourceDialogAsync(new BaronyResourceSourceDTO { BaronyId = _overview.Barony.Id }, isNew: true);
+    }
+
+    private async Task OpenSourceDialogAsync(BaronyResourceSourceDTO draft, bool isNew)
+    {
+        var previous = isNew ? new PpbVector() : ResourceCatalog.Slice(draft.Additive);
+        var parameters = new DialogParameters<ResourceSourceEditDialog>
+        {
+            { x => x.Source, draft },
+        };
+
+        var dialog = await _dialogService.ShowAsync<ResourceSourceEditDialog>(
+            isNew ? "Add Source" : "Edit Source",
+            parameters,
+            new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronyResourceSourceDTO saved)
+            return;
+
+        try
+        {
+            await _baronyRepo.SaveResourceSource(saved);
+            // Mirror Budget transfers: ledger row + actual stock change.
+            await ApplyStockDeltaAsync(ResourceCatalog.Subtract(ResourceCatalog.Slice(saved.Additive), previous));
+            _snackBar.Add(isNew ? "Source added and stocks updated." : "Source updated and stocks adjusted.", Severity.Success);
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save source: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DeleteBalanceRowAsync(ResourceTableRow row)
+    {
+        if (row.SourceId is not int id || !CanManageAsMg)
+            return;
+
+        var confirm = await _dialogService.ShowMessageBoxAsync(
+            "Remove source",
+            $"Remove ledger line “{row.Label}”? Current stocks are not changed — edit the source to zero first if you want to reverse a grant.",
+            yesText: "Remove",
+            cancelText: "Cancel");
+        if (confirm != true)
+            return;
+
+        try
+        {
+            await _baronyRepo.DeleteResourceSource(id);
+            _snackBar.Add("Source removed.", Severity.Success);
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not remove source: " + ex.Message, Severity.Error);
+        }
+    }
+
+    /// <summary>Applies a PPB delta to barony stocks (Food/Treasury scalars stay in sync).</summary>
+    private async Task ApplyStockDeltaAsync(PpbVector delta)
+    {
+        if (_overview is null)
+            return;
+
+        var sliced = ResourceCatalog.Slice(delta);
+        if (sliced.IsEmpty)
+            return;
+
+        var stocks = ResourceCatalog.Slice(_overview.Barony.ResourceStocks);
+        stocks.AddInPlace(sliced);
+        _overview.Barony.ResourceStocks = stocks;
+        _overview.Barony.FoodInGranaries = stocks[Ppb.Food];
+        _overview.Barony.TreasuryGold = stocks[Ppb.Treasury];
+        await _baronyRepo.UpdateBarony(_overview.Barony);
+    }
+
+    private static BaronyResourceSourceDTO CloneSource(BaronyResourceSourceDTO s) => new()
+    {
+        Id = s.Id,
+        BaronyId = s.BaronyId,
+        Name = s.Name,
+        Description = s.Description,
+        Additive = ResourceCatalog.Slice(s.Additive),
+        IsTurnEphemeral = s.IsTurnEphemeral,
+        VisibleOnTurn = s.VisibleOnTurn,
+    };
+}

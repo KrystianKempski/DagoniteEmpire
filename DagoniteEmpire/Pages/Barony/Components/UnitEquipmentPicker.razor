@@ -1,0 +1,386 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Business.Repository.BaronyRepos
+@using DA_Common.Barony
+@using DA_Models.BaronyModels
+@inject ISnackbar _snackBar
+
+@* Excel-style weapon / armor catalog: weapons left, armor+shields right. *@
+<div class="unit-equip-catalog">
+    <div class="unit-equip-catalog__intro">
+        <h3 class="unit-workshop__heading">Arms &amp; armor catalog</h3>
+        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
+            Pick <b>W1</b> / <b>W2</b> on a weapon row (left), armor or shield on the right.
+            Greyed rows need more Build, Agility, Armor skill, or Riding, or lack trade access to military arms / powder / armor tiers / horses.
+            Hover column headers for notes. Costs:
+            <BaronyResourceIcon Resource="Ppb.Production" Size="xs" /> production ·
+            <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" /> gold ·
+            <b>Mkt</b> market (×2 =
+            <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" /> price).
+        </MudText>
+    </div>
+
+    <div class="unit-equip-catalog__split">
+        <section class="unit-equip-tile">
+            <div class="unit-equip-tile__title">Weapons</div>
+            <div class="unit-equip-tile__scroll">
+                <table class="ppb-table ppb-table--source ppb-table--lined unit-equip-table">
+                    <thead>
+                        <tr>
+                            <th class="unit-equip-table__pick">
+                                <BaronyTooltip Title="Weapon 1" Text="Select as primary weapon." Placement="Placement.Top">
+                                    <span>W1</span>
+                                </BaronyTooltip>
+                            </th>
+                            <th class="unit-equip-table__pick">
+                                <BaronyTooltip Title="Weapon 2" Text="Select as secondary weapon (click again to clear)." Placement="Placement.Top">
+                                    <span>W2</span>
+                                </BaronyTooltip>
+                            </th>
+                            <th class="ppb-row-label">Name</th>
+                            <th>Type</th>
+                            @ColHeader("Atk", "Attack", "Weapon attack bonus added to the Attack total.")
+                            @ColHeader("Dmg", "Damage", "Weapon damage bonus.")
+                            @ColHeader("Def", "Defense", "Weapon defense bonus added when this weapon contributes to Defense.")
+                            @ColHeader("Prc", "Pierce", "Armor pierce.")
+                            @ColHeader("Rng", "Range", "Ranged range with no penalty; −4 at double range, −8 at triple.")
+                            @ColHeader("Mov", "Move", "Move penalty from this weapon.")
+                            @ColHeader("1H", "One-handed", "Weapon is one-handed.")
+                            @ColHeader("Bld", "Build requirement", "Minimum required Build.")
+                            @ColHeader("Agi", "Agility requirement", "Minimum required Agility.")
+                            @ResColHeader(Ppb.Production, "Production", "Production cost to build this weapon for one unit (50 troops) when strategic goods are available.")
+                            @ResColHeader(Ppb.Treasury, "Gold", "Gold cost for one unit (50 troops).")
+                            @ColHeader("Mkt", "Market gold", "Market gold. On the Gear row choose Buy to pay Mkt in gold (no Production), or Defense to pay 2×Mkt as Defense.")
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var cat in new[] { "simple", "military", "powder" })
+                        {
+                            <tr class="unit-equip-table__group">
+                                <td colspan="16">@UnitWeaponCatalog.CategoryLabel(cat)</td>
+                            </tr>
+                            @foreach (var w in UnitWeaponCatalog.ByCategory(cat))
+                            {
+                                var isW1 = Weapon1Key == w.Key;
+                                var isW2 = Weapon2Key == w.Key;
+                                var ok = MeetsWeapon(w, out var why);
+                                <tr class="@RowClass(isW1 || isW2, ok)">
+                                    <td class="unit-equip-table__pick">
+                                        <BaronyTooltip Text="@(ok ? "Select as Weapon 1" : why)">
+                                            <button type="button"
+                                                    class="unit-equip-pick @(isW1 ? "unit-equip-pick--on" : null)"
+                                                    disabled="@(!CanEdit)"
+                                                    @onclick="@(() => SelectWeapon1(w))">@(isW1 ? "●" : "○")</button>
+                                        </BaronyTooltip>
+                                    </td>
+                                    <td class="unit-equip-table__pick">
+                                        <BaronyTooltip Text="@(ok ? "Select as Weapon 2 (click again to clear)" : why)">
+                                            <button type="button"
+                                                    class="unit-equip-pick @(isW2 ? "unit-equip-pick--on" : null)"
+                                                    disabled="@(!CanEdit)"
+                                                    @onclick="@(() => ToggleWeapon2(w))">@(isW2 ? "●" : "○")</button>
+                                        </BaronyTooltip>
+                                    </td>
+                                    <td class="ppb-row-label">@w.Name</td>
+                                    <td>@w.WeaponType</td>
+                                    <td>@w.Attack</td>
+                                    <td>@w.Damage</td>
+                                    <td>@w.Defense</td>
+                                    <td>@w.Pierce</td>
+                                    <td>@(w.Range == 0 ? "—" : w.Range.ToString())</td>
+                                    <td>@(w.MovePenalty == 0 ? "—" : w.MovePenalty.ToString())</td>
+                                    <td>@(w.OneHanded ? "yes" : "no")</td>
+                                    <td class="@(Build < w.RequiredBuild ? "unit-equip-table__req--fail" : null)">@w.RequiredBuild</td>
+                                    <td class="@(Agility < w.RequiredAgility ? "unit-equip-table__req--fail" : null)">@w.RequiredAgility</td>
+                                    <td>@w.ProductionCost</td>
+                                    <td>@w.GoldCost</td>
+                                    <td>@w.MarketGold</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="unit-equip-tile">
+            <div class="unit-equip-tile__title">Armor &amp; shields</div>
+            <div class="unit-equip-tile__scroll">
+                <table class="ppb-table ppb-table--source ppb-table--lined unit-equip-table">
+                    <thead>
+                        <tr>
+                            <th class="unit-equip-table__pick">
+                                <BaronyTooltip Title="Pick" Text="Select armor or shield (click again to clear)." Placement="Placement.Top">
+                                    <span>Pick</span>
+                                </BaronyTooltip>
+                            </th>
+                            <th class="ppb-row-label">Name</th>
+                            <th>Type</th>
+                            @ColHeader("Def", "Defense", "Defense bonus from this armor or shield.")
+                            @ColHeader("Arm", "Armor", "Armor value from body armor only — shields do not add Armor. Reduces incoming damage.")
+                            @ColHeader("Pen", "Agility penalty", "Penalty applied to the Agility attribute.")
+                            @ColHeader("Mov", "Move", "Move penalty.")
+                            @ColHeader("Bld", "Build requirement", "Minimum required Build.")
+                            @ColHeader("Ask", "Armor skill requirement", "Minimum required Armor skill.")
+                            @ResColHeader(Ppb.Production, "Production", "Production cost for one unit (50 troops) when strategic goods are available.")
+                            @ResColHeader(Ppb.Treasury, "Gold", "Gold cost for one unit (50 troops).")
+                            @ColHeader("Mkt", "Market gold", "Market gold. On the Gear row choose Buy to pay Mkt in gold (no Production), or Defense to pay 2×Mkt as Defense.")
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var (title, keys) in UnitArmorCatalog.ExcelTiers)
+                        {
+                            var items = UnitArmorCatalog.TierItems(keys).ToList();
+                            var shields = items.Where(x => x.IsShield).ToList();
+                            var bodies = items.Where(x => !x.IsShield).ToList();
+                            <tr class="unit-equip-table__group">
+                                <td colspan="12">@title</td>
+                            </tr>
+                            @if (shields.Count > 0)
+                            {
+                                <tr class="unit-equip-table__subgroup"><td colspan="12">Shields</td></tr>
+                                @foreach (var a in shields)
+                                {
+                                    @ArmorRow(a)
+                                }
+                            }
+                            @if (bodies.Count > 0)
+                            {
+                                <tr class="unit-equip-table__subgroup"><td colspan="12">Body armor</td></tr>
+                                @foreach (var a in bodies)
+                                {
+                                    @ArmorRow(a)
+                                }
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <section class="unit-equip-tile unit-equip-tile--mounts">
+        <div class="unit-equip-tile__title">Mounts</div>
+        <div class="unit-equip-tile__scroll">
+            <table class="ppb-table ppb-table--source ppb-table--lined unit-equip-table">
+                <thead>
+                    <tr>
+                        <th class="unit-equip-table__pick">
+                            <BaronyTooltip Title="Pick" Text="Select a mount (click again to clear)." Placement="Placement.Top">
+                                <span>Pick</span>
+                            </BaronyTooltip>
+                        </th>
+                        <th class="ppb-row-label">Name</th>
+                        @ColHeader("Atk", "Attack", "Attack bonus from this mount.")
+                        @ColHeader("Def", "Defense", "Defense bonus from this mount.")
+                        @ColHeader("Dmg", "Damage", "Damage bonus from this mount.")
+                        @ColHeader("Mov", "Move", "Movement bonus from this mount.")
+                        @ColHeader("Rid", "Riding requirement", "Minimum required Riding skill total.")
+                        @ResColHeader(Ppb.Production, "Production", "Production cost for one unit (50 troops) when horses are available.")
+                        @ResColHeader(Ppb.Treasury, "Gold", "Gold cost for one unit (50 troops).")
+                        @ColHeader("Mkt", "Market gold", "Market gold. Buy = Mkt gold; Defense = 2×Mkt Defense.")
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in UnitMountCatalog.All)
+                    {
+                        var ok = MeetsMount(m, out var why);
+                        var selected = MountKey == m.Key;
+                        <tr class="@RowClass(selected, ok)">
+                            <td class="unit-equip-table__pick">
+                                <BaronyTooltip Text="@(ok ? "Select mount (click again to clear)" : why)">
+                                    <button type="button"
+                                            class="unit-equip-pick @(selected ? "unit-equip-pick--on" : null)"
+                                            disabled="@(!CanEdit)"
+                                            @onclick="@(() => PickMount(m))">@(selected ? "●" : "○")</button>
+                                </BaronyTooltip>
+                            </td>
+                            <td class="ppb-row-label">@m.Name</td>
+                            <td>@m.Attack</td>
+                            <td>@m.Defense</td>
+                            <td>@m.Damage</td>
+                            <td>@FormatSigned(m.MoveBonus)</td>
+                            <td class="@(RidingSkillTotal < m.RequiredRiding ? "unit-equip-table__req--fail" : null)">@m.RequiredRiding</td>
+                            <td>@m.ProductionCost</td>
+                            <td>@m.GoldCost</td>
+                            <td>@m.MarketGold</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+
+@code {
+    [Parameter] public BaronyUnitDTO? Unit { get; set; }
+    [Parameter] public string? Weapon1Key { get; set; }
+    [Parameter] public string? Weapon2Key { get; set; }
+    [Parameter] public string? ArmorKey { get; set; }
+    [Parameter] public string? ShieldKey { get; set; }
+    [Parameter] public string? MountKey { get; set; }
+    [Parameter] public bool CanEdit { get; set; }
+    /// <summary>When set, military / powder / armor tiers / mounts require matching trade-good access.</summary>
+    [Parameter] public TradeGoodAvailabilitySnapshot? Availability { get; set; }
+    [Parameter] public EventCallback<string> Weapon1Changed { get; set; }
+    [Parameter] public EventCallback<string?> Weapon2Changed { get; set; }
+    [Parameter] public EventCallback<string?> ArmorChanged { get; set; }
+    [Parameter] public EventCallback<string?> ShieldChanged { get; set; }
+    [Parameter] public EventCallback<string?> MountChanged { get; set; }
+
+    private int Build => Unit?.EffectiveBuild ?? 0;
+    private int Agility => Unit?.EffectiveAgility ?? 0;
+    private int ArmorSkillTotal
+    {
+        get
+        {
+            if (Unit is null) return 0;
+            var totals = UnitStatHelper.BuildSkillTotals(Unit);
+            return totals.GetValueOrDefault(UnitSkillKey.ArmorSkill);
+        }
+    }
+    private int RidingSkillTotal
+    {
+        get
+        {
+            if (Unit is null) return 0;
+            var totals = UnitStatHelper.BuildSkillTotals(Unit);
+            return totals.GetValueOrDefault(UnitSkillKey.Riding);
+        }
+    }
+
+    private bool MeetsWeapon(UnitWeaponDef w, out string reason) =>
+        UnitEquipmentTradeAccess.MeetsWeapon(w, Build, Agility, Availability, out reason);
+
+    private bool MeetsArmor(UnitArmorDef a, out string reason) =>
+        UnitEquipmentTradeAccess.MeetsArmor(a, Build, ArmorSkillTotal, Availability, out reason);
+
+    private bool MeetsMount(UnitMountDef m, out string reason) =>
+        UnitEquipmentTradeAccess.MeetsMount(m, RidingSkillTotal, Availability, out reason);
+
+    private static string? RowClass(bool selected, bool ok)
+    {
+        if (selected && ok) return "unit-equip-table__row--active";
+        if (selected && !ok) return "unit-equip-table__row--active unit-equip-table__row--locked";
+        if (!ok) return "unit-equip-table__row--locked";
+        return null;
+    }
+
+    private async Task SelectWeapon1(UnitWeaponDef w)
+    {
+        if (!CanEdit) return;
+        if (!MeetsWeapon(w, out var reason))
+        {
+            _snackBar.Add(reason, Severity.Info);
+            return;
+        }
+        if (Weapon2Key == w.Key)
+            await Weapon2Changed.InvokeAsync(null);
+        await Weapon1Changed.InvokeAsync(w.Key);
+    }
+
+    private async Task ToggleWeapon2(UnitWeaponDef w)
+    {
+        if (!CanEdit) return;
+        if (Weapon1Key == w.Key) return;
+        // Allow clearing even if requirements are no longer met.
+        if (Weapon2Key == w.Key)
+        {
+            await Weapon2Changed.InvokeAsync(null);
+            return;
+        }
+        if (!MeetsWeapon(w, out var reason))
+        {
+            _snackBar.Add(reason, Severity.Info);
+            return;
+        }
+        await Weapon2Changed.InvokeAsync(w.Key);
+    }
+
+    private async Task PickArmor(UnitArmorDef a)
+    {
+        if (!CanEdit) return;
+        var selected = a.IsShield ? ShieldKey == a.Key : ArmorKey == a.Key;
+        if (selected)
+        {
+            if (a.IsShield)
+                await ShieldChanged.InvokeAsync(null);
+            else
+                await ArmorChanged.InvokeAsync(null);
+            return;
+        }
+        if (!MeetsArmor(a, out var reason))
+        {
+            _snackBar.Add(reason, Severity.Info);
+            return;
+        }
+        if (a.IsShield)
+            await ShieldChanged.InvokeAsync(a.Key);
+        else
+            await ArmorChanged.InvokeAsync(a.Key);
+    }
+
+    private async Task PickMount(UnitMountDef m)
+    {
+        if (!CanEdit) return;
+        if (MountKey == m.Key)
+        {
+            await MountChanged.InvokeAsync(null);
+            return;
+        }
+        if (!MeetsMount(m, out var reason))
+        {
+            _snackBar.Add(reason, Severity.Info);
+            return;
+        }
+        await MountChanged.InvokeAsync(m.Key);
+    }
+
+    private static string FormatSigned(int v) => v > 0 ? $"+{v}" : v.ToString();
+
+    private RenderFragment ColHeader(string label, string title, string text) => __builder =>
+    {
+        <th>
+            <BaronyTooltip Title="@title" Text="@text">
+                <span class="unit-equip-table__th">@label</span>
+            </BaronyTooltip>
+        </th>
+    };
+
+    private RenderFragment ResColHeader(Ppb resource, string title, string text) => __builder =>
+    {
+        <th>
+            <BaronyTooltip Title="@title" Text="@text">
+                <span class="unit-equip-table__th unit-equip-table__th-res">
+                    <BaronyResourceIcon Resource="@resource" Size="xs" />
+                </span>
+            </BaronyTooltip>
+        </th>
+    };
+
+    private RenderFragment ArmorRow(UnitArmorDef a) => __builder =>
+    {
+        var selected = a.IsShield ? ShieldKey == a.Key : ArmorKey == a.Key;
+        var ok = MeetsArmor(a, out var why);
+        <tr class="@RowClass(selected, ok)">
+            <td class="unit-equip-table__pick">
+                <BaronyTooltip Text="@(ok ? (a.IsShield ? "Select shield (click again to clear)" : "Select armor (click again to clear)") : why)">
+                    <button type="button"
+                            class="unit-equip-pick @(selected ? "unit-equip-pick--on" : null)"
+                            disabled="@(!CanEdit)"
+                            @onclick="@(() => PickArmor(a))">@(selected ? "●" : "○")</button>
+                </BaronyTooltip>
+            </td>
+            <td class="ppb-row-label">@a.Name</td>
+            <td>@(a.IsShield ? "Shields" : a.ArmorClass)</td>
+            <td>@a.Defense</td>
+            <td>@(a.IsShield ? "—" : a.ArmorValue.ToString())</td>
+            <td>@(a.AgilityPenalty == 0 ? "—" : a.AgilityPenalty.ToString())</td>
+            <td>@(a.MovePenalty == 0 ? "—" : a.MovePenalty.ToString())</td>
+            <td class="@(Build < a.RequiredBuild ? "unit-equip-table__req--fail" : null)">@a.RequiredBuild</td>
+            <td class="@(ArmorSkillTotal < a.RequiredArmorSkill ? "unit-equip-table__req--fail" : null)">@a.RequiredArmorSkill</td>
+            <td>@a.ProductionCost</td>
+            <td>@a.GoldCost</td>
+            <td>@a.MarketGold</td>
+        </tr>
+    };
+}

@@ -1,0 +1,52 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+@if (string.IsNullOrWhiteSpace(Text))
+{
+    @ChildContent
+}
+else
+{
+    <div class="barony-hud-tip @AlignClass @(_suppressed ? "barony-hud-tip--suppressed" : null)"
+         @onpointerdown="Suppress"
+         @onpointerleave="ClearSuppress"
+         @onpointercancel="ClearSuppress">
+        @ChildContent
+        <div class="barony-hud-tip__popup" role="tooltip">
+            <div class="barony-tip__box">
+                @if (!string.IsNullOrWhiteSpace(Title))
+                {
+                    <div class="barony-tip__title">@Title</div>
+                }
+                <div class="barony-tip__body">@Text</div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Text { get; set; }
+    /// <summary>Popup alignment: Start (left), Center, End (right).</summary>
+    [Parameter] public HudTipAlign Align { get; set; } = HudTipAlign.Center;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private bool _suppressed;
+
+    private string AlignClass => Align switch
+    {
+        HudTipAlign.Start => "barony-hud-tip--start",
+        HudTipAlign.End => "barony-hud-tip--end",
+        _ => "barony-hud-tip--center",
+    };
+
+    private void Suppress() => _suppressed = true;
+
+    private void ClearSuppress() => _suppressed = false;
+
+    public enum HudTipAlign
+    {
+        Start,
+        Center,
+        End,
+    }
+}

@@ -1,0 +1,87 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<div class="terrain-brush">
+    <MudText Typo="Typo.caption" Class="terrain-brush__hint">
+        Select a domain, then click or drag on the map. Player barony domain is the most transparent overlay.
+    </MudText>
+    <div class="terrain-brush__body">
+        <div class="terrain-brush__options">
+            @foreach (var domain in Domains)
+            {
+                var d = domain;
+                var selected = d.Id == SelectedDomainId;
+                var tiles = TileCount(d.Id);
+                <div class="terrain-domain-chip-row">
+                    <BaronyTooltip Title="@($"{d.Name} : {tiles} tiles")" Text="@d.LordName">
+                        <button type="button"
+                                class="terrain-domain-chip @(selected ? "terrain-domain-chip--selected" : "")"
+                                @onclick="() => SelectDomainAsync(d.Id)">
+                            <span class="terrain-domain-chip__swatch"
+                                  style="background-color: @d.ColorHex"></span>
+                            <span class="terrain-domain-chip__text">
+                                <span class="terrain-domain-chip__name">@d.Name : @tiles</span>
+                                <span class="terrain-domain-chip__lord">@d.LordName</span>
+                            </span>
+                        </button>
+                    </BaronyTooltip>
+                    <BaronyTooltip Text="Change domain color">
+                        <input type="color"
+                               class="terrain-domain-chip__color-input"
+                               value="@d.ColorHex"
+                               aria-label="@($"Change color for {d.Name}")"
+                               @onchange="e => OnDomainColorInputChangedAsync(d.Id, e)" />
+                    </BaronyTooltip>
+                    <BaronyTooltip Text="Edit domain">
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                       Size="Size.Small"
+                                       OnClick="@(() => OnEditDomainAsync(d.Id))" />
+                    </BaronyTooltip>
+                    @if (!d.IsPrimary)
+                    {
+                        <BaronyTooltip Text="Delete domain">
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Size="Size.Small"
+                                           Color="Color.Error"
+                                           OnClick="@(() => OnDeleteDomainAsync(d.Id))" />
+                        </BaronyTooltip>
+                    }
+                </div>
+            }
+            <MudButton Variant="Variant.Outlined"
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       OnClick="OnAddDomainAsync">
+                Add domain
+            </MudButton>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public IReadOnlyList<TerrainMapDomainDTO> Domains { get; set; } = Array.Empty<TerrainMapDomainDTO>();
+    [Parameter] public IReadOnlyDictionary<int, int> TileCountsByDomainId { get; set; }
+        = new Dictionary<int, int>();
+    [Parameter] public int? SelectedDomainId { get; set; }
+    [Parameter] public EventCallback<int?> SelectedDomainIdChanged { get; set; }
+    [Parameter] public EventCallback<(int DomainId, string ColorHex)> OnDomainColorChanged { get; set; }
+    [Parameter] public EventCallback OnAddDomain { get; set; }
+    [Parameter] public EventCallback<int> OnEditDomain { get; set; }
+    [Parameter] public EventCallback<int> OnDeleteDomain { get; set; }
+
+    private int TileCount(int domainId) =>
+        TileCountsByDomainId.TryGetValue(domainId, out var n) ? n : 0;
+
+    private Task SelectDomainAsync(int domainId) => SelectedDomainIdChanged.InvokeAsync(domainId);
+
+    private Task OnDomainColorInputChangedAsync(int domainId, ChangeEventArgs e)
+    {
+        if (e.Value is not string color || string.IsNullOrWhiteSpace(color))
+            return Task.CompletedTask;
+
+        return OnDomainColorChanged.InvokeAsync((domainId, color));
+    }
+
+    private Task OnAddDomainAsync() => OnAddDomain.InvokeAsync();
+    private Task OnEditDomainAsync(int domainId) => OnEditDomain.InvokeAsync(domainId);
+    private Task OnDeleteDomainAsync(int domainId) => OnDeleteDomain.InvokeAsync(domainId);
+}

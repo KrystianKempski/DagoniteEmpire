@@ -1,0 +1,380 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<div class="barony-terrain-map @LayerVisibilityClass @(PaintEnabled ? "barony-terrain-map--paint" : "")"
+     @onmouseup="EndDragAsync"
+     @onmouseleave="OnMapMouseLeaveAsync">
+    <div @ref="_scrollRef" class="barony-terrain-map__scroll">
+        <div class="barony-terrain-grid-wrap"
+             style="--terrain-cell-size: @(CellSizePx)px;">
+            <div class="barony-terrain-grid"
+                 style="grid-template-columns: repeat(@GridWidth, @(CellSizePx)px); grid-auto-rows: @(CellSizePx)px;">
+                @for (var y = 0; y < GridHeight; y++)
+                {
+                    @for (var x = 0; x < GridWidth; x++)
+                    {
+                        var cx = x;
+                        var cy = y;
+                        var tile = GetTile(cx, cy);
+                        var fief = GetFief(tile?.FiefId);
+                        var improvement = GetImprovement(tile?.Id);
+                        var domain = GetDomain(tile?.MapDomainId);
+                        var hovered = HoveredX == cx && HoveredY == cy;
+                        var showFertility = ShowLayer(TerrainMapLayer.Fertility);
+                        var showBuildHint = hovered
+                            && CanProposeBuildAt is not null
+                            && CanProposeBuildAt(cx, cy);
+
+                        <div role="button"
+                             tabindex="0"
+                             class="barony-terrain-cell @(hovered ? "barony-terrain-cell--hovered" : "") @(ClickEnabled ? "barony-terrain-cell--clickable" : "") @(showBuildHint ? "barony-terrain-cell--buildable" : "")"
+                             @onmousedown="() => OnCellMouseDownAsync(cx, cy)"
+                             @onmousedown:preventDefault="@PaintEnabled"
+                             @onclick="() => OnCellClickAsync(cx, cy)"
+                             @onmouseenter="() => OnCellMouseEnterAsync(cx, cy)">
+                            <span class="barony-terrain-cell__layer barony-terrain-cell__fertility"
+                                  style="background-color: @TerrainMapVisuals.CellBackgroundColor(tile, showFertility)">
+                                @if (showFertility
+                                    && tile?.BaseType != TerrainBaseType.Water
+                                    && !TerrainMapVisuals.IsFertilityUnknown(tile))
+                                {
+                                    <span class="barony-terrain-cell__fertility-value">@TerrainMapVisuals.FertilityLabel(tile)</span>
+                                }
+                            </span>
+
+                            @if (ShowLayer(TerrainMapLayer.TerrainType))
+                            {
+                                <span class="barony-terrain-cell__layer barony-terrain-cell__terrain-type">
+                                    @if (TerrainMapVisuals.CustomBaseTypeIconUrl(tile?.BaseType) is string customIconUrl)
+                                    {
+                                        <img src="@customIconUrl"
+                                             alt="@TerrainBaseType.DisplayName(tile?.BaseType)"
+                                             class="@($"barony-terrain-cell__base-icon barony-terrain-cell__base-icon--img barony-terrain-cell__base-icon--{BaseTypeCss(tile?.BaseType)}")" />
+                                    }
+                                    else
+                                    {
+                                        <MudIcon Icon="@TerrainMapVisuals.BaseTypeIcon(tile?.BaseType)"
+                                                 Class="@($"barony-terrain-cell__base-icon barony-terrain-cell__base-icon--{BaseTypeCss(tile?.BaseType)}")" />
+                                    }
+
+                                    @if (tile is not null)
+                                    {
+                                        @foreach (var feature in TerrainFeature.Paintable)
+                                        {
+                                            if (!tile.HasFeature(feature))
+                                                continue;
+
+                                            var css = TerrainMapVisuals.FeatureCss(feature);
+                                            var iconUrls = TerrainMapVisuals.FeatureIconUrls(feature);
+                                            if (iconUrls.Count > 0)
+                                            {
+                                                if (iconUrls.Count > 1)
+                                                {
+                                                    <span class="@($"barony-terrain-cell__feature-row barony-terrain-cell__feature-row--{css}")">
+                                                        @foreach (var iconUrl in iconUrls)
+                                                        {
+                                                            <img src="@iconUrl"
+                                                                 alt="@TerrainFeature.DisplayName(feature)"
+                                                                 class="@($"barony-terrain-cell__feature-icon barony-terrain-cell__feature-icon--{css}")" />
+                                                        }
+                                                    </span>
+                                                }
+                                                else
+                                                {
+                                                    <img src="@iconUrls[0]"
+                                                         alt="@TerrainFeature.DisplayName(feature)"
+                                                         class="@($"barony-terrain-cell__feature-icon barony-terrain-cell__feature-icon--{css}")" />
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <MudIcon Icon="@TerrainMapVisuals.FeatureMudIcon(feature)"
+                                                         Class="@($"barony-terrain-cell__feature-icon barony-terrain-cell__feature-icon--{css}")" />
+                                            }
+                                        }
+                                    }
+                                </span>
+                            }
+
+                            @if (ShowLayer(TerrainMapLayer.Fief) && fief is not null)
+                            {
+                                <span class="barony-terrain-cell__layer barony-terrain-cell__fief"
+                                      style="background-color: @TerrainMapVisuals.FiefOverlayColor(fief)"></span>
+                            }
+
+                            @if (ShowLayer(TerrainMapLayer.Domain) && domain is not null)
+                            {
+                                <span class="barony-terrain-cell__layer barony-terrain-cell__domain"
+                                      style="background-color: @TerrainMapVisuals.DomainOverlayColor(domain)"></span>
+                            }
+
+                            @if (ShowLayer(TerrainMapLayer.Resources) && !string.IsNullOrWhiteSpace(tile?.Resource))
+                            {
+                                <span class="barony-terrain-cell__layer barony-terrain-cell__resource">
+                                    @if (TerrainResource.UsesBakedStrokeIcon(tile!.Resource))
+                                    {
+                                        <img src="@TerrainResource.IconUrl(tile.Resource)"
+                                             alt=""
+                                             class="barony-terrain-cell__resource-icon barony-terrain-cell__resource-icon--img"
+                                             aria-hidden="true" />
+                                    }
+                                    else
+                                    {
+                                        <span class="barony-terrain-cell__resource-icon @(TerrainResource.NeedsDarkOutline(tile!.Resource) ? "resource-icon--dark-outline" : null)"
+                                              style="@ResourceIconStyle(tile!.Resource)"
+                                              aria-hidden="true"></span>
+                                    }
+                                </span>
+                            }
+
+                            @if (ShowLayer(TerrainMapLayer.Improvements) && improvement is not null)
+                            {
+                                <span class="barony-terrain-cell__layer barony-terrain-cell__improvement">
+                                    <img src="@MapImprovement.ResolveIconUrl(improvement.Name, improvement.IconUrl)"
+                                         alt="@(string.IsNullOrWhiteSpace(improvement.Description) ? MapImprovement.DisplayName(improvement.Name) : improvement.Description)"
+                                         class="@($"barony-terrain-cell__improvement-icon barony-terrain-cell__improvement-icon--{ImprovementIconCss(improvement.Name)}")" />
+                                    @if (!string.IsNullOrWhiteSpace(improvement.Description))
+                                    {
+                                        <span class="@($"barony-terrain-cell__improvement-name barony-terrain-cell__improvement-name--{ImprovementIconCss(improvement.Name)}")">@improvement.Description</span>
+                                    }
+                                </span>
+                            }
+                            else if (ShowLayer(TerrainMapLayer.Improvements) && GetConstruction(tile?.Id) is { } construction)
+                            {
+                                <span class="barony-terrain-cell__layer barony-terrain-cell__improvement">
+                                    <BaronyTooltip Text="@construction.Name">
+                                        <img src="@MapImprovement.ConstructionIconUrl"
+                                             alt="@construction.Name"
+                                             class="barony-terrain-cell__improvement-icon barony-terrain-cell__improvement-icon--construction" />
+                                    </BaronyTooltip>
+                                </span>
+                            }
+
+                            @if (showBuildHint)
+                            {
+                                <span class="barony-terrain-cell__layer barony-terrain-cell__build-hint" aria-hidden="true">
+                                    <img src="/icons/hammer.svg"
+                                         alt=""
+                                         class="barony-terrain-cell__build-hint-icon" />
+                                </span>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+
+            @if (HoveredX is int tipX && HoveredY is int tipY && HoverLines.Count > 0)
+            {
+                var tipPlacement = TooltipPlacementClass(tipX, tipY);
+                <div class="barony-terrain-tooltip @tipPlacement"
+                     style="--tooltip-x: @tipX; --tooltip-y: @tipY;"
+                     role="tooltip">
+                    <div class="barony-terrain-tooltip__title">@HoverLines[0]</div>
+                    @for (var i = 1; i < HoverLines.Count; i++)
+                    {
+                        <div class="barony-terrain-tooltip__line">@HoverLines[i]</div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int GridWidth { get; set; } = TerrainMapConstants.GridSize;
+    [Parameter] public int GridHeight { get; set; } = TerrainMapConstants.GridSize;
+    [Parameter] public int CellSizePx { get; set; } = TerrainMapConstants.CellSizePx;
+    [Parameter] public IReadOnlyDictionary<(int X, int Y), TerrainTileDTO> Tiles { get; set; }
+        = new Dictionary<(int X, int Y), TerrainTileDTO>();
+    [Parameter] public IReadOnlyDictionary<int, FiefDTO> Fiefs { get; set; }
+        = new Dictionary<int, FiefDTO>();
+    [Parameter] public IReadOnlyDictionary<int, TerrainImprovementDTO> ImprovementsByTileId { get; set; }
+        = new Dictionary<int, TerrainImprovementDTO>();
+    /// <summary>Active map construction projects keyed by tile id (crane overlay).</summary>
+    [Parameter] public IReadOnlyDictionary<int, BaronyProjectDTO> ConstructionsByTileId { get; set; }
+        = new Dictionary<int, BaronyProjectDTO>();
+    [Parameter] public IReadOnlyDictionary<int, TerrainMapDomainDTO> DomainsById { get; set; }
+        = new Dictionary<int, TerrainMapDomainDTO>();
+    [Parameter] public IReadOnlySet<TerrainMapLayer> VisibleLayers { get; set; }
+        = new HashSet<TerrainMapLayer>(Enum.GetValues<TerrainMapLayer>());
+    [Parameter] public int? HoveredX { get; set; }
+    [Parameter] public int? HoveredY { get; set; }
+    [Parameter] public IReadOnlyList<string> HoverLines { get; set; } = Array.Empty<string>();
+    [Parameter] public bool PaintEnabled { get; set; }
+    /// <summary>When true and not painting, cell click fires <see cref="OnCellClick"/>.</summary>
+    [Parameter] public bool ClickEnabled { get; set; }
+    /// <summary>True when the baron can start a building project on this tile (hover build hint).</summary>
+    [Parameter] public Func<int, int, bool>? CanProposeBuildAt { get; set; }
+    [Parameter] public EventCallback<(int? X, int? Y)> OnCellHover { get; set; }
+    /// <summary>
+    /// Paint a cell. <c>ContinuingStroke</c> is false on mousedown (new stroke),
+    /// true when dragging across further cells — so naming dialogs can reuse one answer.
+    /// </summary>
+    [Parameter] public EventCallback<(int X, int Y, bool ContinuingStroke)> OnCellPaint { get; set; }
+    [Parameter] public EventCallback<(int X, int Y)> OnCellClick { get; set; }
+    [Parameter] public EventCallback OnPaintStrokeEnd { get; set; }
+
+    private ElementReference _scrollRef;
+    private IJSObjectReference? _wheelModule;
+    private IJSObjectReference? _wheelHandle;
+    private bool _wheelAttached;
+    private bool _dragPainting;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _wheelAttached)
+            return;
+
+        try
+        {
+            _wheelModule = await JS.InvokeAsync<IJSObjectReference>(
+                "import", "./js/terrain-map.js?v=page-scroll-wheel");
+            _wheelHandle = await _wheelModule.InvokeAsync<IJSObjectReference>(
+                "attachPageScrollWheel", _scrollRef);
+            _wheelAttached = true;
+        }
+        catch (JSDisconnectedException)
+        {
+            // Circuit gone during render — ignore.
+        }
+        catch (JSException)
+        {
+            /* page-scroll wheel optional — do not break the Blazor circuit */
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_wheelHandle is not null)
+            {
+                await _wheelHandle.InvokeVoidAsync("dispose");
+                await _wheelHandle.DisposeAsync();
+            }
+
+            if (_wheelModule is not null)
+                await _wheelModule.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        finally
+        {
+            _wheelHandle = null;
+            _wheelModule = null;
+        }
+    }
+
+    private async Task OnCellMouseDownAsync(int x, int y)
+    {
+        if (!PaintEnabled)
+            return;
+
+        _dragPainting = true;
+        await OnCellPaint.InvokeAsync((x, y, ContinuingStroke: false));
+    }
+
+    private async Task OnCellClickAsync(int x, int y)
+    {
+        if (!ClickEnabled || PaintEnabled)
+            return;
+
+        await OnCellClick.InvokeAsync((x, y));
+    }
+
+    private async Task OnCellMouseEnterAsync(int x, int y)
+    {
+        await OnCellHover.InvokeAsync((x, y));
+
+        if (PaintEnabled && _dragPainting)
+            await OnCellPaint.InvokeAsync((x, y, ContinuingStroke: true));
+    }
+
+    private async Task OnMapMouseLeaveAsync()
+    {
+        await EndDragAsync();
+        await OnCellHover.InvokeAsync((null, null));
+    }
+
+    private async Task EndDragAsync()
+    {
+        if (!_dragPainting)
+            return;
+
+        _dragPainting = false;
+        await OnPaintStrokeEnd.InvokeAsync();
+    }
+
+    private string TooltipPlacementClass(int x, int y)
+    {
+        var classes = new List<string>();
+        if (y <= 1)
+            classes.Add("barony-terrain-tooltip--below");
+        if (x <= 1)
+            classes.Add("barony-terrain-tooltip--start");
+        else if (x >= GridWidth - 2)
+            classes.Add("barony-terrain-tooltip--end");
+        return string.Join(' ', classes);
+    }
+
+    private string LayerVisibilityClass => string.Join(" ",
+        Enum.GetValues<TerrainMapLayer>()
+            .Where(l => !ShowLayer(l))
+            .Select(l => $"barony-terrain-map--hide-{LayerCss(l)}"));
+
+    private bool ShowLayer(TerrainMapLayer layer) => VisibleLayers.Contains(layer);
+
+    private TerrainTileDTO? GetTile(int x, int y)
+        => Tiles.TryGetValue((x, y), out var tile) ? tile : null;
+
+    private FiefDTO? GetFief(int? fiefId)
+        => fiefId is int id && Fiefs.TryGetValue(id, out var fief) ? fief : null;
+
+    private TerrainImprovementDTO? GetImprovement(int? tileId)
+        => tileId is int id && ImprovementsByTileId.TryGetValue(id, out var imp) ? imp : null;
+
+    private BaronyProjectDTO? GetConstruction(int? tileId)
+        => tileId is int id && ConstructionsByTileId.TryGetValue(id, out var project) ? project : null;
+
+    private TerrainMapDomainDTO? GetDomain(int? domainId)
+        => domainId is int id && DomainsById.TryGetValue(id, out var domain) ? domain : null;
+
+    private static string LayerCss(TerrainMapLayer layer) => layer switch
+    {
+        TerrainMapLayer.Fertility => "fertility",
+        TerrainMapLayer.TerrainType => "terrain-type",
+        TerrainMapLayer.Domain => "domain",
+        TerrainMapLayer.Fief => "fief",
+        TerrainMapLayer.Resources => "resources",
+        TerrainMapLayer.Improvements => "improvements",
+        _ => "unknown",
+    };
+
+    private static string BaseTypeCss(string? baseType) => (baseType ?? TerrainBaseType.Plains) switch
+    {
+        TerrainBaseType.Water => "water",
+        TerrainBaseType.Hills => "hills",
+        TerrainBaseType.Mountains => "mountains",
+        _ => "plains",
+    };
+
+    private static string ResourceIconStyle(string? resource) =>
+        $"--resource-color:{TerrainResource.ColorHex(resource)};" +
+        $"-webkit-mask-image:url('{TerrainResource.IconUrl(resource)}');" +
+        $"mask-image:url('{TerrainResource.IconUrl(resource)}');";
+
+    private static string ImprovementIconCss(string? name) => name switch
+    {
+        MapImprovement.Town => "town",
+        MapImprovement.Village => "village",
+        MapImprovement.HuntersLodge => "hunters-lodge",
+        MapImprovement.FishingHarbor => "fishing-harbor",
+        MapImprovement.Mine => "mine",
+        MapImprovement.Sawmill => "sawmill",
+        MapImprovement.Farm => "farm",
+        MapImprovement.Custom => "custom",
+        _ => "unknown",
+    };
+}

@@ -1,0 +1,72 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<MudDialog Class="barony-dialog barony-help-dialog">
+    <TitleContent>
+        <div class="barony-help-dialog__title">
+            <MudIcon Icon="@Icons.Material.Filled.HelpOutline" Size="Size.Small" />
+            <span>@Entry.Title — Help</span>
+        </div>
+    </TitleContent>
+    <DialogContent>
+        <div class="barony-dialog-theme barony-help-dialog__body">
+            <p class="barony-help-dialog__short">@Entry.Short</p>
+
+            @if (Entry.PlayerSections.Count > 0)
+            {
+                @Panels(Entry.PlayerSections)
+            }
+
+            @if (Entry.GmSections is { Count: > 0 })
+            {
+                <AuthorizeView Roles="@GmRoles">
+                    <Authorized>
+                        <div class="barony-help-dialog__gm">
+                            <div class="barony-help-dialog__gm-heading">
+                                <MudIcon Icon="@Icons.Material.Filled.Shield" Size="Size.Small" />
+                                <span>For the Game Master</span>
+                            </div>
+                            @Panels(Entry.GmSections)
+                        </div>
+                    </Authorized>
+                </AuthorizeView>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Filled" Class="baron-influence-save-btn" OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public BaronyHelpEntry Entry { get; set; } = default!;
+
+    private static readonly string GmRoles = SD.Role_Admin + "," + SD.Role_GameMaster;
+
+    private RenderFragment Panels(IReadOnlyList<BaronyHelpSection> sections) => @<MudExpansionPanels Elevation="0" Class="barony-help-dialog__details">
+        @foreach (var sec in sections)
+        {
+            <MudExpansionPanel Text="@sec.Heading">
+                @if (sec.Kind == BaronyHelpBlockKind.Bullet)
+                {
+                    <ul class="barony-help-dialog__list">
+                        @foreach (var item in sec.Items)
+                        {
+                            <li>@item</li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    @foreach (var item in sec.Items)
+                    {
+                        <p class="barony-help-dialog__para">@item</p>
+                    }
+                }
+            </MudExpansionPanel>
+        }
+    </MudExpansionPanels>;
+
+    private void Close() => MudDialog.Close();
+}

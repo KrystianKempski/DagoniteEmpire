@@ -1,0 +1,309 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="court-commander-tree-dialog barony-dialog"
+           ContentClass="court-commander-tree-dialog__content">
+    <DialogContent>
+        <div class="barony-dialog-theme court-commander-tree">
+            <div class="court-commander-tree__header">
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
+                    CX @_available available · @_spent spent · pool @_sheet.CommanderXp
+                </MudText>
+                <div class="court-commander-tree__legend">
+                    <span class="court-commander-node court-commander-node--unlocked court-commander-node--legend">Unlocked</span>
+                    <span class="court-commander-node court-commander-node--ready court-commander-node--legend">Available</span>
+                    <span class="court-commander-node court-commander-node--locked court-commander-node--legend">Locked</span>
+                </div>
+            </div>
+
+            <div class="court-commander-tree__body">
+            <section class="court-commander-tree__trunk">
+                <h4 class="court-commander-tree__branch-title">
+                    <MudIcon Icon="@BranchIcon(CourtCommanderBranch.Trunk)" Size="Size.Small" Class="court-commander-tree__branch-icon" />
+                    Trunk
+                </h4>
+                <div class="court-commander-tree__tiers">
+                    @foreach (var tier in new[] { 1, 2, 3 })
+                    {
+                        var tierAbilities = AbilitiesFor(CourtCommanderBranch.Trunk, tier);
+                        if (tierAbilities.Count == 0)
+                            continue;
+                        var tierReq = CourtCommanderCatalog.FindTierRequirement(CourtCommanderBranch.Trunk, tier);
+                        <div class="court-commander-tree__tier">
+                            <span class="court-commander-tree__tier-label">Tier @(tier) · @(tierReq?.CxCost ?? tier) CX</span>
+                            <div class="court-commander-tree__nodes">
+                                @foreach (var ability in tierAbilities)
+                                {
+                                    @AbilityNode(ability)
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </section>
+
+            <div class="court-commander-tree__branches">
+                @foreach (var branch in BranchOrder)
+                {
+                    <section class="court-commander-tree__branch court-commander-tree__branch--@branch">
+                        <h4 class="court-commander-tree__branch-title">
+                            <MudIcon Icon="@BranchIcon(branch)" Size="Size.Small" Class="court-commander-tree__branch-icon" />
+                            @BranchTitle(branch)
+                        </h4>
+                        <div class="court-commander-tree__tiers court-commander-tree__tiers--vertical">
+                            @foreach (var tier in new[] { 1, 2, 3 })
+                            {
+                                var tierAbilities = AbilitiesFor(branch, tier);
+                                if (tierAbilities.Count == 0)
+                                    continue;
+                                var tierReq = CourtCommanderCatalog.FindTierRequirement(branch, tier);
+                                <div class="court-commander-tree__tier">
+                                    <span class="court-commander-tree__tier-label">Tier @(tier) · @(tierReq?.CxCost ?? tier) CX</span>
+                                    <div class="court-commander-tree__nodes">
+                                        @foreach (var ability in tierAbilities)
+                                        {
+                                            @AbilityNode(ability)
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </section>
+                }
+            </div>
+
+            </div>
+
+            @if (_selected is not null)
+            {
+                <aside class="court-commander-tree__detail">
+                    <div class="court-commander-tree__detail-head">
+                        <strong>@_selected.NameEn</strong>
+                        <span class="court-commander-tree__detail-meta">
+                            @BranchTitle(_selected.Branch) · Tier @(_selected.Tier) · @_selected.CxCost CX
+                        </span>
+                        @if (CanSpendCx && IsReady(_selected))
+                        {
+                            <MudButton Variant="Variant.Filled"
+                                       Size="Size.Small"
+                                       Class="baron-influence-save-btn court-commander-tree__unlock-btn"
+                                       StartIcon="@Icons.Material.Filled.LockOpen"
+                                       ButtonType="ButtonType.Button"
+                                       OnClick="UnlockSelectedAsync">
+                                Unlock (@_selected.CxCost CX)
+                            </MudButton>
+                        }
+                    </div>
+                    <span class="court-commander-status @StatusCss(_selected.Status)">@StatusLabel(_selected.Status)</span>
+                    <p>@_selected.DescriptionEn</p>
+                    @if (!string.IsNullOrWhiteSpace(_selected.Effects))
+                    {
+                        <p class="court-commander-tree__effects">Effect: @_selected.Effects</p>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(RequirementText(_selected)))
+                    {
+                        <p class="court-commander-tree__req">Requires: @RequirementText(_selected)</p>
+                    }
+                    @if (!IsUnlocked(_selected) && !string.IsNullOrWhiteSpace(_selectedHint))
+                    {
+                        <MudAlert Severity="Severity.Info" Dense="true" Class="mt-1">@_selectedHint</MudAlert>
+                    }
+                    <div class="court-commander-tree__detail-actions">
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" ButtonType="ButtonType.Button" OnClick="Close">Close</MudButton>
+                        @if (_changed)
+                        {
+                            <MudButton Variant="Variant.Filled" Size="Size.Small" Class="baron-influence-save-btn" ButtonType="ButtonType.Button" OnClick="SaveAndClose">Done</MudButton>
+                        }
+                    </div>
+                </aside>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        @if (_selected is null)
+        {
+            <MudButton Variant="Variant.Outlined" OnClick="Close">Close</MudButton>
+            @if (_changed)
+            {
+                <MudButton Variant="Variant.Filled" Class="baron-influence-save-btn" OnClick="SaveAndClose">Done</MudButton>
+            }
+        }
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public CourtCharacterSheet Sheet { get; set; } = CourtCharacterSheet.CreateDefault();
+    [Parameter] public bool CanManage { get; set; }
+    /// <summary>Baron (or MG) may spend CX to unlock abilities.</summary>
+    [Parameter] public bool CanEdit { get; set; }
+
+    private bool CanSpendCx => CanManage || CanEdit;
+
+    private static readonly string[] BranchOrder =
+    [
+        CourtCommanderBranch.Shock,
+        CourtCommanderBranch.Line,
+        CourtCommanderBranch.Skirmish,
+        CourtCommanderBranch.Cunning,
+    ];
+
+    private CourtCharacterSheet _sheet = CourtCharacterSheet.CreateDefault();
+    private CourtCommanderAbility? _selected;
+    private string? _selectedHint;
+    private bool _changed;
+    private int _available;
+    private int _spent;
+
+    protected override void OnInitialized()
+    {
+        _sheet = CloneSheet(Sheet);
+        RefreshPools();
+    }
+
+    private void RefreshPools()
+    {
+        _sheet.Normalize();
+        _available = CourtCommanderFormulas.AvailableCx(_sheet);
+        _spent = CourtCommanderFormulas.SpentCx(_sheet);
+        if (_selected is not null)
+            Select(_selected.Key);
+    }
+
+    private RenderFragment AbilityNode(CourtCommanderAbility ability) => __builder =>
+    {
+        var unlocked = IsUnlocked(ability);
+        var ready = !unlocked && IsReady(ability);
+        var css = unlocked
+            ? "court-commander-node--unlocked"
+            : ready
+                ? "court-commander-node--ready"
+                : "court-commander-node--locked";
+        var selected = _selected is not null
+                       && string.Equals(_selected.Key, ability.Key, StringComparison.OrdinalIgnoreCase);
+        <button type="button"
+                class="court-commander-node @css @(selected ? "court-commander-node--selected" : null)"
+                @onclick="() => Select(ability.Key)">
+            <BaronyTooltip Title="@ability.NameEn" Text="@ability.DescriptionEn">
+                <span class="court-commander-node__name">@ability.NameEn</span>
+            </BaronyTooltip>
+        </button>
+    };
+
+    private List<CourtCommanderAbility> AbilitiesFor(string branch, int tier) =>
+        CourtCommanderCatalog.All
+            .Where(a => string.Equals(a.Branch, branch, StringComparison.OrdinalIgnoreCase) && a.Tier == tier)
+            .OrderBy(a => a.NameEn)
+            .ToList();
+
+    private static string BranchTitle(string branch) => branch switch
+    {
+        CourtCommanderBranch.Trunk => "Trunk",
+        CourtCommanderBranch.Shock => "Shock",
+        CourtCommanderBranch.Line => "Line",
+        CourtCommanderBranch.Skirmish => "Skirmish",
+        CourtCommanderBranch.Cunning => "Cunning",
+        _ => branch,
+    };
+
+    private static string BranchIcon(string branch) => branch switch
+    {
+        CourtCommanderBranch.Trunk => Icons.Material.Filled.AccountTree,
+        CourtCommanderBranch.Shock => Icons.Material.Filled.Bolt,
+        CourtCommanderBranch.Line => Icons.Material.Filled.Shield,
+        CourtCommanderBranch.Skirmish => Icons.Material.Filled.GpsFixed,
+        CourtCommanderBranch.Cunning => Icons.Material.Filled.Visibility,
+        _ => Icons.Material.Filled.MilitaryTech,
+    };
+
+    private bool IsUnlocked(CourtCommanderAbility ability) =>
+        _sheet.UnlockedCommanderAbilities.Any(k =>
+            string.Equals(k, ability.Key, StringComparison.OrdinalIgnoreCase));
+
+    private bool IsReady(CourtCommanderAbility ability) =>
+        CourtCommanderFormulas.CanUnlock(_sheet, ability.Key, out _);
+
+    private void Select(string key)
+    {
+        _selected = CourtCommanderCatalog.Find(key);
+        _selectedHint = null;
+        if (_selected is null || IsUnlocked(_selected))
+            return;
+        if (!CourtCommanderFormulas.CanUnlock(_sheet, _selected.Key, out var reason))
+            _selectedHint = reason;
+    }
+
+    private static string? RequirementText(CourtCommanderAbility ability)
+    {
+        var tierReq = CourtCommanderCatalog.FindTierRequirement(ability.Branch, ability.Tier);
+        return string.IsNullOrWhiteSpace(tierReq?.RequirementsText) ? null : tierReq!.RequirementsText;
+    }
+
+    private static string StatusLabel(string status) => status switch
+    {
+        CourtCommanderAbilityStatus.InCode => "In game",
+        CourtCommanderAbilityStatus.Proposal => "Proposal",
+        CourtCommanderAbilityStatus.Draft => "Draft",
+        _ => status,
+    };
+
+    private static string StatusCss(string status) => status switch
+    {
+        CourtCommanderAbilityStatus.InCode => "court-commander-status--in-code",
+        CourtCommanderAbilityStatus.Proposal => "court-commander-status--proposal",
+        _ => "court-commander-status--draft",
+    };
+
+    private void UnlockSelectedAsync()
+    {
+        if (!CanSpendCx || _selected is null)
+            return;
+        if (!CourtCommanderFormulas.TryUnlock(_sheet, _selected.Key, out var error))
+        {
+            _snackBar.Add(error ?? "Cannot unlock.", Severity.Warning);
+            RefreshPools();
+            return;
+        }
+        _changed = true;
+        _snackBar.Add($"{_selected.NameEn} unlocked.", Severity.Success);
+        RefreshPools();
+    }
+
+    private void Close()
+    {
+        if (_changed)
+            MudDialog.Close(DialogResult.Ok(_sheet));
+        else
+            MudDialog.Cancel();
+    }
+
+    private void SaveAndClose() => MudDialog.Close(DialogResult.Ok(_sheet));
+
+    private static CourtCharacterSheet CloneSheet(CourtCharacterSheet source)
+    {
+        var sheet = new CourtCharacterSheet
+        {
+            Main = new Dictionary<string, int>(source.Main, StringComparer.OrdinalIgnoreCase),
+            Secondary = source.Secondary
+                .Select(s => new CourtSecondaryEntry { Key = s.Key, Value = s.Value })
+                .ToList(),
+            MainOther = source.MainOther
+                .Select(s => new CourtMainOtherSource { Name = s.Name, SkillKey = s.SkillKey, Value = s.Value })
+                .ToList(),
+            DomainOther = source.DomainOther
+                .Select(s => new CourtDomainOtherSource
+                {
+                    Name = s.Name,
+                    Additive = (s.Additive ?? new PpbVector()).Clone(),
+                })
+                .ToList(),
+            CombatOther = source.CombatOther
+                .Select(s => new CourtCombatOtherSource { Name = s.Name, SkillKey = s.SkillKey, Value = s.Value })
+                .ToList(),
+            CommanderXp = source.CommanderXp,
+            UnlockedCommanderAbilities = source.UnlockedCommanderAbilities.ToList(),
+        };
+        sheet.Normalize();
+        return sheet;
+    }
+}

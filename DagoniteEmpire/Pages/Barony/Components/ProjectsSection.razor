@@ -1,0 +1,331 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IBaronyRepository _baronyRepo
+@inject ISnackbar _snackBar
+@inject IDialogService _dialogService
+
+<BaronySection Title="Projects">
+    <Summary>
+        <span class="projects-summary">
+            <span class="projects-summary__item">@ActiveProjects.Count project@(ActiveProjects.Count == 1 ? "" : "s")</span>
+            @if (_allocatingCount > 0)
+            {
+                <span class="projects-summary__item">@_allocatingCount awaiting resources</span>
+            }
+            @if (_inProgressCount > 0)
+            {
+                <span class="projects-summary__item projects-summary__item--active">@_inProgressCount in progress</span>
+            }
+        </span>
+    </Summary>
+    <ChildContent>
+        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
+            Fund projects by allocating Gold, Production, and other cumulative stocks from your barony.
+            Auto-created projects start in <strong>Resource allocation</strong> — turns do not tick until they are fully funded.
+            Spent allocations appear on the Resources balance.
+            Click a project title row to expand or collapse details.
+        </MudText>
+
+        @if (CanEdit)
+        {
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <MudButton Variant="Variant.Outlined"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="AddAsync">
+                    Add Project
+                </MudButton>
+            </div>
+        }
+
+        @if (ActiveProjects.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                No open projects.
+                @if (CanEdit)
+                {
+                    <text> Add one above.</text>
+                }
+            </MudText>
+        }
+        else
+        {
+            <div class="project-card-grid">
+                @foreach (var item in OrderedActiveProjects)
+                {
+                    <ProjectCard Project="@item"
+                                 CanEdit="@CanEdit"
+                                 CanManage="@CanManage"
+                                 OnAllocate="@(() => AllocateAsync(item))"
+                                 OnClearAllocation="@(() => ClearAllocationAsync(item))"
+                                 OnCostModeChanged="@(mode => SwitchCostModeAsync(item, mode))"
+                                 OnEdit="@(() => EditAsync(item))"
+                                 OnDelete="@(() => DeleteAsync(item))" />
+                }
+            </div>
+        }
+    </ChildContent>
+</BaronySection>
+
+<BaronySection Title="Completed Projects" DefaultOpen="false">
+    <Summary>
+        <span class="projects-summary">
+            <span class="projects-summary__item">@CompletedProjects.Count completed</span>
+        </span>
+    </Summary>
+    <ChildContent>
+        @if (CompletedProjects.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                No completed projects yet.
+            </MudText>
+        }
+        else
+        {
+            <div class="project-card-grid">
+                @foreach (var item in OrderedCompletedProjects)
+                {
+                    <ProjectCard Project="@item"
+                                 CanEdit="@CanEdit"
+                                 CanManage="@CanManage"
+                                 OnAllocate="@(() => AllocateAsync(item))"
+                                 OnClearAllocation="@(() => ClearAllocationAsync(item))"
+                                 OnCostModeChanged="@(mode => SwitchCostModeAsync(item, mode))"
+                                 OnEdit="@(() => EditAsync(item))"
+                                 OnDelete="@(() => DeleteAsync(item))" />
+                }
+            </div>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public int BaronyId { get; set; }
+    [Parameter] public List<BaronyProjectDTO> Projects { get; set; } = new();
+    [Parameter] public PpbVector ResourceStocks { get; set; } = new();
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public bool CanManage { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private List<BaronyProjectDTO> ActiveProjects =>
+        Projects.Where(p => !ProjectStatus.IsCompleted(p.Status)).ToList();
+
+    private List<BaronyProjectDTO> CompletedProjects =>
+        Projects.Where(p => ProjectStatus.IsCompleted(p.Status)).ToList();
+
+    private int _inProgressCount => ActiveProjects.Count(p => p.Status == ProjectStatus.InProgress);
+    private int _allocatingCount => ActiveProjects.Count(p => ProjectStatus.IsResourceAllocation(p.Status));
+
+    private IEnumerable<BaronyProjectDTO> OrderedActiveProjects =>
+        ActiveProjects.OrderBy(p => p.Status == ProjectStatus.InProgress ? 0
+                : ProjectStatus.IsResourceAllocation(p.Status) ? 1
+                : p.Status == ProjectStatus.Draft ? 2
+                : 3)
+            .ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase);
+
+    private IEnumerable<BaronyProjectDTO> OrderedCompletedProjects =>
+        CompletedProjects.OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase);
+
+    private async Task AllocateAsync(BaronyProjectDTO item)
+    {
+        if (!CanEdit || !item.CanAcceptAllocation)
+            return;
+
+        var parameters = new DialogParameters<ProjectAllocateDialog>
+        {
+            { x => x.Project, Clone(item) },
+            { x => x.AvailableStocks, ResourceCatalog.Slice(ResourceStocks) },
+        };
+
+        var dialog = await _dialogService.ShowAsync<ProjectAllocateDialog>(
+            "Allocate resources",
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not PpbVector amounts)
+            return;
+
+        try
+        {
+            await _baronyRepo.AllocateProjectResources(item.Id, amounts);
+            _snackBar.Add("Resources allocated to project.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task ClearAllocationAsync(BaronyProjectDTO item)
+    {
+        if (!CanEdit || !item.CanClearAllocation)
+            return;
+
+        var confirm = await _dialogService.ShowMessageBoxAsync(
+            "Clear allocation",
+            $"Return all allocated resources from “{item.Name}” to your stocks?",
+            yesText: "Clear",
+            cancelText: "Cancel");
+        if (confirm != true)
+            return;
+
+        try
+        {
+            await _baronyRepo.ClearProjectAllocations(item.Id);
+            _snackBar.Add("Project allocation cleared.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task SwitchCostModeAsync(BaronyProjectDTO item, string mode)
+    {
+        if (!CanEdit || mode == item.EffectiveCostMode)
+            return;
+
+        try
+        {
+            await _baronyRepo.SetProjectCostMode(item.Id, mode);
+            _snackBar.Add($"Payment method set to {mode}.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task AddAsync()
+    {
+        if (!CanEdit)
+            return;
+
+        var draft = new BaronyProjectDTO
+        {
+            BaronyId = BaronyId,
+            Status = ProjectStatus.Draft,
+            OutputKind = ProjectOutputKind.DecreeOrTechnology,
+        };
+        await OpenEditAsync(draft, isNew: true);
+    }
+
+    private async Task EditAsync(BaronyProjectDTO item)
+    {
+        if (!CanManage)
+            return;
+        await OpenEditAsync(Clone(item), isNew: false);
+    }
+
+    private async Task OpenEditAsync(BaronyProjectDTO draft, bool isNew)
+    {
+        var parameters = new DialogParameters<ProjectEditDialog>
+        {
+            { x => x.Project, draft },
+            { x => x.CanManage, CanManage },
+        };
+
+        var dialog = await _dialogService.ShowAsync<ProjectEditDialog>(
+            isNew ? "Add Project" : "Edit Project",
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = CanManage ? MaxWidth.Large : MaxWidth.Small,
+                FullWidth = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronyProjectDTO saved)
+            return;
+
+        if (!CanManage)
+        {
+            if (!isNew)
+            {
+                _snackBar.Add("Only the game master can edit existing projects.", Severity.Warning);
+                return;
+            }
+
+            saved.Status = ProjectStatus.Draft;
+            saved.TurnsRemaining = 0;
+            saved.Notes = null;
+            saved.HideResultFromBaron = false;
+            saved.AllowedCostModes = ProjectAllowedCostModes.PlayerChoice;
+            saved.CostGoldProduction = new();
+            saved.CostMaterials = new();
+            saved.ResultAdditive = new();
+            saved.ResultPercent = new();
+            saved.Allocated = new();
+            saved.SelectedCostMode = null;
+        }
+
+        try
+        {
+            saved.BaronyId = BaronyId;
+            await _baronyRepo.SaveProject(saved);
+            _snackBar.Add(isNew ? "Project added." : "Project updated.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save project: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DeleteAsync(BaronyProjectDTO item)
+    {
+        if (!CanManage)
+            return;
+
+        var confirm = await _dialogService.ShowMessageBoxAsync(
+            "Remove project",
+            $"Remove “{item.Name}”?",
+            yesText: "Remove",
+            cancelText: "Cancel");
+        if (confirm != true)
+            return;
+
+        try
+        {
+            await _baronyRepo.DeleteProject(item.Id);
+            _snackBar.Add("Project removed.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not remove project: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private static BaronyProjectDTO Clone(BaronyProjectDTO p) => new()
+    {
+        Id = p.Id,
+        BaronyId = p.BaronyId,
+        Name = p.Name,
+        Description = p.Description,
+        OutputKind = p.OutputKind,
+        CostGoldProduction = p.CostGoldProduction.Clone(),
+        CostMaterials = p.CostMaterials.Clone(),
+        AllowedCostModes = p.AllowedCostModes,
+        SelectedCostMode = p.SelectedCostMode,
+        ResultAdditive = p.ResultAdditive.Clone(),
+        ResultPercent = p.ResultPercent.Clone(),
+        Allocated = p.Allocated.Clone(),
+        ResultDescription = p.ResultDescription,
+        HideResultFromBaron = p.HideResultFromBaron,
+        Status = p.Status,
+        TurnsRemaining = p.TurnsRemaining,
+        Notes = p.Notes,
+        TileId = p.TileId,
+        BuildingTemplateId = p.BuildingTemplateId,
+        UnitId = p.UnitId,
+    };
+}

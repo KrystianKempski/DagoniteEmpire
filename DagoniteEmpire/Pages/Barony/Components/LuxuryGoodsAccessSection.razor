@@ -1,0 +1,64 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<BaronySection Title="Luxury goods access" DefaultOpen="true">
+    <Summary>
+        <span class="projects-summary__item">@CurrentTier.NameEn</span>
+    </Summary>
+    <ChildContent>
+        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+            How far luxury markets reach this barony. Set by the GM for now; later it may follow trade-relation count.
+        </MudText>
+
+        <MudRadioGroup T="string"
+                       Value="@SelectedKey"
+                       ValueChanged="OnSelectedChanged"
+                       Disabled="@(!CanEdit)"
+                       Class="luxury-goods-access">
+            <table class="ppb-table ppb-table--lined luxury-goods-access-table">
+                <colgroup>
+                    <col class="luxury-goods-col-radio" />
+                    <col class="luxury-goods-col-name" />
+                    <col class="luxury-goods-col-bonus" />
+                    <col class="luxury-goods-col-desc" />
+                </colgroup>
+                <thead>
+                    <tr>
+                        <th class="luxury-goods-col-radio">Active</th>
+                        <th class="luxury-goods-col-name">Tier</th>
+                        <th class="luxury-goods-col-bonus">PPB bonus</th>
+                        <th class="luxury-goods-col-desc">Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var tier in LuxuryGoodsAccessCatalog.All)
+                    {
+                        <tr class="@(string.Equals(tier.Key, SelectedKey, StringComparison.OrdinalIgnoreCase) ? "luxury-goods-row--active" : "")">
+                            <td class="luxury-goods-col-radio">
+                                <MudRadio T="string" Value="@tier.Key" Dense="true" />
+                            </td>
+                            <td class="luxury-goods-col-name">@tier.NameEn</td>
+                            <td class="luxury-goods-col-bonus">@tier.BonusDisplay</td>
+                            <td class="luxury-goods-col-desc">@tier.Description</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </MudRadioGroup>
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public string SelectedKey { get; set; } = LuxuryGoodsAccessCatalog.DefaultKey;
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public EventCallback<string> SelectedKeyChanged { get; set; }
+
+    private LuxuryGoodsAccessTier CurrentTier => LuxuryGoodsAccessCatalog.Find(SelectedKey);
+
+    private async Task OnSelectedChanged(string value)
+    {
+        if (!CanEdit || string.Equals(value, SelectedKey, StringComparison.OrdinalIgnoreCase))
+            return;
+        SelectedKey = value;
+        await SelectedKeyChanged.InvokeAsync(value);
+    }
+}

@@ -1,0 +1,685 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Business.Repository.BaronyRepos
+@using DA_Common.Barony
+@inject ISnackbar _snackBar
+@inject IDialogService _dialogService
+
+@* Shared unit card layout (Excel right-hand card) — used by generator preview and roster. *@
+<div class="unit-draft-card @(Collapsible ? (_isOpen ? "unit-draft-card--open" : "unit-draft-card--collapsed") : null) @(ShowCurrentHp && Unit.CurrentHp <= 0 ? "unit-draft-card--broken" : null)">
+    <div class="unit-draft-card__title @(Collapsible ? "unit-draft-card__title--toggle" : null)"
+         @onclick="Toggle"
+         role="@(Collapsible ? "button" : null)"
+         aria-expanded="@(Collapsible ? _isOpen : null)">
+        <div class="unit-draft-card__title-main">
+            <span>@ResolvedTitleEyebrow</span>
+            <b>@(string.IsNullOrWhiteSpace(Unit.Name) || Unit.Name == "Forming unit" ? "(name)" : Unit.Name)</b>
+            @if (!string.IsNullOrWhiteSpace(Unit.CaptainName))
+            {
+                <BaronyTooltip Title="Captain"
+                               Text="@(string.IsNullOrWhiteSpace(CaptainTooltip) ? Unit.CaptainName : CaptainTooltip)"
+                               Placement="Placement.Bottom"
+                               Class="unit-draft-card__captain-tip">
+                    <span class="unit-draft-card__captain"
+                          @onclick:stopPropagation="true">(@Unit.CaptainName)</span>
+                </BaronyTooltip>
+            }
+        </div>
+        @if (TitleActions is not null)
+        {
+            <div class="unit-draft-card__title-actions" @onclick:stopPropagation="true">
+                @TitleActions
+            </div>
+        }
+    </div>
+
+    @if (_isOpen)
+    {
+    <div class="unit-draft-card__body">
+    <div class="unit-draft-card__meta">
+        <BaronyTooltip Title="Wage / turn" Text="@_upkeepExplain" Placement="Placement.Bottom">
+            <span class="unit-draft-card__meta-item">
+                <em>Wage</em>
+                <b class="unit-draft-card__meta-val unit-draft-card__meta-val--gold">
+                    @_upkeep.Gold
+                    <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
+                </b>
+            </span>
+        </BaronyTooltip>
+        <BaronyTooltip Title="Food upkeep" Text="@_upkeepExplain" Placement="Placement.Bottom">
+            <span class="unit-draft-card__meta-item">
+                <em>Food</em>
+                <b class="unit-draft-card__meta-val unit-draft-card__meta-val--food">
+                    @_upkeep.Food.ToString("0.#")
+                    <BaronyResourceIcon Resource="Ppb.Food" Size="xs" />
+                </b>
+            </span>
+        </BaronyTooltip>
+        <BaronyTooltip Title="Defense upkeep" Text="@_upkeepExplain" Placement="Placement.Bottom">
+            <span class="unit-draft-card__meta-item">
+                <em>Def/t</em>
+                <b class="unit-draft-card__meta-val unit-draft-card__meta-val--defense">
+                    @_upkeep.Defense
+                    <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" />
+                </b>
+            </span>
+        </BaronyTooltip>
+        <BaronyTooltip Title="Experience points"
+                       Text="Experience points (XP) left to spend after training. Attribute = target × 10; base skill = level × 3; specialization = level × 1 (≤ parent); discipline = current level."
+                       Placement="Placement.Bottom">
+            <span class="unit-draft-card__meta-item"><em>XP</em> <b>@Unit.RemainingPd</b></span>
+        </BaronyTooltip>
+        <BaronyTooltip Title="Troops" Text="@TroopTip" Placement="Placement.Bottom">
+            <span class="unit-draft-card__meta-item">
+                <em>Troops</em>
+                @if (CanManageAsMg)
+                {
+                    <button type="button"
+                            class="unit-draft-card__meta-btn @(Unit.TroopCount < UnitRules.DefaultTroopCount ? "unit-draft-card__meta-btn--loss" : null)"
+                            @onclick="EditTroopCountAsync">
+                        @Unit.TroopCount/@UnitRules.DefaultTroopCount
+                    </button>
+                }
+                else
+                {
+                    <b class="@(Unit.TroopCount < UnitRules.DefaultTroopCount ? "unit-draft-card__meta-val--loss" : null)">
+                        @Unit.TroopCount/@UnitRules.DefaultTroopCount
+                    </b>
+                }
+            </span>
+        </BaronyTooltip>
+        <BaronyTooltip Title="Race" Text="@_race.Description" Placement="Placement.Bottom">
+            <span class="unit-draft-card__meta-item"><em>Race</em> <b>@_race.Name</b></span>
+        </BaronyTooltip>
+        @if (ShowCurrentHp)
+        {
+            <BaronyTooltip Title="Hit points" Text="@HpTip" Placement="Placement.Bottom">
+                <span class="unit-draft-card__meta-item">
+                    <em>HP</em>
+                    @if (CanManageAsMg)
+                    {
+                        <button type="button"
+                                class="unit-draft-card__meta-btn @(Unit.CurrentHp < _combat.MaxHp ? "unit-draft-card__meta-btn--loss" : null)"
+                                @onclick="EditCurrentHpAsync">
+                            @Unit.CurrentHp/@_combat.MaxHp
+                        </button>
+                    }
+                    else
+                    {
+                        <b class="@(Unit.CurrentHp < _combat.MaxHp ? "unit-draft-card__meta-val--loss" : null)">
+                            @Unit.CurrentHp/@_combat.MaxHp
+                        </b>
+                    }
+                </span>
+            </BaronyTooltip>
+        }
+    </div>
+
+    <div class="unit-draft-card__combat">
+        <UnitCombatBreakdown Combat="@_combat"
+                             Unit="@Unit"
+                             CurrentHp="@(ShowCurrentHp ? Unit.CurrentHp : null)"
+                             CanEditOther="@CanManageAsMg"
+                             OtherChanged="HandleCombatOtherChanged" />
+    </div>
+
+    <div class="unit-draft-card__section">
+        <div class="unit-draft-card__section-title">
+            <BaronyTooltip Title="Attributes"
+                           Text="Build = strength/endurance/size · Agility = dexterity/mobility · Will = courage/mental grit · Perception = senses/intuition. Raise cost = target level × 10 XP."
+                           Placement="Placement.Right">
+                <span>Attributes</span>
+            </BaronyTooltip>
+            @if (CanSpendPd && Unit.FreeAttributePoints > 0)
+            {
+                <span class="unit-draft-card__section-hint">@Unit.FreeAttributePoints free attr point(s)</span>
+            }
+            else if (CanManageAsMg)
+            {
+                <span class="unit-draft-card__section-hint">click value for Other (MG)</span>
+            }
+        </div>
+        <div class="unit-card__attrs unit-card__attrs--compact">
+            @AttrChip(UnitAttr.Build, "Build",
+                "Strength, endurance and size of the people in the unit.",
+                Unit.Build, Unit.EffectiveBuild)
+            @AttrChip(UnitAttr.Agility, "Agility",
+                "Dexterity, quickness and mobility. Gear may apply an agility penalty.",
+                Unit.Agility, Unit.EffectiveAgility)
+            @AttrChip(UnitAttr.Will, "Will",
+                "Willpower, courage and mental grit under pressure.",
+                Unit.Will, Unit.EffectiveWill)
+            @AttrChip(UnitAttr.Perception, "Perception",
+                "Awareness, senses and intuition.",
+                Unit.Perception, Unit.EffectivePerception)
+            @DisciplineChip()
+        </div>
+    </div>
+
+    <div class="unit-draft-card__section">
+        <div class="unit-draft-card__section-title">
+            <BaronyTooltip Title="Skills"
+                           Text="Base skills: Total = Base + Other (no attribute). Specializations: Total = parent + linked attr + Base + Other. Base skill XP = level × 3; specialization = level × 1 (cannot exceed parent)."
+                           Placement="Placement.Right">
+                <span>Skills</span>
+            </BaronyTooltip>
+            <span class="unit-draft-card__section-hint">
+                base Total = Base+Other · special Total = parent+From+Base+Other
+                @(CanManageAsMg ? " · click Base / Other (MG)" : "")
+                @(CanSpendPd ? " · + spends XP" : "")
+            </span>
+        </div>
+        <UnitSkillTiles Unit="@Unit"
+                        CanManageAsMg="@CanManageAsMg"
+                        CanSpendPd="@CanSpendPd"
+                        OnChanged="HandleSkillsChanged"
+                        OnXpDraftChanged="HandleXpDraftChanged" />
+    </div>
+
+    <div class="unit-draft-card__section">
+        <div class="unit-draft-card__section-title">Equipment</div>
+        <table class="unit-draft-equip unit-draft-equip--cols">
+            <thead>
+                <tr>
+                    <th>
+                        <BaronyTooltip Title="Weapon 1" Text="Primary weapon. Quality adjusts Atk and Dmg (Good +1 / Poor −1)." Placement="Placement.Top">
+                            <span>Weapon 1</span>
+                        </BaronyTooltip>
+                    </th>
+                    <th>
+                        <BaronyTooltip Title="Weapon 2" Text="Secondary weapon (optional)." Placement="Placement.Top">
+                            <span>Weapon 2</span>
+                        </BaronyTooltip>
+                    </th>
+                    <th>
+                        <BaronyTooltip Title="Armor" Text="Body armor: Def defense, Arm armor value, Pen agility penalty, Mov move penalty." Placement="Placement.Top">
+                            <span>Armor</span>
+                        </BaronyTooltip>
+                    </th>
+                    <th>
+                        <BaronyTooltip Title="Shield" Text="Shield: Def defense, Mov move penalty. Shields do not add Armor." Placement="Placement.Top">
+                            <span>Shield</span>
+                        </BaronyTooltip>
+                    </th>
+                    <th>
+                        <BaronyTooltip Title="Mount" Text="Optional horses / war horses: Atk, Def, Dmg, Mov bonuses. Requires Riding and trade access." Placement="Placement.Top">
+                            <span>Mount</span>
+                        </BaronyTooltip>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="unit-draft-equip__names">
+                    <td>
+                        @(_w1?.Name ?? "—")
+                        @if (_w1 is not null && Unit.Weapon1Quality != UnitWeaponQuality.Normal)
+                        {
+                            <span class="unit-draft-equip__qual">@Unit.Weapon1Quality</span>
+                        }
+                    </td>
+                    <td>@(_w2?.Name ?? "—")</td>
+                    <td>@(_armor?.Name ?? "—")</td>
+                    <td>@(_shield?.Name ?? "—")</td>
+                    <td>@(_mount?.Name ?? "—")</td>
+                </tr>
+                <tr class="unit-draft-equip__stats">
+                    <td>
+                        @if (_w1 is not null)
+                        {
+                            <text>Atk @_w1.Attack · Dmg @_w1.Damage · Def @_w1.Defense · Prc @_w1.Pierce</text>
+                            @if (_w1.Range > 0) { <text> · Rng @_w1.Range</text> }
+                            @if (_w1.MovePenalty != 0) { <text> · Mov @_w1.MovePenalty</text> }
+                        }
+                        else { <text>—</text> }
+                    </td>
+                    <td>
+                        @if (_w2 is not null)
+                        {
+                            <text>Atk @_w2.Attack · Dmg @_w2.Damage · Rng @_w2.Range</text>
+                        }
+                        else { <text>—</text> }
+                    </td>
+                    <td>
+                        @if (_armor is not null)
+                        {
+                            <text>Def @_armor.Defense · Arm @_armor.ArmorValue · Pen @_armor.AgilityPenalty · Mov @_armor.MovePenalty</text>
+                        }
+                        else { <text>—</text> }
+                    </td>
+                    <td>
+                        @if (_shield is not null)
+                        {
+                            <text>Def @_shield.Defense · Mov @_shield.MovePenalty</text>
+                        }
+                        else { <text>—</text> }
+                    </td>
+                    <td>
+                        @if (_mount is not null)
+                        {
+                            <text>Atk +@_mount.Attack · Def +@_mount.Defense · Dmg +@_mount.Damage · Mov +@_mount.MoveBonus</text>
+                        }
+                        else { <text>—</text> }
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="unit-draft-card__section unit-draft-card__section--tight unit-draft-card__footer">
+        <BaronyTooltip Title="Defense skill"
+                       Text="Uses the highest eligible skill: Dodges always; Shields only with a shield equipped; Armor only with armor equipped."
+                       Placement="Placement.Top">
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
+                Def skill <b>@(UnitSkillTree.Find(_combat.DefenseSkillKeyUsed)?.Name ?? _combat.DefenseSkillKeyUsed ?? "—")</b>
+            </MudText>
+        </BaronyTooltip>
+        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
+            @if (Unit.IsTraining && Unit.MaxBaseSkillAtGraduation > 0)
+            {
+                <text>Max skill <b>@Unit.MaxBaseSkillAtGraduation</b> (until graduation)</text>
+            }
+            else if (Unit.IsActive)
+            {
+                <text>Base skill cap lifted</text>
+            }
+            @if (Unit.FreeAttributePoints > 0)
+            {
+                <text> · Free attrs <b>@Unit.FreeAttributePoints</b></text>
+            }
+        </MudText>
+    </div>
+    </div>
+    }
+</div>
+
+@code {
+    [Parameter] public BaronyUnitDTO Unit { get; set; } = new();
+    [Parameter] public bool CanManageAsMg { get; set; }
+    [Parameter] public bool CanSpendPd { get; set; }
+    [Parameter] public bool ShowCurrentHp { get; set; }
+    /// <summary>Baron-style tooltip body for the captain name in parentheses (defaults to the name).</summary>
+    [Parameter] public string? CaptainTooltip { get; set; }
+    [Parameter] public string? TitleEyebrow { get; set; }
+    /// <summary>Optional controls aligned with the unit name (e.g. Reinforce / re-equip).</summary>
+    [Parameter] public RenderFragment? TitleActions { get; set; }
+    /// <summary>When true, the card can collapse to the title row (roster). Generator leaves this false.</summary>
+    [Parameter] public bool Collapsible { get; set; }
+    /// <summary>Initial open state when <see cref="Collapsible"/> (default collapsed, like projects).</summary>
+    [Parameter] public bool DefaultOpen { get; set; }
+    [Parameter] public EventCallback SkillsChanged { get; set; }
+    [Parameter] public EventCallback OnXpDraftChanged { get; set; }
+
+    private bool _isOpen = true;
+    private bool _collapseInitialized;
+
+    private UnitCombatTotals _combat;
+    private UnitUpkeepTotals _upkeep;
+    private string _upkeepExplain = string.Empty;
+    private UnitWeaponDef? _w1;
+    private UnitWeaponDef? _w2;
+    private UnitArmorDef? _armor;
+    private UnitArmorDef? _shield;
+    private UnitMountDef? _mount;
+    private UnitRaceDef _race => UnitRaceCatalog.Find(Unit.RaceKey);
+
+    private string ResolvedTitleEyebrow =>
+        !string.IsNullOrWhiteSpace(TitleEyebrow)
+            ? TitleEyebrow!
+            : Unit.IsActive ? "Active unit"
+            : Unit.IsTraining ? "In training"
+            : Unit.Status;
+
+    private void Toggle()
+    {
+        if (!Collapsible) return;
+        _isOpen = !_isOpen;
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Collapsible && !_collapseInitialized)
+        {
+            _isOpen = DefaultOpen;
+            _collapseInitialized = true;
+        }
+        else if (!Collapsible)
+        {
+            _isOpen = true;
+        }
+
+        _combat = UnitStatHelper.Compute(Unit);
+        _upkeep = UnitStatHelper.ComputeUpkeep(Unit);
+        _upkeepExplain = UnitUpkeepFormulas.Explain(_upkeep);
+        _w1 = UnitWeaponCatalog.Find(Unit.Weapon1Key);
+        _w2 = UnitWeaponCatalog.Find(Unit.Weapon2Key);
+        _armor = UnitArmorCatalog.Find(Unit.ArmorKey);
+        _shield = UnitArmorCatalog.Find(Unit.ShieldKey);
+        _mount = UnitMountCatalog.Find(Unit.MountKey);
+    }
+
+    private RenderFragment AttrChip(
+        string attrKey,
+        string fullLabel,
+        string attrBlurb,
+        int baseVal,
+        int effective) => __builder =>
+    {
+        var cost = UnitRules.AttributeRaiseCost(baseVal + 1);
+        var canFree = Unit.FreeAttributePoints > 0;
+        var canRaise = CanSpendPd && (canFree || Unit.RemainingPd >= cost);
+        var raiseTip = canFree
+            ? $"Raise {fullLabel} to {baseVal + 1} (uses 1 free attribute point)."
+            : $"Raise {fullLabel} to {baseVal + 1} — costs {cost} XP.";
+        var breakdown = AttrBreakdownTip(attrKey, fullLabel, baseVal, effective);
+        var otherSum = AttrOtherSum(attrKey);
+        var hasExtra = otherSum != 0 || AttrGearPenalty(attrKey) != 0;
+
+        <div class="unit-card__attr">
+            <span class="unit-card__attr-name">
+                <BaronyTooltip Title="@fullLabel" Text="@attrBlurb" Placement="Placement.Top">
+                    <span>@fullLabel</span>
+                </BaronyTooltip>
+                @if (canRaise)
+                {
+                    <BaronyTooltip Title="Spend XP" Text="@raiseTip" Placement="Placement.Top">
+                        <button type="button"
+                                class="unit-xp-plus"
+                                @onclick="@(() => RaiseAttrAsync(attrKey))">+</button>
+                    </BaronyTooltip>
+                }
+            </span>
+            <BaronyTooltip Title="@fullLabel" Text="@breakdown" Placement="Placement.Top">
+                @if (CanManageAsMg)
+                {
+                    <button type="button"
+                            class="unit-card__attr-val unit-card__attr-val--btn @(hasExtra ? "unit-card__attr-val--mod" : null)"
+                            @onclick="@(() => EditAttrOtherAsync(attrKey, fullLabel))">
+                        @effective
+                    </button>
+                }
+                else
+                {
+                    <b class="unit-card__attr-val @(hasExtra ? "unit-card__attr-val--mod" : null)">@effective</b>
+                }
+            </BaronyTooltip>
+        </div>
+    };
+
+    private RenderFragment DisciplineChip() => __builder =>
+    {
+        var cost = UnitRules.DisciplineRaiseCost(Unit.Discipline);
+        var canRaise = CanSpendPd
+            && Unit.Discipline < UnitRules.DisciplineMax
+            && Unit.RemainingPd >= cost;
+        var raiseTip = $"Raise Discipline to {Unit.Discipline + 1} — costs {cost} XP.";
+
+        <div class="unit-card__attr">
+            <span class="unit-card__attr-name">
+                <BaronyTooltip Title="Discipline"
+                               Text="Unit discipline (1–18). Starting value comes from training. Raising costs XP equal to the current level."
+                               Placement="Placement.Top">
+                    <span>Discipline</span>
+                </BaronyTooltip>
+                @if (canRaise)
+                {
+                    <BaronyTooltip Title="Spend XP" Text="@raiseTip" Placement="Placement.Top">
+                        <button type="button"
+                                class="unit-xp-plus"
+                                @onclick="RaiseDisciplineAsync">+</button>
+                    </BaronyTooltip>
+                }
+            </span>
+            <b class="unit-card__attr-val">@Unit.Discipline</b>
+        </div>
+    };
+
+    private int AttrOtherSum(string attrKey) => attrKey switch
+    {
+        UnitAttr.Build => Unit.AttrOtherBuild,
+        UnitAttr.Agility => Unit.AttrOtherAgility,
+        UnitAttr.Will => Unit.AttrOtherWill,
+        UnitAttr.Perception => Unit.AttrOtherPerception,
+        _ => 0,
+    };
+
+    private int AttrGearPenalty(string attrKey) => attrKey switch
+    {
+        UnitAttr.Build => Unit.AttrPenaltyBuild,
+        UnitAttr.Agility => Unit.AttrPenaltyAgility,
+        _ => 0,
+    };
+
+    private string AttrBreakdownTip(string attrKey, string fullLabel, int baseVal, int effective)
+    {
+        var lines = new List<string>
+        {
+            $"Base: {baseVal}",
+        };
+
+        foreach (var gear in AttrGearLines(attrKey))
+            lines.Add(gear);
+
+        var sources = UnitCombatOtherFormulas.Get(Unit.AttrOtherSources, attrKey);
+        if (sources.Count == 0 && AttrOtherSum(attrKey) != 0)
+            lines.Add($"Other: {(AttrOtherSum(attrKey) > 0 ? "+" : "")}{AttrOtherSum(attrKey)}");
+        else
+            lines.AddRange(sources.Select(e =>
+            {
+                var name = string.IsNullOrWhiteSpace(e.Label) ? "(unnamed)" : e.Label.Trim();
+                var sign = e.Value > 0 ? "+" : "";
+                return $"{name}: {sign}{e.Value}";
+            }));
+
+        lines.Add($"Total: {effective}");
+        if (CanManageAsMg)
+            lines.Add("\nClick the value to edit named Other sources.");
+        return string.Join("\n", lines);
+    }
+
+    private IEnumerable<string> AttrGearLines(string attrKey)
+    {
+        if (attrKey == UnitAttr.Agility)
+        {
+            if (_armor is not null && _armor.AgilityPenalty != 0)
+                yield return $"Gear ({_armor.Name}): {FormatSigned(_armor.AgilityPenalty)}";
+            if (_shield is not null && _shield.AgilityPenalty != 0)
+                yield return $"Gear ({_shield.Name}): {FormatSigned(_shield.AgilityPenalty)}";
+            if ((_armor is null || _armor.AgilityPenalty == 0)
+                && (_shield is null || _shield.AgilityPenalty == 0)
+                && Unit.AttrPenaltyAgility != 0)
+                yield return $"Gear: {FormatSigned(Unit.AttrPenaltyAgility)}";
+        }
+        else if (attrKey == UnitAttr.Build && Unit.AttrPenaltyBuild != 0)
+        {
+            yield return $"Gear: {FormatSigned(Unit.AttrPenaltyBuild)}";
+        }
+    }
+
+    private static string FormatSigned(int v) => v > 0 ? $"+{v}" : v.ToString();
+
+    private async Task EditAttrOtherAsync(string attrKey, string fullLabel)
+    {
+        if (!CanManageAsMg) return;
+
+        Unit.AttrOtherSources ??= new Dictionary<string, List<UnitCombatModifierEntry>>(StringComparer.OrdinalIgnoreCase);
+        var existing = UnitCombatOtherFormulas.Get(Unit.AttrOtherSources, attrKey)
+            .Select(m => new UnitCombatModifierEntry { Label = m.Label, Value = m.Value })
+            .ToList();
+        if (existing.Count == 0 && AttrOtherSum(attrKey) != 0)
+            existing.Add(new UnitCombatModifierEntry { Label = "Other", Value = AttrOtherSum(attrKey) });
+
+        var parameters = new DialogParameters
+        {
+            [nameof(UnitNamedModifiersDialog.Title)] = $"{fullLabel} — other",
+            [nameof(UnitNamedModifiersDialog.Hint)] =
+                "Each row is a named source (e.g. blessing, curse, magic). The sum fills Other and appears in the tooltip with gear penalties.",
+            [nameof(UnitNamedModifiersDialog.Modifiers)] = existing,
+        };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await _dialogService.ShowAsync<UnitNamedModifiersDialog>(
+            $"{fullLabel} — other",
+            parameters,
+            options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not List<UnitCombatModifierEntry> saved)
+            return;
+
+        if (saved.Count == 0)
+            Unit.AttrOtherSources.Remove(attrKey);
+        else
+            Unit.AttrOtherSources[attrKey] = saved;
+
+        UnitCombatOtherFormulas.ApplyAttrOtherTotals(
+            Unit.AttrOtherSources,
+            out var build, out var agility, out var will, out var perception);
+        Unit.AttrOtherBuild = build;
+        Unit.AttrOtherAgility = agility;
+        Unit.AttrOtherWill = will;
+        Unit.AttrOtherPerception = perception;
+
+        RefreshCombat();
+        await SkillsChanged.InvokeAsync();
+    }
+
+    private async Task RaiseAttrAsync(string attr)
+    {
+        if (!CanSpendPd) return;
+
+        if (Unit.FreeAttributePoints > 0)
+        {
+            ApplyAttrBump(attr);
+            Unit.FreeAttributePoints--;
+            RefreshCombat();
+            await OnXpDraftChanged.InvokeAsync();
+            return;
+        }
+
+        if (!UnitPdFormulas.CanRaiseAttribute(AttrBase(attr), Unit.RemainingPd, out var cost))
+        {
+            _snackBar.Add($"Need {cost} XP.", Severity.Warning);
+            return;
+        }
+
+        ApplyAttrBump(attr);
+        Unit.RemainingPd -= cost;
+        RefreshCombat();
+        await OnXpDraftChanged.InvokeAsync();
+    }
+
+    private async Task RaiseDisciplineAsync()
+    {
+        if (!CanSpendPd) return;
+        if (!UnitPdFormulas.CanRaiseDiscipline(Unit.Discipline, Unit.RemainingPd, out var cost))
+        {
+            _snackBar.Add(Unit.Discipline >= UnitRules.DisciplineMax ? "Discipline maxed." : $"Need {cost} XP.", Severity.Warning);
+            return;
+        }
+        Unit.RemainingPd -= cost;
+        Unit.Discipline++;
+        RefreshCombat();
+        await OnXpDraftChanged.InvokeAsync();
+    }
+
+    private int AttrBase(string attr) => attr switch
+    {
+        UnitAttr.Build => Unit.Build,
+        UnitAttr.Agility => Unit.Agility,
+        UnitAttr.Will => Unit.Will,
+        UnitAttr.Perception => Unit.Perception,
+        _ => 0,
+    };
+
+    private void ApplyAttrBump(string attr)
+    {
+        switch (attr)
+        {
+            case UnitAttr.Build: Unit.Build++; break;
+            case UnitAttr.Agility: Unit.Agility++; break;
+            case UnitAttr.Will: Unit.Will++; break;
+            case UnitAttr.Perception: Unit.Perception++; break;
+        }
+    }
+
+    private string TroopTip
+    {
+        get
+        {
+            var explain = UnitCasualtyFormulas.Explain(Unit.TroopCount);
+            return CanManageAsMg
+                ? $"{explain}\n\nClick to set troop count (MG)."
+                : explain;
+        }
+    }
+
+    private string HpTip => CanManageAsMg
+        ? "Current / maximum hit points.\n\nClick to set current HP (MG)."
+        : "Current / maximum hit points.";
+
+    private void RefreshCombat()
+    {
+        _combat = UnitStatHelper.Compute(Unit);
+        _upkeep = UnitStatHelper.ComputeUpkeep(Unit);
+        _upkeepExplain = UnitUpkeepFormulas.Explain(_upkeep);
+    }
+
+    private async Task EditTroopCountAsync()
+    {
+        if (!CanManageAsMg) return;
+
+        var parameters = new DialogParameters
+        {
+            [nameof(UnitTroopCountEditDialog.UnitName)] = Unit.Name,
+            [nameof(UnitTroopCountEditDialog.Value)] = Unit.TroopCount,
+            [nameof(UnitTroopCountEditDialog.FullStrength)] = UnitRules.DefaultTroopCount,
+        };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
+        var dialog = await _dialogService.ShowAsync<UnitTroopCountEditDialog>("Troop count", parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not int troops)
+            return;
+
+        Unit.TroopCount = troops;
+        RefreshCombat();
+        if (Unit.CurrentHp > _combat.MaxHp)
+            Unit.CurrentHp = _combat.MaxHp;
+        await SkillsChanged.InvokeAsync();
+    }
+
+    private async Task EditCurrentHpAsync()
+    {
+        if (!CanManageAsMg || !ShowCurrentHp) return;
+
+        RefreshCombat();
+        var parameters = new DialogParameters
+        {
+            [nameof(UnitHpEditDialog.UnitName)] = Unit.Name,
+            [nameof(UnitHpEditDialog.Value)] = Unit.CurrentHp,
+            [nameof(UnitHpEditDialog.MaxHp)] = _combat.MaxHp,
+        };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
+        var dialog = await _dialogService.ShowAsync<UnitHpEditDialog>("Hit points", parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not int hp)
+            return;
+
+        Unit.CurrentHp = Math.Clamp(hp, 0, _combat.MaxHp);
+        await SkillsChanged.InvokeAsync();
+    }
+
+    private async Task HandleSkillsChanged()
+    {
+        RefreshCombat();
+        await SkillsChanged.InvokeAsync();
+    }
+
+    private async Task HandleXpDraftChanged()
+    {
+        RefreshCombat();
+        await OnXpDraftChanged.InvokeAsync();
+    }
+
+    private async Task HandleCombatOtherChanged()
+    {
+        RefreshCombat();
+        await SkillsChanged.InvokeAsync();
+    }
+}

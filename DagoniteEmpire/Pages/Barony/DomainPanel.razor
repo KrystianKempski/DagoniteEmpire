@@ -1,0 +1,622 @@
+@page "/barony"
+@layout BaronyLayout
+@inherits BaronyPageBase
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+@inject ICharacterRepository _characterRepo
+@inject IDialogService _dialogService
+
+<PageTitle>Dagonite Empire | Domain Panel</PageTitle>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading barony...</span>
+}
+else if (LoadError is not null)
+{
+    <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
+}
+else if (_overview is not null)
+{
+    <div class="barony-meta-bar" aria-label="Barony status">
+        @if (CanManageAsMg)
+        {
+            <BaronyHudTip Title="Barony" Text="@BaronyUiTooltips.MetaBaronyNameMg">
+                <BaronySwitcher />
+            </BaronyHudTip>
+        }
+        else
+        {
+            <BaronyHudTip Title="Barony" Text="@BaronyUiTooltips.MetaBaronyName">
+                <div class="barony-meta-bar__name">@_overview.Barony.Name</div>
+            </BaronyHudTip>
+        }
+        <div class="barony-meta-bar__stats">
+            <BaronyHudTip Title="Year" Text="@BaronyUiTooltips.MetaYear">
+                <span class="barony-meta-bar__stat">
+                    <span class="barony-meta-bar__label">Year</span>
+                    <span class="barony-meta-bar__value">@_overview.Barony.Year</span>
+                </span>
+            </BaronyHudTip>
+            <BaronyHudTip Title="Season" Text="@BaronyUiTooltips.MetaSeason">
+                <span class="barony-meta-bar__stat">
+                    <span class="barony-meta-bar__label">Season</span>
+                    <span class="barony-meta-bar__value">@SeasonEn(_overview.Barony.Season)</span>
+                </span>
+            </BaronyHudTip>
+            <BaronyHudTip Title="Turn" Text="@BaronyUiTooltips.MetaTurn">
+                <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
+                    <span class="barony-meta-bar__label">Turn</span>
+                    <span class="barony-meta-bar__value">@_overview.Barony.TurnNumber</span>
+                </span>
+            </BaronyHudTip>
+            <BaronyHudTip Title="Size" Text="@BaronyUiTooltips.MetaSize">
+                <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
+                    <span class="barony-meta-bar__label">Size</span>
+                    <span class="barony-meta-bar__value">@_overview.Barony.Size</span>
+                </span>
+            </BaronyHudTip>
+            <BaronyHudTip Title="Loyalty" Text="@BaronyUiTooltips.MetaPpbTurnTotal(Ppb.Loyalty, _grandTotal[Ppb.Loyalty])">
+                <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
+                    <span class="barony-meta-bar__label">Loyalty</span>
+                    <span class="barony-meta-bar__value @SignedClass(_grandTotal[Ppb.Loyalty])">@FmtAdd(_grandTotal[Ppb.Loyalty])</span>
+                </span>
+            </BaronyHudTip>
+            <BaronyHudTip Title="Stability" Text="@BaronyUiTooltips.MetaPpbTurnTotal(Ppb.Stability, _grandTotal[Ppb.Stability])">
+                <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
+                    <span class="barony-meta-bar__label">Stability</span>
+                    <span class="barony-meta-bar__value @SignedClass(_grandTotal[Ppb.Stability])">@FmtAdd(_grandTotal[Ppb.Stability])</span>
+                </span>
+            </BaronyHudTip>
+            <BaronyHudTip Title="Economy" Text="@BaronyUiTooltips.MetaPpbTurnTotal(Ppb.Economy, _grandTotal[Ppb.Economy])">
+                <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
+                    <span class="barony-meta-bar__label">Economy</span>
+                    <span class="barony-meta-bar__value @SignedClass(_grandTotal[Ppb.Economy])">@FmtAdd(_grandTotal[Ppb.Economy])</span>
+                </span>
+            </BaronyHudTip>
+            <BaronyHudTip Title="Unrest" Text="@BaronyUiTooltips.MetaUnrest">
+                @if (CanManageAsMg)
+                {
+                    <button type="button"
+                            class="barony-meta-bar__stat barony-meta-bar__stat--centered barony-meta-bar__stat--clickable"
+                            @onclick="EditUnrestAsync">
+                        <span class="barony-meta-bar__label">Unrest</span>
+                        <span class="barony-meta-bar__value @(_overview.Barony.Unrest > 0 ? "barony-meta-bar__value--neg" : "")">@_overview.Barony.Unrest</span>
+                    </button>
+                }
+                else
+                {
+                    <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
+                        <span class="barony-meta-bar__label">Unrest</span>
+                        <span class="barony-meta-bar__value @(_overview.Barony.Unrest > 0 ? "barony-meta-bar__value--neg" : "")">@_overview.Barony.Unrest</span>
+                    </span>
+                }
+            </BaronyHudTip>
+            <BaronyHudTip Title="Conjuncture" Text="@BaronyUiTooltips.MetaConjuncture(_overview.Barony.ConjunctureDice, _overview.Barony.ConjunctureModifier)">
+                @if (CanManageAsMg)
+                {
+                    <button type="button"
+                            class="barony-meta-bar__stat barony-meta-bar__stat--centered barony-meta-bar__stat--clickable"
+                            @onclick="EditConjunctureAsync">
+                        <span class="barony-meta-bar__label">Conjuncture</span>
+                        <span class="barony-meta-bar__value @ConjunctureSignedClass(_overview.Barony.Conjuncture)">@_overview.Barony.Conjuncture</span>
+                    </button>
+                }
+                else
+                {
+                    <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
+                        <span class="barony-meta-bar__label">Conjuncture</span>
+                        <span class="barony-meta-bar__value @ConjunctureSignedClass(_overview.Barony.Conjuncture)">@_overview.Barony.Conjuncture</span>
+                    </span>
+                }
+            </BaronyHudTip>
+        </div>
+    </div>
+
+    <BaronyPageHeader Title="Domain Panel" HelpKey="domain">
+        <Actions>
+            @if (_overview is not null && _overview.Barony.PlayerTurnReady)
+            {
+                <BaronyTooltip Text="Player marked this turn finished">
+                    <span class="barony-turn-ready-chip">Ready for MG</span>
+                </BaronyTooltip>
+            }
+            @if (CanEdit && !CanManageAsMg)
+            {
+                @if (_overview?.Barony.PlayerTurnReady == true)
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
+                               Class="barony-turn-btn barony-turn-btn--ghost"
+                               OnClick="UndoEndTurnAsync">
+                        Undo End Turn
+                    </MudButton>
+                }
+                else
+                {
+                    <MudButton Variant="Variant.Filled"
+                               Size="Size.Small"
+                               Class="barony-turn-btn barony-turn-btn--solid"
+                               OnClick="EndTurnAsync">
+                        End Turn
+                    </MudButton>
+                }
+            }
+            @if (CanManageAsMg)
+            {
+                @if (_overview?.Barony.PlayerTurnReady == true)
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
+                               Class="barony-turn-btn barony-turn-btn--ghost"
+                               OnClick="UndoEndTurnAsync">
+                        Clear ready
+                    </MudButton>
+                }
+                else if (CanEdit)
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
+                               Class="barony-turn-btn barony-turn-btn--ghost"
+                               OnClick="EndTurnAsync">
+                        End Turn
+                    </MudButton>
+                }
+                <MudButton Variant="Variant.Filled"
+                           Size="Size.Small"
+                           Class="barony-turn-btn barony-turn-btn--solid"
+                           Disabled="@(_resolvingTurn)"
+                           OnClick="ResolveTurnAsync">
+                    Resolve Turn
+                </MudButton>
+            }
+        </Actions>
+    </BaronyPageHeader>
+
+    @* --- Modifier sections (PPB tables) --- *@
+    <AdvisorSection Advisors="@_advisorsForSection" />
+    <CityBuildingsSection BaronyId="@BaronyId"
+                          SavedBuildings="@_savedBuildings"
+                          Improvements="@_overview.Improvements"
+                          Seat="@_overview.Seat"
+                          PurposeTemplates="@_overview.SeatPurposeTemplates"
+                          Catalog="@_buildingCatalog"
+                          CanManage="@CanManageAsMg"
+                          OnChanged="ReloadOverviewAsync" />
+    <SocialGroupRelationsSection BaronyId="@BaronyId"
+                                 Relations="@_overview.SocialRelations"
+                                 CanManage="@CanManageAsMg"
+                                 OnChanged="ReloadOverviewAsync" />
+    <TerrainImprovementsSection Improvements="@_overview.Improvements"
+                                Tiles="@_overview.Tiles"
+                                Fiefs="@_overview.Fiefs"
+                                VassalTributePercent="@_overview.Barony.VassalTributePercent"
+                                Season="@_overview.Barony.Season"
+                                CanManage="@CanManageAsMg"
+                                OnChanged="ReloadOverviewAsync" />
+    <DecreesSection BaronyId="@BaronyId"
+                    Decrees="@_overview.Decrees"
+                    TradeGoodRows="@_tradeGoodRows"
+                    CanManage="@CanManageAsMg"
+                    CanToggleActive="@CanEdit"
+                    OnChanged="ReloadOverviewAsync" />
+    <EventsSection BaronyId="@BaronyId"
+                   CurrentTurn="@_overview.Barony.TurnNumber"
+                   Events="@_overview.Events"
+                   Audiences="@_overview.Audiences"
+                   CanManage="@CanManageAsMg"
+                   OnChanged="ReloadOverviewAsync" />
+    <ArmySection Rows="@_armyRows" />
+    <CommunityPenaltiesSection Rows="@_communityRows" />
+
+    <BaronySection Title="Barony Summary">
+        <Summary>
+            <PpbSummaryChips Vector="@_grandTotal" />
+        </Summary>
+        <ChildContent>
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                final = Σ additive + scalable_additive × (Σ percent / 100).
+                Percent scales positive additives only.
+            </MudText>
+            <div style="overflow-x:auto;">
+                <table class="ppb-table ppb-table--summary ppb-table--lined">
+                    <colgroup>
+                        <col class="summary-col-component" />
+                        @foreach (var _ in PpbCatalog.All)
+                        {
+                            <col class="summary-col-ppb" />
+                        }
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th class="ppb-row-label summary-col-component">Component</th>
+                            @foreach (var info in PpbCatalog.All)
+                            {
+                                <th>
+                                    <BaronyTooltip Text="@info.NameEn">
+                                        <span>@PpbShort(info.Key)</span>
+                                    </BaronyTooltip>
+                                </th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var row in _totalBreakdown)
+                        {
+                            var isFinal = row.Label == "Final Value";
+                            <tr class="@(isFinal ? "ppb-summary-row" : null)">
+                                <td class="ppb-row-label summary-col-component">@row.Label</td>
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    <td class="@SummaryCellClass(row, info.Key)">
+                                        @if (isFinal)
+                                        {
+                                            <b>@SummaryCellText(row, info.Key)</b>
+                                        }
+                                        else
+                                        {
+                                            @SummaryCellText(row, info.Key)
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </ChildContent>
+    </BaronySection>
+}
+
+@code {
+    private BaronyOverviewDTO? _overview;
+    private List<AdvisorDTO> _advisorsForSection = new();
+
+    private List<PpbModifierRow> _advisorRows = new();
+    private List<PpbModifierRow> _buildingRows = new();
+    private List<BaronyBuildingDTO> _savedBuildings = new();
+    private List<BuildingTemplateDTO> _buildingCatalog = new();
+    private List<PpbModifierRow> _socialRows = new();
+    private List<PpbModifierRow> _improvementRows = new();
+    private List<PpbModifierRow> _decreeRows = new();
+    private List<PpbModifierRow> _tradeGoodRows = new();
+    private List<PpbModifierRow> _eventRows = new();
+    private List<PpbModifierRow> _armyRows = new();
+    private List<PpbModifierRow> _communityRows = new();
+
+    private List<PpbModifierRow> _totalBreakdown = new();
+    private PpbVector _grandTotal = new();
+    private bool _resolvingTurn;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBaronyAsync();
+        if (Barony is null)
+            return;
+
+        _overview = await _baronyRepo.GetOverview(Barony.Id);
+        if (_overview is null)
+            return;
+
+        var character = await _characterRepo.GetById(Barony.CharacterId, fullIncludes: true);
+        var baronModifiers = await _baronyRepo.GetBaronInfluenceModifiers(Barony.Id);
+        var advisorModifiers = await _baronyRepo.GetAdvisorInfluenceModifiers(Barony.Id);
+        await _baronyRepo.EnsureBaronTimeDefaults(Barony.Id);
+        var managementJc = BaronyCalc.ManagementJcSpent(await _baronyRepo.GetBaronTimeActions(Barony.Id));
+        var panel = BaronyCalc.BuildDomainPanelRows(
+            _overview, character, baronModifiers, advisorModifiers, managementJc);
+
+        _advisorsForSection = panel.Advisors;
+        _advisorRows = panel.AdvisorRows;
+        _savedBuildings = _overview.Buildings;
+        _buildingCatalog = (await _baronyRepo.GetBuildingTemplates())
+            .Where(t => t.Kind == BuildingKind.Building)
+            .OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        _buildingRows = panel.BuildingRows;
+        _socialRows = panel.SocialRows;
+        _improvementRows = panel.ImprovementRows;
+        _decreeRows = panel.DecreeRows;
+        _tradeGoodRows = panel.TradeGoodRows;
+        _eventRows = panel.EventRows;
+        _armyRows = panel.ArmyRows;
+        _communityRows = panel.CommunityRows;
+        ApplyPanelTotals(panel);
+        NotifyResourceHud();
+    }
+
+    private async Task ReloadOverviewAsync()
+    {
+        if (Barony is null)
+            return;
+
+        _overview = await _baronyRepo.GetOverview(Barony.Id);
+        if (_overview is null)
+            return;
+
+        var character = await _characterRepo.GetById(Barony.CharacterId, fullIncludes: true);
+        var baronModifiers = await _baronyRepo.GetBaronInfluenceModifiers(Barony.Id);
+        var advisorModifiers = await _baronyRepo.GetAdvisorInfluenceModifiers(Barony.Id);
+        await _baronyRepo.EnsureBaronTimeDefaults(Barony.Id);
+        var managementJc = BaronyCalc.ManagementJcSpent(await _baronyRepo.GetBaronTimeActions(Barony.Id));
+        var panel = BaronyCalc.BuildDomainPanelRows(
+            _overview, character, baronModifiers, advisorModifiers, managementJc);
+
+        _advisorsForSection = panel.Advisors;
+        _advisorRows = panel.AdvisorRows;
+        _savedBuildings = _overview.Buildings;
+        _buildingRows = panel.BuildingRows;
+        _socialRows = panel.SocialRows;
+        _improvementRows = panel.ImprovementRows;
+        _decreeRows = panel.DecreeRows;
+        _tradeGoodRows = panel.TradeGoodRows;
+        _eventRows = panel.EventRows;
+        _armyRows = panel.ArmyRows;
+        _communityRows = panel.CommunityRows;
+        ApplyPanelTotals(panel);
+        NotifyResourceHud();
+        StateHasChanged();
+    }
+
+    private void ApplyPanelTotals(BaronyCalc.DomainPanelRowSet panel)
+    {
+        _totalBreakdown = BaronyCalc.BuildBaronySummaryRows(panel);
+        _grandTotal = panel.GrandTotal;
+    }
+
+    private static string FmtAdd(decimal v) => PpbFormat.Additive(v);
+    private static string SignedClass(decimal v)
+        => v > 0m ? "barony-meta-bar__value--pos"
+            : v < 0m ? "barony-meta-bar__value--neg"
+            : "";
+
+    private static string ConjunctureSignedClass(int conj)
+        => conj > EconomyConjunctureFormulas.ConjunctureNeutral ? "barony-meta-bar__value--pos"
+            : conj < EconomyConjunctureFormulas.ConjunctureNeutral ? "barony-meta-bar__value--neg"
+            : "";
+
+    private async Task EditUnrestAsync()
+    {
+        if (!CanManageAsMg || _overview is null)
+            return;
+
+        var parameters = new DialogParameters<UnrestEditDialog>
+        {
+            { x => x.Unrest, _overview.Barony.Unrest },
+        };
+
+        var dialog = await _dialogService.ShowAsync<UnrestEditDialog>(
+            "Unrest",
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.ExtraSmall,
+                FullWidth = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not int unrest)
+            return;
+
+        try
+        {
+            _overview.Barony.Unrest = UnrestPpbFormulas.Clamp(unrest);
+            await _baronyRepo.UpdateBarony(_overview.Barony);
+            if (Barony is not null)
+                Barony.Unrest = _overview.Barony.Unrest;
+            _snackBar.Add("Unrest updated.", Severity.Success);
+            await ReloadOverviewAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save unrest: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task EditConjunctureAsync()
+    {
+        if (!CanManageAsMg || _overview is null)
+            return;
+
+        var parameters = new DialogParameters<ConjunctureEditDialog>
+        {
+            { x => x.ConjunctureDice, _overview.Barony.ConjunctureDice },
+            { x => x.ConjunctureModifier, _overview.Barony.ConjunctureModifier },
+        };
+
+        var dialog = await _dialogService.ShowAsync<ConjunctureEditDialog>(
+            "Conjuncture",
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.ExtraSmall,
+                FullWidth = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not ConjunctureEditDialog.ConjunctureEditResult data)
+            return;
+
+        var dice = data.Dice;
+        var modifier = data.Modifier;
+        try
+        {
+            _overview.Barony.ConjunctureDice = Math.Clamp(dice, 2, 12);
+            _overview.Barony.ConjunctureModifier = modifier;
+            await _baronyRepo.UpdateBarony(_overview.Barony);
+            if (Barony is not null)
+            {
+                Barony.ConjunctureDice = _overview.Barony.ConjunctureDice;
+                Barony.ConjunctureModifier = _overview.Barony.ConjunctureModifier;
+            }
+            _snackBar.Add("Conjuncture updated.", Severity.Success);
+            await ReloadOverviewAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save conjuncture: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task EndTurnAsync()
+    {
+        if (Barony is null || !CanEdit)
+            return;
+
+        var confirm = await _dialogService.ShowMessageBoxAsync(
+            "End turn?",
+            "Confirm that you have nothing left to do this turn. The Game Master can then resolve the turn.",
+            yesText: "End Turn",
+            cancelText: "Cancel");
+        if (confirm != true)
+            return;
+
+        try
+        {
+            await _baronyRepo.SetPlayerTurnReady(Barony.Id, true);
+            if (_overview is not null)
+                _overview.Barony.PlayerTurnReady = true;
+            Barony.PlayerTurnReady = true;
+            _snackBar.Add("Turn marked finished — waiting for the Game Master.", Severity.Success);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not end turn: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task UndoEndTurnAsync()
+    {
+        if (Barony is null || !CanEdit)
+            return;
+
+        try
+        {
+            await _baronyRepo.SetPlayerTurnReady(Barony.Id, false);
+            if (_overview is not null)
+                _overview.Barony.PlayerTurnReady = false;
+            Barony.PlayerTurnReady = false;
+            _snackBar.Add("End-turn mark cleared.", Severity.Info);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not clear ready flag: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task ResolveTurnAsync()
+    {
+        if (Barony is null || _overview is null || !CanManageAsMg || _resolvingTurn)
+            return;
+
+        var ready = _overview.Barony.PlayerTurnReady;
+        var confirm = await _dialogService.ShowMessageBoxAsync(
+            "Resolve turn?",
+            ready
+                ? "Apply income, complete ready projects, roll conjuncture, and advance the calendar."
+                : "The player has not marked End Turn yet. Resolve anyway?",
+            yesText: "Resolve Turn",
+            cancelText: "Cancel");
+        if (confirm != true)
+            return;
+
+        _resolvingTurn = true;
+        try
+        {
+            var character = await _characterRepo.GetById(Barony.CharacterId, fullIncludes: true);
+            var baronModifiers = await _baronyRepo.GetBaronInfluenceModifiers(Barony.Id);
+            var advisorModifiers = await _baronyRepo.GetAdvisorInfluenceModifiers(Barony.Id);
+            await _baronyRepo.EnsureBaronTimeDefaults(Barony.Id);
+            var managementJc = BaronyCalc.ManagementJcSpent(await _baronyRepo.GetBaronTimeActions(Barony.Id));
+            var panel = BaronyCalc.BuildDomainPanelRows(
+                _overview, character, baronModifiers, advisorModifiers, managementJc);
+            var income = BaronyCalc.ExpectedResourceIncome(
+                _overview, character, baronModifiers, advisorModifiers, managementJc);
+            var population = BaronyCalc.SumSettlementPopulation(
+                Barony.Id, _overview.Buildings, _overview.Improvements);
+
+            var report = await _baronyRepo.ResolveTurn(
+                Barony.Id,
+                income,
+                panel.GrandTotal[Ppb.Loyalty],
+                panel.GrandTotal[Ppb.Stability],
+                population);
+
+            Barony.PlayerTurnReady = false;
+            Barony.TurnNumber = report.NewTurnNumber;
+            Barony.Season = report.NewSeason;
+            Barony.Year = report.NewYear;
+            Barony.Month = report.NewMonth;
+            Barony.Unrest = report.UnrestAfter;
+            Barony.ConjunctureDice = report.NewConjunctureDice;
+            Barony.Size = report.Size;
+
+            await ReloadOverviewAsync();
+
+            var parameters = new DialogParameters<TurnResolveReportDialog>
+            {
+                { x => x.Report, report },
+            };
+            await _dialogService.ShowAsync<TurnResolveReportDialog>("Turn resolved", parameters);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not resolve turn: " + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _resolvingTurn = false;
+        }
+    }
+
+    private static string FmtPct(decimal v) => PpbFormat.Percent(v);
+
+    private static string SummaryCellText(PpbModifierRow row, Ppb p)
+    {
+        var add = row.Additive[p];
+        var pct = row.Percent[p];
+        if (add != 0m)
+            return FmtAdd(add);
+        if (pct != 0m)
+            return FmtPct(pct);
+        return "·";
+    }
+
+    private static string SummaryCellClass(PpbModifierRow row, Ppb p)
+    {
+        var add = row.Additive[p];
+        var pct = row.Percent[p];
+        return PpbCellStyle.ValueClass(p, add != 0m ? add : pct);
+    }
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        Ppb.Treasury => "Gold",
+        _ => p.ToString(),
+    };
+
+    private static string SeasonEn(string season) => season switch
+    {
+        "Winter" => "Winter",
+        "Spring" => "Spring",
+        "Summer" => "Summer",
+        "Fall" => "Autumn",
+        _ => season,
+    };
+
+}

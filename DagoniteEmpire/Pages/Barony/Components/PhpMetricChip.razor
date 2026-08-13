@@ -1,0 +1,24 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<BaronyTooltip Text="@TitleOrDefault">
+    <span class="baron-php-chip @BaronPhpVisuals.CssClass(Metric)">
+        <PhpMetricIcon Metric="Metric" Title="" />
+        @if (ShowLabel)
+        {
+            <span class="baron-php-chip__label">@BaronPhpVisuals.Name(Metric)</span>
+        }
+        <span class="baron-php-chip__value">@FormatScore(Value)</span>
+    </span>
+</BaronyTooltip>
+
+@code {
+    [Parameter] public PhpMetric Metric { get; set; }
+    [Parameter] public int Value { get; set; }
+    [Parameter] public bool ShowLabel { get; set; } = true;
+    [Parameter] public string? Title { get; set; }
+
+    private string TitleOrDefault => Title ?? BaronPhpVisuals.Name(Metric);
+
+    private static string FormatScore(int value) =>
+        value > 0 ? $"+{value}" : value.ToString();
+}

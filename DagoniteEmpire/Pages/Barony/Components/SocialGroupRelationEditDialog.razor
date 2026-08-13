@@ -1,0 +1,147 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            <MudTextField Value="@Relation.Group"
+                          Label="Group"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Disabled="true"
+                          Class="baron-influence-field" />
+
+            <MudSwitch @bind-Value="_isActive"
+                       Label="Active in barony"
+                       Color="Color.Primary"
+                       Class="baron-influence-field" />
+
+            <MudNumericField @bind-Value="_influencePercent"
+                             Label="Influence (%)"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0"
+                             Max="100"
+                             Class="baron-influence-field" />
+
+            <MudNumericField @bind-Value="_taxPercent"
+                             Label="Tax (%)"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0"
+                             Max="100"
+                             Class="baron-influence-field" />
+
+            <MudNumericField @bind-Value="RelationScore"
+                             Label="Relation score"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="-100"
+                             Max="100"
+                             Class="baron-influence-field" />
+
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                Label: <b>@SocialRelation.Label(_relationScore)</b>
+            </MudText>
+
+            @if (_previewEffects.Count > 0)
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
+                    PPB effects (computed from relation):
+                </MudText>
+                <MudText Typo="Typo.caption" Class="mb-2">
+                    @string.Join(" · ", _previewEffects)
+                </MudText>
+            }
+            else
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                    No PPB effects for this group at the current relation.
+                </MudText>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public SocialGroupRelationDTO Relation { get; set; } = new();
+
+    private bool _isActive;
+    private int _influencePercent;
+    private int _taxPercent;
+    private int _relationScore;
+    private List<string> _previewEffects = new();
+
+    private int RelationScore
+    {
+        get => _relationScore;
+        set
+        {
+            _relationScore = value;
+            RefreshPreview();
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        _isActive = Relation.IsActive ?? SocialGroup.DefaultIsActive(Relation.Group);
+        _influencePercent = Relation.InfluencePercent ?? SocialGroup.DefaultInfluence(Relation.Group);
+        _taxPercent = Relation.TaxPercent ?? (int)SocialGroup.DefaultTax(Relation.Group);
+        _relationScore = Relation.RelationLevel;
+        RefreshPreview();
+    }
+
+    private void RefreshPreview()
+    {
+        var additive = SocialGroupPpbFormulas.ComputeAdditive(Relation.Group, _relationScore);
+        var percent = SocialGroupPpbFormulas.ComputePercent(Relation.Group, _relationScore);
+        _previewEffects = PpbCatalog.All
+            .SelectMany(info => PreviewEntries(info.Key, additive[info.Key], percent[info.Key]))
+            .ToList();
+    }
+
+    private static IEnumerable<string> PreviewEntries(Ppb key, decimal add, decimal pct)
+    {
+        if (add != 0m)
+            yield return $"{PpbShort(key)} {PpbFormat.Additive(add)}";
+        if (pct != 0m)
+            yield return $"{PpbShort(key)} {PpbFormat.Percent(pct)}";
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        Relation.IsActive = _isActive;
+        Relation.InfluencePercent = Math.Clamp(_influencePercent, 0, 100);
+        Relation.TaxPercent = Math.Clamp(_taxPercent, 0, 100);
+        Relation.RelationLevel = Math.Clamp(_relationScore, -100, 100);
+        BaronyCalc.ApplyComputedPpb(Relation);
+        MudDialog.Close(DialogResult.Ok(Relation));
+    }
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        Ppb.Treasury => "Gold",
+        _ => p.ToString(),
+    };
+}

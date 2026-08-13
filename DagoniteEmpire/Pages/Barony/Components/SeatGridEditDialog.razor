@@ -1,0 +1,53 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            <MudNumericField T="int"
+                             @bind-Value="_width"
+                             Label="Grid width (columns)"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="4"
+                             Max="24"
+                             Class="baron-influence-field" />
+            <MudNumericField T="int"
+                             @bind-Value="_height"
+                             Label="Grid height (rows)"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="4"
+                             Max="24"
+                             Class="baron-influence-field" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="baron-influence-save-btn" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public BaronySeatDTO Seat { get; set; } = new();
+
+    private int _width;
+    private int _height;
+
+    protected override void OnInitialized()
+    {
+        _width = Seat.GridWidth;
+        _height = Seat.GridHeight;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        Seat.GridWidth = Math.Clamp(_width, 4, 24);
+        Seat.GridHeight = Math.Clamp(_height, 4, 24);
+        MudDialog.Close(DialogResult.Ok(Seat));
+    }
+}

@@ -1,0 +1,239 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IDialogService _dialogService
+
+<BaronySection Title="Trophies, Treasures &amp; Artifacts">
+    <Summary>
+        <div class="baron-php-summary">
+            <span class="baron-php-chip baron-php-chip--neutral">Items @_artifacts.Count</span>
+            <PhpMetricChip Metric="PhpMetric.Prestige" Value="@_contrib.Prestige" />
+            <PhpMetricChip Metric="PhpMetric.Honor" Value="@_contrib.Honor" />
+            <PhpMetricChip Metric="PhpMetric.Fear" Value="@_contrib.Fear" />
+        </div>
+    </Summary>
+    <ChildContent>
+        @if (_artifacts.Count == 0)
+        {
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                No trophies, treasures or artifacts yet. Place items in Lord's Seat chambers to apply the room prestige multiplier (capacity: Small 3, Medium 6, Large 12, Huge unlimited).
+            </MudText>
+        }
+        else
+        {
+            <div style="overflow-x:auto;">
+                <table class="ppb-table ppb-table--source ppb-table--lined baron-php-table baron-artifacts-table">
+                    <colgroup>
+                        <col class="artifact-col-name" />
+                        <col class="artifact-col-type" />
+                        <col class="artifact-col-origin" />
+                        <col class="artifact-col-php" />
+                        <col class="artifact-col-php" />
+                        <col class="artifact-col-php" />
+                        <col class="artifact-col-location" />
+                        <col class="artifact-col-desc" />
+                    </colgroup>
+                    <thead>
+                        <tr>
+                            <th class="ppb-row-label artifact-col-name">Name</th>
+                            <th class="artifact-col-type">Type</th>
+                            <th class="artifact-col-origin">Source</th>
+                            <th class="php-col php-col--prestige artifact-col-php">
+                                <PhpMetricIcon Metric="PhpMetric.Prestige" />
+                            </th>
+                            <th class="php-col php-col--honor artifact-col-php">
+                                <PhpMetricIcon Metric="PhpMetric.Honor" />
+                            </th>
+                            <th class="php-col php-col--fear artifact-col-php">
+                                <PhpMetricIcon Metric="PhpMetric.Fear" />
+                            </th>
+                            <th class="artifact-col-location">
+                                <BaronyTooltip Text="Lord's Seat chamber and its prestige multiplier">Location</BaronyTooltip>
+                            </th>
+                            <th class="artifact-col-desc">Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in _artifacts)
+                        {
+                            var mult = BaronyCalc.ArtifactChamberBonus(item, Seat);
+                            <tr>
+                                <td class="ppb-row-label artifact-col-name">
+                                    <div class="source-cell">
+                                        <span class="source-cell__name">@item.Name</span>
+                                        @if (CanEdit)
+                                        {
+                                            <span class="source-cell__actions">
+                                                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => EditAsync(item))" />
+                                                <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(item))" />
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="artifact-col-type">@item.Kind</td>
+                                <td class="artifact-col-origin">@item.Origin</td>
+                                <td class="@ScoreClass(PhpMetric.Prestige, EffectivePhp(item.Prestige, mult))">
+                                    <BaronyTooltip Text="@PhpTitle(item.Prestige, mult)">
+                                        @PhpCell(item.Prestige, mult)
+                                    </BaronyTooltip>
+                                </td>
+                                <td class="@ScoreClass(PhpMetric.Honor, EffectivePhp(item.Honor, mult))">
+                                    <BaronyTooltip Text="@PhpTitle(item.Honor, mult)">
+                                        @PhpCell(item.Honor, mult)
+                                    </BaronyTooltip>
+                                </td>
+                                <td class="@ScoreClass(PhpMetric.Fear, EffectivePhp(item.Fear, mult))">
+                                    <BaronyTooltip Text="@PhpTitle(item.Fear, mult)">
+                                        @PhpCell(item.Fear, mult)
+                                    </BaronyTooltip>
+                                </td>
+                                <td class="artifact-col-location">
+                                    <BaronyTooltip Title="Location" Text="@BaronyCalc.ArtifactLocationTooltip(item, Seat)">
+                                        <span>@BaronyCalc.ArtifactLocationLabel(item, Seat)</span>
+                                    </BaronyTooltip>
+                                </td>
+                                <td class="artifact-col-desc">@(item.Description ?? "")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+        @if (CanEdit)
+        {
+            <MudButton Variant="Variant.Outlined" Class="mt-3" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync">
+                Add Item
+            </MudButton>
+        }
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public BaronyDTO Barony { get; set; } = new();
+    [Parameter] public BaronySeatDTO? Seat { get; set; }
+    [Parameter] public List<BaronArtifactDTO> Artifacts { get; set; } = new();
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    [Inject] private IBaronyRepository _baronyRepo { get; set; } = default!;
+    [Inject] private ISnackbar _snackBar { get; set; } = default!;
+
+    private List<BaronArtifactDTO> _artifacts = new();
+    private PhpTotals _contrib = PhpTotals.Zero;
+
+    protected override void OnParametersSet()
+    {
+        _artifacts = (Artifacts ?? new())
+            .OrderBy(a => a.SortOrder)
+            .ThenBy(a => a.Id)
+            .ToList();
+        _contrib = BaronyCalc.ArtifactsPhpContribution(_artifacts, Seat);
+    }
+
+    private async Task AddAsync() =>
+        await OpenEditDialog(new BaronArtifactDTO
+        {
+            BaronyId = Barony.Id,
+            SortOrder = _artifacts.Count == 0 ? 0 : _artifacts.Max(a => a.SortOrder) + 1,
+        });
+
+    private async Task EditAsync(BaronArtifactDTO item) =>
+        await OpenEditDialog(new BaronArtifactDTO
+        {
+            Id = item.Id,
+            BaronyId = item.BaronyId,
+            Name = item.Name,
+            Kind = item.Kind,
+            Origin = item.Origin,
+            Prestige = item.Prestige,
+            Honor = item.Honor,
+            Fear = item.Fear,
+            SeatRoomId = item.SeatRoomId,
+            Description = item.Description,
+            SortOrder = item.SortOrder,
+        });
+
+    private async Task OpenEditDialog(BaronArtifactDTO draft)
+    {
+        var isNew = draft.Id <= 0;
+        var parameters = new DialogParameters<BaronArtifactEditDialog>
+        {
+            { x => x.Artifact, draft },
+            { x => x.Seat, Seat },
+            { x => x.ExistingArtifacts, Artifacts },
+        };
+
+        var dialog = await _dialogService.ShowAsync<BaronArtifactEditDialog>(
+            isNew ? "Add Item" : "Edit Item",
+            parameters,
+            new DialogOptions
+            {
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true,
+                CloseOnEscapeKey = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronArtifactDTO saved)
+            return;
+
+        if (string.IsNullOrWhiteSpace(saved.Name))
+        {
+            _snackBar.Add("Name is required.", Severity.Warning);
+            return;
+        }
+
+        if (saved.SeatRoomId is int roomId)
+        {
+            var room = Seat?.Rooms?.FirstOrDefault(r => r.Id == roomId);
+            var capacityError = BaronyCalc.ArtifactCapacityError(room, Artifacts, saved.Id > 0 ? saved.Id : null);
+            if (capacityError is not null)
+            {
+                _snackBar.Add(capacityError, Severity.Warning);
+                return;
+            }
+        }
+
+        await _baronyRepo.SaveBaronArtifact(saved);
+        _snackBar.Add("Item saved.", Severity.Success);
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task DeleteAsync(BaronArtifactDTO item)
+    {
+        if (item.Id <= 0)
+            return;
+
+        await _baronyRepo.DeleteBaronArtifact(item.Id);
+        _snackBar.Add("Item removed.", Severity.Success);
+        await OnChanged.InvokeAsync();
+    }
+
+    private static int EffectivePhp(int baseValue, decimal multiplier) =>
+        (int)Math.Round(baseValue * multiplier, MidpointRounding.AwayFromZero);
+
+    private static string FormatScore(int value) =>
+        value > 0 ? $"+{value}" : value.ToString();
+
+    private static string PhpTitle(int baseValue, decimal multiplier)
+    {
+        var effective = EffectivePhp(baseValue, multiplier);
+        if (multiplier == 1m || baseValue == 0)
+            return FormatScore(effective);
+
+        return $"{FormatScore(baseValue)} × {multiplier:0.##} = {FormatScore(effective)}";
+    }
+
+    private RenderFragment PhpCell(int baseValue, decimal multiplier) => __builder =>
+    {
+        var effective = EffectivePhp(baseValue, multiplier);
+        <span class="artifact-php-effective">@FormatScore(effective)</span>
+        @if (multiplier != 1m && baseValue != 0)
+        {
+            <span class="artifact-php-base"> (@FormatScore(baseValue))</span>
+        }
+    };
+
+    private static string ScoreClass(PhpMetric metric, int value) =>
+        $"php-cell {BaronPhpVisuals.CssClass(metric)}"
+        + (value > 0 ? " php-cell--pos" : value < 0 ? " php-cell--neg" : "");
+}

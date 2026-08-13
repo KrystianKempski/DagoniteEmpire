@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using DA_Common;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Data;
@@ -13,6 +13,9 @@ using MudBlazor;
 using Abp.Collections.Extensions;
 using Microsoft.JSInterop;
 using DagoniteEmpire.Helper;
+using DA_DataAccess.BaronyData;
+using DA_Business.Repository.BaronyRepos;
+using DA_Business.Repository.MarchMapRepos;
 
 namespace DagoniteEmpire.Service
 {
@@ -138,7 +141,49 @@ namespace DagoniteEmpire.Service
                         await _userManager.CreateAsync(user, "Guest123*");
                         await _userManager.AddToRoleAsync(user, SD.Role_GameMaster);
                     }
+
+                    if (await _userManager.FindByEmailAsync("duke@duke.com") is null)
+                    {
+                        ApplicationUser user = new()
+                        {
+                            UserName = "Dukemaster",
+                            Email = "duke@duke.com",
+                            EmailConfirmed = true,
+                        };
+                        await _userManager.CreateAsync(user, "Guest123!");
+                        await _userManager.AddToRoleAsync(user, SD.Role_DukePlayer);
+                    }
                 }
+
+                // Hidden account backing the public "Try baron" demo. Always present (demo is public);
+                // random password because sign-in happens server-side, never via the login form.
+                if (await _userManager.FindByEmailAsync(SD.DemoBaronEmail) is null)
+                {
+                    ApplicationUser demoUser = new()
+                    {
+                        UserName = SD.DemoBaronUserName,
+                        Email = SD.DemoBaronEmail,
+                        EmailConfirmed = true,
+                    };
+                    await _userManager.CreateAsync(demoUser, "Demo!" + Guid.NewGuid().ToString("N") + "A1");
+                    await _userManager.AddToRoleAsync(demoUser, SD.Role_DukePlayer);
+                }
+
+                // Hidden account backing the public "Try Game Master" demo. Same throwaway session
+                // machinery as the baron demo, but signed in with the GameMaster role.
+                if (await _userManager.FindByEmailAsync(SD.DemoGmEmail) is null)
+                {
+                    ApplicationUser demoGmUser = new()
+                    {
+                        UserName = SD.DemoGmUserName,
+                        Email = SD.DemoGmEmail,
+                        EmailConfirmed = true,
+                    };
+                    await _userManager.CreateAsync(demoGmUser, "Demo!" + Guid.NewGuid().ToString("N") + "A1");
+                    await _userManager.AddToRoleAsync(demoGmUser, SD.Role_GameMaster);
+                }
+
+                await SyncBuildingTemplateCatalogAsync(contex);
 
                 if (contex.Professions.FirstOrDefault(c => c.Name == SD.GameMaster_NPCName) == null)
                 {
@@ -2825,12 +2870,350 @@ namespace DagoniteEmpire.Service
 
                 contex.SaveChanges();
 
-               
+                await EnsureGenericDemoBaronAsync(contex);
+
+                await SeniorHousesSeeder.EnsureForAllBaroniesAsync(contex);
+                await OrganizationsSeeder.EnsureForAllBaroniesAsync(contex);
+                await VassalFamilySeeder.EnsureForAllBaroniesAsync(contex);
+                await NeighborsSeeder.FixGroupNamesAsync(contex);
+                await MarchMapSeeder.EnsureInitializedAsync(contex);
+                await SeatPurposeTemplatesSeeder.EnsureDefaultsAsync(contex);
             }
             catch (Exception ex)
             {
                 throw new Exception(ex.Message);
             }
+        }
+
+        private static async Task EnsureGenericDemoBaronAsync(ApplicationDbContext contex)
+        {
+            const string sourceName = "Thaddeus Direbolt";
+            const string demoName = "Aldric Emberfall";
+
+            if (await contex.Characters.AnyAsync(c => c.NPCName == demoName))
+                return;
+
+            var source = await contex.Characters
+                .AsNoTracking()
+                .Include(c => c.Attributes)
+                .Include(c => c.BaseSkills)
+                .Include(c => c.SpecialSkills)
+                .Include(c => c.EquipmentSlots)
+                .Include(c => c.Languages)
+                .FirstOrDefaultAsync(c => c.NPCName == sourceName);
+
+            if (source is null)
+                return;
+
+            var created = new Character
+            {
+                UserName = source.UserName,
+                Relation = source.Relation,
+                NPCName = demoName,
+                Description =
+                    "A former adventurer who now rules as a practical baron. Veteran of border expeditions, " +
+                    "strong in melee command and battle leadership, while still keeping a blacksmith's and " +
+                    "craftsman's discipline.",
+                Age = source.Age,
+                ImageUrl = source.ImageUrl,
+                IconUrl = source.IconUrl,
+                NPCType = SD.NPCType.Duke,
+                AttributePoints = source.AttributePoints,
+                CurrentExpPoints = source.CurrentExpPoints,
+                UsedExpPoints = source.UsedExpPoints,
+                TraitBalance = source.TraitBalance,
+                RaceId = source.RaceId,
+                IsApproved = true,
+                ProfessionId = source.ProfessionId,
+                WeaponSet = source.WeaponSet,
+                DateNumber = source.DateNumber,
+                Attributes = source.Attributes?
+                    .OrderBy(a => a.Index)
+                    .Select(a => new DA_DataAccess.CharacterClasses.Attribute
+                    {
+                        Name = a.Name,
+                        FeatureType = a.FeatureType,
+                        Index = a.Index,
+                        BaseBonus = a.BaseBonus,
+                        RaceBonus = a.RaceBonus,
+                        GearBonus = a.GearBonus,
+                        TraitBonus = a.TraitBonus,
+                        OtherBonuses = a.OtherBonuses,
+                        TempBonuses = a.TempBonuses,
+                        HealthBonus = a.HealthBonus,
+                    })
+                    .ToList(),
+                BaseSkills = source.BaseSkills?
+                    .OrderBy(s => s.Index)
+                    .Select(s => new BaseSkill
+                    {
+                        Name = s.Name,
+                        FeatureType = s.FeatureType,
+                        Index = s.Index,
+                        BaseBonus = s.BaseBonus,
+                        RaceBonus = s.RaceBonus,
+                        GearBonus = s.GearBonus,
+                        TraitBonus = s.TraitBonus,
+                        OtherBonuses = s.OtherBonuses,
+                        TempBonuses = s.TempBonuses,
+                        HealthBonus = s.HealthBonus,
+                        RelatedAttribute1 = s.RelatedAttribute1,
+                        RelatedAttribute2 = s.RelatedAttribute2,
+                    })
+                    .ToList(),
+                SpecialSkills = source.SpecialSkills?
+                    .OrderBy(s => s.RelatedBaseSkillName)
+                    .ThenBy(s => s.Index)
+                    .ThenBy(s => s.Name)
+                    .Select(s => new SpecialSkill
+                    {
+                        Name = s.Name,
+                        FeatureType = s.FeatureType,
+                        Index = s.Index,
+                        BaseBonus = s.BaseBonus,
+                        RaceBonus = s.RaceBonus,
+                        GearBonus = s.GearBonus,
+                        TraitBonus = s.TraitBonus,
+                        OtherBonuses = s.OtherBonuses,
+                        TempBonuses = s.TempBonuses,
+                        HealthBonus = s.HealthBonus,
+                        RelatedAttribute1 = s.RelatedAttribute1,
+                        RelatedAttribute2 = s.RelatedAttribute2,
+                        RelatedBaseSkillName = s.RelatedBaseSkillName,
+                        ChosenAttribute = s.ChosenAttribute,
+                        Editable = s.Editable,
+                    })
+                    .ToList(),
+                EquipmentSlots = source.EquipmentSlots?
+                    .OrderBy(s => s.Id)
+                    .Select(s => new EquipmentSlot
+                    {
+                        Count = s.Count,
+                        EquipmentID = s.EquipmentID,
+                        IsEquipped = s.IsEquipped,
+                        SlotType = s.SlotType,
+                    })
+                    .ToList(),
+            };
+
+            if (source.Languages is { Count: > 0 })
+            {
+                var languageIds = source.Languages.Select(l => l.Id).ToList();
+                created.Languages = await contex.Languages
+                    .Where(l => languageIds.Contains(l.Id))
+                    .ToListAsync();
+            }
+
+            ApplyDemoBaronSkillProfile(created);
+
+            contex.Characters.Add(created);
+            await contex.SaveChangesAsync();
+        }
+
+        private static void ApplyDemoBaronSkillProfile(Character character)
+        {
+            if (character.Attributes is not null)
+            {
+                BoostAttribute(character.Attributes, "Strength", 4);
+                BoostAttribute(character.Attributes, "Charisma", 5);
+                BoostAttribute(character.Attributes, "Intelligence", 1);
+                BoostAttribute(character.Attributes, "Willpower", 1);
+            }
+
+            if (character.BaseSkills is not null)
+            {
+                SetBaseSkill(character.BaseSkills, "Melee", 6);
+                SetBaseSkill(character.BaseSkills, "Athletics", 5);
+                SetBaseSkill(character.BaseSkills, "Talk", 5);
+                SetBaseSkill(character.BaseSkills, "Knowledge", 5);
+                SetBaseSkill(character.BaseSkills, "Craft", 6);
+            }
+
+            if (character.SpecialSkills is not null)
+            {
+                SetSpecialSkill(character.SpecialSkills, "Acting", 1);
+                SetSpecialSkill(character.SpecialSkills, "Animals care", 1);
+                SetSpecialSkill(character.SpecialSkills, "Armor", 3);
+                SetSpecialSkill(character.SpecialSkills, "Balance", 1);
+                SetSpecialSkill(character.SpecialSkills, "Bluff", 3);
+                SetSpecialSkill(character.SpecialSkills, "Climbing", 1);
+                SetSpecialSkill(character.SpecialSkills, "Diplomacy", 3);
+                SetSpecialSkill(character.SpecialSkills, "Dirty tricks", 2);
+                SetSpecialSkill(character.SpecialSkills, "Dodge", 3);
+                SetSpecialSkill(character.SpecialSkills, "Geography", 2);
+                SetSpecialSkill(character.SpecialSkills, "Geology and mining", 2);
+                SetSpecialSkill(character.SpecialSkills, "Handcraft", 4);
+                SetSpecialSkill(character.SpecialSkills, "Hearing", 1);
+                SetSpecialSkill(character.SpecialSkills, "Heraldry", 1);
+                SetSpecialSkill(character.SpecialSkills, "History and religion", 2);
+                SetSpecialSkill(character.SpecialSkills, "Shields", 3);
+                SetSpecialSkill(character.SpecialSkills, "Strategy and tactics", 5);
+                SetSpecialSkill(character.SpecialSkills, "Inspire", 4);
+                SetSpecialSkill(character.SpecialSkills, "Intimidate", 3);
+                SetSpecialSkill(character.SpecialSkills, "Jumping", 1);
+                SetSpecialSkill(character.SpecialSkills, "Lifting", 2);
+                SetSpecialSkill(character.SpecialSkills, "Linguistics", 5);
+                SetSpecialSkill(character.SpecialSkills, "Mathematics and logic", 2);
+                SetSpecialSkill(character.SpecialSkills, "Metallurgy and blacksmithing", 5);
+                SetSpecialSkill(character.SpecialSkills, "Pain Resistance", 4);
+                SetSpecialSkill(character.SpecialSkills, "Persuasion", 4);
+                SetSpecialSkill(character.SpecialSkills, "Pickpocketing", 4);
+                SetSpecialSkill(character.SpecialSkills, "Plants and mushrooms", 3);
+                SetSpecialSkill(character.SpecialSkills, "Public speech", 4);
+                SetSpecialSkill(character.SpecialSkills, "Riding", 3);
+                SetSpecialSkill(character.SpecialSkills, "Running", 2);
+                SetSpecialSkill(character.SpecialSkills, "Sense motives", 1);
+                SetSpecialSkill(character.SpecialSkills, "Sense of direction", 2);
+                SetSpecialSkill(character.SpecialSkills, "Sneak", 3);
+                SetSpecialSkill(character.SpecialSkills, "Survival", 3);
+                SetSpecialSkill(character.SpecialSkills, "Swimming", 1);
+                SetSpecialSkill(character.SpecialSkills, "Swords and sabres", 5);
+                SetSpecialSkill(character.SpecialSkills, "Tend wounds", 2);
+                SetSpecialSkill(character.SpecialSkills, "Threatening", 3);
+                SetSpecialSkill(character.SpecialSkills, "Torture", 2);
+                SetSpecialSkill(character.SpecialSkills, "Trade", 2);
+                SetSpecialSkill(character.SpecialSkills, "Trapping", 1);
+                SetSpecialSkill(character.SpecialSkills, "Vigilance", 2);
+                SetSpecialSkill(character.SpecialSkills, "Wilderness knowledge", 3);
+                SetSpecialSkill(character.SpecialSkills, "Wrestling", 4);
+            }
+        }
+
+        private static void BoostAttribute(IEnumerable<DA_DataAccess.CharacterClasses.Attribute> attributes, string name, int add)
+        {
+            var attr = attributes.FirstOrDefault(a => string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase));
+            if (attr is null)
+                return;
+            attr.BaseBonus += add;
+        }
+
+        private static void SetBaseSkill(IEnumerable<BaseSkill> skills, string name, int value)
+        {
+            var skill = skills.FirstOrDefault(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase));
+            if (skill is null)
+                return;
+            skill.BaseBonus = value;
+        }
+
+        private static void SetSpecialSkill(IEnumerable<SpecialSkill> skills, string name, int value)
+        {
+            var skill = skills.FirstOrDefault(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase));
+            if (skill is null)
+                return;
+            skill.BaseBonus = value;
+        }
+
+        /// <summary>Reseed catalog when empty, legacy Polish, or outdated farm/mine/quarry/sawmill names.</summary>
+        private static async Task SyncBuildingTemplateCatalogAsync(ApplicationDbContext ctx)
+        {
+            var needsReseed = !await ctx.BuildingTemplates.AnyAsync()
+                || await ctx.BuildingTemplates.AnyAsync(t =>
+                    t.Kind == "Budynek"
+                    || t.Kind == "Ulepszenie"
+                    || t.Name == "Akademia Wojskowa"
+                    || t.Name == "Cmentarzysko"
+                    || t.Name == "Poor Farms"
+                    || t.Name == "Common Farms"
+                    || t.Name == "Fertile Farms"
+                    || t.Name == "Iron Mine"
+                    || t.Name == "Copper Mine"
+                    || t.Name == "Mine - Copper"
+                    || t.Name == "Mine - hard metals"
+                    || t.Name == "Mine - luxury metals"
+                    || t.Name == "Mine - precious gems (common)"
+                    || t.Name == "Granite Quarry"
+                    || t.Name == "Common Quarry"
+                    || t.Name == "Obsidian Quarry"
+                    || t.Name == "Dagonite Mine"
+                    || t.Name == "Mine - Dagonite"
+                    || t.Name == "Soft Metal Mine"
+                    || t.Name == "Hard Metal Mine"
+                    || t.Name == "Luxury Metal Mine"
+                    || t.Name == "Silver Mine"
+                    || t.Name == "Gold Mine"
+                    || t.Name == "Precious Gem Mine (Luxury)"
+                    || t.Name == "Precious Gem Mine (Common)"
+                    || t.Name == "Ironwood Sawmill"
+                    || t.Name == "Common Sawmill"
+                    || t.Name == "Farm - very poor"
+                    || t.Name == "Farm - poor"
+                    || t.Name == "Farm - regular fertility"
+                    || t.Name == "Farm - very fertile"
+                    || t.Name == "Farm - exceptionally fertile")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Clay pit")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Mine - Salt")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Sawmill - Elven alder")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Sawmill - Shipbuilding wood")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Mine - Sulfur")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Quarry - Tarnit")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Mine - Dagoferryt")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Farm - poor fertility")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Farm")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Farm - fertile")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Farm - bountiful")
+                || await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Mine - Dagonite")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Market Square")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Steward's Building")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Marketplace")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Inn")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Brewery")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Candlemaker")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Farm (Dye plant)")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Smithy")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Forge")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Armorer")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Plate Workshop")
+                || !await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Horse Stud (regular)")
+                || await ctx.BuildingTemplates.AnyAsync(t =>
+                    t.Name == "Sheep pastures"
+                    && (t.Description == null || !t.Description.Contains("Requires trade access to Sheep")))
+                || await ctx.BuildingTemplates.AnyAsync(t =>
+                    t.Name == "Pastures (cattle)"
+                    && (t.Description == null || !t.Description.Contains("Requires trade access to Cattle")))
+                || await ctx.BuildingTemplates.AnyAsync(t =>
+                    t.Name == "Horse Stud (regular)"
+                    && (t.Description == null || !t.Description.Contains("Requires trade access to Horses")))
+                // Trade-building lore: Pastures / Vineyard cost explanations + Produces lines.
+                || await ctx.BuildingTemplates.AnyAsync(t =>
+                    t.Name == "Pastures (cattle)"
+                    && (t.Description == null || !t.Description.Contains("herd itself must be bought")))
+                || await ctx.BuildingTemplates.AnyAsync(t =>
+                    t.Name == "Apiary"
+                    && (t.Description == null || !t.Description.Contains("Produces Honey & Wax")))
+                || await ctx.BuildingTemplates.AnyAsync(t => t.Name == "Small Brewery")
+                || await ctx.BuildingTemplates.AnyAsync(t =>
+                    t.Name == "Fishing Pier"
+                    && (t.EffectAdditiveJson == null || !t.EffectAdditiveJson.Contains("-0.5,10")))
+                // Farm PPB sync: defense -1 + treasury 8/10/15/20 (was wrongly treasury -1).
+                || await ctx.BuildingTemplates.AnyAsync(t =>
+                    t.Name == "Farm - poor fertility"
+                    && (t.EffectAdditiveJson == null || !t.EffectAdditiveJson.Contains("-1,8")))
+                // Hunter's Lodge: Army 2 was wrongly stored as Corruption 2.
+                || await ctx.BuildingTemplates.AnyAsync(t =>
+                    t.Name == "Hunter's Lodge"
+                    && (t.EffectAdditiveJson == null
+                        || t.EffectAdditiveJson.Contains("2,0,0,0,0,3,5")
+                        || !t.EffectAdditiveJson.Contains("0,0,0,0,0,0,3,5")))
+                // Barracks: Defense 20, Treasury −60; Town Garrison: Defense 6, Treasury −25 + guard/upgrade text.
+                || await ctx.BuildingTemplates.AnyAsync(t =>
+                    t.Name == "Barracks"
+                    && (t.EffectAdditiveJson == null || !t.EffectAdditiveJson.Contains("20,-60")))
+                || await ctx.BuildingTemplates.AnyAsync(t =>
+                    t.Name == "Town Garrison"
+                    && (t.EffectAdditiveJson == null
+                        || !t.EffectAdditiveJson.Contains("6,-25")
+                        || t.Description == null
+                        || !t.Description.Contains("city guard unit")));
+
+            if (!needsReseed)
+                return;
+
+            foreach (var building in await ctx.BaronyBuildings.Where(b => b.TemplateId != null).ToListAsync())
+                building.TemplateId = null;
+
+            ctx.BuildingTemplates.RemoveRange(await ctx.BuildingTemplates.ToListAsync());
+            ctx.BuildingTemplates.AddRange(BuildingTemplateSeeder.CreateAll());
+            await ctx.SaveChangesAsync();
         }
     }
 }

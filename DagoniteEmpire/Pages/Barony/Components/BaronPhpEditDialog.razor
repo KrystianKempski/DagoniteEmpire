@@ -1,0 +1,85 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            <MudTextField @bind-Value="_source"
+                          Label="Source"
+                          HelperText="e.g. Traits, Adventure: …"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="baron-influence-field"
+                          Required="true" />
+            <MudTextField @bind-Value="_description"
+                          Label="Description"
+                          HelperText="Optional. Shown on hover over the source in the table."
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="2"
+                          Class="baron-influence-field" />
+            <div class="baron-php-edit-fields">
+                <MudNumericField @bind-Value="_prestige"
+                                 Label="Prestige"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Class="baron-influence-field php-field php-field--prestige" />
+                <MudNumericField @bind-Value="_honor"
+                                 Label="Honor"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Class="baron-influence-field php-field php-field--honor" />
+                <MudNumericField @bind-Value="_fear"
+                                 Label="Fear"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Class="baron-influence-field php-field php-field--fear" />
+            </div>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public BaronPhpSourceDTO Source { get; set; } = new();
+
+    private string _source = string.Empty;
+    private string? _description;
+    private int _prestige;
+    private int _honor;
+    private int _fear;
+
+    protected override void OnInitialized()
+    {
+        _source = Source.Source;
+        _description = Source.Description;
+        _prestige = Source.Prestige;
+        _honor = Source.Honor;
+        _fear = Source.Fear;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (string.IsNullOrWhiteSpace(_source))
+        {
+            _snackBar.Add("Source name is required.", Severity.Warning);
+            return;
+        }
+
+        Source.Source = _source.Trim();
+        Source.Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim();
+        Source.Prestige = _prestige;
+        Source.Honor = _honor;
+        Source.Fear = _fear;
+        MudDialog.Close(DialogResult.Ok(Source));
+    }
+}

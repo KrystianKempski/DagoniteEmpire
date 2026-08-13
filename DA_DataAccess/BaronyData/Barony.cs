@@ -1,0 +1,116 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace DA_DataAccess.BaronyData
+{
+    /// <summary>
+    /// Baronia zarządzana przez postać typu Duke/Baron. Relacja 1:1 z Character (przez CharacterId).
+    /// Encje potomne wskazują na baronię przez int BaronyId (bez nawigacji, wzorem Mob/CampaignId).
+    /// Wektory PPB (baza) trzymane jako JSON (wzorem BattleMap.CellsJson).
+    /// </summary>
+    public class Barony
+    {
+        [Key]
+        public int Id { get; set; }
+
+        /// <summary>Postać będąca baronem (1:1).</summary>
+        public int CharacterId { get; set; }
+
+        public string Name { get; set; } = "Nowa Baronia";
+
+        /// <summary>Rozmiar baronii (liczba pól).</summary>
+        public int Size { get; set; }
+
+        /// <summary>Terrain map width in tiles (columns). Default 15.</summary>
+        public int TerrainMapWidth { get; set; } = DA_Common.Barony.TerrainMapGrid.DefaultSize;
+
+        /// <summary>Terrain map height in tiles (rows). Default 15.</summary>
+        public int TerrainMapHeight { get; set; } = DA_Common.Barony.TerrainMapGrid.DefaultSize;
+
+        // --- Stan sezonu / tury (BaronySeasonState, osadzony) ---
+        public int Year { get; set; } = 625;
+        public int Month { get; set; } = 3;
+        public int TurnNumber { get; set; } = 1;
+        public string Season { get; set; } = "Spring";
+
+        // --- Akumulatory (przenoszą się między turami) ---
+        /// <summary>Skarbiec baronii.</summary>
+        public decimal TreasuryGold { get; set; }
+
+        /// <summary>Kiesa barona (osobna od skarbca; baron może przelewać bez ograniczeń).</summary>
+        public decimal BaronPurseGold { get; set; }
+
+        /// <summary>Żywność w spichlerzach.</summary>
+        public decimal FoodInGranaries { get; set; }
+
+        /// <summary>Cumulative resource stocks (JSON PpbVector; Food/Gold mirrored with scalar fields).</summary>
+        public string ResourceStocksJson { get; set; } = "{}";
+
+        /// <summary>Income applied at end of the previous turn (JSON PpbVector).</summary>
+        public string PreviousTurnIncomeJson { get; set; } = "{}";
+
+        /// <summary>
+        /// Stocks snapshot at Resolve Turn, before income and project grants (JSON PpbVector).
+        /// Resource Balance “Stock from previous turn”.
+        /// </summary>
+        public string PreviousTurnStockJson { get; set; } = "{}";
+
+        public int Unrest { get; set; }
+
+        /// <summary>Raw 2d6 rolled at turn start for economic conjuncture (typically 2–12).</summary>
+        public int ConjunctureDice { get; set; } = 7;
+
+        /// <summary>MG-only modifier added to <see cref="ConjunctureDice"/> (war, harvest, etc.).</summary>
+        public int ConjunctureModifier { get; set; }
+
+        /// <summary>
+        /// Default Weapon 1 quality for newly trained units (Normal / Good / Poor). MG-only.
+        /// </summary>
+        public string DefaultUnitWeaponQuality { get; set; } = DA_Common.Barony.UnitWeaponQuality.Normal;
+
+        /// <summary>
+        /// Share of gross gold income paid to the senior (Budget Fief expense). Default 15.
+        /// </summary>
+        public decimal LiegeTributePercent { get; set; } = 15m;
+
+        /// <summary>
+        /// Share of village gold on vassal fiefs kept by the baron. Default 15.
+        /// </summary>
+        public decimal VassalTributePercent { get; set; } = 15m;
+
+        public int Prestige { get; set; }
+        public int Honor { get; set; }
+        public int Fear { get; set; }
+
+        /// <summary>Bazowe wartości PPB (przed modyfikatorami) — JSON PpbVector.</summary>
+        public string BaseParametersJson { get; set; } = "{}";
+
+        public string? Notes { get; set; }
+
+        /// <summary>
+        /// JSON array of <see cref="DA_Common.Barony.TradeGoodsCatalog"/> keys forced available by MG override.
+        /// Derived availability also includes goods produced by buildings/improvements and goods received via trade treaties.
+        /// </summary>
+        public string AvailableTradeGoodsJson { get; set; } = "[]";
+
+        /// <summary>Key from <see cref="DA_Common.Barony.LuxuryGoodsAccessCatalog"/> — luxury market reach for this barony.</summary>
+        public string LuxuryGoodsAccessKey { get; set; } = "basic";
+
+        /// <summary>JSON array of <see cref="DA_Common.Barony.BaronyTradeTreaty"/>.</summary>
+        public string TradeTreatiesJson { get; set; } = "[]";
+
+        /// <summary>
+        /// JSON array of Known Lords keys blocked from trading with this barony
+        /// (cannot be path destination or transit).
+        /// </summary>
+        public string BlockedTradeLordKeysJson { get; set; } = "[]";
+
+        /// <summary>JSON map of Known Lords catalog key → player/MG notes for that lord.</summary>
+        public string KnownLordNotesJson { get; set; } = "{}";
+
+        /// <summary>JSON map of Known Lords catalog key → player mark (icon + color).</summary>
+        public string KnownLordMarksJson { get; set; } = "{}";
+
+        /// <summary>Player marked the current turn as finished; MG may resolve.</summary>
+        public bool PlayerTurnReady { get; set; }
+    }
+}

@@ -1,0 +1,92 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<table class="ppb-table @TableClass">
+    <thead>
+        <tr>
+            @if (ShowRowLabels)
+            {
+                <th class="ppb-row-label">@RowHeader</th>
+            }
+            @foreach (var info in PpbCatalog.All)
+            {
+                <th>
+                    <BaronyTooltip Text="@info.NameEn">@info.ShortEn</BaronyTooltip>
+                </th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var row in Rows)
+        {
+            <tr>
+                @if (ShowRowLabels)
+                {
+                    <td class="ppb-row-label">
+                        @if (!string.IsNullOrWhiteSpace(row.Formula))
+                        {
+                            <BaronyTooltip Title="@row.Label" Text="@row.Formula">
+                                <span>
+                                    @row.Label
+                                    <MudIcon Icon="@Icons.Material.Outlined.Functions" Size="Size.Small" Class="ml-1" Style="vertical-align:text-bottom;opacity:.6;" />
+                                </span>
+                            </BaronyTooltip>
+                        }
+                        else
+                        {
+                            @row.Label
+                        }
+                    </td>
+                }
+                @foreach (var info in PpbCatalog.All)
+                {
+                    <td class="@CellClass(row, info.Key)">@((MarkupString)CellContent(row, info.Key))</td>
+                }
+            </tr>
+        }
+        @if (Summary is not null)
+        {
+            <tr class="ppb-summary-row">
+                @if (ShowRowLabels)
+                {
+                    <td class="ppb-row-label">@SummaryLabel</td>
+                }
+                @foreach (var info in PpbCatalog.All)
+                {
+                    var v = Summary[info.Key];
+                    <td class="@PpbCellStyle.ValueClass(info.Key, v)">@Fmt(v)</td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter] public IEnumerable<PpbModifierRow> Rows { get; set; } = Array.Empty<PpbModifierRow>();
+    [Parameter] public PpbVector? Summary { get; set; }
+    [Parameter] public string SummaryLabel { get; set; } = "Section total";
+    [Parameter] public string RowHeader { get; set; } = "Modifier";
+    [Parameter] public string TableClass { get; set; } = "ppb-table--zebra";
+    [Parameter] public bool ShowRowLabels { get; set; } = true;
+
+    private static string Fmt(decimal v) => PpbFormat.Additive(v);
+
+    private static string CellContent(PpbModifierRow row, Ppb p)
+    {
+        var add = row.Additive?[p] ?? 0m;
+        var pct = row.Percent?[p] ?? 0m;
+        var parts = new List<string>();
+        if (add != 0m)
+            parts.Add(PpbFormat.Additive(add));
+        if (pct != 0m)
+            parts.Add(PpbFormat.Percent(pct));
+        return parts.Count == 0 ? "<span class=\"ppb-cell-zero\">·</span>" : string.Join(" / ", parts);
+    }
+
+    private static string CellClass(PpbModifierRow row, Ppb p)
+    {
+        var add = row.Additive?[p] ?? 0m;
+        var pct = row.Percent?[p] ?? 0m;
+        var net = add + pct;
+        return PpbCellStyle.ValueClass(p, net);
+    }
+}

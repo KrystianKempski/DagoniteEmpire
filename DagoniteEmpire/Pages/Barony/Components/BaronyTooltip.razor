@@ -1,0 +1,144 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IJSRuntime Js
+@implements IDisposable
+
+@if (string.IsNullOrWhiteSpace(Text))
+{
+    @ChildContent
+}
+else
+{
+    <MudTooltip Placement="@_placement"
+                Arrow="false"
+                Color="Color.Transparent"
+                TooltipClass="barony-tip-popover"
+                ShowOnHover="false"
+                ShowOnFocus="false"
+                @bind-Visible="_visible">
+        <ChildContent>
+            <span @ref="_anchor"
+                  class="@AnchorClass()"
+                  style="@Style"
+                  @onpointerenter="ShowAsync"
+                  @onpointerleave="Hide"
+                  @onpointercancel="Hide">
+                @ChildContent
+            </span>
+        </ChildContent>
+        <TooltipContent>
+            <div class="barony-tip__box">
+                @if (!string.IsNullOrWhiteSpace(Title))
+                {
+                    <div class="barony-tip__title">@Title</div>
+                }
+                <div class="barony-tip__body">@Text</div>
+            </div>
+        </TooltipContent>
+    </MudTooltip>
+}
+
+@code {
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Text { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? Style { get; set; }
+    [Parameter] public Placement Placement { get; set; } = Placement.Right;
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private ElementReference _anchor;
+    private Placement _placement = Placement.Right;
+    private bool _visible;
+    private int _hoverToken;
+    private readonly Guid _instanceId = Guid.NewGuid();
+    private DotNetObjectReference<BaronyTooltip>? _dotNetRef;
+
+    private string AnchorClass() =>
+        string.IsNullOrWhiteSpace(Class) ? "barony-tip-anchor" : $"barony-tip-anchor {Class}";
+
+    protected override void OnInitialized()
+    {
+        _dotNetRef = DotNetObjectReference.Create(this);
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (!_visible)
+            _placement = Placement;
+    }
+
+    private async Task ShowAsync()
+    {
+        var token = ++_hoverToken;
+
+        try
+        {
+            var name = await Js.InvokeAsync<string>(
+                "baronyPickTooltipPlacement",
+                _anchor,
+                Placement.ToString());
+            if (token != _hoverToken)
+                return;
+
+            _placement = name switch
+            {
+                "Left" => Placement.Left,
+                "Top" => Placement.Top,
+                "Bottom" => Placement.Bottom,
+                _ => Placement.Right,
+            };
+        }
+        catch
+        {
+            if (token != _hoverToken)
+                return;
+
+            _placement = Placement;
+        }
+
+        if (token != _hoverToken)
+            return;
+
+        _visible = true;
+
+        try
+        {
+            await Js.InvokeVoidAsync("baronyTipWatchScroll", _instanceId.ToString(), _dotNetRef);
+        }
+        catch
+        {
+            // ignore disconnect / prerender
+        }
+    }
+
+    private void Hide()
+    {
+        _hoverToken++;
+        _visible = false;
+        _ = TryUnwatchScrollAsync();
+    }
+
+    [JSInvokable]
+    public Task OnScrollHide()
+    {
+        Hide();
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private async Task TryUnwatchScrollAsync()
+    {
+        try
+        {
+            await Js.InvokeVoidAsync("baronyTipUnwatchScroll", _instanceId.ToString());
+        }
+        catch
+        {
+            // ignore disconnect / prerender
+        }
+    }
+
+    public void Dispose()
+    {
+        _ = TryUnwatchScrollAsync();
+        _dotNetRef?.Dispose();
+    }
+}

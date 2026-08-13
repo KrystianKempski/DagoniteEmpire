@@ -31,6 +31,21 @@ namespace DA_Common
         public const string GameMaster_Portrait = "../images/gm_avatar.webp";
         public const string PostNoPortrait = "__no_portrait__";
 
+        /// <summary>Hidden Identity account used by the public "Try baron" demo (DukePlayer role, no interactive login).</summary>
+        public const string DemoBaronUserName = "DemoBaron";
+        public const string DemoBaronEmail = "demo-baron@dagonite.local";
+        /// <summary>Hidden Identity account used by the public "Try Game Master" demo (GameMaster role, no interactive login).</summary>
+        public const string DemoGmUserName = "DemoGM";
+        public const string DemoGmEmail = "demo-gm@dagonite.local";
+        /// <summary>Source character cloned per demo session (seeded by <c>EnsureGenericDemoBaronAsync</c>).</summary>
+        public const string DemoBaronSourceCharacterName = "Aldric Emberfall";
+        /// <summary>Abandoned demo sessions older than this are swept from the database.</summary>
+        public static readonly TimeSpan DemoSessionTtl = TimeSpan.FromMinutes(2);
+
+        /// <summary>True for any hidden demo account (baron or GM), used to isolate demo sessions in shared UI.</summary>
+        public static bool IsDemoUserName(string? userName) =>
+            userName == DemoBaronUserName || userName == DemoGmUserName;
+
         /// <summary>HttpOnly cookie so wiki static middleware can read the active hero (Blazor session storage is not available there).</summary>
         public const string WikiSelectedCharacterCookie = "dagonite_wiki_character_id";
 
@@ -667,6 +682,23 @@ namespace DA_Common
         public const string Anvil = "icons/anvil.svg";
         public const string Helm = "icons/barbute.svg";
         public const string Chest = "icons/chest.svg";
+        public const string JewelCrownWhite = "icons/jewel-crown_white.svg";
+        public const string JewelCrown = "icons/jewel-crown.svg";
+        public const string Compass = "icons/compass.svg";
+        public const string Windmill = "icons/windmill.svg";
+        public const string WindmillBlack = "icons/windmill-black.svg";
+        public const string TwoCoins = "icons/two-coins.svg";
+        public const string Trade = "icons/trade.svg";
+        public const string AxeSword = "icons/axe-sword.svg";
+        public const string VerticalBanner = "icons/vertical-banner.svg";
+        public const string People = "icons/people.svg";
+        public const string ShakingHands = "icons/shaking-hands.svg";
+        public const string WoodenCrate = "icons/wooden-crate.svg";
+        public const string WoodCabinBlack = "icons/wood-cabin-black.svg";
+        public const string GearHammer = "icons/gear-hammer.svg";
+        public const string Crane = "icons/crane.svg";
+        public const string WaxSeal = "icons/wax-seal.svg";
+        public const string TiedScroll = "icons/tied-scroll.svg";
         public const string Goblin = "icons/goblin.svg";
         public const string Attack = "icons/sword-clash.svg";
         public const string AttackWhite = "icons/sword-clash-white.svg";
@@ -938,7 +970,9 @@ namespace DA_Common
         public const string IsAuthenticated = "IsAuthenticated";
         public const string Role = "Role";
         public const string IsInited = "IsInited";
-        public static readonly string[] All = { SelectedCharacterId, UserName, UserId, IsAdminOrMG, CharacterMG, IsAuthenticated, Role, IsInited };
+        /// <summary>Opaque demo-session token; present only while inside the "Try baron" demo.</summary>
+        public const string DemoToken = "DemoToken";
+        public static readonly string[] All = { SelectedCharacterId, UserName, UserId, IsAdminOrMG, CharacterMG, IsAuthenticated, Role, IsInited, DemoToken };
     }; 
 
     public class States

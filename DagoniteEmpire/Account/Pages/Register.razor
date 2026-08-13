@@ -7,6 +7,7 @@
 @using Microsoft.AspNetCore.Identity.UI.Services
 @using Microsoft.AspNetCore.WebUtilities
 @using DA_DataAccess
+@using DA_Common
 
 @inject UserManager<ApplicationUser> UserManager
 @inject IUserStore<ApplicationUser> UserStore
@@ -101,6 +102,16 @@
         if (!result.Succeeded)
         {
             identityErrors = result.Errors;
+            return;
+        }
+
+        var identityRole = Input.UserRole == SD.NPCType.Duke
+            ? SD.Role_DukePlayer
+            : SD.Role_HeroPlayer;
+        var roleResult = await UserManager.AddToRoleAsync(user, identityRole);
+        if (!roleResult.Succeeded)
+        {
+            identityErrors = roleResult.Errors;
             return;
         }
 

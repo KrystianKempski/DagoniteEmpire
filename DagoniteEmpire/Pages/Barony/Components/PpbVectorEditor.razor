@@ -1,0 +1,106 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<div class="ppb-editor @(Compact ? "ppb-editor--compact" : "") @(ReadOnly ? "ppb-editor--readonly" : "")">
+    @if (!string.IsNullOrEmpty(Title))
+    {
+        <MudText Typo="Typo.subtitle2" Class="mb-1">@Title</MudText>
+    }
+    <div class="ppb-editor-grid @(Compact ? CompactGridClass : "")">
+        @foreach (var info in VisibleColumns)
+        {
+            var key = info.Key;
+            var significant = IsSignificant(key);
+            <BaronyTooltip Text="@FieldTitle(info, significant)">
+                <MudNumericField T="decimal"
+                                 Label="@FieldLabel(info)"
+                                 Value="@Value.Get(key)"
+                                 ValueChanged="@(v => OnChanged(key, v))"
+                                 Variant="Variant.Text"
+                                 Margin="Margin.Dense"
+                                 ShrinkLabel="@Compact"
+                                 IconSize="Size.Small"
+                                 Step="@StepSize"
+                                 Format="0.#"
+                                 Disabled="@ReadOnly"
+                                 HideSpinButtons="@ReadOnly"
+                                 Class="@FieldClass(significant)" />
+            </BaronyTooltip>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public PpbVector Value { get; set; } = new();
+    [Parameter] public EventCallback<PpbVector> ValueChanged { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public bool Percent { get; set; }
+    [Parameter] public bool Compact { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
+    [Parameter] public bool ExcludeTreasury { get; set; }
+    [Parameter] public bool UseEnglishLabels { get; set; }
+    [Parameter] public IReadOnlySet<Ppb>? SignificantKeys { get; set; }
+    /// <summary>When set, only these PPB keys are shown (overrides ExcludeTreasury).</summary>
+    [Parameter] public IReadOnlyCollection<PpbInfo>? Columns { get; set; }
+
+    private decimal StepSize => Percent ? 0.1m : 1m;
+
+    private IEnumerable<PpbInfo> VisibleColumns =>
+        Columns is { Count: > 0 }
+            ? Columns
+            : ExcludeTreasury ? PpbCatalog.All.Where(p => p.Key != Ppb.Treasury) : PpbCatalog.All;
+
+    private bool IsSignificant(Ppb key)
+        => SignificantKeys is { Count: > 0 } && SignificantKeys.Contains(key);
+
+    private string? FieldClass(bool significant)
+    {
+        var parts = new List<string>();
+        if (Compact)
+            parts.Add("ppb-compact-numeric");
+        if (significant)
+            parts.Add("ppb-field-significant");
+        return parts.Count == 0 ? null : string.Join(' ', parts);
+    }
+
+    private string? FieldTitle(PpbInfo info, bool significant)
+    {
+        var displayName = UseEnglishLabels ? info.NameEn : info.NamePl;
+        if (significant)
+            return $"{displayName} — significant for this office";
+        if (SignificantKeys is { Count: > 0 })
+            return $"{displayName} — stored; influence rules coming later";
+        return Compact ? displayName : null;
+    }
+
+    private string CompactGridClass =>
+        Columns is { Count: > 0 }
+            ? "ppb-editor-grid--compact-resources"
+            : ExcludeTreasury ? "ppb-editor-grid--compact-12" : "ppb-editor-grid--compact";
+
+    private string FieldLabel(PpbInfo info) =>
+        Compact ? PpbShort(info.Key) : (UseEnglishLabels ? info.NameEn : info.NamePl) + (Percent ? " %" : "");
+
+    private async Task OnChanged(Ppb key, decimal v)
+    {
+        Value.Set(key, v);
+        await ValueChanged.InvokeAsync(Value);
+    }
+
+    private static string PpbShort(Ppb p) => p switch
+    {
+        Ppb.Food => "Food",
+        Ppb.Economy => "Econ",
+        Ppb.Production => "Prod",
+        Ppb.Loyalty => "Loy",
+        Ppb.Stability => "Stab",
+        Ppb.Law => "Law",
+        Ppb.Corruption => "Corr",
+        Ppb.Science => "Sci",
+        Ppb.Magic => "Mag",
+        Ppb.Culture => "Cult",
+        Ppb.Intelligence => "Intel",
+        Ppb.Defense => "Def",
+        Ppb.Treasury => "Gold",
+        _ => p.ToString(),
+    };
+}

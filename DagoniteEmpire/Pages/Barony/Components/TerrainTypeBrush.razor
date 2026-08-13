@@ -1,0 +1,103 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<div class="terrain-brush">
+    <MudText Typo="Typo.caption" Class="terrain-brush__hint">
+        Features toggle on click/drag (stackable bitmask). Click again to remove. Clear layer resets base type and features.
+    </MudText>
+    <div class="terrain-brush__body terrain-brush__body--split">
+        <div class="terrain-brush__group">
+            <div class="terrain-brush__options">
+                @foreach (var baseType in TerrainBaseType.All)
+                {
+                    var t = baseType;
+                    var selected = SubMode == TerrainTypeSubMode.Base && t == BaseTypeValue;
+                    <BaronyTooltip Text="@TerrainBaseType.DisplayName(t)">
+                        <button type="button"
+                                class="terrain-type-option @(selected ? "terrain-type-option--selected" : "")"
+                                aria-label="@TerrainBaseType.DisplayName(t)"
+                                @onclick="() => SelectBaseAsync(t)">
+                        @if (TerrainMapVisuals.CustomBaseTypeIconUrl(t) is string customIconUrl)
+                        {
+                            <img src="@customIconUrl"
+                                 alt="@TerrainBaseType.DisplayName(t)"
+                                 class="terrain-type-option__icon" />
+                        }
+                        else
+                        {
+                            <MudIcon Icon="@TerrainMapVisuals.BaseTypeIcon(t)" Size="Size.Medium" />
+                        }
+                        <span>@TerrainBaseType.DisplayName(t)</span>
+                        </button>
+                    </BaronyTooltip>
+                }
+            </div>
+            <MudText Typo="Typo.caption" Class="terrain-brush__label">Base type</MudText>
+        </div>
+
+        <div class="terrain-brush__group">
+            <div class="terrain-brush__options">
+                @foreach (var feature in TerrainFeature.Paintable)
+                {
+                    var f = feature;
+                    var selected = SubMode == TerrainTypeSubMode.Feature && FeatureValue == f;
+                    <BaronyTooltip Text="@TerrainFeature.DisplayName(f)">
+                        <button type="button"
+                                class="terrain-type-option @(selected ? "terrain-type-option--selected" : "")"
+                                aria-label="@TerrainFeature.DisplayName(f)"
+                                @onclick="() => SelectFeatureAsync(f)">
+                        @if (TerrainMapVisuals.FeatureIconUrls(f) is { Count: > 0 } iconUrls)
+                        {
+                            @if (iconUrls.Count > 1)
+                            {
+                                <span class="terrain-type-option__icon-cluster terrain-type-option__icon-cluster--dense-forest">
+                                    @foreach (var iconUrl in iconUrls)
+                                    {
+                                        <img src="@iconUrl"
+                                             alt=""
+                                             class="terrain-type-option__icon terrain-type-option__icon--clustered" />
+                                    }
+                                </span>
+                            }
+                            else
+                            {
+                                <img src="@iconUrls[0]"
+                                     alt="@TerrainFeature.DisplayName(f)"
+                                     class="terrain-type-option__icon" />
+                            }
+                        }
+                        else
+                        {
+                            <MudIcon Icon="@TerrainMapVisuals.FeatureMudIcon(f)"
+                                     Size="Size.Medium"
+                                     Style="@(f == TerrainFeature.River || f == TerrainFeature.Coast ? "color:#1f6f98;" : null)" />
+                        }
+                        <span>@TerrainFeature.DisplayName(f)</span>
+                        </button>
+                    </BaronyTooltip>
+                }
+            </div>
+            <MudText Typo="Typo.caption" Class="terrain-brush__label">Features</MudText>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public TerrainTypeSubMode SubMode { get; set; } = TerrainTypeSubMode.Base;
+    [Parameter] public EventCallback<TerrainTypeSubMode> SubModeChanged { get; set; }
+    [Parameter] public string BaseTypeValue { get; set; } = TerrainBaseType.Plains;
+    [Parameter] public EventCallback<string> BaseTypeValueChanged { get; set; }
+    [Parameter] public int FeatureValue { get; set; } = TerrainFeature.Forest;
+    [Parameter] public EventCallback<int> FeatureValueChanged { get; set; }
+
+    private async Task SelectBaseAsync(string value)
+    {
+        await SubModeChanged.InvokeAsync(TerrainTypeSubMode.Base);
+        await BaseTypeValueChanged.InvokeAsync(value);
+    }
+
+    private async Task SelectFeatureAsync(int feature)
+    {
+        await SubModeChanged.InvokeAsync(TerrainTypeSubMode.Feature);
+        await FeatureValueChanged.InvokeAsync(feature);
+    }
+}

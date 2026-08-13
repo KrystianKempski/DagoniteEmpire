@@ -1,0 +1,833 @@
+@page "/barony/notes"
+@layout BaronyLayout
+@inherits BaronyPageBase
+@implements IAsyncDisposable
+@using DA_Business.Repository.BaronyRepos
+@using DA_Models.BaronyModels
+@attribute [Authorize(Roles = SD.Role_DukePlayer)]
+@inject IBaronyPlayerNoteRepository _notesRepo
+@inject IDialogService _dialogService
+@inject IJSRuntime _js
+
+<PageTitle>Dagonite Empire | Barony Notes</PageTitle>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading...</span>
+}
+else if (CanManageAsMg)
+{
+    <MudAlert Severity="Severity.Info" Class="my-2">The Notes tab is the baron player's private space and is not available to the Game Master.</MudAlert>
+}
+else if (LoadError is not null)
+{
+    <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
+}
+else if (Barony is not null)
+{
+    <div class="barony-notes__page">
+        <BaronyPageHeader Title="Notes" HelpKey="notes" ShowSectionToggle="false" />
+
+        <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
+            Private planning space — only you can see this. The Game Master has no access.
+        </MudText>
+
+        <MudTabs Elevation="0"
+                 Rounded="false"
+                 Border="false"
+                 ApplyEffectsToContainer="false"
+                 @bind-ActivePanelIndex="_activeTab"
+                 Class="terrain-brush-tabs barony-notes__tabs"
+                 PanelClass="pt-3">
+            <MudTabPanel Text="Journal">
+            <div class="barony-notes__journal">
+                <div class="barony-notes__layout">
+                    <aside class="barony-notes__threads">
+                        <div class="barony-notes__threads-head">
+                            <span>Threads</span>
+                            <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                           Size="Size.Small"
+                                           aria-label="New note"
+                                           OnClick="NewThreadAsync" />
+                        </div>
+                        <ul class="barony-notes__thread-list">
+                            @foreach (var t in _threads)
+                            {
+                                <li class="barony-notes__thread-item @(t.Id == _selected?.Id ? "barony-notes__thread-item--active" : "")"
+                                    @onclick="() => SelectThreadAsync(t.Id)">
+                                    <span class="barony-notes__thread-title">@ThreadTitle(t)</span>
+                                    <span class="barony-notes__thread-meta">T@(t.CreatedTurn)</span>
+                                </li>
+                            }
+                        </ul>
+                    </aside>
+
+                    <section class="barony-notes__editor-pane">
+                        @if (_selected is null)
+                        {
+                            <div class="barony-notes__placeholder">
+                                <MudIcon Icon="@Icons.Material.Filled.NoteAdd" Size="Size.Large" />
+                                <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                                    No notes yet. Create your first thread.
+                                </MudText>
+                                <MudButton Variant="Variant.Filled"
+                                           Class="barony-turn-btn barony-turn-btn--solid"
+                                           Size="Size.Small"
+                                           StartIcon="@Icons.Material.Filled.Add"
+                                           OnClick="NewThreadAsync">
+                                    New thread
+                                </MudButton>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="barony-notes__editor-head">
+                                <MudTextField @bind-Value="_titleEdit"
+                                              Variant="Variant.Text"
+                                              Margin="Margin.Dense"
+                                              Immediate="false"
+                                              OnBlur="SaveTitleAsync"
+                                              Placeholder="Untitled note"
+                                              Class="barony-notes__title-field" />
+                                <MudTooltip Text="@(_isDirty ? "Unsaved changes" : "Saved")">
+                                    <MudIcon Icon="@(_isDirty ? Icons.Material.Filled.Sync : Icons.Material.Filled.CloudDone)"
+                                             Size="Size.Small"
+                                             Class="@($"barony-notes__status {(_isDirty ? "barony-notes__status--pending" : "barony-notes__status--saved")}")" />
+                                </MudTooltip>
+                                <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
+                                               Size="Size.Small"
+                                               aria-label="Delete note"
+                                               Class="barony-notes__delete-btn"
+                                               OnClick="() => DeleteThreadAsync(_selected)" />
+                            </div>
+
+                            <div class="barony-notes__editor">
+                                <BlazoredTextEditor @ref="_editor" @key="_editorEpoch" Placeholder="Write your plans, ideas, reminders…">
+                                    <ToolbarContent>@JournalToolbar()</ToolbarContent>
+                                    <EditorContent></EditorContent>
+                                </BlazoredTextEditor>
+                            </div>
+                        }
+                    </section>
+                </div>
+            </div>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Sticky notes">
+            <div class="barony-notes__sticky">
+                <div class="barony-notes__sticky-toolbar">
+                    <MudButton Variant="Variant.Filled"
+                               Class="barony-turn-btn barony-turn-btn--solid"
+                               Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="AddStickyAsync">
+                        Add sticky
+                    </MudButton>
+                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
+                        Drag cards to reorder. Changes save automatically.
+                    </MudText>
+                </div>
+
+                @if (_stickies.Count == 0)
+                {
+                    <div class="barony-notes__placeholder">
+                        <MudIcon Icon="@Icons.Material.Filled.StickyNote2" Size="Size.Large" />
+                        <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                            No sticky notes yet. Add your first idea, plan or reminder.
+                        </MudText>
+                    </div>
+                }
+                else
+                {
+                    <div class="barony-notes__sticky-board">
+                        @foreach (var s in _stickies)
+                        {
+                            <div class="barony-notes__sticky-card @(s.Id == _dragStickyId ? "barony-notes__sticky-card--dragging" : "")"
+                                 style="@StickyCardStyle(s)"
+                                 draggable="true"
+                                 @key="s.Id"
+                                 @ondragstart="e => OnStickyDragStart(e, s.Id)"
+                                 @ondragend="OnStickyDragEnd"
+                                 @ondragover="OnStickyDragOver"
+                                 @ondragover:preventDefault="true"
+                                 @ondrop="() => OnStickyDropAsync(s.Id)"
+                                 @ondrop:preventDefault="true">
+                                <div class="barony-notes__sticky-head">
+                                    <span class="barony-notes__sticky-grip" title="Drag to reorder">⠿</span>
+                                    <div class="barony-notes__sticky-colors">
+                                        @foreach (var c in StickyPalette)
+                                        {
+                                            <button type="button"
+                                                    class="barony-notes__sticky-swatch @((s.Color ?? DefaultStickyColor) == c ? "barony-notes__sticky-swatch--active" : "")"
+                                                    style="@($"background:{c};")"
+                                                    title="Change colour"
+                                                    @onclick="() => SetStickyColorAsync(s, c)"></button>
+                                        }
+                                    </div>
+                                    <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
+                                                   Size="Size.Small"
+                                                   aria-label="Delete sticky"
+                                                   OnClick="() => DeleteStickyAsync(s)" />
+                                </div>
+                                <input class="barony-notes__sticky-title"
+                                       placeholder="Title"
+                                       @bind="s.Title"
+                                       @bind:event="oninput"
+                                       @onblur="() => SaveStickyAsync(s)" />
+                                <textarea class="barony-notes__sticky-body"
+                                          placeholder="Write a note, idea or plan…"
+                                          @bind="s.BodyHtml"
+                                          @bind:event="oninput"
+                                          @onblur="() => SaveStickyAsync(s)"></textarea>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Reminders">
+            <div class="barony-notes__reminders">
+                <div class="barony-notes__reminder-add">
+                    <input class="barony-notes__reminder-text"
+                           placeholder="Remind me to…"
+                           @bind="_newReminderText"
+                           @bind:event="oninput"
+                           @onkeydown="OnReminderKeyDown" />
+                    <div class="barony-notes__reminder-in">
+                        <span>in</span>
+                        <input type="number" min="1" max="999"
+                               class="barony-notes__reminder-turns"
+                               @bind="_newReminderTurns" />
+                        <span>turn@(_newReminderTurns == 1 ? "" : "s") → <b>T@(CurrentTurn + Math.Max(1, _newReminderTurns))</b></span>
+                    </div>
+                    <MudButton Variant="Variant.Filled"
+                               Class="barony-turn-btn barony-turn-btn--solid"
+                               Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.AddAlarm"
+                               Disabled="@string.IsNullOrWhiteSpace(_newReminderText)"
+                               OnClick="AddReminderAsync">
+                        Add reminder
+                    </MudButton>
+                </div>
+
+                <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
+                    Current turn: <b>T@(CurrentTurn)</b>. Reminders light up when your barony reaches the target turn.
+                </MudText>
+
+                @if (_reminders.Count == 0)
+                {
+                    <div class="barony-notes__placeholder">
+                        <MudIcon Icon="@Icons.Material.Filled.NotificationsActive" Size="Size.Large" />
+                        <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                            No reminders yet. Add one above to be nudged in a few turns.
+                        </MudText>
+                    </div>
+                }
+                else
+                {
+                    <div class="barony-notes__reminder-list">
+                        @foreach (var r in SortedReminders())
+                        {
+                            var isDue = !r.IsDone && CurrentTurn >= (r.DueTurn ?? 0);
+                            <div class="barony-notes__reminder-card @(r.IsDone ? "barony-notes__reminder-card--done" : "") @(isDue ? "barony-notes__reminder-card--due" : "")">
+                                <MudIconButton Icon="@(r.IsDone ? Icons.Material.Filled.CheckCircle : (isDue ? Icons.Material.Filled.NotificationsActive : Icons.Material.Outlined.Notifications))"
+                                               Size="Size.Small"
+                                               aria-label="Toggle done"
+                                               Class="barony-notes__reminder-toggle"
+                                               OnClick="() => ToggleReminderDoneAsync(r)" />
+                                <div class="barony-notes__reminder-main">
+                                    <span class="barony-notes__reminder-title">@r.Title</span>
+                                    <span class="barony-notes__reminder-meta">@ReminderMeta(r)</span>
+                                </div>
+                                <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
+                                               Size="Size.Small"
+                                               aria-label="Delete reminder"
+                                               OnClick="() => DeleteReminderAsync(r)" />
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </MudTabPanel>
+    </MudTabs>
+    </div>
+}
+
+@code {
+    private List<BaronyPlayerNoteDTO> _threads = new();
+    private BaronyPlayerNoteDTO? _selected;
+    private BlazoredTextEditor? _editor;
+
+    private List<BaronyPlayerNoteDTO> _stickies = new();
+    private int? _dragStickyId;
+    private const string DefaultStickyColor = "#fff9c4";
+    private static readonly string[] StickyPalette =
+        { "#fff9c4", "#ffe0b2", "#ffcdd2", "#c8e6c9", "#bbdefb", "#e1bee7", "#eceff1" };
+
+    private List<BaronyPlayerNoteDTO> _reminders = new();
+    private string _newReminderText = "";
+    private int _newReminderTurns = 1;
+    private int CurrentTurn => Barony?.TurnNumber ?? 0;
+
+    private int _activeTab;
+
+    private bool _shouldLoadEditor;
+    private int _loadAttempts;
+    private int _editorEpoch;
+    private const int MaxLoadAttempts = 12;
+    private const int EditorJsTimeoutMs = 4000;
+
+    private string _titleEdit = "";
+    private string _lastSavedHtml = "<p></p>";
+    private string _lastSeenHtml = "<p></p>";
+    private bool _isDirty;
+    private bool _saveInFlight;
+
+    private CancellationTokenSource? _autoSaveCts;
+    private PeriodicTimer? _autoSaveTimer;
+    private Task? _autoSaveLoop;
+
+    private string LocalDraftKey => $"barony-journal-{BaronyId}-{_selected?.Id ?? 0}";
+
+    private static string ThreadTitle(BaronyPlayerNoteDTO t) =>
+        string.IsNullOrWhiteSpace(t.Title) ? "Untitled note" : t.Title!;
+
+    private RenderFragment JournalToolbar() => __builder =>
+    {
+        <select class="ql-header">
+            <option selected=""></option>
+            <option value="1"></option>
+            <option value="2"></option>
+            <option value="3"></option>
+        </select>
+        <span class="ql-formats">
+            <button class="ql-bold"></button>
+            <button class="ql-italic"></button>
+            <button class="ql-underline"></button>
+            <button class="ql-strike"></button>
+        </span>
+        <span class="ql-formats">
+            <select class="ql-color"></select>
+            <select class="ql-background"></select>
+        </span>
+        <span class="ql-formats">
+            <button class="ql-list" value="ordered"></button>
+            <button class="ql-list" value="bullet"></button>
+            <button class="ql-blockquote"></button>
+        </span>
+        <span class="ql-formats">
+            <button class="ql-link"></button>
+            <button class="ql-clean"></button>
+        </span>
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBaronyAsync();
+        if (Barony is null || CanManageAsMg)
+            return;
+
+        _threads = await _notesRepo.GetNotes(BaronyId, BaronyPlayerNoteType.Journal);
+        if (_threads.Count == 0)
+            _threads.Add(await CreateThreadAsync("Note 1"));
+
+        SetActiveThread(_threads[0]);
+
+        _stickies = await _notesRepo.GetNotes(BaronyId, BaronyPlayerNoteType.Sticky);
+        _reminders = await _notesRepo.GetNotes(BaronyId, BaronyPlayerNoteType.Reminder);
+
+        _activeTab = ReadTabFromQuery();
+    }
+
+    private int ReadTabFromQuery()
+    {
+        var uri = _navigationManager.ToAbsoluteUri(_navigationManager.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        if (!query.TryGetValue("tab", out var tab))
+            return 0;
+        return tab.ToString().ToLowerInvariant() switch
+        {
+            "sticky" => 1,
+            "reminders" => 2,
+            _ => 0,
+        };
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_shouldLoadEditor || _loadAttempts >= MaxLoadAttempts)
+            return;
+
+        _loadAttempts++;
+        if (_editor is null || _selected is null)
+        {
+            await Task.Delay(50);
+            StateHasChanged();
+            return;
+        }
+
+        try
+        {
+            var dbHtml = _selected.BodyHtml ?? "<p></p>";
+            var localHtml = await TryReadLocalDraftAsync();
+
+            var initialHtml = dbHtml;
+            var restored = false;
+            if (!string.IsNullOrWhiteSpace(localHtml) && !IsBlankHtml(localHtml) && localHtml != dbHtml)
+            {
+                // Local backup is newer than what reached the DB — restore it and let the loop save it.
+                initialHtml = localHtml!;
+                restored = true;
+            }
+
+            await _editor.LoadHTMLContent(initialHtml);
+            _shouldLoadEditor = false;
+
+            _lastSavedHtml = dbHtml;
+            _lastSeenHtml = initialHtml;
+            _isDirty = restored;
+
+            StartAutoSaveLoop();
+            StateHasChanged();
+        }
+        catch
+        {
+            await Task.Delay(50);
+            StateHasChanged();
+        }
+    }
+
+    private void SetActiveThread(BaronyPlayerNoteDTO thread)
+    {
+        _selected = thread;
+        _titleEdit = thread.Title ?? "";
+        _lastSavedHtml = thread.BodyHtml ?? "<p></p>";
+        _lastSeenHtml = _lastSavedHtml;
+        _isDirty = false;
+        _editorEpoch++;
+        _loadAttempts = 0;
+        _shouldLoadEditor = true;
+    }
+
+    private async Task<BaronyPlayerNoteDTO> CreateThreadAsync(string title)
+    {
+        var dto = new BaronyPlayerNoteDTO
+        {
+            BaronyId = BaronyId,
+            NoteType = BaronyPlayerNoteType.Journal,
+            Title = title,
+            BodyHtml = "<p></p>",
+            CreatedTurn = Barony?.TurnNumber ?? 0,
+            SortOrder = _threads.Count,
+        };
+        return await _notesRepo.Upsert(dto);
+    }
+
+    private async Task NewThreadAsync()
+    {
+        await StopAutoSaveAsync();
+        await FlushCurrentAsync();
+
+        var created = await CreateThreadAsync($"Note {_threads.Count + 1}");
+        _threads.Add(created);
+        SetActiveThread(created);
+        StateHasChanged();
+    }
+
+    private async Task SelectThreadAsync(int id)
+    {
+        if (_selected?.Id == id)
+            return;
+
+        await StopAutoSaveAsync();
+        await FlushCurrentAsync();
+
+        var thread = _threads.FirstOrDefault(t => t.Id == id);
+        if (thread is null)
+            return;
+
+        SetActiveThread(thread);
+        StateHasChanged();
+    }
+
+    private async Task SaveTitleAsync()
+    {
+        if (_selected is null)
+            return;
+
+        var title = string.IsNullOrWhiteSpace(_titleEdit) ? "Untitled note" : _titleEdit.Trim();
+        if (title == (_selected.Title ?? ""))
+            return;
+
+        _saveInFlight = true;
+        try
+        {
+            var html = await TryGetEditorHtmlAsync(_editor, _lastSavedHtml) ?? _lastSavedHtml;
+            _selected.Title = title;
+            _selected.BodyHtml = html;
+            var saved = await _notesRepo.Upsert(_selected);
+            _selected.Id = saved.Id;
+            _lastSavedHtml = html;
+            _lastSeenHtml = html;
+            _isDirty = false;
+            await TryClearLocalDraftAsync();
+        }
+        finally
+        {
+            _saveInFlight = false;
+        }
+        StateHasChanged();
+    }
+
+    private async Task DeleteThreadAsync(BaronyPlayerNoteDTO? thread)
+    {
+        if (thread is null)
+            return;
+
+        var ok = await _dialogService.ShowMessageBoxAsync(
+            "Delete note",
+            $"Delete \"{ThreadTitle(thread)}\" permanently? This cannot be undone.",
+            yesText: "Delete",
+            cancelText: "Cancel");
+        if (ok != true)
+            return;
+
+        await StopAutoSaveAsync();
+        await TryClearLocalDraftAsync();
+        await _notesRepo.DeleteNote(thread.Id);
+        _threads.Remove(thread);
+
+        if (_selected?.Id == thread.Id)
+        {
+            if (_threads.Count > 0)
+                SetActiveThread(_threads[0]);
+            else
+                _selected = null;
+        }
+        StateHasChanged();
+    }
+
+    // ---- Sticky notes ------------------------------------------------------
+
+    private string StickyCardStyle(BaronyPlayerNoteDTO s) =>
+        $"background:{s.Color ?? DefaultStickyColor};";
+
+    private async Task AddStickyAsync()
+    {
+        var dto = new BaronyPlayerNoteDTO
+        {
+            BaronyId = BaronyId,
+            NoteType = BaronyPlayerNoteType.Sticky,
+            BodyHtml = "",
+            Color = DefaultStickyColor,
+            CreatedTurn = Barony?.TurnNumber ?? 0,
+            SortOrder = _stickies.Count,
+        };
+        var created = await _notesRepo.Upsert(dto);
+        _stickies.Add(created);
+        StateHasChanged();
+    }
+
+    private async Task SaveStickyAsync(BaronyPlayerNoteDTO s)
+    {
+        s.Title = string.IsNullOrWhiteSpace(s.Title) ? null : s.Title.Trim();
+        var saved = await _notesRepo.Upsert(s);
+        s.Id = saved.Id;
+    }
+
+    private async Task SetStickyColorAsync(BaronyPlayerNoteDTO s, string color)
+    {
+        if (s.Color == color)
+            return;
+        s.Color = color;
+        await SaveStickyAsync(s);
+        StateHasChanged();
+    }
+
+    private async Task DeleteStickyAsync(BaronyPlayerNoteDTO s)
+    {
+        var ok = await _dialogService.ShowMessageBoxAsync(
+            "Delete sticky note",
+            "Delete this sticky note permanently? This cannot be undone.",
+            yesText: "Delete",
+            cancelText: "Cancel");
+        if (ok != true)
+            return;
+
+        await _notesRepo.DeleteNote(s.Id);
+        _stickies.Remove(s);
+        await PersistStickyOrderAsync();
+    }
+
+    private void OnStickyDragStart(DragEventArgs e, int id)
+    {
+        _dragStickyId = id;
+        e.DataTransfer.EffectAllowed = "move";
+    }
+
+    private void OnStickyDragOver(DragEventArgs e) => e.DataTransfer.DropEffect = "move";
+
+    private void OnStickyDragEnd() => _dragStickyId = null;
+
+    private async Task OnStickyDropAsync(int targetId)
+    {
+        var draggedId = _dragStickyId;
+        _dragStickyId = null;
+        if (draggedId is null || draggedId == targetId)
+            return;
+
+        var dragged = _stickies.FirstOrDefault(s => s.Id == draggedId);
+        var target = _stickies.FirstOrDefault(s => s.Id == targetId);
+        if (dragged is null || target is null)
+            return;
+
+        _stickies.Remove(dragged);
+        _stickies.Insert(_stickies.IndexOf(target), dragged);
+        await PersistStickyOrderAsync();
+    }
+
+    private async Task PersistStickyOrderAsync()
+    {
+        for (var i = 0; i < _stickies.Count; i++)
+        {
+            if (_stickies[i].SortOrder != i)
+            {
+                _stickies[i].SortOrder = i;
+                var saved = await _notesRepo.Upsert(_stickies[i]);
+                _stickies[i].Id = saved.Id;
+            }
+        }
+        StateHasChanged();
+    }
+
+    // ---- Reminders ---------------------------------------------------------
+
+    private IEnumerable<BaronyPlayerNoteDTO> SortedReminders() =>
+        _reminders
+            .OrderBy(r => r.IsDone)
+            .ThenBy(r => r.DueTurn ?? int.MaxValue)
+            .ThenBy(r => r.Id);
+
+    private string ReminderMeta(BaronyPlayerNoteDTO r)
+    {
+        var due = r.DueTurn ?? 0;
+        if (r.IsDone)
+            return $"Done \u00b7 target T{due}";
+        if (CurrentTurn >= due)
+        {
+            var over = CurrentTurn - due;
+            return over == 0 ? $"Due now \u00b7 T{due}" : $"Overdue by {over} turn{(over == 1 ? "" : "s")} \u00b7 T{due}";
+        }
+        var left = due - CurrentTurn;
+        return $"In {left} turn{(left == 1 ? "" : "s")} \u00b7 T{due}";
+    }
+
+    private async Task OnReminderKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await AddReminderAsync();
+    }
+
+    private async Task AddReminderAsync()
+    {
+        var text = (_newReminderText ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(text))
+            return;
+
+        var turns = Math.Max(1, _newReminderTurns);
+        var dto = new BaronyPlayerNoteDTO
+        {
+            BaronyId = BaronyId,
+            NoteType = BaronyPlayerNoteType.Reminder,
+            Title = text,
+            CreatedTurn = CurrentTurn,
+            DueTurn = CurrentTurn + turns,
+            SortOrder = _reminders.Count,
+        };
+        var created = await _notesRepo.Upsert(dto);
+        _reminders.Add(created);
+        _newReminderText = "";
+        _newReminderTurns = 1;
+        StateHasChanged();
+    }
+
+    private async Task ToggleReminderDoneAsync(BaronyPlayerNoteDTO r)
+    {
+        r.IsDone = !r.IsDone;
+        var saved = await _notesRepo.Upsert(r);
+        r.Id = saved.Id;
+        StateHasChanged();
+    }
+
+    private async Task DeleteReminderAsync(BaronyPlayerNoteDTO r)
+    {
+        var ok = await _dialogService.ShowMessageBoxAsync(
+            "Delete reminder",
+            "Delete this reminder permanently? This cannot be undone.",
+            yesText: "Delete",
+            cancelText: "Cancel");
+        if (ok != true)
+            return;
+
+        await _notesRepo.DeleteNote(r.Id);
+        _reminders.Remove(r);
+        StateHasChanged();
+    }
+
+    private void StartAutoSaveLoop()
+    {
+        _autoSaveCts?.Cancel();
+        _autoSaveCts?.Dispose();
+        _autoSaveTimer?.Dispose();
+
+        _autoSaveCts = new CancellationTokenSource();
+        _autoSaveTimer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+        _autoSaveLoop = AutoSaveLoopAsync(_autoSaveCts.Token);
+    }
+
+    private async Task AutoSaveLoopAsync(CancellationToken ct)
+    {
+        try
+        {
+            while (await _autoSaveTimer!.WaitForNextTickAsync(ct))
+                await TickAsync();
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    // Debounced autosave: mark pending while the text keeps changing, save once it settles.
+    private async Task TickAsync()
+    {
+        if (_selected is null || _editor is null || _saveInFlight)
+            return;
+
+        var html = await TryGetEditorHtmlAsync(_editor, null);
+        if (html is null)
+            return;
+
+        if (html != _lastSeenHtml)
+        {
+            _lastSeenHtml = html;
+            var dirty = html != _lastSavedHtml;
+            if (dirty)
+                await TryWriteLocalDraftAsync(html);
+            if (dirty != _isDirty)
+            {
+                _isDirty = dirty;
+                await InvokeAsync(StateHasChanged);
+            }
+            return;
+        }
+
+        if (html == _lastSavedHtml)
+            return;
+
+        _saveInFlight = true;
+        try
+        {
+            _selected.BodyHtml = html;
+            var saved = await _notesRepo.Upsert(_selected);
+            _selected.Id = saved.Id;
+            _lastSavedHtml = html;
+            await TryClearLocalDraftAsync();
+            _isDirty = false;
+            await InvokeAsync(StateHasChanged);
+        }
+        finally
+        {
+            _saveInFlight = false;
+        }
+    }
+
+    private async Task FlushCurrentAsync()
+    {
+        if (_selected is null || _editor is null)
+            return;
+
+        var html = await TryGetEditorHtmlAsync(_editor, null);
+        if (html is null || html == _lastSavedHtml)
+            return;
+
+        _selected.BodyHtml = html;
+        var saved = await _notesRepo.Upsert(_selected);
+        _selected.Id = saved.Id;
+        _lastSavedHtml = html;
+        _isDirty = false;
+        await TryClearLocalDraftAsync();
+    }
+
+    private async Task StopAutoSaveAsync()
+    {
+        if (_autoSaveCts is not null)
+        {
+            await _autoSaveCts.CancelAsync();
+            _autoSaveCts.Dispose();
+            _autoSaveCts = null;
+        }
+
+        _autoSaveTimer?.Dispose();
+        _autoSaveTimer = null;
+
+        if (_autoSaveLoop is not null)
+        {
+            try { await _autoSaveLoop; }
+            catch (OperationCanceledException) { }
+            _autoSaveLoop = null;
+        }
+
+        var spins = 0;
+        while (_saveInFlight && spins++ < 50)
+            await Task.Delay(50);
+    }
+
+    private async Task<string?> TryGetEditorHtmlAsync(BlazoredTextEditor? editor, string? fallback)
+    {
+        if (editor is null) return fallback;
+        try
+        {
+            var htmlTask = editor.GetHTML();
+            var winner = await Task.WhenAny(htmlTask, Task.Delay(EditorJsTimeoutMs));
+            if (winner != htmlTask) return fallback;
+            return await htmlTask ?? fallback;
+        }
+        catch
+        {
+            return fallback;
+        }
+    }
+
+    private async Task<string?> TryReadLocalDraftAsync()
+    {
+        try { return await _js.InvokeAsync<string?>("localStorage.getItem", LocalDraftKey); }
+        catch { return null; }
+    }
+
+    private async Task TryWriteLocalDraftAsync(string html)
+    {
+        try { await _js.InvokeVoidAsync("localStorage.setItem", LocalDraftKey, html); }
+        catch { }
+    }
+
+    private async Task TryClearLocalDraftAsync()
+    {
+        try { await _js.InvokeVoidAsync("localStorage.removeItem", LocalDraftKey); }
+        catch { }
+    }
+
+    private static bool IsBlankHtml(string? html)
+    {
+        if (string.IsNullOrWhiteSpace(html))
+            return true;
+        var stripped = System.Text.RegularExpressions.Regex.Replace(html, "<.*?>", "").Replace("&nbsp;", "").Trim();
+        return stripped.Length == 0;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await StopAutoSaveAsync();
+        // Final flush so nothing typed in the last second is lost on navigation.
+        try { await FlushCurrentAsync(); }
+        catch { }
+    }
+}

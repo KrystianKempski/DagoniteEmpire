@@ -1,0 +1,165 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Common.Barony
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            <MudText Typo="Typo.body2" Class="mb-2">
+                Chamber: <strong>@Room.Name</strong> — @Room.SizeCategory (@Room.TileCount tiles)
+            </MudText>
+            <MudSelect T="int?"
+                       @bind-Value="_purposeId"
+                       Label="Purpose"
+                       Clearable="true"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Class="baron-influence-field">
+                <MudSelectItem Value="@((int?)null)">(none)</MudSelectItem>
+                @foreach (var t in EligibleTemplates)
+                {
+                    <MudSelectItem Value="@((int?)t.Id)">@t.Name</MudSelectItem>
+                }
+            </MudSelect>
+            @if (_purposeId is not null)
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-3 mb-1">
+                    Occupant (optional)
+                </MudText>
+                <MudSelect T="int?"
+                           Value="_occupantAdvisorId"
+                           ValueChanged="OnAdvisorChanged"
+                           Label="From baron / advisors"
+                           Clearable="true"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Class="baron-influence-field"
+                           Disabled="@(!AssignableOccupants.Any() || HasCustomOccupant)">
+                    <MudSelectItem Value="@((int?)null)">(none)</MudSelectItem>
+                    @foreach (var advisor in AssignableOccupants)
+                    {
+                        <MudSelectItem Value="@((int?)advisor.Id)">@OccupantOptionLabel(advisor)</MudSelectItem>
+                    }
+                </MudSelect>
+                <MudTextField @bind-Value="OccupantCustom"
+                              Label="Custom occupant"
+                              Placeholder="e.g. Captain of the Guard"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Class="baron-influence-field mt-2"
+                              Disabled="@HasAdvisorOccupant"
+                              Immediate="true" />
+                @if (!AssignableOccupants.Any())
+                {
+                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-1">
+                        No baron or advisors with assigned names — use custom occupant instead.
+                    </MudText>
+                }
+            }
+            @if (_selected is not null)
+            {
+                <MudPaper Class="pa-3 mt-2" Elevation="0" Style="background:var(--barony-surface-2);">
+                    <MudText Typo="Typo.subtitle2">@_selected.Name</MudText>
+                    @if (!string.IsNullOrWhiteSpace(_selected.Description))
+                    {
+                        <MudText Typo="Typo.body2" Class="mt-1">@_selected.Description</MudText>
+                    }
+                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-1">
+                        Min size: @_selected.MinSizeCategory
+                        @if (!string.IsNullOrWhiteSpace(_selected.WhoOccupies))
+                        {
+                            <text> · Typical occupant: @_selected.WhoOccupies</text>
+                        }
+                        @if (_selected.SleepCapacity > 0)
+                        {
+                            <text> · Sleep: @_selected.SleepCapacity</text>
+                        }
+                    </MudText>
+                </MudPaper>
+            }
+            @if (IneligibleTemplates.Any())
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-2">
+                    @IneligibleTemplates.Count() purpose(s) require a larger chamber.
+                </MudText>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="baron-influence-save-btn" OnClick="Save">Assign</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public SeatRoomDTO Room { get; set; } = new();
+    [Parameter] public List<SeatPurposeTemplateDTO> Templates { get; set; } = new();
+    [Parameter] public List<AdvisorDTO> Advisors { get; set; } = new();
+
+    private int? _purposeId;
+    private int? _occupantAdvisorId;
+    private string _occupantCustom = string.Empty;
+
+    private IEnumerable<SeatPurposeTemplateDTO> EligibleTemplates =>
+        Templates.Where(t => SeatRoomSizeCategory.MeetsMinimum(Room.TileCount, t.MinSizeCategory));
+
+    private IEnumerable<SeatPurposeTemplateDTO> IneligibleTemplates =>
+        Templates.Where(t => !SeatRoomSizeCategory.MeetsMinimum(Room.TileCount, t.MinSizeCategory));
+
+    private IEnumerable<AdvisorDTO> AssignableOccupants =>
+        BaronyCalc.OrderAdvisors(Advisors).Where(a => !string.IsNullOrWhiteSpace(a.PersonName));
+
+    private bool HasCustomOccupant => !string.IsNullOrWhiteSpace(_occupantCustom);
+
+    private bool HasAdvisorOccupant => _occupantAdvisorId is not null;
+
+    private string OccupantCustom
+    {
+        get => _occupantCustom;
+        set
+        {
+            _occupantCustom = value ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(_occupantCustom))
+                _occupantAdvisorId = null;
+        }
+    }
+
+    private SeatPurposeTemplateDTO? _selected =>
+        _purposeId is int pid ? Templates.FirstOrDefault(t => t.Id == pid) : null;
+
+    protected override void OnInitialized()
+    {
+        _purposeId = Room.PurposeTemplateId;
+        _occupantAdvisorId = Room.OccupantAdvisorId;
+        _occupantCustom = Room.OccupantCustom ?? string.Empty;
+    }
+
+    private void OnAdvisorChanged(int? advisorId)
+    {
+        _occupantAdvisorId = advisorId;
+        if (advisorId is not null)
+            _occupantCustom = string.Empty;
+    }
+
+    private static string OccupantOptionLabel(AdvisorDTO advisor)
+    {
+        var role = BaronyCalc.AdvisorRoleLabel(advisor);
+        var name = advisor.PersonName.Trim();
+        return $"{role}: {name}";
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        var custom = string.IsNullOrWhiteSpace(_occupantCustom) ? null : _occupantCustom.Trim();
+        MudDialog.Close(DialogResult.Ok(new SeatRoomPurposeAssignmentDTO
+        {
+            PurposeTemplateId = _purposeId,
+            OccupantAdvisorId = _purposeId is null || custom is not null ? null : _occupantAdvisorId,
+            OccupantCustom = _purposeId is null ? null : custom,
+        }));
+    }
+}

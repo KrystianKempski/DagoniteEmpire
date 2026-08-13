@@ -1,0 +1,183 @@
+@page "/barony/army"
+@layout BaronyLayout
+@inherits BaronyPageBase
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+@inject ISnackbar _snackBar
+@inject IBaronyBattleMapRepository _battleMapRepo
+
+<PageTitle>Dagonite Empire | Army</PageTitle>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading army...</span>
+}
+else if (LoadError is not null)
+{
+    <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
+}
+else if (Barony is not null)
+{
+    <BaronyPageHeader Title="Army" HelpKey="army">
+        <Summary>
+            <span class="projects-summary">
+                <span class="projects-summary__item">@_units.Count unit@(_units.Count == 1 ? "" : "s")</span>
+                <span class="projects-summary__item">@_units.Count(u => u.IsTraining) in training</span>
+                <span class="projects-summary__item">@_units.Count(u => u.IsActive) active</span>
+            </span>
+        </Summary>
+    </BaronyPageHeader>
+
+    @if (_battleInProgress)
+    {
+        <MudAlert Severity="Severity.Warning" Class="my-2" Dense="true">
+            A battle is in progress. Unit cards are locked — HP and roster updates apply when the Game Master presses <b>End battle</b> on the Battle Map.
+        </MudAlert>
+    }
+
+    <BaronySection Title="Units">
+        <Summary>
+            <span class="projects-summary__item">Two cards per row · same layout as the generator preview</span>
+        </Summary>
+        <ChildContent>
+            <div class="army-roster-summary">
+                <div class="army-roster-summary__title">Army totals</div>
+                <div class="army-roster-summary__grid">
+                    <BaronyTooltip Title="Units"
+                                   Text="Number of units in the roster (training + active).">
+                        <div class="army-roster-summary__item">
+                            <span class="army-roster-summary__label">Units</span>
+                            <span class="army-roster-summary__value">@_rosterUnits</span>
+                        </div>
+                    </BaronyTooltip>
+                    <BaronyTooltip Title="Troops"
+                                   Text="Sum of troop counts across all units.">
+                        <div class="army-roster-summary__item">
+                            <span class="army-roster-summary__label">Troops</span>
+                            <span class="army-roster-summary__value">@_rosterTroops</span>
+                        </div>
+                    </BaronyTooltip>
+                    <BaronyTooltip Title="Wage / turn"
+                                   Text="Sum of wages for Active units (paid each turn once graduated). Training units are excluded until Active.">
+                        <div class="army-roster-summary__item">
+                            <span class="army-roster-summary__label">Gold / turn</span>
+                            <span class="army-roster-summary__value army-roster-summary__value--gold">
+                                @_rosterWage
+                                <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
+                            </span>
+                        </div>
+                    </BaronyTooltip>
+                    <BaronyTooltip Title="Food upkeep / turn"
+                                   Text="Sum of food upkeep for Active units each turn.">
+                        <div class="army-roster-summary__item">
+                            <span class="army-roster-summary__label">Food / turn</span>
+                            <span class="army-roster-summary__value army-roster-summary__value--food">
+                                @_rosterFood.ToString("0.#")
+                                <BaronyResourceIcon Resource="Ppb.Food" Size="xs" />
+                            </span>
+                        </div>
+                    </BaronyTooltip>
+                    <BaronyTooltip Title="Defense upkeep / turn"
+                                   Text="Sum of Defense upkeep for Active units each turn.">
+                        <div class="army-roster-summary__item">
+                            <span class="army-roster-summary__label">Defense / turn</span>
+                            <span class="army-roster-summary__value army-roster-summary__value--defense">
+                                @_rosterDefense
+                                <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" />
+                            </span>
+                        </div>
+                    </BaronyTooltip>
+                </div>
+                @if (_units.Any(u => u.IsTraining))
+                {
+                    <MudText Typo="Typo.caption" Class="army-roster-summary__note">
+                        Upkeep totals count Active units only
+                        (@_units.Count(u => u.IsActive) active · @_units.Count(u => u.IsTraining) still training).
+                    </MudText>
+                }
+            </div>
+
+            @if (_units.Count == 0)
+            {
+                <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No units yet. Use the generator below.</MudText>
+            }
+            else
+            {
+                <div class="unit-roster">
+                    @foreach (var unit in _units)
+                    {
+                        <UnitCardSection @key="unit.Id"
+                                         Unit="@unit"
+                                         CanEdit="@RosterCanEdit"
+                                         CanManageAsMg="@RosterCanManage"
+                                         AvailableCaptains="@_courtiers"
+                                         OccupiedCaptainIds="@_occupiedCaptainIds"
+                                         OnChanged="ReloadAsync" />
+                    }
+                </div>
+            }
+        </ChildContent>
+    </BaronySection>
+
+    <UnitGeneratorSection BaronyId="@Barony.Id"
+                          CanEdit="@RosterCanEdit"
+                          CanManageAsMg="@RosterCanManage"
+                          OnStarted="OnTrainingStarted" />
+}
+
+@code {
+    private List<BaronyUnitDTO> _units = new();
+    private List<AvailableAdvisorDTO> _courtiers = new();
+    private HashSet<int> _occupiedCaptainIds = new();
+    private bool _battleInProgress;
+
+    private bool RosterCanEdit => CanEdit && !_battleInProgress;
+    private bool RosterCanManage => CanManageAsMg && !_battleInProgress;
+
+    private int _rosterUnits => _units.Count;
+    private int _rosterTroops => _units.Sum(u => u.TroopCount);
+    private int _rosterWage => _units.Where(u => u.IsActive).Sum(u => UnitStatHelper.ComputeUpkeep(u).Gold);
+    private decimal _rosterFood => _units.Where(u => u.IsActive).Sum(u => UnitStatHelper.ComputeUpkeep(u).Food);
+    private int _rosterDefense => _units.Where(u => u.IsActive).Sum(u => UnitStatHelper.ComputeUpkeep(u).Defense);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBaronyAsync();
+        if (Barony is null)
+            return;
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (Barony is null)
+            return;
+        _units = await _baronyRepo.GetUnits(Barony.Id);
+        _courtiers = await _baronyRepo.GetAvailableAdvisors(Barony.Id);
+        _occupiedCaptainIds = _units
+            .Where(u => u.CaptainAvailableAdvisorId is int)
+            .Select(u => u.CaptainAvailableAdvisorId!.Value)
+            .ToHashSet();
+        try
+        {
+            var map = await _battleMapRepo.GetOrCreate(Barony.Id);
+            _battleInProgress = string.Equals(map.Phase, BaronyBattlePhases.Battle, StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            _battleInProgress = false;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnTrainingStarted(StartUnitTrainingResult result)
+    {
+        await ReloadAsync();
+        var recruit = UnitRecruitSelectionCatalog.Find(result.Unit.RecruitSelectionKey);
+        var msg = result.Unit.IsActive
+            ? $"Unit “{result.Unit.Name}” ready."
+            : $"Training project “{result.Project.Name}” created — fund it on Projects.";
+        if (recruit?.EventEffect is not null)
+            msg += $" Event “{recruit.EventEffect.Name}” started.";
+        _snackBar.Add(msg, Severity.Success);
+    }
+}

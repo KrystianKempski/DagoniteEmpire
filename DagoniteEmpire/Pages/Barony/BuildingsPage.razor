@@ -1,0 +1,273 @@
+@page "/barony/buildings"
+@layout BaronyLayout
+@inherits BaronyPageBase
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+@inject IDialogService _dialogService
+@inject IJSRuntime JS
+
+<PageTitle>Dagonite Empire | Buildings</PageTitle>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading building catalog...</span>
+}
+else if (LoadError is not null)
+{
+    <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
+}
+else
+{
+    <div class="buildings-page">
+        <BaronyPageHeader Title="Buildings" HelpKey="buildings" ShowSectionToggle="false">
+            <Summary>
+                <span class="buildings-catalog-count">@FilteredCount of @_templates.Count entries</span>
+            </Summary>
+        </BaronyPageHeader>
+
+        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="buildings-page__intro">
+            Catalog of buildings and terrain improvements. PPB columns use separate additive (+) and percent (%) subcolumns. Click headers to sort.
+            @if (CanEdit)
+            {
+                <text> Use the hammer on a city building to start a construction project (adds to Domain Panel when finished).</text>
+            }
+        </MudText>
+
+        @if (_templates.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Dense="true">
+                The building catalog is empty.
+                @if (CanManageAsMg)
+                {
+                    <text> Use <strong>Add building</strong> below to create the first template.</text>
+                }
+            </MudAlert>
+        }
+
+        <div class="buildings-catalog-filters">
+                <MudTextField @bind-Value="_nameFilter"
+                              Placeholder="Filter by name…"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Immediate="true"
+                              Clearable="true"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              Class="buildings-catalog-filters__name"
+                              Disabled="@(_templates.Count == 0)" />
+                <MudSelect T="string"
+                           Label="Type"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Clearable="true"
+                           Dense="true"
+                           Class="buildings-catalog-filters__kind"
+                           @bind-Value="_kindFilter"
+                           Disabled="@(_templates.Count == 0)">
+                    <MudSelectItem Value="@BuildingKind.Building">Building</MudSelectItem>
+                    <MudSelectItem Value="@BuildingKind.Improvement">Improvement</MudSelectItem>
+                </MudSelect>
+                @if (CanManageAsMg)
+                {
+                    <MudButton Variant="Variant.Filled"
+                               Class="barony-turn-btn barony-turn-btn--solid buildings-catalog-filters__add"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="OpenCreateTemplateDialogAsync">
+                        Add building
+                    </MudButton>
+                }
+        </div>
+
+        @if (_templates.Count > 0)
+        {
+            @if (FilteredCount == 0)
+            {
+                <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">
+                    No buildings match the current filters.
+                </MudAlert>
+            }
+            else
+            {
+                <div class="buildings-page__table-area">
+                    <div class="buildings-catalog-scroll">
+                        <BuildingCatalogTable Items="@FilteredTemplates"
+                                              CanProposeBuild="@CanEdit"
+                                              CanManageCatalog="@CanManageAsMg"
+                                              OnEditTemplate="OpenEditTemplateDialogAsync"
+                                              OnDeleteTemplate="DeleteTemplateAsync"
+                                              OnProposeBuild="OnProposeBuildAsync" />
+                    </div>
+                </div>
+            }
+        }
+    </div>
+}
+
+@code {
+    private List<BuildingTemplateDTO> _templates = new();
+    private string _nameFilter = "";
+    private string? _kindFilter;
+
+    private int FilteredCount => FilteredTemplates.Count();
+
+    private IEnumerable<BuildingTemplateDTO> FilteredTemplates =>
+        _templates
+            .Where(MatchesNameFilter)
+            .Where(MatchesKindFilter);
+
+    private bool MatchesNameFilter(BuildingTemplateDTO item)
+        => string.IsNullOrWhiteSpace(_nameFilter)
+           || item.Name.Contains(_nameFilter, StringComparison.OrdinalIgnoreCase);
+
+    private bool MatchesKindFilter(BuildingTemplateDTO item)
+        => string.IsNullOrEmpty(_kindFilter) || item.Kind == _kindFilter;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBaronyAsync();
+        if (Barony is null)
+            return;
+
+        await ReloadTemplatesAsync();
+    }
+
+    private async Task OpenCreateTemplateDialogAsync()
+    {
+        if (!CanManageAsMg)
+            return;
+
+        var existingNames = _templates
+            .Select(t => t.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var parameters = new DialogParameters<CreateBuildingTemplateDialog>
+        {
+            { x => x.DefaultKind, _kindFilter },
+            { x => x.ExistingNames, existingNames },
+        };
+
+        var dialog = await _dialogService.ShowAsync<CreateBuildingTemplateDialog>(
+            "New catalog entry",
+            parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseOnEscapeKey = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BuildingTemplateDTO template)
+            return;
+
+        try
+        {
+            var saved = await _baronyRepo.SaveBuildingTemplate(template);
+            await ReloadTemplatesAsync();
+            _snackBar.Add($"Catalog entry “{saved.Name}” created.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not save catalog entry: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task OnProposeBuildAsync(BuildingTemplateDTO template)
+    {
+        if (!CanEdit || Barony is null)
+            return;
+
+        if (!string.Equals(template.Kind, BuildingKind.Building, StringComparison.OrdinalIgnoreCase))
+        {
+            _snackBar.Add("Terrain improvements are built from the Terrain map.", Severity.Info);
+            return;
+        }
+
+        var parameters = new DialogParameters<CreateCityBuildingProjectDialog>
+        {
+            { x => x.BaronyId, Barony.Id },
+            { x => x.Template, template },
+        };
+
+        var dialog = await _dialogService.ShowAsync<CreateCityBuildingProjectDialog>(
+            "New building project",
+            parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronyProjectDTO project)
+            return;
+
+        try
+        {
+            await _baronyRepo.SaveProject(project);
+            _snackBar.Add("Building project added — see the Projects tab.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not create project: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task OpenEditTemplateDialogAsync(BuildingTemplateDTO template)
+    {
+        if (!CanManageAsMg)
+            return;
+
+        var existingNames = _templates
+            .Where(t => t.Id != template.Id)
+            .Select(t => t.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var parameters = new DialogParameters<CreateBuildingTemplateDialog>
+        {
+            { x => x.ExistingNames, existingNames },
+            { x => x.InitialTemplate, template },
+        };
+
+        var dialog = await _dialogService.ShowAsync<CreateBuildingTemplateDialog>(
+            "Edit catalog entry",
+            parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseOnEscapeKey = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BuildingTemplateDTO edited)
+            return;
+
+        try
+        {
+            var saved = await _baronyRepo.SaveBuildingTemplate(edited);
+            await ReloadTemplatesAsync();
+            _snackBar.Add($"Catalog entry “{saved.Name}” updated.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not update catalog entry: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DeleteTemplateAsync(BuildingTemplateDTO template)
+    {
+        if (!CanManageAsMg || template.Id <= 0)
+            return;
+
+        var confirmed = await JS.InvokeAsync<bool>(
+            "confirm",
+            $"Delete catalog entry \"{template.Name}\"? This cannot be undone.");
+
+        if (!confirmed)
+            return;
+
+        try
+        {
+            await _baronyRepo.DeleteBuildingTemplate(template.Id);
+            await ReloadTemplatesAsync();
+            _snackBar.Add($"Catalog entry “{template.Name}” deleted.", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add("Could not delete catalog entry: " + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task ReloadTemplatesAsync()
+    {
+        _templates = (await _baronyRepo.GetBuildingTemplates())
+            .OrderBy(t => t.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+}

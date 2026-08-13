@@ -1,4 +1,5 @@
 using Abp.Domain.Entities;
+using DA_DataAccess.BaronyData;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Chat;
 using DA_DataAccess.Scribe;
@@ -56,6 +57,46 @@ namespace DA_DataAccess.Data
         public DbSet<ScribeConversation> ScribeConversations { get; set; }
         public DbSet<ScribeMessage> ScribeMessages { get; set; }
 
+        // BARONIA - warstwa zarządzania baronią
+        public DbSet<Barony> Baronies { get; set; }
+        public DbSet<BaronyPlayerNote> BaronyPlayerNotes { get; set; }
+        public DbSet<Advisor> Advisors { get; set; }
+        public DbSet<AvailableAdvisor> AvailableAdvisors { get; set; }
+        public DbSet<BaronyBuilding> BaronyBuildings { get; set; }
+        public DbSet<SocialGroupRelation> SocialGroupRelations { get; set; }
+        public DbSet<Decree> Decrees { get; set; }
+        public DbSet<BaronyEvent> BaronyEvents { get; set; }
+        public DbSet<CommunityModifier> CommunityModifiers { get; set; }
+        public DbSet<BaronInfluenceModifier> BaronInfluenceModifiers { get; set; }
+        public DbSet<AdvisorInfluenceModifier> AdvisorInfluenceModifiers { get; set; }
+        public DbSet<Fief> Fiefs { get; set; }
+        public DbSet<TerrainTile> TerrainTiles { get; set; }
+        public DbSet<TerrainMapDomain> TerrainMapDomains { get; set; }
+        public DbSet<TerrainImprovement> TerrainImprovements { get; set; }
+        public DbSet<BaronyProject> BaronyProjects { get; set; }
+        public DbSet<BaronyRelation> BaronyRelations { get; set; }
+        public DbSet<BaronyRelationModifier> BaronyRelationModifiers { get; set; }
+        public DbSet<BaronySeat> BaronySeats { get; set; }
+        public DbSet<SeatRoom> SeatRooms { get; set; }
+        public DbSet<SeatRoomTrait> SeatRoomTraits { get; set; }
+        public DbSet<SeatTile> SeatTiles { get; set; }
+        public DbSet<SeatPurposeTemplate> SeatPurposeTemplates { get; set; }
+        public DbSet<BaronyResourceSource> BaronyResourceSources { get; set; }
+        public DbSet<BaronPurseSource> BaronPurseSources { get; set; }
+        public DbSet<BaronPhpSource> BaronPhpSources { get; set; }
+        public DbSet<BaronArtifact> BaronArtifacts { get; set; }
+        public DbSet<BaronTimeModifier> BaronTimeModifiers { get; set; }
+        public DbSet<BaronTimeAction> BaronTimeActions { get; set; }
+        public DbSet<BaronLetterThread> BaronLetterThreads { get; set; }
+        public DbSet<BaronLetterMessage> BaronLetterMessages { get; set; }
+        public DbSet<BaronAudience> BaronAudiences { get; set; }
+        public DbSet<BaronAudienceExchange> BaronAudienceExchanges { get; set; }
+        public DbSet<BaronyUnit> BaronyUnits { get; set; }
+        public DbSet<BaronyBattleMap> BaronyBattleMaps { get; set; }
+        public DbSet<MarchMapState> MarchMapStates { get; set; }
+        public DbSet<BuildingTemplate> BuildingTemplates { get; set; }
+        public DbSet<DemoSession> DemoSessions { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -67,6 +108,90 @@ namespace DA_DataAccess.Data
                 // Enable pgvector extension for SCRIBE (PostgreSQL only)
                 modelBuilder.HasPostgresExtension("vector");
             }
+
+            modelBuilder.Entity<BaronyRelationModifier>(entity =>
+            {
+                entity.HasOne(m => m.Relation)
+                    .WithMany(r => r.Modifiers)
+                    .HasForeignKey(m => m.RelationId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<BaronyRelation>(entity =>
+            {
+                entity.HasIndex(e => e.FiefId);
+            });
+
+            modelBuilder.Entity<BaronyPlayerNote>(entity =>
+            {
+                entity.HasIndex(e => e.BaronyId);
+                entity.HasIndex(e => new { e.BaronyId, e.NoteType });
+            });
+
+            modelBuilder.Entity<BaronPhpSource>(entity =>
+            {
+                entity.HasIndex(e => e.BaronyId);
+            });
+
+            modelBuilder.Entity<BaronArtifact>(entity =>
+            {
+                entity.HasIndex(e => e.BaronyId);
+                entity.HasIndex(e => e.SeatRoomId);
+            });
+
+            modelBuilder.Entity<BaronTimeModifier>(entity =>
+            {
+                entity.HasIndex(e => e.BaronyId);
+            });
+
+            modelBuilder.Entity<BaronTimeAction>(entity =>
+            {
+                entity.HasIndex(e => e.BaronyId);
+            });
+
+            modelBuilder.Entity<BaronLetterThread>(entity =>
+            {
+                entity.HasIndex(e => e.BaronyId);
+                entity.HasIndex(e => e.RelationId);
+                entity.HasMany(e => e.Messages)
+                    .WithOne(e => e.Thread!)
+                    .HasForeignKey(e => e.ThreadId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<BaronLetterMessage>(entity =>
+            {
+                entity.HasIndex(e => e.ThreadId);
+            });
+
+            modelBuilder.Entity<BaronAudience>(entity =>
+            {
+                entity.HasIndex(e => e.BaronyId);
+                entity.HasIndex(e => new { e.BaronyId, e.TurnNumber });
+                entity.HasIndex(e => e.ContinuedFromAudienceId);
+                entity.HasMany(e => e.Exchanges)
+                    .WithOne(e => e.Audience!)
+                    .HasForeignKey(e => e.AudienceId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<BaronAudienceExchange>(entity =>
+            {
+                entity.HasIndex(e => e.AudienceId);
+            });
+
+            modelBuilder.Entity<BaronyUnit>(entity =>
+            {
+                entity.HasIndex(e => e.BaronyId);
+                entity.HasIndex(e => e.CaptainAvailableAdvisorId)
+                    .IsUnique()
+                    .HasFilter("\"CaptainAvailableAdvisorId\" IS NOT NULL");
+            });
+
+            modelBuilder.Entity<BaronyProject>(entity =>
+            {
+                entity.HasIndex(e => e.UnitId);
+            });
 
             // Configure SCRIBE entities
             modelBuilder.Entity<ScribeChunk>(entity =>
@@ -100,6 +225,16 @@ namespace DA_DataAccess.Data
             {
                 entity.HasIndex(e => e.UserId);
                 entity.HasIndex(e => e.CampaignId);
+            });
+
+            modelBuilder.Entity<TerrainTile>(entity =>
+            {
+                entity.HasIndex(e => new { e.BaronyId, e.X, e.Y }).IsUnique();
+            });
+
+            modelBuilder.Entity<SeatTile>(entity =>
+            {
+                entity.HasIndex(e => new { e.SeatId, e.Level, e.X, e.Y }).IsUnique();
             });
 
             //modelBuilder.Entity<ProfessionSkill>()

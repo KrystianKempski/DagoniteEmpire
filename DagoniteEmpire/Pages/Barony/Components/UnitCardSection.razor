@@ -1,0 +1,586 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Business.Repository.BaronyRepos
+@using DA_Common.Barony
+@inject IBaronyRepository _baronyRepo
+@inject ISnackbar _snackBar
+@inject IDialogService _dialogService
+
+<div class="unit-roster-card @(_xpDirty ? "unit-roster-card--dirty" : null)">
+    @if (_xpDirty)
+    {
+        <div class="unit-xp-bar">
+            <span class="unit-xp-bar__text">
+                Pending XP: <b>@XpSpentPending</b>
+                · left <b>@Unit.RemainingPd</b>
+                @if (FreeAttrsSpentPending > 0)
+                {
+                    <text> · free attrs <b>@FreeAttrsSpentPending</b></text>
+                }
+            </span>
+            <div class="unit-xp-bar__actions">
+                <MudButton Size="Size.Small"
+                           Variant="Variant.Filled"
+                           Class="barony-turn-btn barony-turn-btn--solid"
+                           Disabled="@_busy"
+                           OnClick="SaveXpDraftAsync">
+                    Save
+                </MudButton>
+                <MudButton Size="Size.Small"
+                           Variant="Variant.Outlined"
+                           Class="barony-turn-btn barony-turn-btn--ghost"
+                           Disabled="@_busy"
+                           OnClick="UndoXpDraft">
+                    Undo
+                </MudButton>
+            </div>
+        </div>
+    }
+
+    <UnitDraftCardPreview Unit="@Unit"
+                          CanManageAsMg="@CanManageAsMg"
+                          CanSpendPd="@CanSpendPd"
+                          ShowCurrentHp="true"
+                          CaptainTooltip="@CaptainTooltipText"
+                          Collapsible="true"
+                          SkillsChanged="PersistFromCardAsync"
+                          OnXpDraftChanged="OnXpDraftFromCardAsync">
+        <TitleActions>
+            @if (Unit.IsTraining)
+            {
+                <span class="unit-draft-card__title-status">
+                    @if (ProjectStatus.IsResourceAllocation(Unit.OpenProjectStatus))
+                    {
+                        <text>awaiting resources</text>
+                    }
+                    else
+                    {
+                        <text>@TurnsLeftLabel left</text>
+                    }
+                    @if (Unit.TrainingProjectId is int trainPid)
+                    {
+                        <text> · <a href="/barony/projects">#@trainPid</a></text>
+                    }
+                </span>
+                @if (CanManageAsMg)
+                {
+                    <MudButton Size="Size.Small"
+                               Variant="Variant.Filled"
+                               Class="barony-turn-btn barony-turn-btn--solid"
+                               Disabled="@_busy"
+                               OnClick="ActivateUnitAsync">
+                        Make active
+                    </MudButton>
+                }
+            }
+            else if (HasOpenChangeEquipmentProject)
+            {
+                <span class="unit-draft-card__title-status">
+                    @(IsChangeEquipmentAwaitingResources ? "re-equip · awaiting resources" : $"re-equip · {TurnsLeftLabel} left")
+                    · <a href="/barony/projects">#@Unit.TrainingProjectId</a>
+                </span>
+            }
+            else if (HasOpenReinforceProject)
+            {
+                <span class="unit-draft-card__title-status">
+                    @(IsReinforceAwaitingResources ? "reinforce · awaiting resources" : $"reinforce · {TurnsLeftLabel} left")
+                    · <a href="/barony/projects">#@Unit.TrainingProjectId</a>
+                </span>
+            }
+            else
+            {
+                @if (CanReinforce)
+                {
+                    <MudButton Size="Size.Small"
+                               Variant="Variant.Filled"
+                               Class="barony-turn-btn barony-turn-btn--solid"
+                               Disabled="@_busy"
+                               OnClick="OpenReinforceAsync">
+                        Reinforce
+                    </MudButton>
+                }
+                @if (CanChangeEquipment)
+                {
+                    <BaronyTooltip Title="Change unit equipment"
+                                   Text="Start a Resource allocation project to re-equip this unit (Craft / Buy / Defense), same as the unit generator Gear row.">
+                        <button type="button"
+                                class="unit-draft-card__icon-btn"
+                                disabled="@_busy"
+                                aria-label="Change unit equipment"
+                                @onclick="OpenChangeEquipmentAsync">
+                            <img src="/icons/armor-vest.svg"
+                                 alt=""
+                                 width="20"
+                                 height="20"
+                                 class="unit-draft-card__icon-btn-img" />
+                        </button>
+                    </BaronyTooltip>
+                }
+            }
+            @if (CanEdit)
+            {
+                <BaronyTooltip Title="@(string.IsNullOrWhiteSpace(Unit.CaptainName) ? "Assign captain" : $"Captain: {Unit.CaptainName}")"
+                               Text="Choose a free courtier as this unit’s captain (1 courtier ↔ 1 unit).">
+                    <button type="button"
+                            class="unit-draft-card__icon-btn @(Unit.CaptainAvailableAdvisorId is > 0 ? "unit-draft-card__icon-btn--captain" : null)"
+                            disabled="@_busy"
+                            aria-label="Assign captain"
+                            @onclick="OpenCaptainPickerAsync">
+                        <img src="/icons/black-knight-helm.svg"
+                             alt=""
+                             width="20"
+                             height="20"
+                             class="unit-draft-card__icon-btn-img" />
+                    </button>
+                </BaronyTooltip>
+            }
+            <BaronyTooltip Text="Show unit history">
+                <MudIconButton Icon="@Icons.Material.Filled.History"
+                               Size="Size.Small"
+                               Disabled="@_busy"
+                               OnClick="OpenUnitLogAsync" />
+            </BaronyTooltip>
+            @if (CanManageAsMg)
+            {
+                <BaronyTooltip Text="Remove unit">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Size="Size.Small"
+                                   Color="Color.Error"
+                                   Disabled="@_busy"
+                                   OnClick="DeleteUnitAsync" />
+                </BaronyTooltip>
+            }
+        </TitleActions>
+    </UnitDraftCardPreview>
+</div>
+
+@code {
+    [Parameter] public BaronyUnitDTO Unit { get; set; } = new();
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public bool CanManageAsMg { get; set; }
+    [Parameter] public List<AvailableAdvisorDTO> AvailableCaptains { get; set; } = new();
+    [Parameter] public HashSet<int> OccupiedCaptainIds { get; set; } = new();
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private AvailableAdvisorDTO? CurrentCaptain =>
+        Unit.CaptainAvailableAdvisorId is int id
+            ? AvailableCaptains.FirstOrDefault(a => a.Id == id)
+            : null;
+
+    private string CaptainTooltipText
+    {
+        get
+        {
+            var name = Unit.CaptainName ?? CurrentCaptain?.Name;
+            if (string.IsNullOrWhiteSpace(name))
+                return string.Empty;
+
+            var lines = new List<string> { name, "Courtier captain of this unit (1 courtier ↔ 1 unit)." };
+            var unlocked = CurrentCaptain?.Sheet?.UnlockedCommanderAbilities;
+            if (unlocked is { Count: > 0 })
+            {
+                lines.Add("");
+                lines.Add("Unlocked abilities:");
+                foreach (var key in unlocked)
+                {
+                    var ability = CourtCommanderCatalog.Find(key);
+                    var label = ability is null
+                        ? key
+                        : $"{ability.NameEn} (T{ability.Tier})";
+                    lines.Add("• " + label);
+                }
+            }
+
+            return string.Join("\n", lines);
+        }
+    }
+
+    private async Task OpenCaptainPickerAsync()
+    {
+        if (!CanEdit || _busy)
+            return;
+
+        var parameters = new DialogParameters
+        {
+            [nameof(UnitCaptainPickDialog.UnitName)] = Unit.Name,
+            [nameof(UnitCaptainPickDialog.CurrentCaptainId)] = Unit.CaptainAvailableAdvisorId,
+            [nameof(UnitCaptainPickDialog.AvailableCaptains)] = AvailableCaptains,
+            [nameof(UnitCaptainPickDialog.OccupiedCaptainIds)] = OccupiedCaptainIds,
+        };
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+        };
+        var dialog = await _dialogService.ShowAsync<UnitCaptainPickDialog>("Assign captain", parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled)
+            return;
+
+        // Ok(null) means clear; Ok(int) means assign.
+        int? captainId = result.Data switch
+        {
+            int id => id,
+            _ => null,
+        };
+        await OnCaptainChangedAsync(captainId);
+    }
+
+    private bool CanSpendPd => CanEdit && Unit.IsActive;
+    private bool HasOpenReinforceProject =>
+        Unit.TrainingProjectId is > 0
+        && !string.IsNullOrWhiteSpace(Unit.OpenProjectOutputKind)
+        && Unit.OpenProjectOutputKind.Contains("Reinforce", StringComparison.OrdinalIgnoreCase)
+        && !IsChangeEquipmentKind(Unit.OpenProjectOutputKind);
+    private bool HasOpenChangeEquipmentProject =>
+        Unit.TrainingProjectId is > 0
+        && IsChangeEquipmentKind(Unit.OpenProjectOutputKind);
+    private bool IsReinforceAwaitingResources =>
+        HasOpenReinforceProject && ProjectStatus.IsResourceAllocation(Unit.OpenProjectStatus);
+    private bool IsChangeEquipmentAwaitingResources =>
+        HasOpenChangeEquipmentProject && ProjectStatus.IsResourceAllocation(Unit.OpenProjectStatus);
+    private bool CanReinforce =>
+        CanEdit
+        && Unit.IsActive
+        && Unit.TroopCount < UnitRules.DefaultTroopCount
+        && Unit.TrainingProjectId is null;
+    private bool CanChangeEquipment =>
+        CanEdit
+        && Unit.IsActive
+        && Unit.TrainingProjectId is null;
+
+    private string TurnsLeftLabel
+    {
+        get
+        {
+            var n = Unit.TrainingTurnsRemaining;
+            if (n is null) return "? turns";
+            return n == 1 ? "1 turn" : $"{n} turns";
+        }
+    }
+
+    private static bool IsChangeEquipmentKind(string? kind) =>
+        !string.IsNullOrWhiteSpace(kind)
+        && (kind.Contains("Change Equipment", StringComparison.OrdinalIgnoreCase)
+            || kind.Contains("ChangeEquipment", StringComparison.OrdinalIgnoreCase)
+            || kind.Contains("Re-equip", StringComparison.OrdinalIgnoreCase));
+
+    private bool _xpDirty;
+    private bool _busy;
+    private int _baselineUnitId = int.MinValue;
+
+    private async Task OnCaptainChangedAsync(int? captainId)
+    {
+        if (_busy)
+            return;
+        _busy = true;
+        try
+        {
+            Unit.CaptainAvailableAdvisorId = captainId is > 0 ? captainId : null;
+            await _baronyRepo.SaveUnit(Unit);
+            _snackBar.Add(
+                Unit.CaptainAvailableAdvisorId is null ? "Captain cleared." : "Captain assigned.",
+                Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+    private XpBaseline? _baseline;
+
+    private int XpSpentPending =>
+        _baseline is null ? 0 : Math.Max(0, _baseline.RemainingPd - Unit.RemainingPd);
+
+    private int FreeAttrsSpentPending =>
+        _baseline is null ? 0 : Math.Max(0, _baseline.FreeAttributePoints - Unit.FreeAttributePoints);
+
+    protected override void OnParametersSet()
+    {
+        if (Unit.Id != _baselineUnitId)
+        {
+            _baselineUnitId = Unit.Id;
+            _baseline = null;
+            _xpDirty = false;
+        }
+    }
+
+    private void EnsureXpBaseline()
+    {
+        if (_baseline is not null) return;
+        _baseline = XpBaseline.Capture(Unit);
+    }
+
+    private Task OnXpDraftFromCardAsync()
+    {
+        EnsureXpBaseline();
+        _xpDirty = true;
+        return Task.CompletedTask;
+    }
+
+    private async Task SaveXpDraftAsync()
+    {
+        if (!_xpDirty || _busy) return;
+        _busy = true;
+        try
+        {
+            await PersistAsync();
+            _baseline = XpBaseline.Capture(Unit);
+            _xpDirty = false;
+            _snackBar.Add("XP spend saved.", Severity.Success);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private void UndoXpDraft()
+    {
+        if (_baseline is null || _busy) return;
+        _baseline.Restore(Unit);
+        _baseline = null;
+        _xpDirty = false;
+        _snackBar.Add("XP spend undone.", Severity.Info);
+    }
+
+    private async Task OpenReinforceAsync()
+    {
+        if (!CanReinforce || _busy) return;
+
+        var parameters = new DialogParameters
+        {
+            [nameof(UnitReinforceDialog.Unit)] = Unit,
+        };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await _dialogService.ShowAsync<UnitReinforceDialog>("Reinforce", parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not StartUnitReinforceRequest request)
+            return;
+
+        _busy = true;
+        try
+        {
+            var created = await _baronyRepo.StartUnitReinforce(request);
+            Unit.TrainingProjectId = created.Project.Id;
+            Unit.TrainingTurnsRemaining = created.Project.TurnsRemaining;
+            Unit.OpenProjectOutputKind = created.Project.OutputKind;
+            Unit.OpenProjectStatus = created.Project.Status;
+            _snackBar.Add($"Reinforce project “{created.Project.Name}” created — fund it on Projects.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task OpenChangeEquipmentAsync()
+    {
+        if (!CanChangeEquipment || _busy) return;
+
+        TradeGoodAvailabilitySnapshot? availability = null;
+        try
+        {
+            availability = await _baronyRepo.GetTradeGoodAvailability(Unit.BaronyId);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+            return;
+        }
+
+        var parameters = new DialogParameters
+        {
+            [nameof(UnitChangeEquipmentDialog.Unit)] = Unit,
+            [nameof(UnitChangeEquipmentDialog.Availability)] = availability,
+        };
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.ExtraLarge,
+            FullWidth = true,
+        };
+        var dialog = await _dialogService.ShowAsync<UnitChangeEquipmentDialog>(
+            "Change unit equipment", parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not StartUnitChangeEquipmentRequest request)
+            return;
+
+        _busy = true;
+        try
+        {
+            var created = await _baronyRepo.StartUnitChangeEquipment(request);
+            Unit.TrainingProjectId = created.Project.Id;
+            Unit.TrainingTurnsRemaining = created.Project.TurnsRemaining;
+            Unit.OpenProjectOutputKind = created.Project.OutputKind;
+            Unit.OpenProjectStatus = created.Project.Status;
+            _snackBar.Add(
+                $"Change equipment project “{created.Project.Name}” created — fund it on Projects.",
+                Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task OpenUnitLogAsync()
+    {
+        if (_busy)
+            return;
+
+        var parameters = new DialogParameters
+        {
+            [nameof(UnitLogDialog.Unit)] = Unit,
+        };
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Large,
+            FullWidth = true,
+        };
+        var dialog = await _dialogService.ShowAsync<UnitLogDialog>(
+            "Unit history", parameters, options);
+        _ = await dialog.Result;
+    }
+
+    private async Task ActivateUnitAsync()
+    {
+        if (!CanManageAsMg || !Unit.IsTraining || _busy) return;
+        _busy = true;
+        try
+        {
+            if (_xpDirty)
+                UndoXpDraft();
+
+            var updated = await _baronyRepo.ActivateUnit(Unit.Id);
+            Unit.Status = updated.Status;
+            Unit.MaxBaseSkillAtGraduation = updated.MaxBaseSkillAtGraduation;
+            Unit.CurrentHp = updated.CurrentHp;
+            Unit.TrainingTurnsRemaining = updated.TrainingTurnsRemaining;
+            Unit.TrainingProjectId = updated.TrainingProjectId;
+            Unit.OpenProjectOutputKind = null;
+            Unit.OpenProjectStatus = null;
+            _baseline = null;
+            _xpDirty = false;
+            _snackBar.Add($"Unit “{Unit.Name}” is now Active.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task DeleteUnitAsync()
+    {
+        if (!CanManageAsMg || _busy || Unit.Id <= 0)
+            return;
+
+        var confirm = await _dialogService.ShowMessageBoxAsync(
+            "Delete unit?",
+            $"Permanently delete “{Unit.Name}” from the Army roster? This cannot be undone.",
+            yesText: "Delete",
+            cancelText: "Cancel");
+        if (confirm != true)
+            return;
+
+        _busy = true;
+        try
+        {
+            await _baronyRepo.DeleteUnit(Unit.Id);
+            _snackBar.Add($"Unit “{Unit.Name}” deleted.", Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task PersistFromCardAsync()
+    {
+        await PersistAsync();
+        if (_xpDirty)
+        {
+            _baseline = XpBaseline.Capture(Unit);
+            _xpDirty = false;
+        }
+    }
+
+    private async Task PersistAsync()
+    {
+        try
+        {
+            var combat = UnitStatHelper.Compute(Unit);
+            Unit.CurrentHp = Math.Clamp(Unit.CurrentHp, 0, combat.MaxHp);
+            await _baronyRepo.SaveUnit(Unit);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private sealed class XpBaseline
+    {
+        public int Build { get; init; }
+        public int Agility { get; init; }
+        public int Will { get; init; }
+        public int Perception { get; init; }
+        public int Discipline { get; init; }
+        public int RemainingPd { get; init; }
+        public int FreeAttributePoints { get; init; }
+        public Dictionary<string, int> SkillBase { get; init; } = new(StringComparer.OrdinalIgnoreCase);
+
+        public static XpBaseline Capture(BaronyUnitDTO u) => new()
+        {
+            Build = u.Build,
+            Agility = u.Agility,
+            Will = u.Will,
+            Perception = u.Perception,
+            Discipline = u.Discipline,
+            RemainingPd = u.RemainingPd,
+            FreeAttributePoints = u.FreeAttributePoints,
+            SkillBase = new Dictionary<string, int>(u.SkillBase, StringComparer.OrdinalIgnoreCase),
+        };
+
+        public void Restore(BaronyUnitDTO u)
+        {
+            u.Build = Build;
+            u.Agility = Agility;
+            u.Will = Will;
+            u.Perception = Perception;
+            u.Discipline = Discipline;
+            u.RemainingPd = RemainingPd;
+            u.FreeAttributePoints = FreeAttributePoints;
+            u.SkillBase.Clear();
+            foreach (var (k, v) in SkillBase)
+                u.SkillBase[k] = v;
+        }
+    }
+}
