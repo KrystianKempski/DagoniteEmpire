@@ -2870,18 +2870,29 @@ namespace DagoniteEmpire.Service
 
                 contex.SaveChanges();
 
-                await EnsureGenericDemoBaronAsync(contex);
-
-                await SeniorHousesSeeder.EnsureForAllBaroniesAsync(contex);
-                await OrganizationsSeeder.EnsureForAllBaroniesAsync(contex);
-                await VassalFamilySeeder.EnsureForAllBaroniesAsync(contex);
-                await NeighborsSeeder.FixGroupNamesAsync(contex);
-                await MarchMapSeeder.EnsureInitializedAsync(contex);
-                await SeatPurposeTemplatesSeeder.EnsureDefaultsAsync(contex);
+                await RunOptionalSeederAsync("EnsureGenericDemoBaronAsync", () => EnsureGenericDemoBaronAsync(contex));
+                await RunOptionalSeederAsync("SeniorHousesSeeder.EnsureForAllBaroniesAsync", () => SeniorHousesSeeder.EnsureForAllBaroniesAsync(contex));
+                await RunOptionalSeederAsync("OrganizationsSeeder.EnsureForAllBaroniesAsync", () => OrganizationsSeeder.EnsureForAllBaroniesAsync(contex));
+                await RunOptionalSeederAsync("VassalFamilySeeder.EnsureForAllBaroniesAsync", () => VassalFamilySeeder.EnsureForAllBaroniesAsync(contex));
+                await RunOptionalSeederAsync("NeighborsSeeder.FixGroupNamesAsync", () => NeighborsSeeder.FixGroupNamesAsync(contex));
+                await RunOptionalSeederAsync("MarchMapSeeder.EnsureInitializedAsync", () => MarchMapSeeder.EnsureInitializedAsync(contex));
+                await RunOptionalSeederAsync("SeatPurposeTemplatesSeeder.EnsureDefaultsAsync", () => SeatPurposeTemplatesSeeder.EnsureDefaultsAsync(contex));
             }
             catch (Exception ex)
             {
                 throw new Exception(ex.Message);
+            }
+        }
+
+        private static async Task RunOptionalSeederAsync(string name, Func<Task> seeder)
+        {
+            try
+            {
+                await seeder();
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"[DbInitializer] Optional seeder '{name}' failed: {ex}");
             }
         }
 
