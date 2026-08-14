@@ -18,6 +18,8 @@ namespace DA_Business.Repository.BaronyRepos
     public static class DarkholdSeeder
     {
         public const string BaronyName = "Darkhold";
+        public const int TerrainMapWidth = 11;
+        public const int TerrainMapHeight = 10;
 
         private const string ResourceSuffix = "DarkholdSeed.json";
 
@@ -37,6 +39,13 @@ namespace DA_Business.Repository.BaronyRepos
         /// </summary>
         public static async Task SeedAsync(ApplicationDbContext ctx, int baronyId, string baronName)
         {
+            var barony = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == baronyId);
+            if (barony is null)
+                return;
+
+            barony.TerrainMapWidth = TerrainMapWidth;
+            barony.TerrainMapHeight = TerrainMapHeight;
+
             // Idempotency guard — a seeded barony always has at least one terrain domain.
             if (await ctx.TerrainMapDomains.AnyAsync(d => d.BaronyId == baronyId))
                 return;

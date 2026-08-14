@@ -37,6 +37,10 @@
             <MudText Typo="Typo.subtitle2" Class="mb-1">Seats on the route</MudText>
             <MudText Typo="Typo.caption" Class="mb-2 d-block" Style="color:var(--barony-muted);">
                 For each seat you may swap goods and add a gold sweetener. Destination needs at least one exchanged good.
+                @if (!AutoApprovesOnSave)
+                {
+                    <text> Bonuses apply only after the Game Master approves this treaty.</text>
+                }
             </MudText>
 
             @for (var i = 0; i < _paragraphs.Count; i++)
@@ -134,6 +138,10 @@
             <MudText Typo="Typo.body2">
                 Goods received:
                 @( _previewReceived.Count == 0 ? "—" : string.Join(", ", _previewReceived.Select(g => g.Name)) )
+                @if (!AutoApprovesOnSave)
+                {
+                    <span style="color:var(--barony-muted);"> (after MG approval)</span>
+                }
             </MudText>
             <MudText Typo="Typo.body2" Class="mt-1">
                 Economy from route: +@_previewRouteEconomy.ToString("0.##")
@@ -200,6 +208,7 @@
     [Parameter] public MarchMapDocument? MapDocument { get; set; }
     [Parameter] public string? PlayerSeatNodeId { get; set; }
     [Parameter] public IReadOnlyCollection<string> BlockedLordKeys { get; set; } = Array.Empty<string>();
+    [Parameter] public bool AutoApprovesOnSave { get; set; }
 
     private string _treatyId = Guid.NewGuid().ToString("N");
     private string? _title;
@@ -215,10 +224,17 @@
 
     private BaronyTradeTreaty Draft => BuildDraft();
 
-    private IReadOnlyList<TradeGoodEntry> _previewReceived => TradeTreatyCalculator.BaronyReceivedGoods(new[] { Draft });
-    private decimal _previewRouteEconomy => TradeTreatyCalculator.RouteEconomyBonus(Draft);
-    private decimal _previewCustoms => TradeTreatyCalculator.TotalCustomsGoldPerTurn(new[] { Draft });
-    private decimal _previewSweetener => TradeTreatyCalculator.TotalSweetenerGoldPerTurn(new[] { Draft });
+    private BaronyTradeTreaty PreviewTreaty()
+    {
+        var draft = BuildDraft();
+        draft.IsApproved = true;
+        return draft;
+    }
+
+    private IReadOnlyList<TradeGoodEntry> _previewReceived => TradeTreatyCalculator.BaronyReceivedGoods(new[] { PreviewTreaty() });
+    private decimal _previewRouteEconomy => TradeTreatyCalculator.RouteEconomyBonus(PreviewTreaty());
+    private decimal _previewCustoms => TradeTreatyCalculator.TotalCustomsGoldPerTurn(new[] { PreviewTreaty() });
+    private decimal _previewSweetener => TradeTreatyCalculator.TotalSweetenerGoldPerTurn(new[] { PreviewTreaty() });
     private IReadOnlyList<PpbPreviewRow> _previewPpbRows => BuildPreviewPpb();
     private IReadOnlyList<string> _validationErrors => TradeTreatyCalculator.ValidateTreaty(
         Draft,
@@ -299,7 +315,7 @@
 
     private IReadOnlyList<PpbPreviewRow> BuildPreviewPpb()
     {
-        TradeTreatyCalculator.SumTreatyBonuses(new[] { Draft }, out var add, out _);
+        TradeTreatyCalculator.SumTreatyBonuses(new[] { PreviewTreaty() }, out var add, out _);
         return PpbCatalog.All
             .Select(info => (info.NameEn, add[info.Key]))
             .Where(x => x.Item2 != 0m)

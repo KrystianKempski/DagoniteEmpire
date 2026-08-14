@@ -595,6 +595,7 @@ else
             { x => x.MapDocument, _document },
             { x => x.PlayerSeatNodeId, _playerSeatNodeId },
             { x => x.BlockedLordKeys, _blockedLordKeys },
+            { x => x.AutoApprovesOnSave, CanManageAsMg },
         };
 
         var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseOnEscapeKey = true };
@@ -617,6 +618,8 @@ else
         if (result.Data is not BaronyTradeTreaty saved)
             return;
 
+        saved.IsApproved = CanManageAsMg;
+
         var list = _treaties.ToList();
         var idx = list.FindIndex(t => string.Equals(t.Id, saved.Id, StringComparison.OrdinalIgnoreCase));
         if (idx >= 0)
@@ -628,7 +631,9 @@ else
         _treaties = list;
         _editingTreaty = saved;
         RefreshTradeRouteOverlays();
-        _snackBar.Add("Trade treaty saved.", Severity.Success);
+        _snackBar.Add(
+            CanManageAsMg ? "Trade treaty saved." : "Trade treaty submitted for MG approval.",
+            Severity.Success);
         NotifyResourceHud();
     }
 
@@ -646,6 +651,7 @@ else
             Id = existing?.Id ?? Guid.NewGuid().ToString("N"),
             Title = existing?.Title,
             CounterpartyLordKey = path.End.LordKey!,
+            IsApproved = existing?.IsApproved,
             Paragraphs = paragraphs,
         };
     }

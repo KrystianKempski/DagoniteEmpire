@@ -26,7 +26,7 @@ else
     </BaronyPageHeader>
 
     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-        Goods are available when produced by a city building or terrain improvement, or received via a trade treaty.
+        Goods are available when produced by a city building or terrain improvement, or received via an MG-approved trade treaty.
         Only locally produced goods (or MG overrides) can be granted in treaties — treaty imports cannot be re-exported.
         Available goods, luxury access, route economy, and treaty gold (customs / sweeteners) all feed Domain Panel → Decrees and Technologies.
     </MudText>
@@ -42,6 +42,7 @@ else
                           BaronyAvailableGoodKeys="@_availability.GrantableKeys"
                           BorderLordKeys="@_borderLordKeys"
                           CanEdit="@CanEdit"
+                          CanManageAsMg="@CanManageAsMg"
                           TreatiesChanged="OnTreatiesChangedAsync" />
 
     <LuxuryGoodsAccessSection SelectedKey="@_luxuryKey"
@@ -75,8 +76,11 @@ else
     private IReadOnlyList<TradeGoodEntry> AvailableGoods =>
         TradeGoodsCatalog.All.Where(g => _availability.AvailableKeys.Contains(g.Key)).ToList();
 
-    private decimal _treatyRouteEconomy => TradeTreatyCalculator.TotalRouteEconomyBonus(_treaties);
-    private decimal _treatyGoldOutflow => TradeTreatyCalculator.TotalGoldOutflowPerTurn(_treaties);
+    private decimal _treatyRouteEconomy => TradeTreatyCalculator.TotalRouteEconomyBonus(_approvedTreaties);
+    private decimal _treatyGoldOutflow => TradeTreatyCalculator.TotalGoldOutflowPerTurn(_approvedTreaties);
+
+    private IEnumerable<BaronyTradeTreaty> _approvedTreaties =>
+        TradeTreatyApproval.EffectivelyApproved(_treaties);
 
     protected override async Task OnInitializedAsync()
     {

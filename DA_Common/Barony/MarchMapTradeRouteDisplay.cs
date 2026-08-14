@@ -38,14 +38,21 @@ namespace DA_Common.Barony
 
         public static string RouteName(BaronyTradeTreaty treaty)
         {
+            string name;
             if (!string.IsNullOrWhiteSpace(treaty.Title))
-                return treaty.Title.Trim();
+                name = treaty.Title.Trim();
+            else
+            {
+                var lord = KnownLordsCatalog.FindByKey(treaty.CounterpartyLordKey);
+                name = lord is not null
+                    ? $"Route to {lord.Holdings}"
+                    : "Trade route";
+            }
 
-            var lord = KnownLordsCatalog.FindByKey(treaty.CounterpartyLordKey);
-            if (lord is not null)
-                return $"Route to {lord.Holdings}";
+            if (TradeTreatyApproval.IsPending(treaty))
+                return $"{name} (pending)";
 
-            return "Trade route";
+            return name;
         }
 
         public static IReadOnlyList<MarchMapTradeRouteOverlay> BuildOverlays(

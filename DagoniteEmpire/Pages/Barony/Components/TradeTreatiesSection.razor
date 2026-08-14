@@ -6,6 +6,10 @@
     <Summary>
         <span class="projects-summary">
             <span class="projects-summary__item">@Treaties.Count treaty@(Treaties.Count == 1 ? "" : "ies")</span>
+            @if (_pendingCount > 0)
+            {
+                <span class="projects-summary__item trade-treaty-pending-summary">@_pendingCount pending MG approval</span>
+            }
             @if (_customsPerTurn > 0m)
             {
                 <span class="projects-summary__item">@_customsPerTurn.ToString("0.##") gold / turn customs</span>
@@ -32,6 +36,10 @@
     <ChildContent>
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3 d-block">
             Treaties are designed on the March map.
+            @if (!CanManageAsMg)
+            {
+                <text> New and edited treaties require MG approval before trade bonuses and goods apply.</text>
+            }
         </MudText>
 
         @if (CanEdit)
@@ -66,17 +74,36 @@
                         : lord is not null
                             ? $"Treaty with {lord.Name} {lord.House}"
                             : treaty.CounterpartyLordKey;
+                    var pending = TradeTreatyApproval.IsPending(treaty);
                     var received = TradeTreatyCalculator.BaronyReceivedGoods(new[] { treaty });
-                    <div class="trade-treaty-card barony-panel mb-3">
+                    var previewReceived = pending
+                        ? TradeTreatyCalculator.BaronyReceivedGoods(new[] { PreviewAsApproved(treaty) })
+                        : received;
+                    <div class="trade-treaty-card barony-panel mb-3 @(pending ? "trade-treaty-card--pending" : "")">
                         <div class="d-flex flex-wrap justify-space-between align-center gap-2 mb-2">
-                            <MudText Typo="Typo.subtitle1">@title</MudText>
-                            @if (CanEdit)
-                            {
-                                <div class="d-flex gap-2">
+                            <div class="d-flex flex-wrap align-center gap-2">
+                                <MudText Typo="Typo.subtitle1">@title</MudText>
+                                @if (pending)
+                                {
+                                    <MudChip T="string" Size="Size.Small" Class="trade-treaty-pending-chip">Awaiting MG approval</MudChip>
+                                }
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap">
+                                @if (CanManageAsMg && pending)
+                                {
+                                    <MudButton Size="Size.Small"
+                                               Variant="Variant.Filled"
+                                               Class="baron-influence-save-btn"
+                                               OnClick="() => ApproveAsync(treaty)">
+                                        Approve
+                                    </MudButton>
+                                }
+                                @if (CanEdit)
+                                {
                                     <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => EditAsync(treaty)">Edit route</MudButton>
                                     <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteAsync(treaty)">Delete</MudButton>
-                                </div>
-                            }
+                                }
+                            </div>
                         </div>
                         @if (lord is not null)
                         {
@@ -85,14 +112,26 @@
                             </MudText>
                         }
                         <MudText Typo="Typo.body2" Class="mt-2">
-                            <strong>Route economy:</strong> +@TradeTreatyCalculator.RouteEconomyBonus(treaty).ToString("0.##")
-                            (toll + destination: max(1, Wealth − 2))
+                            <strong>Route economy:</strong>
+                            @if (pending)
+                            {
+                                <text> +@TradeTreatyCalculator.RouteEconomyBonus(treaty).ToString("0.##") after approval</text>
+                            }
+                            else
+                            {
+                                <text> +@TradeTreatyCalculator.RouteEconomyBonus(treaty).ToString("0.##")</text>
+                            }
+                            <span style="color:var(--barony-muted);"> (each seat on the route: Wealth − 2)</span>
                         </MudText>
-                        @if (received.Count > 0)
+                        @if (previewReceived.Count > 0)
                         {
                             <MudText Typo="Typo.body2" Class="mt-1">
                                 <strong>Goods received:</strong>
-                                @string.Join(", ", received.Select(g => g.Name))
+                                @string.Join(", ", previewReceived.Select(g => g.Name))
+                                @if (pending)
+                                {
+                                    <span style="color:var(--barony-muted);"> (after approval)</span>
+                                }
                             </MudText>
                         }
                         @foreach (var (paragraph, idx) in treaty.Paragraphs.Select((p, i) => (p, i)))
@@ -124,7 +163,7 @@
                 }
             </div>
 
-            <TradeTreatyBonusSummary Treaties="@Treaties" />
+            <TradeTreatyBonusSummary Treaties="@_approvedTreaties" />
         }
     </ChildContent>
 </BaronySection>
@@ -135,16 +174,22 @@
     [Parameter] public IReadOnlyCollection<string> BaronyAvailableGoodKeys { get; set; } = Array.Empty<string>();
     [Parameter] public IReadOnlyCollection<string> BorderLordKeys { get; set; } = Array.Empty<string>();
     [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public bool CanManageAsMg { get; set; }
     [Parameter] public EventCallback<IReadOnlyList<BaronyTradeTreaty>> TreatiesChanged { get; set; }
 
-    private decimal _customsPerTurn => TradeTreatyCalculator.TotalCustomsGoldPerTurn(Treaties);
-    private decimal _sweetenerPerTurn => TradeTreatyCalculator.TotalSweetenerGoldPerTurn(Treaties);
+    private IReadOnlyList<BaronyTradeTreaty> _approvedTreaties =>
+        TradeTreatyApproval.EffectivelyApproved(Treaties).ToList();
+
+    private int _pendingCount => Treaties.Count(TradeTreatyApproval.IsPending);
+
+    private decimal _customsPerTurn => TradeTreatyCalculator.TotalCustomsGoldPerTurn(_approvedTreaties);
+    private decimal _sweetenerPerTurn => TradeTreatyCalculator.TotalSweetenerGoldPerTurn(_approvedTreaties);
 
     private PpbVector _treatyPpbGlance
     {
         get
         {
-            TradeTreatyCalculator.SumTreatyBonuses(Treaties, out var add, out _);
+            TradeTreatyCalculator.SumTreatyBonuses(_approvedTreaties, out var add, out _);
             return add;
         }
     }
@@ -155,10 +200,34 @@
     private static string FormatGoods(IEnumerable<string> keys) =>
         string.Join(", ", keys.Select(k => TradeGoodsCatalog.Find(k)?.Name ?? k));
 
+    private static BaronyTradeTreaty PreviewAsApproved(BaronyTradeTreaty treaty) => new()
+    {
+        Id = treaty.Id,
+        CounterpartyLordKey = treaty.CounterpartyLordKey,
+        Title = treaty.Title,
+        IsApproved = true,
+        Paragraphs = treaty.Paragraphs,
+    };
+
     private void CreateAsync() => _nav.NavigateTo("/barony/march-map?design=1");
 
     private void EditAsync(BaronyTradeTreaty treaty) =>
         _nav.NavigateTo($"/barony/march-map?treaty={Uri.EscapeDataString(treaty.Id)}");
+
+    private async Task ApproveAsync(BaronyTradeTreaty treaty)
+    {
+        if (!CanManageAsMg || !TradeTreatyApproval.IsPending(treaty))
+            return;
+
+        var list = Treaties.ToList();
+        var idx = list.FindIndex(t => string.Equals(t.Id, treaty.Id, StringComparison.OrdinalIgnoreCase));
+        if (idx < 0)
+            return;
+
+        list[idx].IsApproved = true;
+        await TreatiesChanged.InvokeAsync(list);
+        _snackBar.Add("Trade treaty approved.", Severity.Success);
+    }
 
     private async Task DeleteAsync(BaronyTradeTreaty treaty)
     {

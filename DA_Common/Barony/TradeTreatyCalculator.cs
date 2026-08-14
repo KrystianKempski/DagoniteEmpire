@@ -21,7 +21,7 @@ namespace DA_Common.Barony
     public static IReadOnlyList<TradeGoodEntry> BaronyReceivedGoods(IEnumerable<BaronyTradeTreaty> treaties)
     {
       var keys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-      foreach (var treaty in treaties)
+      foreach (var treaty in TradeTreatyApproval.EffectivelyApproved(treaties))
       {
         foreach (var paragraph in treaty.Paragraphs)
         {
@@ -64,10 +64,10 @@ namespace DA_Common.Barony
     }
 
     public static decimal TotalRouteEconomyBonus(IEnumerable<BaronyTradeTreaty> treaties) =>
-      treaties.Sum(RouteEconomyBonus);
+      TradeTreatyApproval.EffectivelyApproved(treaties).Sum(RouteEconomyBonus);
 
     public static decimal TotalCustomsGoldPerTurn(IEnumerable<BaronyTradeTreaty> treaties) =>
-      treaties.SelectMany(t => t.Paragraphs)
+      TradeTreatyApproval.EffectivelyApproved(treaties).SelectMany(t => t.Paragraphs)
         .Where(p => !p.IsDestination)
         .Sum(p => p.CustomsGoldPerTurn);
 
@@ -76,7 +76,7 @@ namespace DA_Common.Barony
     /// Positive = barony pays net; negative = barony receives net.
     /// </summary>
     public static decimal TotalSweetenerGoldPerTurn(IEnumerable<BaronyTradeTreaty> treaties) =>
-      treaties.SelectMany(t => t.Paragraphs).Sum(p => p.SweetenerGoldPerTurn);
+      TradeTreatyApproval.EffectivelyApproved(treaties).SelectMany(t => t.Paragraphs).Sum(p => p.SweetenerGoldPerTurn);
 
     /// <summary>Customs + sweetener net outflow (positive = gold leaving the barony).</summary>
     public static decimal TotalGoldOutflowPerTurn(IEnumerable<BaronyTradeTreaty> treaties) =>
@@ -236,6 +236,7 @@ namespace DA_Common.Barony
       BaronyTradeTreaty treaty) =>
       allTreaties
         .Where(t => !string.Equals(t.Id, treaty.Id, StringComparison.OrdinalIgnoreCase))
+        .Where(TradeTreatyApproval.IsEffectivelyApproved)
         .Append(treaty)
         .ToList();
 

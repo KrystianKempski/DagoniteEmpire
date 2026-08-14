@@ -48,6 +48,21 @@ namespace DA_Common.Barony
     public string CounterpartyLordKey { get; set; } = string.Empty;
     public string? Title { get; set; }
     public List<TradeTreatyParagraph> Paragraphs { get; set; } = new();
+
+    /// <summary>
+    /// <c>null</c> = legacy treaty (treated as approved). <c>false</c> = awaiting MG approval.
+    /// </summary>
+    public bool? IsApproved { get; set; }
+  }
+
+  public static class TradeTreatyApproval
+  {
+    public static bool IsEffectivelyApproved(BaronyTradeTreaty treaty) => treaty.IsApproved != false;
+
+    public static bool IsPending(BaronyTradeTreaty treaty) => treaty.IsApproved == false;
+
+    public static IEnumerable<BaronyTradeTreaty> EffectivelyApproved(IEnumerable<BaronyTradeTreaty> treaties) =>
+      treaties.Where(IsEffectivelyApproved);
   }
 
   public static class TradeTreatyParagraphLabels

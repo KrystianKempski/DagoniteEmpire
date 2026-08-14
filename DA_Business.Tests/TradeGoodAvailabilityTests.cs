@@ -160,4 +160,56 @@ public class TradeGoodAvailabilityTests
         Assert.Equal(1m, add[Ppb.Defense]);
         Assert.Equal(1m, add[Ppb.Production]);
     }
+
+    [Fact]
+    public void Resolve_PendingTreaty_DoesNotUnlockGoodsOrBonuses()
+    {
+        var treaty = new BaronyTradeTreaty
+        {
+            Id = "t-pending",
+            CounterpartyLordKey = "x",
+            IsApproved = false,
+            Paragraphs =
+            {
+                new TradeTreatyParagraph
+                {
+                    LordKey = "x",
+                    IsDestination = true,
+                    CounterpartyGrantsGoodKeys = { "spices" },
+                },
+            },
+        };
+
+        var snap = TradeGoodAvailability.Resolve(Array.Empty<string>(), new[] { treaty }, null);
+
+        Assert.DoesNotContain("spices", snap.TreatyReceivedKeys);
+        Assert.False(snap.IsAvailable("spices"));
+
+        TradeTreatyCalculator.SumTreatyBonuses(new[] { treaty }, out var add, out var pct);
+        Assert.True(add.IsEmpty);
+        Assert.True(pct.IsEmpty);
+    }
+
+    [Fact]
+    public void Resolve_LegacyTreatyWithoutApprovalFlag_StillApplies()
+    {
+        var treaty = new BaronyTradeTreaty
+        {
+            Id = "t-legacy",
+            CounterpartyLordKey = "x",
+            Paragraphs =
+            {
+                new TradeTreatyParagraph
+                {
+                    LordKey = "x",
+                    IsDestination = true,
+                    CounterpartyGrantsGoodKeys = { "spices" },
+                },
+            },
+        };
+
+        var snap = TradeGoodAvailability.Resolve(Array.Empty<string>(), new[] { treaty }, null);
+
+        Assert.Contains("spices", snap.TreatyReceivedKeys);
+    }
 }

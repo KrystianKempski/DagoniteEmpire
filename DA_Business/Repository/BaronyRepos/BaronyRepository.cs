@@ -700,6 +700,7 @@ namespace DA_Business.Repository.BaronyRepos
                     Id = string.IsNullOrWhiteSpace(treaty.Id) ? Guid.NewGuid().ToString("N") : treaty.Id.Trim(),
                     CounterpartyLordKey = treaty.CounterpartyLordKey.Trim(),
                     Title = string.IsNullOrWhiteSpace(treaty.Title) ? null : treaty.Title.Trim(),
+                    IsApproved = treaty.IsApproved,
                     Paragraphs = MigrateParagraphsToPerSeat(treaty, knownGoods),
                 };
 
