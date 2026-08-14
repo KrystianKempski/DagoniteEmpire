@@ -3040,14 +3040,23 @@ namespace DagoniteEmpire.Service
         /// </summary>
         private static async Task<Character> BuildDemoBaronFromTemplateAsync(ApplicationDbContext contex, string demoName)
         {
-            // Characters.ProfessionId is a non-null FK, so 0 is invalid; resolve a real one
-            // (a "Game Master" profession is always seeded earlier in Initialize). RaceId is
-            // nullable, so leave it null when no race exists yet.
-            var professionId = await contex.Professions
-                .OrderByDescending(p => p.IsApproved)
-                .ThenBy(p => p.Id)
-                .Select(p => p.Id)
-                .FirstOrDefaultAsync();
+            var warriorProfession = await contex.Professions
+                .FirstOrDefaultAsync(p => p.Name == "Warrior");
+
+            if (warriorProfession is null)
+            {
+                warriorProfession = new Profession
+                {
+                    Name = "Warrior",
+                    Description = "A battle-hardened fighter who relies on raw strength and melee discipline.",
+                    RelatedAttributeName = "Strength",
+                    IsApproved = true,
+                    ClassLevel = 2,
+                };
+
+                contex.Professions.Add(warriorProfession);
+                await contex.SaveChangesAsync();
+            }
 
             var raceId = await contex.Races
                 .OrderByDescending(r => r.RaceApproved)
@@ -3064,9 +3073,10 @@ namespace DagoniteEmpire.Service
                     "strong in melee command and battle leadership, while still keeping a blacksmith's and " +
                     "craftsman's discipline.",
                 Age = 42,
+                ImageUrl = "/images/aldric.jpg",
                 NPCType = SD.NPCType.Duke,
                 IsApproved = true,
-                ProfessionId = professionId,
+                ProfessionId = warriorProfession.Id,
                 RaceId = raceId,
                 Attributes = DA_Models.CharacterSeeder.GetAttributes().Values
                     .OrderBy(a => a.Index)
