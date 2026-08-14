@@ -2870,13 +2870,13 @@ namespace DagoniteEmpire.Service
 
                 contex.SaveChanges();
 
-                await RunOptionalSeederAsync("EnsureGenericDemoBaronAsync", () => EnsureGenericDemoBaronAsync(contex));
-                await RunOptionalSeederAsync("SeniorHousesSeeder.EnsureForAllBaroniesAsync", () => SeniorHousesSeeder.EnsureForAllBaroniesAsync(contex));
-                await RunOptionalSeederAsync("OrganizationsSeeder.EnsureForAllBaroniesAsync", () => OrganizationsSeeder.EnsureForAllBaroniesAsync(contex));
-                await RunOptionalSeederAsync("VassalFamilySeeder.EnsureForAllBaroniesAsync", () => VassalFamilySeeder.EnsureForAllBaroniesAsync(contex));
-                await RunOptionalSeederAsync("NeighborsSeeder.FixGroupNamesAsync", () => NeighborsSeeder.FixGroupNamesAsync(contex));
-                await RunOptionalSeederAsync("MarchMapSeeder.EnsureInitializedAsync", () => MarchMapSeeder.EnsureInitializedAsync(contex));
-                await RunOptionalSeederAsync("SeatPurposeTemplatesSeeder.EnsureDefaultsAsync", () => SeatPurposeTemplatesSeeder.EnsureDefaultsAsync(contex));
+                await RunOptionalSeederAsync(contex, "EnsureGenericDemoBaronAsync", () => EnsureGenericDemoBaronAsync(contex));
+                await RunOptionalSeederAsync(contex, "SeniorHousesSeeder.EnsureForAllBaroniesAsync", () => SeniorHousesSeeder.EnsureForAllBaroniesAsync(contex));
+                await RunOptionalSeederAsync(contex, "OrganizationsSeeder.EnsureForAllBaroniesAsync", () => OrganizationsSeeder.EnsureForAllBaroniesAsync(contex));
+                await RunOptionalSeederAsync(contex, "VassalFamilySeeder.EnsureForAllBaroniesAsync", () => VassalFamilySeeder.EnsureForAllBaroniesAsync(contex));
+                await RunOptionalSeederAsync(contex, "NeighborsSeeder.FixGroupNamesAsync", () => NeighborsSeeder.FixGroupNamesAsync(contex));
+                await RunOptionalSeederAsync(contex, "MarchMapSeeder.EnsureInitializedAsync", () => MarchMapSeeder.EnsureInitializedAsync(contex));
+                await RunOptionalSeederAsync(contex, "SeatPurposeTemplatesSeeder.EnsureDefaultsAsync", () => SeatPurposeTemplatesSeeder.EnsureDefaultsAsync(contex));
             }
             catch (Exception ex)
             {
@@ -2884,7 +2884,7 @@ namespace DagoniteEmpire.Service
             }
         }
 
-        private static async Task RunOptionalSeederAsync(string name, Func<Task> seeder)
+        private static async Task RunOptionalSeederAsync(ApplicationDbContext contex, string name, Func<Task> seeder)
         {
             try
             {
@@ -2893,6 +2893,9 @@ namespace DagoniteEmpire.Service
             catch (Exception ex)
             {
                 Console.Error.WriteLine($"[DbInitializer] Optional seeder '{name}' failed: {ex}");
+                // Drop any entities the failed seeder left tracked so its bad state
+                // cannot cascade into the SaveChanges of the seeders that run after it.
+                contex.ChangeTracker.Clear();
             }
         }
 
@@ -3037,6 +3040,21 @@ namespace DagoniteEmpire.Service
         /// </summary>
         private static async Task<Character> BuildDemoBaronFromTemplateAsync(ApplicationDbContext contex, string demoName)
         {
+            // Characters.ProfessionId is a non-null FK, so 0 is invalid; resolve a real one
+            // (a "Game Master" profession is always seeded earlier in Initialize). RaceId is
+            // nullable, so leave it null when no race exists yet.
+            var professionId = await contex.Professions
+                .OrderByDescending(p => p.IsApproved)
+                .ThenBy(p => p.Id)
+                .Select(p => p.Id)
+                .FirstOrDefaultAsync();
+
+            var raceId = await contex.Races
+                .OrderByDescending(r => r.RaceApproved)
+                .ThenBy(r => r.Id)
+                .Select(r => (int?)r.Id)
+                .FirstOrDefaultAsync();
+
             var created = new Character
             {
                 UserName = SD.DemoBaronTemplateUserName,
@@ -3048,6 +3066,8 @@ namespace DagoniteEmpire.Service
                 Age = 42,
                 NPCType = SD.NPCType.Duke,
                 IsApproved = true,
+                ProfessionId = professionId,
+                RaceId = raceId,
                 Attributes = DA_Models.CharacterSeeder.GetAttributes().Values
                     .OrderBy(a => a.Index)
                     .Select(a => new DA_DataAccess.CharacterClasses.Attribute
