@@ -2938,8 +2938,8 @@ namespace DagoniteEmpire.Service
                     "strong in melee command and battle leadership, while still keeping a blacksmith's and " +
                     "craftsman's discipline.",
                 Age = source.Age,
-                ImageUrl = source.ImageUrl,
-                IconUrl = source.IconUrl,
+                ImageUrl = "/images/aldric.jpg",
+                IconUrl = "/images/aldric-icon.webp",
                 NPCType = SD.NPCType.Duke,
                 AttributePoints = source.AttributePoints,
                 CurrentExpPoints = source.CurrentExpPoints,
@@ -3074,6 +3074,7 @@ namespace DagoniteEmpire.Service
                     "craftsman's discipline.",
                 Age = 42,
                 ImageUrl = "/images/aldric.jpg",
+                IconUrl = "/images/aldric-icon.webp",
                 NPCType = SD.NPCType.Duke,
                 IsApproved = true,
                 ProfessionId = warriorProfession.Id,
