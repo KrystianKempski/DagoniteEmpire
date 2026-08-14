@@ -163,6 +163,8 @@ namespace DA_Business.Repository.BaronyRepos
                 {
                     throw new RepositoryErrorException($"Unsupported barony seed profile: {seedProfile}");
                 }
+
+                ApplyStarterResourceStocks(added.Entity);
                 SeedBaronCampaign(ctx, character, added.Entity);
                 await ctx.SaveChangesAsync();
 
@@ -170,6 +172,21 @@ namespace DA_Business.Repository.BaronyRepos
             }
             catch (RepositoryErrorException) { throw; }
             catch (System.Exception ex) { throw Err(ex, nameof(CreateForCharacter)); }
+        }
+
+        private static void ApplyStarterResourceStocks(Barony barony)
+        {
+            var stocks = new PpbVector
+            {
+                [Ppb.Food] = 5m,
+                [Ppb.Production] = 50m,
+                [Ppb.Defense] = 50m,
+                [Ppb.Treasury] = 100m,
+            };
+
+            barony.FoodInGranaries = stocks[Ppb.Food];
+            barony.TreasuryGold = stocks[Ppb.Treasury];
+            barony.ResourceStocksJson = Ser(stocks);
         }
 
         /// <summary>

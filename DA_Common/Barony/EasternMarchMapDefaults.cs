@@ -1,8 +1,48 @@
+using System.Reflection;
+using System.Text.Json;
+
 namespace DA_Common.Barony
 {
     public static class EasternMarchMapDefaults
     {
+        private const string ResourceName = "DA_Common.Barony.SeedData.eastern-march-map.json";
+
+        private static readonly JsonSerializerOptions JsonOptions = new()
+        {
+            PropertyNameCaseInsensitive = true,
+        };
+
+        /// <summary>
+        /// Authored Eastern March map (hand-placed node positions + road/river links) shared by every
+        /// barony. Falls back to a procedural layout only if the embedded resource is missing/unreadable.
+        /// </summary>
         public static MarchMapDocument CreateSeedDocument()
+        {
+            return LoadAuthoredDocument() ?? CreateProceduralDocument();
+        }
+
+        private static MarchMapDocument? LoadAuthoredDocument()
+        {
+            var assembly = typeof(EasternMarchMapDefaults).Assembly;
+            using var stream = assembly.GetManifestResourceStream(ResourceName);
+            if (stream is null)
+                return null;
+
+            try
+            {
+                using var reader = new StreamReader(stream);
+                var doc = JsonSerializer.Deserialize<MarchMapDocument>(reader.ReadToEnd(), JsonOptions);
+                if (doc is null || doc.Nodes is null || doc.Nodes.Count == 0)
+                    return null;
+                return doc;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static MarchMapDocument CreateProceduralDocument()
         {
             var doc = new MarchMapDocument();
             var byHolding = new Dictionary<string, MarchMapNode>(StringComparer.OrdinalIgnoreCase);
