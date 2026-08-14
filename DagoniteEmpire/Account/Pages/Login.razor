@@ -17,7 +17,45 @@
 <div class="container pt-2">
 <h1 class="border-0">Log in</h1>
 <div class="row">
-    <div class="col-md-4">
+    @* Public demo access is intentionally available in every environment, including release. *@
+    <div class="col-md-6 col-md-offset-2 order-md-2">
+        <section class="mb-4">
+            <h3>Try the game — no account needed</h3>
+            <hr />
+            <p>
+                Step into a baron's shoes and explore the Barony layer on a ready-made demo
+                (the barony of Darkhold), or run it as the Game Master. The Barony game is
+                designed to be played on a desktop computer.
+            </p>
+            <div class="d-flex flex-column gap-2" style="max-width: 22rem;">
+                <a href="Account/DemoBaron" class="btn btn-lg btn-primary w-100">Try the Baron demo</a>
+                <a href="Account/DemoGameMaster" class="btn btn-lg btn-primary w-100">Try the Game Master demo</a>
+            </div>
+        </section>
+        @if (Configuration.GetConnectionString("TestAccountsEnable") == "true")
+        {
+        <section>
+            <h3>Try some test accounts.</h3>
+            <hr />
+
+            <div>
+                <p>
+                    You can use default test users or create your own account.
+                </p>
+                <b>
+                    Default player account:
+                </b>
+                <p>- Login: player@example.com</p>
+                <p>- Password: Guest123*</p>
+                <b>Default Game Master account:</b>
+                <p>- Login: gm@example.com</p>
+                <p>- Password: Guest123*</p>
+            </div>
+
+        </section>
+        }
+    </div>
+    <div class="col-md-4 order-md-1">
         <section>
             <StatusMessage Message="@errorMessage" />
             <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
@@ -58,43 +96,6 @@
             </EditForm>
         </section>
     </div>
-        <div class="col-md-6 col-md-offset-2">
-            <section class="mb-4">
-                <h3>Try the game — no account needed</h3>
-                <hr />
-                <p>
-                    Step into a baron's shoes and explore the Barony layer on a ready-made demo
-                    (the barony of Darkhold), or run it as the Game Master. The Barony game is
-                    designed to be played on a desktop computer.
-                </p>
-                <div class="d-flex flex-column gap-2" style="max-width: 22rem;">
-                    <a href="Account/DemoBaron" class="btn btn-lg btn-primary w-100">Try the Baron demo</a>
-                    <a href="Account/DemoGameMaster" class="btn btn-lg btn-primary w-100">Try the Game Master demo</a>
-                </div>
-            </section>
-            @if (Configuration.GetConnectionString("TestAccountsEnable") == "true")
-            {
-            <section>
-                <h3>Try some test accounts.</h3>
-                <hr />
-
-                <div>
-                    <p>
-                        You can use default test users or create your own account.
-                    </p>
-                    <b>
-                        Default player account:
-                    </b>
-                    <p>- Login: player@example.com</p>
-                    <p>- Password: Guest123*</p>
-                    <b>Default Game Master account:</b>
-                    <p>- Login: gm@example.com</p>
-                    <p>- Password: Guest123*</p>
-                </div>
-
-            </section>
-            }
-        </div>
 </div>
 </div>
 
