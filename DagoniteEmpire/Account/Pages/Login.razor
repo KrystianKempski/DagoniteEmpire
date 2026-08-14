@@ -11,6 +11,7 @@
 @inject IdentityRedirectManager RedirectManager
 @inject UserManager<ApplicationUser> UserManager
 @inject IConfiguration Configuration
+@inject IWebHostEnvironment Environment
 @inherits LayoutComponentBase
 <PageTitle>Log in</PageTitle>
 
@@ -32,7 +33,7 @@
                 <a href="Account/DemoGameMaster" class="btn btn-lg btn-primary w-100">Try the Game Master demo</a>
             </div>
         </section>
-        @if (Configuration.GetConnectionString("TestAccountsEnable") == "true")
+        @if (Environment.IsDevelopment() && Configuration.GetConnectionString("TestAccountsEnable") == "true")
         {
         <section>
             <h3>Try some test accounts.</h3>
