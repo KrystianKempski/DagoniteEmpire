@@ -2903,7 +2903,16 @@ namespace DagoniteEmpire.Service
                 .FirstOrDefaultAsync(c => c.NPCName == sourceName);
 
             if (source is null)
+            {
+                // Production/fresh databases have no hand-made "Thaddeus Direbolt" to clone from,
+                // so build the demo baron from the standard code-embedded character template instead.
+                // Without this the demo endpoints throw "source character not found" → HTTP 500.
+                var templated = await BuildDemoBaronFromTemplateAsync(contex, demoName);
+                ApplyDemoBaronSkillProfile(templated);
+                contex.Characters.Add(templated);
+                await contex.SaveChangesAsync();
                 return;
+            }
 
             var created = new Character
             {
@@ -3008,6 +3017,66 @@ namespace DagoniteEmpire.Service
 
             contex.Characters.Add(created);
             await contex.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Builds the persistent demo-baron source character from the standard code-embedded
+        /// character template (<see cref="DA_Models.CharacterSeeder"/>) so it exists on any
+        /// database, including fresh production ones that lack the hand-made clone source.
+        /// </summary>
+        private static async Task<Character> BuildDemoBaronFromTemplateAsync(ApplicationDbContext contex, string demoName)
+        {
+            var created = new Character
+            {
+                UserName = SD.DemoBaronTemplateUserName,
+                NPCName = demoName,
+                Description =
+                    "A former adventurer who now rules as a practical baron. Veteran of border expeditions, " +
+                    "strong in melee command and battle leadership, while still keeping a blacksmith's and " +
+                    "craftsman's discipline.",
+                Age = 42,
+                NPCType = SD.NPCType.Duke,
+                IsApproved = true,
+                Attributes = DA_Models.CharacterSeeder.GetAttributes().Values
+                    .OrderBy(a => a.Index)
+                    .Select(a => new DA_DataAccess.CharacterClasses.Attribute
+                    {
+                        Name = a.Name,
+                        Index = a.Index,
+                    })
+                    .ToList(),
+                BaseSkills = DA_Models.CharacterSeeder.GetBaseSkills()
+                    .OrderBy(s => s.Index)
+                    .Select(s => new BaseSkill
+                    {
+                        Name = s.Name,
+                        Index = s.Index,
+                        RelatedAttribute1 = s.RelatedAttribute1,
+                        RelatedAttribute2 = s.RelatedAttribute2,
+                    })
+                    .ToList(),
+                SpecialSkills = DA_Models.CharacterSeeder.GetSpecialSkills()
+                    .OrderBy(s => s.RelatedBaseSkillName)
+                    .ThenBy(s => s.Index)
+                    .ThenBy(s => s.Name)
+                    .Select(s => new SpecialSkill
+                    {
+                        Name = s.Name,
+                        Index = s.Index,
+                        RelatedAttribute1 = s.RelatedAttribute1,
+                        RelatedAttribute2 = s.RelatedAttribute2,
+                        RelatedBaseSkillName = s.RelatedBaseSkillName,
+                        ChosenAttribute = s.ChosenAttribute,
+                    })
+                    .ToList(),
+            };
+
+            var common = (await contex.Languages.ToListAsync())
+                .FirstOrDefault(l => SD.Languages.IsCommon(l.Name));
+            if (common is not null)
+                created.Languages = new List<Language> { common };
+
+            return created;
         }
 
         private static void ApplyDemoBaronSkillProfile(Character character)

@@ -39,6 +39,8 @@ namespace DA_Common
         public const string DemoGmEmail = "demo-gm@dagonite.local";
         /// <summary>Source character cloned per demo session (seeded by <c>EnsureGenericDemoBaronAsync</c>).</summary>
         public const string DemoBaronSourceCharacterName = "Aldric Emberfall";
+        /// <summary>Owner of the persistent demo-baron template character; kept distinct from <see cref="DemoBaronUserName"/> so it never collides with per-session clones.</summary>
+        public const string DemoBaronTemplateUserName = "DemoBaronTemplate";
         /// <summary>Abandoned demo sessions older than this are swept from the database.</summary>
         public static readonly TimeSpan DemoSessionTtl = TimeSpan.FromMinutes(2);
 
