@@ -5,32 +5,32 @@
     <TitleContent>
         <MudText Typo="Typo.h6">
             <img src="@MyIcon.Scroll" width="40x" height="40px" class="helm-icon" />
-            @Title Wound
+            @Title Rana
         </MudText>
     </TitleContent>
     <DialogContent >
-        <MudSelect Required="true" @bind-Value="@NewWound.Location" Label="Location" Placeholder="Select location">
+        <MudSelect Required="true" @bind-Value="@NewWound.Location" Label="Lokalizacja" Placeholder="Wybierz lokalizację">
             @foreach(var loc in Wounds.Location.All)
             {
                 <MudSelectItem Value="@loc">@loc</MudSelectItem>
             }
         </MudSelect>
-        <MudSelect Required="true" @bind-Value="@SeverityName" Label="Severity" Placeholder="Select Severity">
+        <MudSelect Required="true" @bind-Value="@SeverityName" Label="Dotkliwość" Placeholder="Wybierz dotkliwość">
             @foreach (var loc in Wounds.Severity.All)
             {
                 <MudSelectItem Value="@loc">@loc</MudSelectItem>
             }
         </MudSelect>
-        <MudTextField Required="true" @bind-Value="@NewWound.Description" Label="Description" Lines="3" />
+        <MudTextField Required="true" @bind-Value="@NewWound.Description" Label="Opis" Lines="3" />
         <DateComponent Editable="true" Date="CurrentDate"></DateComponent>
 
-        <MudCheckBox @bind-Value="@NewWound.IsIgnored" Label="Ignored"></MudCheckBox>
-        <MudCheckBox @bind-Value="@NewWound.IsTended" Label="Tended"></MudCheckBox>
-        <MudCheckBox @bind-Value="@NewWound.IsMagicHealed" Label="Magic healed"></MudCheckBox>
+        <MudCheckBox @bind-Value="@NewWound.IsIgnored" Label="Ignorowana"></MudCheckBox>
+        <MudCheckBox @bind-Value="@NewWound.IsTended" Label="Opatrzona"></MudCheckBox>
+        <MudCheckBox @bind-Value="@NewWound.IsMagicHealed" Label="Uleczona magią"></MudCheckBox>
 
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton OnClick="Cancel">Anuluj</MudButton>
         <MudButton Color="Color.Error" OnClick="CreateWound">@Title</MudButton>
     </DialogActions>
 </MudDialog>
@@ -41,7 +41,7 @@
     [Parameter] public WoundDTO NewWound { get; set; } = new();
     [Parameter] public DateModel CurrentDate { get; set; } = new(1,1);
     [Parameter] public bool IsEdit { get; set; } = false;
-    private string Title = "Create";
+    private string Title = "Utwórz";
     private string SeverityName = "";
     private void Cancel()
     {
@@ -52,7 +52,7 @@
     {
         if (IsEdit)
         {
-            Title = "Edit";
+            Title = "Edytuj";
             SeverityName = NewWound.Severity;
         }
         else
@@ -67,8 +67,8 @@
         NewWound.DateNumber = DateModel.GetDaysFromDate(NewWound.DateStart);
         MudDialog.Close(DialogResult.Ok(NewWound));
         if (IsEdit)
-            Snackbar.Add("Wound edited", Severity.Success);
+            Snackbar.Add("Rana zedytowana", Severity.Success);
         else 
-            Snackbar.Add("Wound created", Severity.Success);
+            Snackbar.Add("Rana utworzona", Severity.Success);
     }
 }

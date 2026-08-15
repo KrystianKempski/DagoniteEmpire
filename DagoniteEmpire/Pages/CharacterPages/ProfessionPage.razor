@@ -21,10 +21,10 @@
 @inject NavigationManager _navigationManager
 @inject IUserService _userService
 @inject IBrowserViewportService _vieportService
-<PageTitle>Dagonie Empire | Class</PageTitle>
+<PageTitle>Dagonie Empire | Profesja</PageTitle>
 <div class="on-top-dialog">
 
-    <_LeavePage ComponentDescription="class" IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click"></_LeavePage>
+    <_LeavePage ComponentDescription="profesji" IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click"></_LeavePage>
 </div>
 
 <div class="container justify-content-around">
@@ -45,7 +45,7 @@
             <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
 
             <div class="save-btn down">
-                 <button @onclick="OnSaveChangesBtnClick" class="btn btn-primary">Save</button>
+                 <button @onclick="OnSaveChangesBtnClick" class="btn btn-primary">Zapisz</button>
             </div>
             </MudHidden>
         }
@@ -54,11 +54,11 @@
         <div class="wide-screen-table">
             <div class="w-100 prof-header-row">
                 <div class="d-flex flex-column px-1 prof-name-cell">
-                    <label class="class-section py-1">Class name</label>
+                    <label class="class-section py-1">Nazwa profesji</label>
                     <div class="prof-name-field-wrap">
                         @if (CanEditClassMetadata)
                         {
-                            <input type="text" class="prof-variables" @bind="ProfessionDTO.Name" @bind:event="oninput" @bind:after="SomeChange" placeholder="Insert class name" />
+                            <input type="text" class="prof-variables" @bind="ProfessionDTO.Name" @bind:event="oninput" @bind:after="SomeChange" placeholder="Wpisz nazwę profesji" />
                         }
                         else
                         {
@@ -67,39 +67,39 @@
                     </div>
                 </div>
                 <div class="d-flex flex-column px-1 prof-header-fixed">
-                    <label class="class-section py-1">Related attribute</label>
+                    <label class="class-section py-1">Powiązany atrybut</label>
                     <label class="prof-variables" style="width: 150px;">@ProfessionDTO.RelatedAttributeName</label>
                 </div>
                 @if (UserInfo?.IsAdminOrMG == true)
                 {
                     <div class="d-flex flex-column px-1 prof-header-fixed">
-                        <label class="column-section py-1">Class Level</label>
+                        <label class="column-section py-1">Poziom profesji</label>
                         <input type="number" class="prof-variables" @bind="ProfessionDTO.ClassLevel" @bind:event="oninput" @bind:after="ChangeProfLevel" />
                     </div>
                 }
                 else
                 {
                     <div class="d-flex flex-column px-1 prof-header-fixed">
-                        <label class="column-section py-1">Class Level</label>
+                        <label class="column-section py-1">Poziom profesji</label>
                         <label class="prof-variables">@ProfessionDTO.ClassLevel</label>
                     </div>
                 }
 
                 <div class="d-flex flex-column px-1 prof-header-fixed">
-                    <label class="column-section py-1">Skill roll</label>
+                    <label class="column-section py-1">Rzut umiejętności</label>
                     <label class="prof-variables">@ProfessionDTO.ProfessionSkillRoll</label>
                 </div>
                 <div class="d-flex flex-column px-1 prof-header-fixed">
-                    <label class="column-section py-1">Focus points</label>
+                    <label class="column-section py-1">Punkty skupienia</label>
                         <label class="prof-variables">@ProfessionDTO.CurrentFocusPoints</label>
                 </div>
 
                 <div class="d-flex flex-column px-1 prof-action-buttons prof-header-fixed">
                     <div class="prof-action-buttons-row gap-2">
-                        <button class="btn btn-secondary" @onclick="Rest">Rest</button>
+                        <button class="btn btn-secondary" @onclick="Rest">Odpocznij</button>
                         @if (IsLeaveAllowed == false)
                         {
-                            <button @onclick="OnSaveChangesBtnClick" class="btn btn-primary">Save</button>
+                            <button @onclick="OnSaveChangesBtnClick" class="btn btn-primary">Zapisz</button>
                         }
                     </div>
                 </div>
@@ -109,11 +109,11 @@
             <div class="d-flex flex-column ">
                 <div class="d-flex w-100">
                     <div class="d-flex flex-column px-1 prof-name-cell w-100">
-                        <label class="class-section py-1">Class name</label>
+                        <label class="class-section py-1">Nazwa profesji</label>
                         <div class="prof-name-field-wrap">
                             @if (CanEditClassMetadata)
                             {
-                                <input type="text" class="prof-variables" @bind="ProfessionDTO.Name" @bind:event="oninput" @bind:after="SomeChange" placeholder="Insert class name" />
+                                <input type="text" class="prof-variables" @bind="ProfessionDTO.Name" @bind:event="oninput" @bind:after="SomeChange" placeholder="Wpisz nazwę profesji" />
                             }
                             else
                             {
@@ -132,31 +132,31 @@
                     } *@
                 </div>
                 <div class="d-flex flex-column px-1">
-                    <label class="class-section py-1">Related attribute</label>
+                    <label class="class-section py-1">Powiązany atrybut</label>
                     <label class="prof-variables">@ProfessionDTO.RelatedAttributeName</label>
                 </div>
                 <div class="d-flex">
                     @if (UserInfo?.IsAdminOrMG == true)
                     {
                         <div class="d-flex flex-column px-1 variables">
-                            <label class="column-section py-1">Class Level</label>
+                            <label class="column-section py-1">Poziom profesji</label>
                             <input type="number" class="prof-variables" @bind="ProfessionDTO.ClassLevel" @bind:event="oninput" @bind:after="ChangeProfLevel" />
                         </div>
                     }
                     else
                     {
                         <div class="d-flex flex-column px-1 variables">
-                            <label class="column-section py-1">Class Level</label>
+                            <label class="column-section py-1">Poziom profesji</label>
                             <label class="prof-variables">@ProfessionDTO.ClassLevel</label>
                         </div>
                     }
 
                     <div class="d-flex flex-column px-1 variables">
-                        <label class="column-section py-1">Skill roll</label>
+                        <label class="column-section py-1">Rzut umiejętności</label>
                         <label class="prof-variables">@ProfessionDTO.ProfessionSkillRoll</label>
                     </div>
                     <div class="d-flex flex-column px-1 variables">
-                        <label class="column-section py-1">Focus points</label>
+                        <label class="column-section py-1">Punkty skupienia</label>
                             <label class="prof-variables">@ProfessionDTO.CurrentFocusPoints</label>
                     </div>
                 </div>
@@ -165,7 +165,7 @@
 
         </div>
         <div class="d-flex flex-column flex-grow-1 mx-1">
-            <label class="class-section">Class description</label>
+            <label class="class-section">Opis profesji</label>
             <BlazoredTextEditor @ref="DescrEdit">
                 <ToolbarContent>
                     <span class="ql-formats">
@@ -183,21 +183,21 @@
         </div>
 
         <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" PanelClass="px-2">
-            <MudTabPanel Text="Active class skills" Style="font-weight: bold;">
+            <MudTabPanel Text="Aktywne umiejętności profesji" Style="font-weight: bold;">
                 @*  ACTIVE SKILLS  *@
                 <div class="wide-screen-table mx-1">
 
                     <table class="table align-middle">
                         <thead>
                             <tr>
-                                <th scope="col" class="level-row text-center">Level</th>
-                                <th scope="col" class="name-row text-center">Name</th>
-                                <th scope="col" class="descr-row text-center">Description</th>
+                                <th scope="col" class="level-row text-center">Poziom</th>
+                                <th scope="col" class="name-row text-center">Nazwa</th>
+                                <th scope="col" class="descr-row text-center">Opis</th>
                                 <th scope="col" class="number-row text-center">DC</th>
-                                <th scope="col" class="number-row text-center">Cost</th>
-                                <th scope="col" class="number-row text-center">Range</th>
-                                <th scope="col" class="number-row text-center">Uses</th>
-                                <th scope="col" class="number-row text-center">Actions</th>
+                                <th scope="col" class="number-row text-center">Koszt</th>
+                                <th scope="col" class="number-row text-center">Zasięg</th>
+                                <th scope="col" class="number-row text-center">Użycia</th>
+                                <th scope="col" class="number-row text-center">Akcje</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -244,13 +244,13 @@
                     <table class="table align-middle">
                         <thead>
                             <tr>
-                                <th scope="col" class="level-row text-center">Level</th>
-                                <th scope="col" class="name-row text-center">Name</th>
+                                <th scope="col" class="level-row text-center">Poziom</th>
+                                <th scope="col" class="name-row text-center">Nazwa</th>
                                 <th scope="col" class="number-row text-center">DC</th>
-                                <th scope="col" class="number-row text-center">Cost</th>
-                                <th scope="col" class="number-row text-center"> Range</th>
-                                <th scope="col" class="number-row text-center">Uses</th>
-                                <th scope="col" class="number-row text-center">Actions</th>
+                                <th scope="col" class="number-row text-center">Koszt</th>
+                                <th scope="col" class="number-row text-center"> Zasięg</th>
+                                <th scope="col" class="number-row text-center">Użycia</th>
+                                <th scope="col" class="number-row text-center">Akcje</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -296,7 +296,7 @@
                 </div>
 
             </MudTabPanel>
-            <MudTabPanel Text="Passive class skills" Style="font-weight: bold;">
+            <MudTabPanel Text="Pasywne umiejętności profesji" Style="font-weight: bold;">
                 @*  PASSIVE SKILLS  *@
 
                 <div class="wide-screen-table mx-1">
@@ -304,10 +304,10 @@
                     <table class="table align-middle">
                         <thead>
                             <tr>
-                                <th scope="col" class="level-row text-center">Level</th>
-                                <th scope="col" class="name-row text-center">Name</th>
-                                <th scope="col" class="descr-row text-center">Description</th>
-                                <th scope="col" class="number-row text-center">Actions</th>
+                                <th scope="col" class="level-row text-center">Poziom</th>
+                                <th scope="col" class="name-row text-center">Nazwa</th>
+                                <th scope="col" class="descr-row text-center">Opis</th>
+                                <th scope="col" class="number-row text-center">Akcje</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -328,9 +328,9 @@
                     <table class="table align-middle">
                         <thead>
                             <tr>
-                                <th scope="col" class="number-row text-center">Level</th>
-                                <th scope="col" class="name-row-short text-center">Name</th>
-                                <th scope="col" class="number-row text-center">Actions</th>
+                                <th scope="col" class="number-row text-center">Poziom</th>
+                                <th scope="col" class="name-row-short text-center">Nazwa</th>
+                                <th scope="col" class="number-row text-center">Akcje</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -352,16 +352,16 @@
             </MudTabPanel>
             @if(ProfessionDTO.CasterType != SpellcasterType.None)
             {
-            <MudTabPanel Text="Spells" Disabled="false" Style="font-weight: bold;">
+            <MudTabPanel Text="Zaklęcia" Disabled="false" Style="font-weight: bold;">
                 @*  SPELLS  *@
 
                  <div class="wide-screen-table">
                     <MudTable RowClass="cell-small" T="SpellCircleDTO" Items="@SpellCircles" Breakpoint="Breakpoint.None" @ref="CircleTable">
                         <HeaderContent>
-                            <MudTh Style="text-align:center; width: 60px; padding: 4px; font-size:13px; font-weight:bold;">Level</MudTh>
-                            <MudTh Style="text-align:center; width: 60px; padding: 4px; font-size:13px; font-weight:bold;">Known</MudTh>
-                            <MudTh Style="text-align:center; width: 60px; padding: 4px; font-size:13px; font-weight:bold;">Today</MudTh>
-                            <MudTh Style="text-align:center; padding: 4px;  font-size:13px; font-weight:bold;">Spell slots</MudTh>
+                            <MudTh Style="text-align:center; width: 60px; padding: 4px; font-size:13px; font-weight:bold;">Poziom</MudTh>
+                            <MudTh Style="text-align:center; width: 60px; padding: 4px; font-size:13px; font-weight:bold;">Znane</MudTh>
+                            <MudTh Style="text-align:center; width: 60px; padding: 4px; font-size:13px; font-weight:bold;">Dzisiaj</MudTh>
+                            <MudTh Style="text-align:center; padding: 4px;  font-size:13px; font-weight:bold;">Sloty zaklęć</MudTh>
                         </HeaderContent>
                         <RowTemplate>
                             <MudTd Style="text-align:center; width: 60px; padding: 4px; font-size:26px; font-weight:bold" DataLabel="Level">@context.Level</MudTd>
@@ -387,7 +387,7 @@
                                         }
                                         else
                                         {
-                                            <MudTd Style="padding: 4px;" DataLabel="Prepared">Select Spell</MudTd>
+                                            <MudTd Style="padding: 4px;" DataLabel="Prepared">Wybierz zaklęcie</MudTd>
                                         }
                                         <MudTd Style="width: 60px; padding: 4px;" DataLabel="ready">
                                         
@@ -398,10 +398,10 @@
                                         <MudTd Style="width: 60px; padding: 4px;" DataLabel="actions">
                                             <div class="d-flex px-0">
                                                 @if(slotContext.Spell is not null && string.IsNullOrEmpty(slotContext.Spell.Name) == false){
-                                                    <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,true))" Icon="@Icons.Material.Filled.Edit" aria-label="Change spell"></MudIconButton>
-                                                    <MudIconButton Style="width:30px; height: 30px; padding:1px;"  OnClick="@(()=>DeleteSpell(slotContext))" Icon="@Icons.Material.Filled.Delete" aria-label="Delete spell"></MudIconButton>
+                                                    <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,true))" Icon="@Icons.Material.Filled.Edit" aria-label="Zmień zaklęcie"></MudIconButton>
+                                                    <MudIconButton Style="width:30px; height: 30px; padding:1px;"  OnClick="@(()=>DeleteSpell(slotContext))" Icon="@Icons.Material.Filled.Delete" aria-label="Usuń zaklęcie"></MudIconButton>
                                                 }else{
-                                                    <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,false))" Icon="@Icons.Material.Filled.Add" aria-label="Add new spell"></MudIconButton>
+                                                    <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,false))" Icon="@Icons.Material.Filled.Add" aria-label="Dodaj nowe zaklęcie"></MudIconButton>
                                                 }
                                             </div>
                                         </MudTd>
@@ -418,9 +418,9 @@
                             <MudSimpleTable Elevation="1" Style="margin-bottom:2px;">
                                 <thead>
                                     <tr>
-                                        <th style="text-align:center; padding: 4px; font-size:13px; font-weight:bold;">Level</th>
-                                        <th style="text-align:center; padding: 4px; font-size:13px; font-weight:bold;">Known</th>
-                                        <th style="text-align:center; padding: 4px; font-size:13px; font-weight:bold;">Today</th>
+                                        <th style="text-align:center; padding: 4px; font-size:13px; font-weight:bold;">Poziom</th>
+                                        <th style="text-align:center; padding: 4px; font-size:13px; font-weight:bold;">Znane</th>
+                                        <th style="text-align:center; padding: 4px; font-size:13px; font-weight:bold;">Dzisiaj</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -451,7 +451,7 @@
                                     }
                                     else
                                     {
-                                        <MudTd Style="padding: 4px;" DataLabel="Prepared">Select Spell</MudTd>
+                                        <MudTd Style="padding: 4px;" DataLabel="Prepared">Wybierz zaklęcie</MudTd>
                                     }
                                     <MudTd Style="width: 60px; padding: 4px;" DataLabel="ready">
 
@@ -463,12 +463,12 @@
                                         <div class="d-flex px-0">
                                             @if (slotContext.Spell is not null && string.IsNullOrEmpty(slotContext.Spell.Name) == false)
                                             {
-                                                <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,true))" Icon="@Icons.Material.Filled.Edit" aria-label="Change spell"></MudIconButton>
-                                                <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>DeleteSpell(slotContext))" Icon="@Icons.Material.Filled.Delete" aria-label="Delete spell"></MudIconButton>
+                                                <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,true))" Icon="@Icons.Material.Filled.Edit" aria-label="Zmień zaklęcie"></MudIconButton>
+                                                <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>DeleteSpell(slotContext))" Icon="@Icons.Material.Filled.Delete" aria-label="Usuń zaklęcie"></MudIconButton>
                                             }
                                             else
                                             {
-                                                <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,false))" Icon="@Icons.Material.Filled.Add" aria-label="Add new spell"></MudIconButton>
+                                                <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,false))" Icon="@Icons.Material.Filled.Add" aria-label="Dodaj nowe zaklęcie"></MudIconButton>
                                             }
                                         </div>
                                     </MudTd>
@@ -625,7 +625,7 @@
         catch (Exception ex)
         {
             IsLoading = false;
-            await _jsruntime.ToastrError("Error while initialize: " + ex.ToString());
+            await _jsruntime.ToastrError("Błąd podczas inicjalizacji: " + ex.ToString());
         }
     }
 
@@ -700,7 +700,7 @@
             AllParams.Character = await _characterRepository.GetById(Id);
             if (AllParams.Character is null)
             {
-                ErrorMessage = "Character not found.";
+                ErrorMessage = "Nie znaleziono postaci.";
                 return false;
             }
 
@@ -721,7 +721,7 @@
 
             if (string.IsNullOrEmpty(ProfessionDTO.RelatedAttributeName))
             {
-                ErrorMessage = "No related class attribute.";
+                ErrorMessage = "Brak powiązanego atrybutu profesji.";
                 return false;
             }
 
@@ -733,7 +733,7 @@
         }
         catch(Exception ex)
         {
-            ErrorMessage = "Error while initialize: " + ex.Message;
+            ErrorMessage = "Błąd podczas inicjalizacji: " + ex.Message;
             await _jsruntime.ToastrError(ErrorMessage);
             return false;
         }
@@ -747,11 +747,11 @@
             StateHasChanged();
             if (string.IsNullOrEmpty(ProfessionDTO.Name) || string.IsNullOrEmpty(ProfessionDTO.Description))
             {
-                throw new WarningException("Create name and description of class");
+                throw new WarningException("Utwórz nazwę i opis profesji");
             }
             if (string.IsNullOrEmpty(ProfessionDTO.RelatedAttributeName))
             {
-                throw new WarningException("Choose class related attribute");
+                throw new WarningException("Wybierz atrybut powiązany z profesją");
             }
 
             ProfessionDTO.SpellCircles = SpellCircles;
@@ -795,7 +795,7 @@
         catch (Exception ex)
         {
             IsLoading = false;
-            await _jsruntime.ToastrError("Error while initialize: " + ex.ToString());
+            await _jsruntime.ToastrError("Błąd podczas inicjalizacji: " + ex.ToString());
         }
     }
 
@@ -812,7 +812,7 @@
                                                                             { x => x.IsActiveSkill, skill.IsActiveSkill },
                                                                             { x => x.AllParams, AllParams } };
 
-        var dialog = await DialogService.ShowAsync<CreateProfessionSkillDialog>("Edit " + skill.TraitLabel, parameters, await SetDialogOptions());
+        var dialog = await DialogService.ShowAsync<CreateProfessionSkillDialog>("Edytuj " + skill.TraitLabel, parameters, await SetDialogOptions());
         var result = await dialog.Result;
 
         if (!result.Canceled)
@@ -850,23 +850,23 @@
         catch (Exception ex)
         {
             IsLoading = false;
-            await _jsruntime.ToastrError("Error while initialize: " + ex.ToString());
+            await _jsruntime.ToastrError("Błąd podczas inicjalizacji: " + ex.ToString());
         }
     }
 
     private async Task Rest()
     {
         bool? result = await DialogService.ShowMessageBoxAsync(
-            "Warning",
-            "Are you sure you want to rest?",
-            yesText: "Yes", cancelText: "No");
+            "Uwaga",
+            "Czy na pewno chcesz odpocząć?",
+            yesText: "Tak", cancelText: "Nie");
         if(result is null || result == false){
             return;
         }
 
         ProfessionDTO.Rest(AllParams);
         IsLeaveAllowed = false;
-        await _jsruntime.ToastrSuccess("Character rested");
+        await _jsruntime.ToastrSuccess("Postać odpoczęła");
         StateHasChanged();
     }
 
@@ -887,7 +887,7 @@
             spell.IsApproved = spellSlot.Spell.IsApproved;
         }
         var parameters = new DialogParameters<SpellDialog> { { x => x.Spell, spell }, { x => x.IsEdit, isEdit } };
-        var dialog = await DialogService.ShowAsync<SpellDialog>("Edit spell", parameters);
+        var dialog = await DialogService.ShowAsync<SpellDialog>("Edytuj zaklęcie", parameters);
         var result = await dialog.Result;
 
         if (!result.Canceled)
@@ -993,7 +993,7 @@
     {
         if (string.IsNullOrEmpty(skill.Name))
         {
-            await _jsruntime.ToastrWarning("Define skill first");
+            await _jsruntime.ToastrWarning("Najpierw zdefiniuj umiejętność");
             return;
         }
 

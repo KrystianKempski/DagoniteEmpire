@@ -10,7 +10,7 @@
 @inject IDialogService DialogService
 @inject IBrowserViewportService _vieportService
 @implements IDisposable
-<PageTitle>Dagonie Empire | Character list</PageTitle>
+<PageTitle>Dagonie Empire | Lista postaci</PageTitle>
 @if (IsLoading)
 {
         <LoadingPage></LoadingPage>
@@ -32,12 +32,12 @@ else
                 <MudStack Row="true" Spacing="2" Class="mb-2">
                     @if (Characters.Count() < 6 || UserInfo?.IsAdminOrMG == true)
                     {
-                        <MudButton Class="pa-2 justify-content-start w-auto" StartIcon="@Icons.Material.Filled.Add" ButtonType="MudBlazor.ButtonType.Button" Disabled="false" OnClick="@(() => _navigationManager.NavigateTo("/character/create/"))">Add Character</MudButton>
+                        <MudButton Class="pa-2 justify-content-start w-auto" StartIcon="@Icons.Material.Filled.Add" ButtonType="MudBlazor.ButtonType.Button" Disabled="false" OnClick="@(() => _navigationManager.NavigateTo("/character/create/"))">Dodaj postać</MudButton>
                     }
                     else
                     {
-                        <MudTooltip Text="Maximum 6 characters allowed">
-                            <MudButton Class="pa-2 justify-content-start w-auto" StartIcon="@Icons.Material.Filled.Add" ButtonType="MudBlazor.ButtonType.Button" Disabled="true">Add Character</MudButton>
+                        <MudTooltip Text="Maksymalnie 6 postaci">
+                            <MudButton Class="pa-2 justify-content-start w-auto" StartIcon="@Icons.Material.Filled.Add" ButtonType="MudBlazor.ButtonType.Button" Disabled="true">Dodaj postać</MudButton>
                         </MudTooltip>
                     }
                 </MudStack>
@@ -85,7 +85,7 @@ else
     private IEnumerable<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
     private IEnumerable<CharacterDTO> ApprovedCharacters { get; set; } = new List<CharacterDTO>();
     public bool IsLoading { get; set; } = true;
-    private string Title { get; set; } = "Your characters";
+    private string Title { get; set; } = "Twoje postacie";
 
     public UserInfo? UserInfo { get; set; }
 
@@ -109,7 +109,7 @@ else
         }catch(Exception ex)
         {
             IsLoading = false;
-            await _jsRuntime.ToastrError("Error while initialize: " + ex.ToString());
+            await _jsRuntime.ToastrError("Błąd podczas inicjalizacji: " + ex.ToString());
         }
     }
 
@@ -135,20 +135,20 @@ else
             if (UserInfo is null)
             {
                 IsLoading = false;
-                await _jsRuntime.ToastrError("Error while initialize user info");
+                await _jsRuntime.ToastrError("Błąd podczas inicjalizacji informacji o użytkowniku");
             }
         }
 
         if (UserInfo is not null && UserInfo?.IsAdminOrMG == true)
         {
 
-            Title = "All avalible characters";
+            Title = "Wszystkie dostępne postacie";
             Characters = await _characterRepository.GetAll();
             ApprovedCharacters = await _characterRepository.GetAllApproved();
         }
         else
         {
-            Title = "Characters of " + UserInfo?.UserName;
+            Title = "Postacie użytkownika " + UserInfo?.UserName;
             Characters = await _characterRepository.GetAllForUser(UserInfo?.UserName);
             ApprovedCharacters = await _characterRepository.GetAllApproved(UserInfo?.UserName);
         }
@@ -158,10 +158,10 @@ else
     {
         var character = Characters.FirstOrDefault(c => c.Id == id);
         bool? result = await DialogService.ShowMessageBoxAsync(
-            "Delete Character",
-            $"Are you sure you want to delete {character?.NPCName ?? "this character"}?",
-            yesText: "Delete",
-            cancelText: "Cancel");
+            "Usuń postać",
+            $"Czy na pewno usunąć {character?.NPCName ?? "tę postać"}?",
+            yesText: "Usuń",
+            cancelText: "Anuluj");
         
         if (result == true)
         {

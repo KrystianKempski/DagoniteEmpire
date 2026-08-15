@@ -3,7 +3,7 @@
     <InputSelect disabled="@Disabled" class="form-select p-1" ValueExpression="@(()=>SelectedGearName)"
                  Value="@SelectedGearName"
             ValueChanged="@((string value) => ChangeGear(value))">
-        <option value="Empty">Empty</option>
+        <option value="Empty">Puste</option>
         @foreach (var eq in AllGearsOfType)
         {
             <option value="@eq.Equipment.Name"> @eq.Equipment.Name</option>
@@ -99,7 +99,7 @@
         }
         catch (Exception ex)
         {
-            snackbar.Add("Error while reloading gear: " + ex.Message,Severity.Error);
+            snackbar.Add("Błąd podczas przeładowania ekwipunku: " + ex.Message,Severity.Error);
 
         }
     }
@@ -134,7 +134,7 @@
         }
         catch (Exception ex)
         {
-            snackbar.Add("Error while changing gear: " + ex.Message,Severity.Error);
+            snackbar.Add("Błąd podczas zmiany ekwipunku: " + ex.Message,Severity.Error);
            
         }
     }

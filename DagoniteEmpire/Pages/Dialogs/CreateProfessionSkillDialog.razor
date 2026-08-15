@@ -15,14 +15,14 @@
         <div class="main-table">
             <div class="d-flex ">
                 <div class="d-flex flex-column flex-grow-1">
-                <label class="fw-bold py-1">Profession skill name</label>
-                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Placeholder="Talent name" @bind-Value="@NewTrait.Name"></MudTextField>
+                <label class="fw-bold py-1">Nazwa umiejętności profesji</label>
+                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Placeholder="Nazwa talentu" @bind-Value="@NewTrait.Name"></MudTextField>
                 </div>
 
                 @if (UserInfo?.IsAdminOrMG == true)
                 {
                 <div class="d-flex flex-column px-1">
-                    <label class="fw-bold py-1">Approve</label>
+                    <label class="fw-bold py-1">Zatwierdź</label>
                     <div class="justify-content-center mx-auto my-auto">
                     <MudCheckBox T="bool"  @bind-Value="NewTrait.TraitApproved"></MudCheckBox>
                     </div>
@@ -30,32 +30,32 @@
                 }
             </div>
             <div class="align-items-start bonus-name py-0">
-                <label class="fw-bold  py-1">Profession skill description</label>
+                <label class="fw-bold  py-1">Opis umiejętności profesji</label>
             </div>
             <div class="align-items-start">
                 <div class="col-12 bonus-name py-0">
-                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Lines="3" Placeholder="Insert general trait description" @bind-Value="@NewTrait.Descr"></MudTextField>
+                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Lines="3" Placeholder="Wpisz ogólny opis cechy" @bind-Value="@NewTrait.Descr"></MudTextField>
                 </div>
             </div>
            
                         
-            <label class="fw-bold pt-4">Bonuses and penalties</label>
+            <label class="fw-bold pt-4">Premie i kary</label>
 
             @if (NewTrait.Bonuses != null)
             {
                 @foreach (var obj in NewTrait.Bonuses)
                 {
-                    <label class="bonus-cell">Bonus @obj.Index</label>
+                    <label class="bonus-cell">Premia @obj.Index</label>
                     <div class="bonuses-columns">
                             <div class="bonus-cell">
-                            <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select a feature type" @bind-Value="@obj.FeatureType" Variant="Variant.Outlined" Margin="Margin.Dense">
+                            <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Wybierz typ właściwości" @bind-Value="@obj.FeatureType" Variant="Variant.Outlined" Margin="Margin.Dense">
                                 @foreach (var __ft in FeatureData) { <MudSelectItem Value="@__ft">@__ft</MudSelectItem> }
                             </MudSelect>
                             </div>
                         @if (obj.FeatureType == SD.FeatureAttribute)
                         {
                             <div class="bonus-cell">
-                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select an Attribute " @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Wybierz atrybut " @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense">
                                     @foreach (var __a in AllParams.Attributes.GetAllArray()) { <MudSelectItem Value="@__a.Name">@__a.Name</MudSelectItem> }
                                 </MudSelect>
                             </div>
@@ -63,7 +63,7 @@
                         else if (obj.FeatureType == SD.FeatureBaseSkill)
                         {
                             <div class="bonus-cell">
-                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select base skill " @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Wybierz umiejętność bazową " @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense">
                                     @foreach (var __b in AllParams.BaseSkills) { <MudSelectItem Value="@__b.Name">@__b.Name</MudSelectItem> }
                                 </MudSelect>
                             </div>
@@ -71,7 +71,7 @@
                         else if (obj.FeatureType == SD.FeatureSpecialSkill)
                         {
                             <div class="bonus-cell">
-                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select special skill " @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Wybierz umiejętność specjalną " @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense">
                                     @foreach (var __s in AllParams.SpecialSkills.GetAllArray()) { <MudSelectItem Value="@__s.Name">@__s.Name</MudSelectItem> }
                                 </MudSelect>
                             </div>
@@ -79,7 +79,7 @@
                         else if (obj.FeatureType == SD.FeatureWeaponQuality)
                         {
                             <div class="bonus-cell">
-                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select weapon quality" @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Wybierz cechę broni" @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense">
                                     @foreach (var __w in WeaponQualityList) { <MudSelectItem Value="@__w">@__w</MudSelectItem> }
                                 </MudSelect>
                             </div>
@@ -87,7 +87,7 @@
                         else if(obj.FeatureType == SD.FeatureOther)
                         {
                             <div class="bonus-double-cell">
-                                <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Lines="3" Placeholder="Insert bonus description" @bind-Value="@obj.Description"></MudTextField>
+                                <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Lines="3" Placeholder="Wpisz opis premii" @bind-Value="@obj.Description"></MudTextField>
 
                             </div>
                         }
@@ -130,28 +130,28 @@
                     <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Placeholder="DC" @bind-Value="@NewTrait.DC"></MudNumericField>
                 </div>
                 <div class="d-flex flex-column me-4">
-                    <label class="fw-bold py-1">Cost</label>
-                    <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Placeholder="Cost" @bind-Value="@NewTrait.Cost"></MudNumericField>
+                    <label class="fw-bold py-1">Koszt</label>
+                    <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Placeholder="Koszt" @bind-Value="@NewTrait.Cost"></MudNumericField>
                 </div>
                 <div class="d-flex flex-column me-4">
-                    <label class="fw-bold py-1">Range</label>
-                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Placeholder="Range" @bind-Value="@NewTrait.Range"></MudTextField>
+                    <label class="fw-bold py-1">Zasięg</label>
+                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Placeholder="Zasięg" @bind-Value="@NewTrait.Range"></MudTextField>
                 </div>
             </div>
         }
         else
         {           
             <div class="d-flex py-2">
-                <MudButton Class="me-4" Variant="Variant.Filled" OnClick="SelectExistingSkill">Select existing talent</MudButton>
-                <MudButton Variant="Variant.Filled" OnClick="ClearSkill">Clear skill</MudButton>
+                <MudButton Class="me-4" Variant="Variant.Filled" OnClick="SelectExistingSkill">Wybierz istniejący talent</MudButton>
+                <MudButton Variant="Variant.Filled" OnClick="ClearSkill">Wyczyść umiejętność</MudButton>
             </div>
         }
 
     </DialogContent>
     <DialogActions>
 
-        <MudButton OnClick="OnCancelBtnClick">Cancel</MudButton>
-        <MudButton Color="Color.Error" OnClick="OnSaveTraitBtnClick">Save</MudButton>
+        <MudButton OnClick="OnCancelBtnClick">Anuluj</MudButton>
+        <MudButton Color="Color.Error" OnClick="OnSaveTraitBtnClick">Zapisz</MudButton>
 
     </DialogActions>
 </MudDialog>
@@ -176,7 +176,7 @@
 
     public UserInfo? UserInfo { get; set; }
     public string TraitType { get; set; } = SD.TraitType_Profession;
-    private string HeaderName = "Modify talent";
+    private string HeaderName = "Modyfikuj talent";
 
     List<string> WeaponQualityList = new List<string> {
         SD.WeaponQuality.Fast,
@@ -217,12 +217,12 @@
     {
         if (string.IsNullOrEmpty(NewTrait.Name) || string.IsNullOrEmpty(NewTrait.Descr))
         {
-            ErrorMessage = $"Create name and description of trait";
+            ErrorMessage = $"Utwórz nazwę i opis cechy";
             return;
         }
         if (IsEditMode == false && AllParams.TraitsProfession.Where(t => t.Name == NewTrait.Name).Count() > 0)
         {
-            ErrorMessage = $"That trait name already exists";
+            ErrorMessage = $"Cecha o tej nazwie już istnieje";
             return;
         }
 
@@ -230,13 +230,13 @@
         {
             if (bonus.BonusValue == 0 && bonus.Description == string.Empty)
             {
-                ErrorMessage = $"Please fill all input fiels in bonus";
+                ErrorMessage = $"Wypełnij wszystkie pola w premii";
                 return;
             }
         }
         if (!NewTrait.Bonuses.GroupBy(x => x.FeatureName).All(g => g.Count() == 1))
         {
-            ErrorMessage = $"Bonuses cannot relate to the same feature more than once";
+            ErrorMessage = $"Premie nie mogą dotyczyć tej samej właściwości więcej niż raz";
             return;
         }
 
@@ -245,9 +245,9 @@
         MudDialog.Close(DialogResult.Ok(NewTrait));
         string text = "";
         if (NewTrait.IsActiveSkill)
-            text = "Active skill modified";
+            text = "Aktywna umiejętność zmodyfikowana";
         else
-            text = "Passive skill modified";
+            text = "Pasywna umiejętność zmodyfikowana";
         Snackbar.Add(text, Severity.Success);
     }
     private void OnCancelBtnClick()
@@ -270,14 +270,14 @@
 
         if (TraitType == SD.TraitType_Profession)
         {
-            HeaderName = "Edit profession skill";
+            HeaderName = "Edytuj umiejętność profesji";
         }
         else
         {
             if (IsEditMode)
-                HeaderName = "Edit trait";
+                HeaderName = "Edytuj cechę";
             else
-                HeaderName = "Create a new trait";
+                HeaderName = "Utwórz nową cechę";
         }
     }
 
@@ -310,7 +310,7 @@
                                                                    { x => x.MultiRowSelection, false },
                                                                    { x => x.AllParams, AllParams }};
 
-        var dialog = await DialogService.ShowAsync<ExistingTraitDialog>("Select " + NewTrait.TraitLabel, parameters, await SetDialogOptions());
+        var dialog = await DialogService.ShowAsync<ExistingTraitDialog>("Wybierz " + NewTrait.TraitLabel, parameters, await SetDialogOptions());
         var result = await dialog.Result;
 
         if (!result.Canceled)

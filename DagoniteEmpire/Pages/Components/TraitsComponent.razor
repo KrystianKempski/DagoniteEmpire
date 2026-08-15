@@ -7,19 +7,19 @@
     <table class="table align-middle">
         <thead>
             <tr>
-                <th scope="col" class="name-row">Name</th>
-                <th scope="col" class="description-row">Description</th>
+                <th scope="col" class="name-row">Nazwa</th>
+                <th scope="col" class="description-row">Opis</th>
                 @if (TraitType == SD.TraitType_Character)
                 {
-                    <th scope="col" class="trait-value-row text-center">Value</th>
+                    <th scope="col" class="trait-value-row text-center">Wartość</th>
                 }
                 @if (TraitType == SD.TraitType_Temporary)
                 {
-                    <th scope="col" class="trait-value-row text-center">Duration</th>
+                    <th scope="col" class="trait-value-row text-center">Czas trwania</th>
                 }
                 @if (IsInfoMode == false)
                 {                      
-                    <th scope="col" class="action-row text-center">Actions</th>
+                    <th scope="col" class="action-row text-center">Akcje</th>
                 }
             </tr>
         </thead>
@@ -67,7 +67,7 @@
 
             @if (TraitType == SD.TraitType_Character && (UserInfo?.IsAdminOrMG == true  || AllParams?.Character.IsApproved == false))
             {
-                <label class="balance">Traits balance: @AllParams?.Character.TraitBalance </label>
+                <label class="balance">Bilans cech: @AllParams?.Character.TraitBalance </label>
             }
 
             @if (IsInfoMode == false && (  UserInfo?.IsAdminOrMG == true || AllParams?.Character.IsApproved == false || TraitType != SD.TraitType_Character))
@@ -75,16 +75,16 @@
                 <div class="buttons-row">
                     @if (ShowFromTemplate)
                     {
-                        <button @onclick="OnFromTemplateClick" class="add-trait">From Template</button>
+                        <button @onclick="OnFromTemplateClick" class="add-trait">Z szablonu</button>
                     }
-                    <button @onclick="@(()=>AddCustomTrait())" class="add-trait">Add @TraitName</button>
+                    <button @onclick="@(()=>AddCustomTrait())" class="add-trait">Dodaj @TraitName</button>
                     @if (TraitType == SD.TraitType_Gear && WeaponQualityAvalible)
                     {
-                        <button @onclick="@(()=>AddWeaponQualities())" class="add-trait">Add weapon qualities</button>
+                        <button @onclick="@(()=>AddWeaponQualities())" class="add-trait">Dodaj cechy broni</button>
                     }
                     @if (TraitType != SD.TraitType_Gear)
                     {                    
-                        <button @onclick="@(()=>AddExistingTrait())" class="add-trait">Existing @TraitName </button>
+                        <button @onclick="@(()=>AddExistingTrait())" class="add-trait">Istniejące @TraitName </button>
                     }
                 </div>
             }
@@ -143,7 +143,7 @@
                                                                     { x => x.AllParams, AllParams } };
 
 
-        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Add " + NewTrait.TraitLabel, parameters, await SetDialogOptions());
+        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Dodaj " + NewTrait.TraitLabel, parameters, await SetDialogOptions());
         var result = await dialog.Result;
 
         if (!result.Canceled)
@@ -162,7 +162,7 @@
                                                                     { x => x.IsWeaponQualityMode, true }, 
                                                                     { x => x.AllParams, AllParams } };
 
-        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Add weapon quality", parameters, await SetDialogOptions());
+        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Dodaj cechę broni", parameters, await SetDialogOptions());
         var result = await dialog.Result;
 
         if (!result.Canceled)
@@ -181,7 +181,7 @@
                                                                    { x => x.TraitType, TraitType },
                                                                    { x => x.AllParams, AllParams }};
 
-        var dialog = await DialogService.ShowAsync<ExistingTraitDialog>("Select " + NewTrait.TraitLabel, parameters, await SetDialogOptions());
+        var dialog = await DialogService.ShowAsync<ExistingTraitDialog>("Wybierz " + NewTrait.TraitLabel, parameters, await SetDialogOptions());
         var result = await dialog.Result;
 
         if (!result.Canceled)
@@ -217,7 +217,7 @@
                                                                    { x => x.IsWeaponQualityMode, IsWeaponQualityMode },
                                                                    { x => x.IsInfoMode, IsInfoMode }};
 
-        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Edit " + TraitName, parameters);
+        var dialog = await DialogService.ShowAsync<CreateTraitDialog>("Edytuj " + TraitName, parameters);
         var result = await dialog.Result;
 
         if (!result.Canceled)

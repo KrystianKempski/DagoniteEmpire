@@ -4,23 +4,23 @@
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
-            Choose human attribute and skills bonus
+            Wybierz bonus do atrybutu i umiejętności człowieka
         </MudText>
     </TitleContent>
     <DialogContent>
-        <MudSelect @bind-Value="HumanRaceBonuses.AttributeNameBonus" Margin="Margin.Dense" T="string" Label="Attribute" Variant="Variant.Filled">
+        <MudSelect @bind-Value="HumanRaceBonuses.AttributeNameBonus" Margin="Margin.Dense" T="string" Label="Atrybut" Variant="Variant.Filled">
             @foreach (var attr in SD.Attributes.All)
             {
                 <MudSelectItem Value="@(attr)" />
             }
         </MudSelect>
-        <MudSelect @bind-Value="HumanRaceBonuses.FirstSkillNameBonus" Margin="Margin.Dense" T="string" Label="Base skill 1" Variant="Variant.Filled">
+        <MudSelect @bind-Value="HumanRaceBonuses.FirstSkillNameBonus" Margin="Margin.Dense" T="string" Label="Umiejętność bazowa 1" Variant="Variant.Filled">
             @foreach (var bs in SD.BaseSkills.All)
             {
                 <MudSelectItem Value="@(bs)" />
             }
         </MudSelect>
-        <MudSelect @bind-Value="HumanRaceBonuses.SecondSkillNameBonus" Margin="Margin.Dense" T="string" Label="Base skill 2" Variant="Variant.Filled">
+        <MudSelect @bind-Value="HumanRaceBonuses.SecondSkillNameBonus" Margin="Margin.Dense" T="string" Label="Umiejętność bazowa 2" Variant="Variant.Filled">
             @foreach (var bs in SD.BaseSkills.All)
             {
                 <MudSelectItem Value="@(bs)" />
@@ -28,8 +28,8 @@
         </MudSelect>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Error" OnClick="ChooseBonuses">Choose</MudButton>
+        <MudButton OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Color="Color.Error" OnClick="ChooseBonuses">Wybierz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -53,26 +53,26 @@
     {
         if (string.IsNullOrEmpty(HumanRaceBonuses.AttributeNameBonus))
         {
-            Snackbar.Add("Choose attribute bonus", Severity.Warning);
+            Snackbar.Add("Wybierz bonus do atrybutu", Severity.Warning);
             return;
         }
         if (string.IsNullOrEmpty(HumanRaceBonuses.FirstSkillNameBonus))
         {
-            Snackbar.Add("Choose first skill bonus", Severity.Warning);
+            Snackbar.Add("Wybierz bonus do pierwszej umiejętności", Severity.Warning);
             return;
         }
         if (string.IsNullOrEmpty(HumanRaceBonuses.SecondSkillNameBonus))
         {
-            Snackbar.Add("Choose second skill bonus", Severity.Warning);
+            Snackbar.Add("Wybierz bonus do drugiej umiejętności", Severity.Warning);
             return;
         }
         if (HumanRaceBonuses.SecondSkillNameBonus == HumanRaceBonuses.FirstSkillNameBonus)
         {
-            Snackbar.Add("Base skill bonuses cannot be the same", Severity.Warning);
+            Snackbar.Add("Bonusy do umiejętności bazowych nie mogą być takie same", Severity.Warning);
             return;
         }
         MudDialog.Close(DialogResult.Ok(HumanRaceBonuses));
 
-        Snackbar.Add("Bonuses added", Severity.Success);
+        Snackbar.Add("Bonusy dodane", Severity.Success);
     }
 }

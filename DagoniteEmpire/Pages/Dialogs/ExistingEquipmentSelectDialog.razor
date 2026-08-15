@@ -8,7 +8,7 @@
             @HeaderName
         </MudText>
         <MudSpacer />
-        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+        <MudTextField @bind-Value="_searchString" Placeholder="Szukaj" Adornment="Adornment.Start" Immediate="true"
                       AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
     </TitleContent>
     <DialogContent>
@@ -20,14 +20,14 @@
                     <Columns>
                         <SelectColumn T="EquipmentDTO" />
                         <PropertyColumn Filterable="false" Property="x => x.Name" />
-                        <PropertyColumn Property="x => x.EquipmentType" Title="Type">
+                        <PropertyColumn Property="x => x.EquipmentType" Title="Typ">
                             <FilterTemplate>
                                 <MudIconButton OnClick="@OpenFilter" Icon="@_icon" Size="@Size.Small" />
                                 <MudOverlay Visible="@_filterOpen" OnClick="@(() => _filterOpen = false)" />
                                 <MudPopover Open="@_filterOpen" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopCenter"
                                     Style="width:150px">
                                    <MudStack Spacing="0">
-                                       <MudCheckBox T="bool" Label="Select All" Size="@Size.Small" Value="@_selectAll" ValueChanged="@SelectAll" />
+                                       <MudCheckBox T="bool" Label="Zaznacz wszystkie" Size="@Size.Small" Value="@_selectAll" ValueChanged="@SelectAll" />
                                        <MudStack Spacing="0" Style="overflow-y:auto;max-height:250px">
                                             @foreach (var item in SD.EquipmentType.All)
                                            {
@@ -36,14 +36,14 @@
                                            }
                                        </MudStack>
                                        <MudStack Row="true">
-                                            <MudButton OnClick="@(() => ClearFilterAsync(context))">Clear</MudButton>
-                                            <MudButton Color="@Color.Primary" OnClick="@(() => ApplyFilterAsync(context))">Filter</MudButton>
+                                            <MudButton OnClick="@(() => ClearFilterAsync(context))">Wyczyść</MudButton>
+                                            <MudButton Color="@Color.Primary" OnClick="@(() => ApplyFilterAsync(context))">Filtruj</MudButton>
                                        </MudStack>
                                    </MudStack>
                                 </MudPopover>
                             </FilterTemplate>
                         </PropertyColumn>
-                    <PropertyColumn Filterable="false" Property="x => x.Description" Title="Description" />
+                    <PropertyColumn Filterable="false" Property="x => x.Description" Title="Opis" />
                     </Columns>
                 </MudDataGrid>
             </MudHidden>
@@ -55,14 +55,14 @@
                         <SelectColumn T="EquipmentDTO" />
                         <HierarchyColumn T="EquipmentDTO" />
                         <PropertyColumn Filterable="false" Property="x => x.Name"  />
-                        <PropertyColumn Property="x => x.EquipmentType" Title="Type">
+                        <PropertyColumn Property="x => x.EquipmentType" Title="Typ">
                             <FilterTemplate>
                                 <MudIconButton OnClick="@OpenFilter" Icon="@_icon" Size="@Size.Small" />
                                 <MudOverlay Visible="@_filterOpen" OnClick="@(() => _filterOpen = false)" />
                                 <MudPopover Open="@_filterOpen" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopCenter"
                                     Style="width:150px">
                                    <MudStack Spacing="0">
-                                       <MudCheckBox T="bool" Label="Select All" Size="@Size.Small" Value="@_selectAll" ValueChanged="@SelectAll" />
+                                       <MudCheckBox T="bool" Label="Zaznacz wszystkie" Size="@Size.Small" Value="@_selectAll" ValueChanged="@SelectAll" />
                                        <MudStack Spacing="0" Style="overflow-y:auto;max-height:250px">
                                             @foreach (var item in SD.EquipmentType.All)
                                             {
@@ -71,8 +71,8 @@
                                             }
                                        </MudStack>
                                        <MudStack Row="true">
-                                            <MudButton OnClick="@(() => ClearFilterAsync(context))">Clear</MudButton>
-                                            <MudButton Color="@Color.Primary" OnClick="@(() => ApplyFilterAsync(context))">Filter</MudButton>
+                                            <MudButton OnClick="@(() => ClearFilterAsync(context))">Wyczyść</MudButton>
+                                            <MudButton Color="@Color.Primary" OnClick="@(() => ApplyFilterAsync(context))">Filtruj</MudButton>
                                        </MudStack>
                                    </MudStack>
                                 </MudPopover>
@@ -86,8 +86,8 @@
             </MudHidden>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="OnCancelBtnClick">Cancel</MudButton>
-        <MudButton Color="Color.Error" OnClick="OnSaveTraitBtnClick">Save</MudButton>
+        <MudButton OnClick="OnCancelBtnClick">Anuluj</MudButton>
+        <MudButton Color="Color.Error" OnClick="OnSaveTraitBtnClick">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -97,7 +97,7 @@
     [Parameter] public ICollection<EquipmentSlotDTO> SelectedEquipment { get; set; } = new List<EquipmentSlotDTO>();
     private ICollection<EquipmentDTO> SelectedItems = new List<EquipmentDTO>();
     private IEnumerable<EquipmentDTO> Equipment { get; set; } = new List<EquipmentDTO>();
-    public string HeaderName { get; set; } = "Select equipment";
+    public string HeaderName { get; set; } = "Wybierz ekwipunek";
 
     HashSet<EquipmentDTO> _selectedItems = new();
     HashSet<EquipmentDTO> _filterItems = new();
@@ -115,7 +115,7 @@
 
         MudDialog.Close(DialogResult.Ok(SelectedEquipment));
         if (SelectedEquipment.Any())
-            Snackbar.Add("Equipment selected", Severity.Success);
+            Snackbar.Add("Ekwipunek wybrany", Severity.Success);
 
     }
     private void OnCancelBtnClick()

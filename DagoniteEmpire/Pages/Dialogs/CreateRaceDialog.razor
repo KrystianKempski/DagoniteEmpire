@@ -7,7 +7,7 @@
     <TitleContent>
         <MudText Typo="Typo.h6">
             <img src="@MyIcon.Goblin" width="40px" height="40px" class="pr-2" />
-             Create new Race
+             Utwórz nową rasę
         </MudText>
     </TitleContent>
     <DialogContent>
@@ -16,13 +16,13 @@
 
             <div class="d-flex ">
                 <div class="d-flex flex-column flex-grow-1">
-                    <label class="fw-bold py-1">Race name</label>
-                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Insert race name" @bind-Value="@NewRace.Name"></MudTextField>
+                    <label class="fw-bold py-1">Nazwa rasy</label>
+                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Wpisz nazwę rasy" @bind-Value="@NewRace.Name"></MudTextField>
                 </div>
                 @if (UserInfo?.IsAdminOrMG == true)
                 {
                     <div class="d-flex flex-column px-1">
-                        <label class="fw-bold py-1">Approve</label>
+                        <label class="fw-bold py-1">Zatwierdź</label>
                         <div class="justify-content-center mx-auto my-auto">
                             <MudCheckBox T="bool" @bind-Value="NewRace.RaceApproved"></MudCheckBox>
                         </div>
@@ -30,12 +30,12 @@
                 }
             </div>
             <div class="d-flex flex-column flex-grow-1">
-                <label class="fw-bold  p-1">Race description</label>
+                <label class="fw-bold  p-1">Opis rasy</label>
                  <MudTextField @bind-Value="@NewRace.Description" Lines="8"></MudTextField>
             </div>
 
 
-            <label class="fw-bold pt-4">Bonuses and penalties</label>
+            <label class="fw-bold pt-4">Premie i kary</label>
             @if (NewRace.Traits != null)
             {
                 <div class="traits">
@@ -51,8 +51,8 @@
 
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Error" OnClick="OnSaveRaceBtnClick">Save</MudButton>
+        <MudButton OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Color="Color.Error" OnClick="OnSaveRaceBtnClick">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -74,12 +74,12 @@
     {
         if (Traits == null || Traits.Count() == 0)
         {
-            ErrorMessage = $"There must be at least one trait in race";
+            ErrorMessage = $"W rasie musi być co najmniej jedna cecha";
             return;
         }
         if (string.IsNullOrEmpty(NewRace.Name) || string.IsNullOrEmpty(NewRace.Description))
         {
-            ErrorMessage = $"Create name and description of race";
+            ErrorMessage = $"Utwórz nazwę i opis rasy";
             return;
         }
         if (NewRace != null)
@@ -100,9 +100,9 @@
 
         MudDialog.Close(DialogResult.Ok(NewRace));
         if (IsEdit)
-            Snackbar.Add("Wound edited", Severity.Success);
+            Snackbar.Add("Rana zedytowana", Severity.Success);
         else
-            Snackbar.Add("Wound created", Severity.Success);
+            Snackbar.Add("Rana utworzona", Severity.Success);
     }
 
     private void Cancel()

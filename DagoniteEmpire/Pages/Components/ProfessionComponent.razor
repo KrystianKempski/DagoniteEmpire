@@ -9,7 +9,7 @@
     <div class="sheet-img">
        @*  <img src="../images/old_paper2.png" class="stretch" /> *@
     </div>
-    <h3 class="my-3 ml-3 text-center">CLASS</h3>
+    <h3 class="my-3 ml-3 text-center">PROFESJA</h3>
     @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
     {
         <InputText style="width: 100%;font-size: 14px;padding: 2px 2px 2px 2px; margin: 0px; border: 1px solid RGB(206 212 218); border-radius: 4px; background-color:transparent;"
@@ -23,10 +23,10 @@
     <table class="table align-middle">
         <thead>
             <tr>
-                <th scope="col" class="name-row">Level</th>
-                <th scope="col" class="name-row">Attribute</th>
-                <th scope="col" class="name-row">Roll</th>
-                <th scope="col" class="name-row">Focus</th>
+                <th scope="col" class="name-row">Poziom</th>
+                <th scope="col" class="name-row">Atrybut</th>
+                <th scope="col" class="name-row">Rzut</th>
+                <th scope="col" class="name-row">Skupienie</th>
             </tr>
         </thead>
         <tbody>
@@ -48,14 +48,14 @@
         </tbody>
     </table>
 
-    <label class="prof-descr-label">Class description</label>
+    <label class="prof-descr-label">Opis profesji</label>
     <div class="ql-snow ql-content richtext-conteiner" style="border-width:0">
         <div class="ql-editor" style="height:100%; overflow:auto;">
             @((MarkupString)(Profession?.Description ?? string.Empty))
         </div>
     </div>
     <div class="buttons">
-        <button @onclick="@(()=>EditProfession())" class="add-trait">Edit class</button>
+        <button @onclick="@(()=>EditProfession())" class="add-trait">Edytuj profesję</button>
     </div>
 
 
@@ -94,7 +94,7 @@
                 { x => x.AllParams, AllParams }
             };
             var options = new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.ExtraLarge };
-            var dialog = await DialogService.ShowAsync<CreateProfessionDialog>("Specify class", parameters, options);
+            var dialog = await DialogService.ShowAsync<CreateProfessionDialog>("Określ profesję", parameters, options);
             var result = await dialog.Result;
             if (result?.Data is not null && !result.Canceled)
             {
@@ -114,7 +114,7 @@
         {
             if (string.IsNullOrEmpty(Profession.Name))
             {
-                ProfessionName = "Class name";
+                ProfessionName = "Nazwa profesji";
             }
             else
             {

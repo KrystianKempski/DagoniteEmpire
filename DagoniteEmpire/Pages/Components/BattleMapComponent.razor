@@ -17,19 +17,19 @@ else
             <MudPaper Class="battle-map-toolbar pa-2 mb-2" Elevation="1">
                 <MudStack Spacing="2">
                     <MudToggleGroup T="string" @bind-Value="_tool" @bind-Value:after="OnToolChanged" Color="Color.Primary" Size="Size.Small" SelectionMode="SelectionMode.SingleSelection" CheckMark="false">
-                        <MudToggleItem Value="@("tiles")" Text="Tiles" />
-                        <MudToggleItem Value="@("text")" Text="Text" />
-                        <MudToggleItem Value="@("token")" Text="Token" />
-                        <MudToggleItem Value="@("erase")" Text="Eraser" />
+                        <MudToggleItem Value="@("tiles")" Text="Kafelki" />
+                        <MudToggleItem Value="@("text")" Text="Tekst" />
+                        <MudToggleItem Value="@("token")" Text="Żeton" />
+                        <MudToggleItem Value="@("erase")" Text="Gumka" />
                     </MudToggleGroup>
 
                     @if (_tool == "tiles")
                     {
                         <MudToggleGroup T="string" @bind-Value="_tileBrush" Color="Color.Primary" Size="Size.Small" SelectionMode="SelectionMode.SingleSelection" CheckMark="false">
-                            <MudToggleItem Value="@("color")" Text="Color" />
-                            <MudToggleItem Value="@("difficult")" Text="Difficult" />
-                            <MudToggleItem Value="@("impassable")" Text="Impassable" />
-                            <MudToggleItem Value="@("normal")" Text="Clear terrain" />
+                            <MudToggleItem Value="@("color")" Text="Kolor" />
+                            <MudToggleItem Value="@("difficult")" Text="Trudny" />
+                            <MudToggleItem Value="@("impassable")" Text="Nieprzebyty" />
+                            <MudToggleItem Value="@("normal")" Text="Czysty teren" />
                         </MudToggleGroup>
 
                         @if (_tileBrush == "color")
@@ -41,10 +41,10 @@ else
                                             class="battle-map-swatch @(swatch == _currentColor ? "selected" : string.Empty)"
                                             style="background:@swatch"
                                             title="@swatch"
-                                            aria-label="@($"Color {swatch}")"
+                                            aria-label="@($"Kolor {swatch}")"
                                             @onclick="@(() => SelectColor(swatch))"></button>
                                 }
-                                <label class="battle-map-custom-color" title="Custom color">
+                                <label class="battle-map-custom-color" title="Własny kolor">
                                     <input type="color"
                                            class="battle-map-color-input"
                                            value="@_currentColor"
@@ -57,7 +57,7 @@ else
                     @if (_tool == "text" && _selectedCell is not null)
                     {
                         <MudTextField T="string"
-                                      Label="@($"Text for cell ({_selectedCell.X + 1}, {_selectedCell.Y + 1})")"
+                                      Label="@($"Tekst dla komórki ({_selectedCell.X + 1}, {_selectedCell.Y + 1})")"
                                       Value="@GetCellText(_selectedCell.X, _selectedCell.Y)"
                                       ValueChanged="@(v => OnCellTextChanged(v))"
                                       Immediate="false"
@@ -70,7 +70,7 @@ else
                         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="flex-wrap">
                             @if (AvailableParticipants.Any())
                             {
-                                <MudSelect T="string" @bind-Value="_newTokenLabel" Label="Participant" Dense="true" Style="max-width:260px" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                <MudSelect T="string" @bind-Value="_newTokenLabel" Label="Uczestnik" Dense="true" Style="max-width:260px" Variant="Variant.Outlined" Margin="Margin.Dense">
                                     @foreach (var participant in AvailableParticipants)
                                     {
                                         <MudSelectItem Value="@participant.Label">
@@ -91,21 +91,21 @@ else
                             }
                             else
                             {
-                                <MudText Typo="Typo.caption">All participants are on the map.</MudText>
+                                <MudText Typo="Typo.caption">Wszyscy uczestnicy są na mapie.</MudText>
                             }
                             <MudButton Variant="Variant.Filled"
                                        Color="Color.Primary"
                                        Size="Size.Small"
                                        StartIcon="@Icons.Material.Filled.AddCircle"
                                        Disabled="@(AvailableParticipants.Any() == false)"
-                                       OnClick="AddToken">Add token</MudButton>
+                                       OnClick="AddToken">Dodaj żeton</MudButton>
                             @if (_selectedTokenId is not null)
                             {
-                                <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" StartIcon="@Icons.Material.Filled.Delete" OnClick="RemoveSelectedToken">Remove token</MudButton>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" StartIcon="@Icons.Material.Filled.Delete" OnClick="RemoveSelectedToken">Usuń żeton</MudButton>
                             }
                         </MudStack>
                         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="flex-wrap">
-                            <MudText Typo="Typo.caption">Size:</MudText>
+                            <MudText Typo="Typo.caption">Rozmiar:</MudText>
                             <MudToggleGroup T="int" Value="_newTokenSize" ValueChanged="OnTokenSizeChanged" Color="Color.Primary" Size="Size.Small" SelectionMode="SelectionMode.SingleSelection" CheckMark="false">
                                 <MudToggleItem Value="1" Text="1×1" />
                                 <MudToggleItem Value="2" Text="2×2" />
@@ -113,21 +113,21 @@ else
                             </MudToggleGroup>
                             @if (_selectedTokenId is null)
                             {
-                                <MudText Typo="Typo.caption" Class="mud-text-secondary">for new tokens</MudText>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">dla nowych żetonów</MudText>
                             }
                         </MudStack>
                     }
 
                     <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3" Class="flex-wrap">
                         <div style="min-width:180px">
-                            <MudText Typo="Typo.caption">Width: @Map.Width</MudText>
+                            <MudText Typo="Typo.caption">Szerokość: @Map.Width</MudText>
                             <MudSlider T="int" Min="5" Max="20" Step="1" Value="Map.Width" ValueChanged="@(v => OnSizeChanged(v, Map.Height))" />
                         </div>
                         <div style="min-width:180px">
-                            <MudText Typo="Typo.caption">Height: @Map.Height</MudText>
+                            <MudText Typo="Typo.caption">Wysokość: @Map.Height</MudText>
                             <MudSlider T="int" Min="5" Max="20" Step="1" Value="Map.Height" ValueChanged="@(v => OnSizeChanged(Map.Width, v))" />
                         </div>
-                        <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" StartIcon="@Icons.Material.Filled.Clear" OnClick="ClearMap">Clear map</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" StartIcon="@Icons.Material.Filled.Clear" OnClick="ClearMap">Wyczyść mapę</MudButton>
                     </MudStack>
                 </MudStack>
             </MudPaper>
@@ -249,15 +249,15 @@ else
         <div class="battle-map-legend">
             <span class="battle-map-legend-item">
                 <span class="battle-map-legend-range"></span>
-                Movement range
+                Zasięg ruchu
             </span>
             <span class="battle-map-legend-item">
                 <MudIcon Icon="@Icons.Material.Filled.Terrain" Class="battle-map-legend-icon difficult" />
-                Difficult terrain (×2 move)
+                Trudny teren (×2 ruch)
             </span>
             <span class="battle-map-legend-item">
                 <MudIcon Icon="@Icons.Material.Filled.Block" Class="battle-map-legend-icon impassable" />
-                Impassable
+                Nieprzebyty
             </span>
         </div>
     </div>
@@ -596,20 +596,20 @@ else
     {
         if (Map is null || string.IsNullOrWhiteSpace(_newTokenLabel))
         {
-            SnackBar.Add("Select a participant from the list", Severity.Warning);
+            SnackBar.Add("Wybierz uczestnika z listy", Severity.Warning);
             return;
         }
 
         var participant = FindParticipant(_newTokenLabel);
         if (participant is null)
         {
-            SnackBar.Add("Select a participant from the list", Severity.Warning);
+            SnackBar.Add("Wybierz uczestnika z listy", Severity.Warning);
             return;
         }
 
         if (IsParticipantOnMap(participant.Label))
         {
-            SnackBar.Add("This participant is already on the map", Severity.Warning);
+            SnackBar.Add("Ten uczestnik jest już na mapie", Severity.Warning);
             SelectNextAvailableParticipant();
             return;
         }
@@ -631,7 +631,7 @@ else
         _selectedTokenId = token.Id;
         if (await SaveAsync())
         {
-            SnackBar.Add("Click a cell to move the selected token.", Severity.Info);
+            SnackBar.Add("Kliknij komórkę, aby przesunąć wybrany żeton.", Severity.Info);
             SelectNextAvailableParticipant();
         }
     }
@@ -733,7 +733,7 @@ else
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error saving battle map");
-            SnackBar.Add("Failed to save map", Severity.Error);
+            SnackBar.Add("Nie udało się zapisać mapy", Severity.Error);
             return false;
         }
     }

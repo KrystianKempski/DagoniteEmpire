@@ -13,7 +13,7 @@
     <TitleContent>
         <MudText Typo="Typo.h6">
             <img src="@MyIcon.Dice" width="40" height="40" />
-            Add temporary status
+            Dodaj tymczasowy status
         </MudText>
     </TitleContent>
     <DialogContent>
@@ -24,7 +24,7 @@
                 <MudPaper Elevation="1" Class="pa-2 h-100">
 
                     @* Select Rolling character *@
-                    <MudSelect Value="@SelectedCharacterName" T="string" Required="true" ValueChanged="SelectCharacter" Label="Select Rolling character">
+                    <MudSelect Value="@SelectedCharacterName" T="string" Required="true" ValueChanged="SelectCharacter" Label="Wybierz postać rzucającą">
                         <MudSelectItem Value="@string.Empty">@string.Empty</MudSelectItem>
                         @foreach(var attacker in CharacterAllParams)
                         {
@@ -42,7 +42,7 @@
                         }
                     </MudSelect>                
                     @* Select state  *@
-                    <MudSelect  T="TraitDTO" Required="true" @bind-Value="@SelectedTrait" Label="Select state">
+                    <MudSelect  T="TraitDTO" Required="true" @bind-Value="@SelectedTrait" Label="Wybierz status">
                         @if (Traits is not null && Traits.Count() > 0)
                         {
                             @foreach (TraitDTO trait in Traits)
@@ -52,14 +52,14 @@
                         }
 
                     </MudSelect>
-                    <MudNumericField Label="Duration" @bind-Value="StateDuration"> @StateDuration</MudNumericField>
+                    <MudNumericField Label="Czas trwania" @bind-Value="StateDuration"> @StateDuration</MudNumericField>
                    </MudPaper>
             </MudItem>
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Exit</MudButton>
-        <MudButton Color="Color.Error" OnClick="AddStateAndExit">Save</MudButton>
+        <MudButton OnClick="Cancel">Wyjdź</MudButton>
+        <MudButton Color="Color.Error" OnClick="AddStateAndExit">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -110,7 +110,7 @@
             }
         }catch(Exception ex)
         {
-            Snackbar.Add("Error while selecting character: " + ex.Message);
+            Snackbar.Add("Błąd podczas wybierania postaci: " + ex.Message);
         }
     }
 
@@ -130,11 +130,11 @@
                 StateDuration,
                 !IsCharacter);
             MudDialog.Close(DialogResult.Ok(snapshot));
-            Snackbar.Add($"{SelectedTrait.Name} added to:{SelectedCharacterName}", Severity.Success);
+            Snackbar.Add($"{SelectedTrait.Name} dodano do: {SelectedCharacterName}", Severity.Success);
         }
         catch(Exception ex)
         {
-            Snackbar.Add("Error while saving: " + ex.Message, Severity.Error);
+            Snackbar.Add("Błąd podczas zapisywania: " + ex.Message, Severity.Error);
         }
     }    
 

@@ -7,7 +7,7 @@
 <div class="portrait">
     <MudPaper Class="w-100 h-100 pa-2">
         <div class="portrait-relative">
-    <h3 class="my-3 ml-3 text-center">PORTRAIT</h3>
+    <h3 class="my-3 ml-3 text-center">PORTRET</h3>
     <div class="portrait-imageframe">
         <img src="@AllParams.Character.ImageUrl" class="portrait-image" />
             @if (!HasPortrait)
@@ -21,18 +21,18 @@
             <InputFile accept=".jpeg,.jpg,.png" id="input" OnChange="HandleImageUpload" class="sr-only"></InputFile>
             @if (HasPortrait)
             {
-                <button type="button" class="make-icon-btn" @onclick="OpenIconCropper">Make an Icon</button>
+                <button type="button" class="make-icon-btn" @onclick="OpenIconCropper">Utwórz ikonę</button>
                 @if (HasIcon)
                 {
-                    <div class="icon-preview" title="Current character icon">
-                        <img src="@AllParams.Character.IconUrl" alt="Character icon" />
+                    <div class="icon-preview" title="Aktualna ikona postaci">
+                        <img src="@AllParams.Character.IconUrl" alt="Ikona postaci" />
                     </div>
                 }
             }
     </div>
 
     <div class="points-control">
-        <label class="points-label">Avalible experience points:</label>
+        <label class="points-label">Dostępne punkty doświadczenia:</label>
         @if (UserInfo?.IsAdminOrMG == true)
         {
             <span class="points-indicator ml-auto"><MudNumericField Margin="0" Class="dense-numeric-field" Min="0" @bind-Value="AllParams.Character.CurrentExpPoints" @bind-Value:after="ChangeParams"></MudNumericField></span>
@@ -45,7 +45,7 @@
     <div class="points-control">
         @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
         {
-            <label class="points-label">Avalible attribute points:</label>
+            <label class="points-label">Dostępne punkty atrybutów:</label>
             <span class="points-indicator ml-auto">@AllParams.Character.AttributePoints</span>
         }
     </div>
@@ -67,7 +67,7 @@
     public EventCallback OnPortraitChange { get; set; }
     public string ImageUrl { get; set; } = "";
 
-    private string ChooseFile = "Choose file";
+    private string ChooseFile = "Wybierz plik";
     UserInfo? UserInfo { get; set; }
 
     private bool HasPortrait =>
@@ -92,7 +92,7 @@
                 foreach (var file in e.GetMultipleFiles())
                 {
                     var parameters = new DialogParameters<CropperDialog> { { x => x.File, e.File } };
-                    var dialog = await DialogService.ShowAsync<CropperDialog>("Cropp portrait", parameters, await SetOptions());
+                    var dialog = await DialogService.ShowAsync<CropperDialog>("Przytnij portret", parameters, await SetOptions());
                     var result = await dialog.Result;
 
                     if (result?.Data is not null && !result.Canceled)
@@ -106,7 +106,7 @@
         }
         catch (Exception ex)
         {
-            await _jsRuntime.ToastrError("Error while image upload: " + ex.ToString());
+            await _jsRuntime.ToastrError("Błąd podczas przesyłania obrazu: " + ex.ToString());
         }
     }
 
@@ -123,7 +123,7 @@
             {
                 { x => x.PortraitUrl, AllParams.Character.ImageUrl! }
             };
-            var dialog = await DialogService.ShowAsync<IconCropperDialog>("Make an icon", parameters, await SetOptions());
+            var dialog = await DialogService.ShowAsync<IconCropperDialog>("Utwórz ikonę", parameters, await SetOptions());
             var result = await dialog.Result;
 
             if (result?.Data is not null && !result.Canceled)
@@ -135,7 +135,7 @@
         }
         catch (Exception ex)
         {
-            await _jsRuntime.ToastrError("Error while creating icon: " + ex);
+            await _jsRuntime.ToastrError("Błąd podczas tworzenia ikony: " + ex);
         }
     }
 

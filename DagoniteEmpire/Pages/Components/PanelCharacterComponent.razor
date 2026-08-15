@@ -30,7 +30,7 @@
             <MudButton Style="@BackgroundColor" Class="pa-1" OnClick="OnExpandCollapseClick">
                 <div class="w-100 d-flex px-2 justify-content-between">
                     <div class="image-frame">
-                        <MudImage Width="80" ObjectFit="ObjectFit.ScaleDown" Src="@ImageUrl" Alt="Character image" Elevation="25" Class="rounded-lg" />
+                        <MudImage Width="80" ObjectFit="ObjectFit.ScaleDown" Src="@ImageUrl" Alt="Obraz postaci" Elevation="25" Class="rounded-lg" />
                         <div class="image-cover">
                             <MudPaper Style="opacity:0.4; background-color:red;" Height="@WoundLevel" Width="100%" Outlined="false" Elevation="0" ></MudPaper>
                             
@@ -44,8 +44,8 @@
                                     </ChildContent>
                                     <TooltipContent>
                                         <span class="character-status-tooltip-text">
-                                            <span class="character-status-tooltip-name">No turn</span>
-                                            <span class="character-status-tooltip-duration">No actions</span>
+                                            <span class="character-status-tooltip-name">Brak tury</span>
+                                            <span class="character-status-tooltip-duration">Brak akcji</span>
                                         </span>
                                     </TooltipContent>
                                 </MudTooltip> 
@@ -82,7 +82,7 @@
             @if (IsExpanded && (ShowActionsPanel || ShowMobTurnPanel || ShowClassButton || ShowGrantExtraActionButton))
             {
                 <MudPaper Elevation="1" Class="pa-1 mx-1 character-actions-panel">
-                    <MudText Class="p-1" Typo="Typo.button">ACTIONS</MudText>
+                    <MudText Class="p-1" Typo="Typo.button">AKCJE</MudText>
                     @if (ShowActionsPanel)
                     {
                     <MudTooltip Placement="Placement.Right" TooltipClass="character-action-tooltip">
@@ -92,7 +92,7 @@
                                            Color="@(CanDeclareFullDefence ? Color.Info : Color.Default)"
                                            Disabled="!CanDeclareFullDefence"
                                            Size="Size.Small"
-                                           aria-label="Declare full defence"
+                                           aria-label="Deklaruj pełną obronę"
                                            OnClick="ConfirmFullDefenceAsync" />
                         </span>
                         </ChildContent>
@@ -111,7 +111,7 @@
                         <span class="@GetActionWrapperClass(CanDeclareHalfAction)">
                             <MudIconButton Disabled="!CanDeclareHalfAction"
                                            Size="Size.Small"
-                                           aria-label="Do half action"
+                                           aria-label="Wykonaj pół akcji"
                                            OnClick="ConfirmHalfActionAsync">
                                 <img src="@MyIcon.HalfAction" class="character-action-icon" width="22" height="22" alt="" />
                             </MudIconButton>
@@ -133,7 +133,7 @@
                             <MudIconButton Disabled="!CanGrantExtraAction"
                                            Color="@(HasUsedAtLeastOneAction ? Color.Info : Color.Default)"
                                            Size="Size.Small"
-                                           aria-label="Grant extra action"
+                                           aria-label="Przyznaj dodatkową akcję"
                                            OnClick="GrantExtraActionAsync">
                                 <img src="@MyIcon.NoTurn" class="character-action-icon" width="22" height="22" alt="" />
                             </MudIconButton>
@@ -152,14 +152,14 @@
                     <MudTooltip Placement="Placement.Right" TooltipClass="character-action-tooltip">
                         <ChildContent>
                             <MudIconButton Size="Size.Small"
-                                           aria-label="Open class"
+                                           aria-label="Otwórz profesję"
                                            OnClick="OpenClassAsync">
                                 <img src="@MyIcon.Anvil" class="character-action-icon" width="22" height="22" alt="" />
                             </MudIconButton>
                         </ChildContent>
                         <TooltipContent>
                             <span class="character-status-tooltip-text">
-                                <span class="character-status-tooltip-name">Open class</span>
+                                <span class="character-status-tooltip-name">Otwórz profesję</span>
                                 <span class="character-status-tooltip-duration">@ProfessionName</span>
                             </span>
                         </TooltipContent>
@@ -172,34 +172,34 @@
                     @if(BattleProperties is not null && ( UserInfo?.IsAdminOrMG == true || Relation == Relation.Teammate || Relation == Relation.Ally)){
 
                     <MudPaper Elevation="1" Class="my-1">
-                        <MudText Class="p-1" Typo="Typo.button">ATTACK  ( base: @BattleProperties[SD.BattleProperty.AttackBase].SumBonus )</MudText>
+                        <MudText Class="p-1" Typo="Typo.button">ATAK  ( baza: @BattleProperties[SD.BattleProperty.AttackBase].SumBonus )</MudText>
                         <MudGrid Spacing="1" Justify="Justify.SpaceBetween">
                             <MudItem xs="3">
-                                <label class="w-100 text-center">Dodge: @BattleProperties[SD.BattleProperty.AttackDodge].SumBonus</label>
+                                <label class="w-100 text-center">Unik: @BattleProperties[SD.BattleProperty.AttackDodge].SumBonus</label>
                             </MudItem>
                             <MudItem xs="3">
-                                <label class="w-100 text-center">Parry: @BattleProperties[SD.BattleProperty.AttackParry].SumBonus</label>
+                                <label class="w-100 text-center">Parada: @BattleProperties[SD.BattleProperty.AttackParry].SumBonus</label>
                             </MudItem>
                             <MudItem xs="3">
-                                <label class="w-100 text-center">Shield: @BattleProperties[SD.BattleProperty.AttackShield].SumBonus</label>
+                                <label class="w-100 text-center">Tarcza: @BattleProperties[SD.BattleProperty.AttackShield].SumBonus</label>
                             </MudItem>
                             <MudItem xs="3">
-                                <label class="w-100 text-center">Armor: @BattleProperties[SD.BattleProperty.AttackArmor].SumBonus</label>
+                                <label class="w-100 text-center">Pancerz: @BattleProperties[SD.BattleProperty.AttackArmor].SumBonus</label>
                             </MudItem>
                         </MudGrid>
-                        <MudText Class="p-1" Typo="Typo.button">DEFENCE ( absorbtion: @BattleProperties[SD.BattleProperty.ArmorClass].SumBonus )</MudText>
+                        <MudText Class="p-1" Typo="Typo.button">OBRONA ( absorpcja: @BattleProperties[SD.BattleProperty.ArmorClass].SumBonus )</MudText>
                         <MudGrid Spacing="1" Justify="Justify.SpaceBetween">
                             <MudItem xs="3">
-                                <label class="w-100 text-center">Dodge: @BattleProperties[SD.BattleProperty.DefenceDodge].SumBonus</label>
+                                <label class="w-100 text-center">Unik: @BattleProperties[SD.BattleProperty.DefenceDodge].SumBonus</label>
                             </MudItem>
                             <MudItem xs="3">
-                                <label class="w-100 text-center">Parry: @BattleProperties[SD.BattleProperty.DefenceParry].SumBonus</label>
+                                <label class="w-100 text-center">Parada: @BattleProperties[SD.BattleProperty.DefenceParry].SumBonus</label>
                             </MudItem>
                             <MudItem xs="3">
-                                <label class="w-100 text-center">Shield: @BattleProperties[SD.BattleProperty.DefenceShield].SumBonus</label>
+                                <label class="w-100 text-center">Tarcza: @BattleProperties[SD.BattleProperty.DefenceShield].SumBonus</label>
                             </MudItem>
                             <MudItem xs="3">
-                                <label class="w-100 text-center">Armor: @BattleProperties[SD.BattleProperty.DefenceArmor].SumBonus</label>
+                                <label class="w-100 text-center">Pancerz: @BattleProperties[SD.BattleProperty.DefenceArmor].SumBonus</label>
                             </MudItem>
                         </MudGrid>
                     </MudPaper>
@@ -212,14 +212,14 @@
 
                             <div class="d-flex">
                                 <div class="flex-grow-1 weapon-prop-label">
-                                        <MudText Typo="Typo.button">Main: @BattlePropertyModel.MainWeaponUsed.Name</MudText>
+                                        <MudText Typo="Typo.button">Główna: @BattlePropertyModel.MainWeaponUsed.Name</MudText>
                                 </div>
                             </div>
                                 @if (BattlePropertyModel.MainWeaponUsed.IsTwoHanded == true)
                             {
                                 <div class="d-flex">
                                     <div class="flex-grow-1 weapon-prop-label">
-                                        <label>Two handed weapon</label>
+                                        <label>Broń dwuręczna</label>
                                     </div>
                                 </div>
                             }
@@ -253,14 +253,14 @@
                             <MudPaper Class="p-1 w-100 h-100" Elevation="1">
                             <div class="d-flex">
                                 <div class="flex-grow-1 weapon-prop-label">
-                                        <MudText Typo="Typo.button">Off: @BattlePropertyModel.OffWeaponUsed.Name</MudText>
+                                        <MudText Typo="Typo.button">Pomocnicza: @BattlePropertyModel.OffWeaponUsed.Name</MudText>
                                 </div>
                             </div>
                                 @if (BattlePropertyModel.OffWeaponUsed.IsTwoHanded == true)
                             {
                                 <div class="d-flex">
                                     <div class="flex-grow-1 weapon-prop-label">
-                                        <label>Two handed weapon</label>
+                                        <label>Broń dwuręczna</label>
                                     </div>
                                 </div>
                             }
@@ -294,7 +294,7 @@
                             <MudPaper Class="p-1 w-100 h-100" Elevation="1">
                             <div class="d-flex">
                                 <div class="flex-grow-1 weapon-prop-label">
-                                        <MudText Typo="Typo.button">Armor: @BattlePropertyModel.ArmorUsed.Name</MudText>
+                                        <MudText Typo="Typo.button">Pancerz: @BattlePropertyModel.ArmorUsed.Name</MudText>
                                 </div>
                             </div>
                             @if (ArmorProps is not null)
@@ -327,7 +327,7 @@
                             <MudPaper Class="p-1 w-100 h-100" Elevation="1">
                             <div class="d-flex">
                                 <div class="flex-grow-1 weapon-prop-label">
-                                        <MudText Typo="Typo.button">Shield: @BattlePropertyModel.ShieldUsed.Name</MudText>
+                                        <MudText Typo="Typo.button">Tarcza: @BattlePropertyModel.ShieldUsed.Name</MudText>
                                 </div>
                             </div>
                             @if (ShieldProps is not null)
@@ -360,7 +360,7 @@
                             <MudPaper Class="p-1 w-100 h-100" Elevation="1">
                             <div class="d-flex">
                                 <div class="flex-grow-1 weapon-prop-label">
-                                        <MudText Typo="Typo.button">Temporary states</MudText>
+                                        <MudText Typo="Typo.button">Stany tymczasowe</MudText>
                                 </div>
                             </div>
                             @foreach (var icon in Icons)
@@ -385,7 +385,7 @@
                             <MudPaper Class="p-1 w-100 h-100" Elevation="1">
                                 <div class="d-flex">
                                     <div class="flex-grow-1 weapon-prop-label">
-                                        <MudText Typo="Typo.button">Wounds</MudText>
+                                        <MudText Typo="Typo.button">Rany</MudText>
                                     </div>
                                 </div>
                                 @foreach (var wound in AllParams?.Health.GetAll())
@@ -524,16 +524,16 @@
         get
         {
             if (HasTemporaryState(States.Names.Dead))
-                return ("Full defence", "Blocked: dead");
+                return ("Pełna obrona", "Zablokowane: martwy");
             if (HasTemporaryState(States.Names.Unconscious))
-                return ("Full defence", "Blocked: unconscious");
+                return ("Pełna obrona", "Zablokowane: nieprzytomny");
             if (HasTemporaryState(States.Names.NoTurn))
-                return ("Full defence", "Blocked: no actions");
+                return ("Pełna obrona", "Zablokowane: brak akcji");
             if (HasHalfTurn)
-                return ("Full defence", "Blocked: half action used");
+                return ("Pełna obrona", "Zablokowane: użyto pół akcji");
             if (HasTemporaryState(States.Names.FullDefence))
-                return ("Full defence", "Already active");
-            return ("Full defence", "No attack; +5 DEF next round");
+                return ("Pełna obrona", "Już aktywne");
+            return ("Pełna obrona", "Brak ataku; +5 OBR w następnej rundzie");
         }
     }
 
@@ -542,16 +542,16 @@
         get
         {
             if (HasTemporaryState(States.Names.Dead))
-                return ("Half action", "Blocked: dead");
+                return ("Pół akcji", "Zablokowane: martwy");
             if (HasTemporaryState(States.Names.Unconscious))
-                return ("Half action", "Blocked: unconscious");
+                return ("Pół akcji", "Zablokowane: nieprzytomny");
             if (HasTemporaryState(States.Names.FullDefence))
-                return ("Half action", "Blocked: full defence");
+                return ("Pół akcji", "Zablokowane: pełna obrona");
             if (HasTemporaryState(States.Names.NoTurn) && !HasHalfTurn)
-                return ("Half action", "Blocked: no actions");
+                return ("Pół akcji", "Zablokowane: brak akcji");
             if (HasHalfTurn)
-                return ("End turn", "Half turn → No turn");
-            return ("Half action", "Gain Half turn; click again to end");
+                return ("Zakończ turę", "Pół tury → Brak tury");
+            return ("Pół akcji", "Uzyskaj pół tury; kliknij ponownie, aby zakończyć");
         }
     }
 
@@ -562,9 +562,9 @@
             if (!HasUsedAtLeastOneAction)
                 return ("Dodaj kolejną akcję", "Wymaga wykorzystanej akcji");
             if (HasTemporaryState(States.Names.NoTurn))
-                return ("Dodaj kolejną akcję", "No turn → Half turn");
+                return ("Dodaj kolejną akcję", "Brak tury → Pół tury");
             if (HasTemporaryState(States.Names.HalfTurn))
-                return ("Dodaj kolejną akcję", "Usuwa Half turn");
+                return ("Dodaj kolejną akcję", "Usuwa Pół tury");
             return ("Dodaj kolejną akcję", "Wymaga wykorzystanej akcji");
         }
     }
@@ -573,7 +573,7 @@
         canUse ? "character-action-wrapper" : "character-action-wrapper character-action-inactive-wrapper";
 
     private static string FormatStateDuration(int turns) =>
-        turns == 1 ? "1 turn left" : $"{turns} turns left";
+        turns == 1 ? "pozostała 1 tura" : $"pozostało tur: {turns}";
 
     private void OnExpandCollapseClick()
     {
@@ -597,7 +597,7 @@
                 var ownsCharacter = await _characterRepository.CheckIfCharacterBelongToUser(UserInfo.UserName, Id);
                 if (!ownsCharacter)
                 {
-                    Snackbar.Add("You can only open class for your own character.", Severity.Warning);
+                    Snackbar.Add("Możesz otworzyć profesję tylko dla własnej postaci.", Severity.Warning);
                     return;
                 }
 
@@ -609,7 +609,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add("Error opening class: " + ex.Message, Severity.Warning);
+            Snackbar.Add("Błąd otwierania profesji: " + ex.Message, Severity.Warning);
         }
     }
 
@@ -635,7 +635,7 @@
         }
         catch (Exception ex)
         {            
-            Snackbar.Add("Error initializing panel Character: " + ex.Message, Severity.Warning);
+            Snackbar.Add("Błąd inicjalizacji panelu postaci: " + ex.Message, Severity.Warning);
         }
     }
 
@@ -669,7 +669,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add("Error refreshing panel: " + ex.Message, Severity.Warning);
+            Snackbar.Add("Błąd odświeżania panelu: " + ex.Message, Severity.Warning);
         }
     }
 
@@ -735,7 +735,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add("Error loading Character: " + ex.Message, Severity.Warning);
+            Snackbar.Add("Błąd wczytywania postaci: " + ex.Message, Severity.Warning);
         }
     }
 
@@ -774,7 +774,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add("Error loading Character: " + ex.Message, Severity.Warning);
+            Snackbar.Add("Błąd wczytywania postaci: " + ex.Message, Severity.Warning);
         }
     }
 
@@ -858,7 +858,7 @@
         }
         catch(Exception ex)
         {
-            Snackbar.Add("Error loading icons: " + ex.Message, Severity.Warning);
+            Snackbar.Add("Błąd wczytywania ikon: " + ex.Message, Severity.Warning);
         }
     }
 
@@ -882,10 +882,10 @@
         var characterName = AllParams.Character.NPCName;
         bool? result = await DialogMessageBox.ShowCompactAsync(
             DialogService,
-            "Full defence",
-            $"Declare for {characterName}?",
-            "No attack; +5 DEF next round",
-            yesText: "Declare");
+            "Pełna obrona",
+            $"Zadeklarować dla {characterName}?",
+            "Brak ataku; +5 OBR w następnej rundzie",
+            yesText: "Zadeklaruj");
 
         if (result is not true)
             return;
@@ -908,7 +908,7 @@
         await _traitCharacterRepository.Create(StateSeeder.GetStateDTO(States.Names.FullDefence, false, 1, Id));
         await _traitCharacterRepository.Create(StateSeeder.GetStateDTO(States.Names.NoTurn, false, 1, Id));
 
-        Snackbar.Add("Full defence declared.", Severity.Success);
+        Snackbar.Add("Zadeklarowano pełną obronę.", Severity.Success);
         await OnFullDefenceApplied.InvokeAsync(Id);
     }
 
@@ -930,17 +930,17 @@
 
         if (HasHalfTurn)
         {
-            title = "End turn";
-            line1 = $"End turn for {participantName}?";
-            line2 = "Half turn → No turn";
-            yesText = "End turn";
+            title = "Zakończ turę";
+            line1 = $"Zakończyć turę dla {participantName}?";
+            line2 = "Pół tury → Brak tury";
+            yesText = "Zakończ turę";
         }
         else
         {
-            title = "Half action";
-            line1 = $"Half action for {participantName}?";
-            line2 = "Grants Half turn; click again to end";
-            yesText = "Use half action";
+            title = "Pół akcji";
+            line1 = $"Pół akcji dla {participantName}?";
+            line2 = "Nadaje Pół tury; kliknij ponownie, aby zakończyć";
+            yesText = "Użyj pół akcji";
         }
 
         bool? result = await DialogMessageBox.ShowCompactAsync(
@@ -966,12 +966,12 @@
             if (CombatStateString.HasState(Mob.States, States.Names.HalfTurn))
             {
                 Mob.States = CombatStateString.Add(Mob.States, States.Names.NoTurn, States.Duration.SingleTurn);
-                Snackbar.Add("Turn ended — no actions left.", Severity.Success);
+                Snackbar.Add("Tura zakończona — brak akcji.", Severity.Success);
             }
             else
             {
                 Mob.States = CombatStateString.Add(Mob.States, States.Names.HalfTurn, States.Duration.SingleTurn);
-                Snackbar.Add("Half action declared.", Severity.Success);
+                Snackbar.Add("Zadeklarowano pół akcji.", Severity.Success);
             }
 
             await _mobRepository.Update(Mob);
@@ -990,12 +990,12 @@
             await _traitCharacterRepository.Delete(halfTurn.Id);
             AllParams.TraitsTemporary.Remove(halfTurn);
             await _traitCharacterRepository.Create(StateSeeder.GetStateDTO(States.Names.NoTurn, false, 1, Id));
-            Snackbar.Add("Turn ended — no actions left.", Severity.Success);
+            Snackbar.Add("Tura zakończona — brak akcji.", Severity.Success);
         }
         else
         {
             await _traitCharacterRepository.Create(StateSeeder.GetStateDTO(States.Names.HalfTurn, false, 1, Id));
-            Snackbar.Add("Half action declared.", Severity.Success);
+            Snackbar.Add("Zadeklarowano pół akcji.", Severity.Success);
         }
 
         await OnFullDefenceApplied.InvokeAsync(Id);
@@ -1015,12 +1015,12 @@
             {
                 Mob.States = RemoveMobState(Mob.States, States.Names.NoTurn);
                 Mob.States = CombatStateString.Add(Mob.States, States.Names.HalfTurn, States.Duration.SingleTurn);
-                Snackbar.Add("Przyznano half turn.", Severity.Success);
+                Snackbar.Add("Przyznano pół tury.", Severity.Success);
             }
             else if (CombatStateString.HasState(Mob.States, States.Names.HalfTurn))
             {
                 Mob.States = RemoveMobState(Mob.States, States.Names.HalfTurn);
-                Snackbar.Add("Usunięto half turn — pełna tura przywrócona.", Severity.Success);
+                Snackbar.Add("Usunięto pół tury — pełna tura przywrócona.", Severity.Success);
             }
 
             await _mobRepository.Update(Mob);
@@ -1044,7 +1044,7 @@
 
             await _traitCharacterRepository.Create(
                 StateSeeder.GetStateDTO(States.Names.HalfTurn, false, States.Duration.SingleTurn, Id));
-            Snackbar.Add("Przyznano half turn.", Severity.Success);
+            Snackbar.Add("Przyznano pół tury.", Severity.Success);
         }
         else if (HasTemporaryState(States.Names.HalfTurn))
         {
@@ -1055,7 +1055,7 @@
                 AllParams.TraitsTemporary.Remove(halfTurn);
             }
 
-            Snackbar.Add("Usunięto half turn — pełna tura przywrócona.", Severity.Success);
+            Snackbar.Add("Usunięto pół tury — pełna tura przywrócona.", Severity.Success);
         }
 
         await OnFullDefenceApplied.InvokeAsync(Id);

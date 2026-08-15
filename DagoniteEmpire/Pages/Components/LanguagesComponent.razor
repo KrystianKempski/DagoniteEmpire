@@ -5,16 +5,16 @@
 
 <div class="languages">
     <div class="languages-summary">
-        <span>Known: @AllParams.GetUsedLanguageSlots() / @AllParams.GetMaxLanguageSlots()</span>
+        <span>Znane: @AllParams.GetUsedLanguageSlots() / @AllParams.GetMaxLanguageSlots()</span>
     </div>
     <div class="table-container">
         <table class="table align-middle languages-table">
             <thead>
                 <tr>
-                    <th scope="col" class="name-row">Name</th>
-                    <th scope="col">Category</th>
-                    <th scope="col">Script</th>
-                    <th scope="col">Typical speakers</th>
+                    <th scope="col" class="name-row">Nazwa</th>
+                    <th scope="col">Kategoria</th>
+                    <th scope="col">Pismo</th>
+                    <th scope="col">Typowi użytkownicy</th>
                     @if (CanDelete)
                     {
                         <th scope="col" class="languages-actions-col"></th>
@@ -25,7 +25,7 @@
                 @if (AllParams.Languages.Any() == false)
                 {
                     <tr>
-                        <td colspan="@(CanDelete ? 5 : 4)" class="text-center languages-empty">No languages selected.</td>
+                        <td colspan="@(CanDelete ? 5 : 4)" class="text-center languages-empty">Nie wybrano języków.</td>
                     </tr>
                 }
                 else
@@ -37,7 +37,7 @@
                                 <label class="name-label">@language.Name</label>
                                 @if (SD.Languages.IsCommon(language.Name))
                                 {
-                                    <span class="language-free-badge">free</span>
+                                    <span class="language-free-badge">darmowy</span>
                                 }
                             </td>
                             <td><label class="name-label">@language.Category</label></td>
@@ -63,7 +63,7 @@
     @if (CanAdd && CanAddMore)
     {
         <div class="buttons-row">
-            <button @onclick="OpenAddLanguageDialog" class="add-trait">Add language</button>
+            <button @onclick="OpenAddLanguageDialog" class="add-trait">Dodaj język</button>
         </div>
     }
 </div>
@@ -107,7 +107,7 @@
             { nameof(SelectLanguageDialog.AvailableLanguages), AllParams.AvailableLanguages }
         };
 
-        var dialog = await DialogService.ShowAsync<SelectLanguageDialog>("Select language", parameters, options);
+        var dialog = await DialogService.ShowAsync<SelectLanguageDialog>("Wybierz język", parameters, options);
         var result = await dialog.Result;
         if (result is null || result.Canceled || result.Data is not LanguageDTO selected)
             return;
@@ -117,7 +117,7 @@
 
         if (UserInfo?.IsAdminOrMG != true && AllParams.GetUsedLanguageSlots() >= AllParams.GetMaxLanguageSlots())
         {
-            await _jsRuntime.ToastrWarning("No free language slots available.");
+            await _jsRuntime.ToastrWarning("Brak wolnych slotów na języki.");
             return;
         }
 
@@ -132,7 +132,7 @@
 
         if (!CanDelete)
         {
-            await _jsRuntime.ToastrWarning("You cannot remove languages from a finished character.");
+            await _jsRuntime.ToastrWarning("Nie można usuwać języków z ukończonej postaci.");
             return;
         }
 

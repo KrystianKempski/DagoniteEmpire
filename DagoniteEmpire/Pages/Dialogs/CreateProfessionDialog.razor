@@ -2,23 +2,23 @@
 @inject IJSRuntime _jsruntime
 @inject IUserService _userService
 <MudDialog>
-    <TitleContent>Specify class</TitleContent>
+    <TitleContent>Określ klasę</TitleContent>
         <DialogContent>
                  <div class="main-table">                    
                         <label class="warnign-message">@ErrorMessage</label>
                         <div class="wide-screen-table">
                             <div class="d-flex ">
                                 <div class="d-flex flex-column px-1 flex-grow-1">
-                                    <label class="class-section py-1">Class name</label>
-                                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Insert class name" @bind-Value="@ProfessionDTO.Name"></MudTextField>
+                                    <label class="class-section py-1">Nazwa klasy</label>
+                                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Wpisz nazwę klasy" @bind-Value="@ProfessionDTO.Name"></MudTextField>
                                 </div>
                                 <div class="d-flex flex-column px-1">
-                                    <label class="class-section py-1">Related attribute</label>
+                                    <label class="class-section py-1">Powiązany atrybut</label>
                                     <InputSelect style="width: 150px;height: 32px;border: 1px solid RGB(206 212 218); border-radius: 4px; padding: 0px 4px 0px 4px;"
                                                  ValueExpression="@(()=>ProfessionDTO.RelatedAttributeName)"
                                                  Value="@ProfessionDTO.RelatedAttributeName"
                                                  ValueChanged="@((string value) => ChangeRelatedAttribute(value))">
-                                        <option value="0" selected disabled>--Select--</option>
+                                        <option value="0" selected disabled>--Wybierz--</option>
                                         @foreach(var attr in SD.Attributes.All)
                                         {
                                             <option value="@attr"> @attr</option>
@@ -28,30 +28,30 @@
                                 @if (UserInfo?.IsAdminOrMG == true)
                                 {
                                     <div class="d-flex flex-column px-1">
-                                        <label class="column-section py-1">Class Level</label>
+                                        <label class="column-section py-1">Poziom klasy</label>
                                         <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" Style="width:100px"  HideSpinButtons="true" @bind-Value="@ProfessionDTO.ClassLevel" @bind-Value:after="ChangeProfLevel"></MudNumericField>
                                     </div>
                                 }
                                 else
                                 {
                                     <div class="d-flex flex-column px-1">
-                                        <label class="column-section py-1">Class Level</label>
+                                        <label class="column-section py-1">Poziom klasy</label>
                                         <label class="prof-variables">@ProfessionDTO.ClassLevel</label>
                                     </div>
                                 }
 
                                 <div class="d-flex flex-column px-1">
-                                    <label class="column-section py-1">Skill roll</label>
+                                    <label class="column-section py-1">Rzut na umiejętność</label>
                                     <label class="prof-variables">@ProfessionDTO.ProfessionSkillRoll</label>
                                 </div>
                                 <div class="d-flex flex-column px-1">
-                                    <label class="column-section py-1">Focus points</label>
+                                    <label class="column-section py-1">Punkty skupienia</label>
                                      <label class="prof-variables">@ProfessionDTO.MaxFocusPoints</label>
                                 </div>
                                 @if (UserInfo?.IsAdminOrMG == true)
                                 {
                                     <div class="d-flex flex-column px-1">
-                                        <label class="class-section py-1">Approve</label>
+                                        <label class="class-section py-1">Zatwierdź</label>
                                         <div class="justify-content-center mx-auto my-auto">
                                             <MudCheckBox T="bool" @bind-Value="ProfessionDTO.IsApproved"></MudCheckBox>
                                         </div>
@@ -63,13 +63,13 @@
                             <div class="d-flex flex-column ">
                                 <div class="d-flex" >
                                     <div class="d-flex flex-column px-1 flex-grow-1">
-                                        <label class="class-section py-1">Class name</label>
-                                        <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Insert class name" @bind-Value="@ProfessionDTO.Name"></MudTextField>
+                                        <label class="class-section py-1">Nazwa klasy</label>
+                                        <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Wpisz nazwę klasy" @bind-Value="@ProfessionDTO.Name"></MudTextField>
                                     </div>
                                     @if (UserInfo?.IsAdminOrMG == true)
                                     {
                                         <div class="d-flex flex-column px-1">
-                                            <label class="class-section py-1">Approve</label>
+                                            <label class="class-section py-1">Zatwierdź</label>
                                             <div class="justify-content-center mx-auto my-auto">
                                                 <MudCheckBox T="bool" @bind-Value="ProfessionDTO.IsApproved"></MudCheckBox>
                                             </div>
@@ -77,13 +77,13 @@
                                     }
                                 </div>
                                 <div class="d-flex flex-column px-1">
-                                    <label class="class-section py-1">Related attribute</label>
+                                    <label class="class-section py-1">Powiązany atrybut</label>
                                     <InputSelect style="height: 32px;border: 1px solid RGB(206 212 218); border-radius: 4px; padding: 0px 4px 0px 4px;"
                                                  ValueExpression="@(()=>ProfessionDTO.RelatedAttributeName)"
                                                  Value="@ProfessionDTO.RelatedAttributeName"
                                                  ValueChanged="@((string value) => ChangeRelatedAttribute(value))">
                                         
-                                        <option value="0" selected disabled>--Select--</option>
+                                        <option value="0" selected disabled>--Wybierz--</option>
                                         @foreach (var attr in SD.Attributes.All)
                                         {
                                             <option value="@attr"> @attr</option>
@@ -94,24 +94,24 @@
                                     @if (UserInfo?.IsAdminOrMG == true)
                                     {
                                         <div class="d-flex flex-column px-1 variables">
-                                            <label class="column-section py-1">Class Level</label>
+                                            <label class="column-section py-1">Poziom klasy</label>
                                             <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense"  HideSpinButtons="true" @bind-Value="@ProfessionDTO.ClassLevel" @bind-Value:after="ChangeProfLevel"></MudNumericField>
                                         </div>
                                     }
                                     else
                                     {
                                         <div class="d-flex flex-column px-1 variables">
-                                            <label class="column-section py-1">Class Level</label>
+                                            <label class="column-section py-1">Poziom klasy</label>
                                             <label class="prof-variables">@ProfessionDTO.ClassLevel</label>
                                         </div>
                                     }
 
                                     <div class="d-flex flex-column px-1 variables">
-                                        <label class="column-section py-1">Skill roll</label>
+                                        <label class="column-section py-1">Rzut na umiejętność</label>
                                         <label class="prof-variables">@ProfessionDTO.ProfessionSkillRoll</label>
                                     </div>
                                     <div class="d-flex flex-column px-1 variables">
-                                        <label class="column-section py-1">Focus points</label>
+                                        <label class="column-section py-1">Punkty skupienia</label>
                                         <label class="prof-variables">@ProfessionDTO.MaxFocusPoints</label>
                                     </div>
                                  </div>
@@ -120,23 +120,23 @@
 
                         </div>
                         <div class="d-flex flex-column flex-grow-1">
-                            <label class="class-section">Class description</label>
-                            <MudTextField T="string" Variant="Variant.Outlined" Lines="5" @bind-Value="@ProfessionDTO.Description" Placeholder="Enter class description"></MudTextField>
+                            <label class="class-section">Opis klasy</label>
+                            <MudTextField T="string" Variant="Variant.Outlined" Lines="5" @bind-Value="@ProfessionDTO.Description" Placeholder="Wpisz opis klasy"></MudTextField>
                         </div>
                         @*  ACTIVE SKILLS  *@
-                        <label class="class-section">Active class skills</label>
+                        <label class="class-section">Aktywne umiejętności klasy</label>
 
                         <div class="wide-screen-table">
 
                             <table class="table align-middle">
                                 <thead>
                                     <tr>
-                                        <th scope="col" class="level-row text-center">Level</th>
-                                        <th scope="col" class="name-row text-center">Name</th>
-                                        <th scope="col" class="descr-row text-center">Description</th>
+                                        <th scope="col" class="level-row text-center">Poziom</th>
+                                        <th scope="col" class="name-row text-center">Nazwa</th>
+                                        <th scope="col" class="descr-row text-center">Opis</th>
                                         <th scope="col" class="number-row text-center">DC</th>
-                                        <th scope="col" class="number-row text-center">Cost</th>
-                                        <th scope="col" class="number-row text-center"> Range</th>
+                                        <th scope="col" class="number-row text-center">Koszt</th>
+                                        <th scope="col" class="number-row text-center"> Zasięg</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -146,10 +146,10 @@
                                         @if (skill.Index%2==0){
                                             <td rowspan="2"> <label class="short-row">@skill.Level</label> </td>
                                         }
-                                        <td> <div class="name-cell"> <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Insert skill name" @bind-Value="@skill.Name"></MudTextField> </div> </td>
+                                        <td> <div class="name-cell"> <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Wpisz nazwę umiejętności" @bind-Value="@skill.Name"></MudTextField> </div> </td>
                                         <td>
                                             <div class="bonus-double-cell">
-                                                <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" id="@skill.Index.ToString()" @bind-Value:after="@(()=>ChangeDescription(skill.Index))" Lines="3" Placeholder="Insert skill description" @bind-Value="@skill.Descr">
+                                                <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" id="@skill.Index.ToString()" @bind-Value:after="@(()=>ChangeDescription(skill.Index))" Lines="3" Placeholder="Wpisz opis umiejętności" @bind-Value="@skill.Descr">
                                                 </MudTextField>
                                             </div>
                                         </td>
@@ -166,11 +166,11 @@
                             <table class="table align-middle">
                                 <thead>
                                     <tr>
-                                        <th scope="col" class="level-row text-center">Level</th>
-                                        <th scope="col" class="name-row-short text-center">Name</th>
+                                        <th scope="col" class="level-row text-center">Poziom</th>
+                                        <th scope="col" class="name-row-short text-center">Nazwa</th>
                                         <th scope="col" class="number-row text-center">DC</th>
-                                        <th scope="col" class="number-row text-center">Cost</th>
-                                        <th scope="col" class="number-row text-center"> Range</th>
+                                        <th scope="col" class="number-row text-center">Koszt</th>
+                                        <th scope="col" class="number-row text-center"> Zasięg</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -181,7 +181,7 @@
                                             {
                                                 <td rowspan="4"> <label class="short-row">@skill.Level</label> </td>
                                             }
-                                            <td> <div class="name-cell"> <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Insert skill name" @bind-Value="@skill.Name"></MudTextField> </div> </td>
+                                            <td> <div class="name-cell"> <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Wpisz nazwę umiejętności" @bind-Value="@skill.Name"></MudTextField> </div> </td>
                                            
                                             <td><div class="short-row"><MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" @bind-Value="@skill.DC"></MudNumericField></div></td>
                                             <td><div class="short-row"><MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" @bind-Value="@skill.Cost"></MudNumericField></div></td>
@@ -189,7 +189,7 @@
                                         </tr>
                                         <tr>
                                             <td colspan="4">
-                                                <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" id="@skill.Index.ToString()" @bind-Value:after="@(()=>ChangeDescription(skill.Index))" Lines="3" Placeholder="Insert skill description" @bind-Value="@skill.Descr">
+                                                <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" id="@skill.Index.ToString()" @bind-Value:after="@(()=>ChangeDescription(skill.Index))" Lines="3" Placeholder="Wpisz opis umiejętności" @bind-Value="@skill.Descr">
                                                 </MudTextField>
                                             </td>
                                         </tr>
@@ -198,16 +198,16 @@
                             </table>
                         </div>
                        @*  PASSIVE SKILLS  *@
-                        <label class="class-section">Passive class skills</label>
+                        <label class="class-section">Pasywne umiejętności klasy</label>
 
                         <div class="wide-screen-table">
 
                             <table class="table align-middle">
                                 <thead>
                                     <tr>
-                                        <th scope="col" class="level-row text-center">Level</th>
-                                        <th scope="col" class="name-row text-center">Name</th>
-                                        <th scope="col" class="descr-row text-center">Description</th>
+                                        <th scope="col" class="level-row text-center">Poziom</th>
+                                        <th scope="col" class="name-row text-center">Nazwa</th>
+                                        <th scope="col" class="descr-row text-center">Opis</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -215,10 +215,10 @@
                                     {
                                         <tr>
                                             <td> <label class="short-row">@skill.Level</label> </td>
-                                            <td> <div class="name-cell"> <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Insert skill name" @bind-Value="@skill.Name"></MudTextField> </div> </td>
+                                            <td> <div class="name-cell"> <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Wpisz nazwę umiejętności" @bind-Value="@skill.Name"></MudTextField> </div> </td>
                                             <td>
                                                 <div class="bonus-double-cell">
-                                                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" id="@skill.Index.ToString()" @bind-Value:after="@(()=>ChangeDescription(skill.Index))" Lines="3" Placeholder="Insert skill description" @bind-Value="@skill.Descr">
+                                                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" id="@skill.Index.ToString()" @bind-Value:after="@(()=>ChangeDescription(skill.Index))" Lines="3" Placeholder="Wpisz opis umiejętności" @bind-Value="@skill.Descr">
                                                     </MudTextField>
                                                 </div>
                                             </td>
@@ -232,8 +232,8 @@
                             <table class="table align-middle">
                                 <thead>
                                     <tr>
-                                        <th scope="col" class="number-row text-center">Level</th>
-                                        <th scope="col" class="name-row-short text-center">Name</th>
+                                        <th scope="col" class="number-row text-center">Poziom</th>
+                                        <th scope="col" class="name-row-short text-center">Nazwa</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -241,11 +241,11 @@
                                     {
                                         <tr>
                                             <td rowspan="2"> <label class="short-row">@skill.Level</label> </td>
-                                            <td> <div class="name-cell"> <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Insert skill name" @bind-Value="@skill.Name"></MudTextField> </div> </td>
+                                            <td> <div class="name-cell"> <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Wpisz nazwę umiejętności" @bind-Value="@skill.Name"></MudTextField> </div> </td>
                                         </tr>
                                         <tr>
                                             <td colspan="2">
-                                                <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" id="@skill.Index.ToString()" @bind-Value:after="@(()=>ChangeDescription(skill.Index))" Lines="3" Placeholder="Insert skill description" @bind-Value="@skill.Descr">
+                                                <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" id="@skill.Index.ToString()" @bind-Value:after="@(()=>ChangeDescription(skill.Index))" Lines="3" Placeholder="Wpisz opis umiejętności" @bind-Value="@skill.Descr">
                                                 </MudTextField>
                                             </td>
                                         </tr>
@@ -259,8 +259,8 @@
                 
         </DialogContent>
         <DialogActions>
-            <MudButton OnClick="OnCancelBtnClick">Cancel</MudButton>
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="OnSaveProfBtnClick">Save</MudButton>
+            <MudButton OnClick="OnCancelBtnClick">Anuluj</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="OnSaveProfBtnClick">Zapisz</MudButton>
         </DialogActions>
 </MudDialog>
 
@@ -285,12 +285,12 @@
         {
             if (string.IsNullOrEmpty(ProfessionDTO.Name) || string.IsNullOrEmpty(ProfessionDTO.Description))
             {
-                ErrorMessage = "Create name and description of class";
+                ErrorMessage = "Utwórz nazwę i opis klasy";
                 return;
             }
             if (string.IsNullOrEmpty(ProfessionDTO.RelatedAttributeName))
             {
-                ErrorMessage = "Choose attribute related to class";
+                ErrorMessage = "Wybierz atrybut powiązany z klasą";
                 return;
             }
             ProfessionDTO.CurrentFocusPoints = ProfessionDTO.MaxFocusPoints;
@@ -299,8 +299,8 @@
         }
         catch (Exception ex)
         {
-            ErrorMessage = "Save error: " + ex.Message;
-            await _jsruntime.ToastrError("Save failed: " + ex.Message + " | " + ex.GetType().Name);
+            ErrorMessage = "Błąd zapisu: " + ex.Message;
+            await _jsruntime.ToastrError("Zapis nie powiódł się: " + ex.Message + " | " + ex.GetType().Name);
         }
     }
 
@@ -331,7 +331,7 @@
         }
         catch (Exception ex)
         {
-            await _jsruntime.ToastrError("Error while changing profession related attribute: " + ex.Message);
+            await _jsruntime.ToastrError("Błąd podczas zmiany atrybutu powiązanego z profesją: " + ex.Message);
         }
     }
 

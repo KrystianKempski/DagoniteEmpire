@@ -20,6 +20,28 @@ oraz (b) lokalizację DataAnnotations lub jawne `ErrorMessage` przy każdym polu
 Proponuję zrobić to w osobnej mini-turze (Faza 2b) albo w Fazie 10 (QA).
 ODP:
 
+### [Faza 3] Nazwy walut (lore) — WealthRecordsDialog
+Waluty świata gry: **Imperials / Talars / Hellers / Coppers** zostawiłem po angielsku
+(nazwy własne/lore). Czy spolszczyć na Imperiały / Talary / Halerze / Miedziaki?
+Uwaga: te nazwy mogą występować też w wielu innych miejscach (majątek postaci, baronia).
+ODP:
+
+### [Faza 3] Etykiety mobilne DataLabel — ProfessionPage
+Atrybuty `DataLabel="..."` (Spell slots, Prepared, Level, Known, Today, ready, actions)
+pokazywane przez MudBlazor jako nagłówki kolumn na wąskim ekranie — zostały po angielsku
+(poza pierwotnym allowlistem). Spolszczyć dla spójności na mobile? (drobne)
+ODP:
+
+### [Faza 3] Podpisy przycisków z DTO (TraitLabel) — TraitsComponent
+Napisy „Dodaj …/Istniejące …" biorą się z właściwości DTO `TraitLabel` (w DA_Models),
+a nie z markup. Pełne spolszczenie wymaga tłumaczenia w DTO — do zrobienia w Fazie 8.
+ODP:
+
+### [Faza 3] Nazwy poziomów trudności / wynik rzutu — MakeSkillRollDialog
+`SD.GetDifficultyName(...)` i wyjście `RollService` (DA_Common) nadal po angielsku —
+do spolszczenia w Fazie 8 (backend).
+ODP:
+
 ---
 
 ## Rozstrzygnięte

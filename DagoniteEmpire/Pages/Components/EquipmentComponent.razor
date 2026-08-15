@@ -6,16 +6,16 @@
 @inject NavigationManager _navigationManager
 @inject ISnackbar Snackbar
 <div class="equipment">
-    <h3 class="my-3 ml-3 text-center">EQUIPMENT</h3>
+    <h3 class="my-3 ml-3 text-center">EKWIPUNEK</h3>
     <div class="table-container" >
         <table class="table align-middle" >
             <thead>
                 <tr>
-                    <th scope="col" class="name-row">Name</th>
-                    <th scope="col" class="value-row text-center">Count</th>
-                    <th scope="col" class="value-row text-center">Price</th>
-                    <th scope="col" class="value-row text-center">Weight</th>
-                    <th scope="col" class="action-row text-center">Actions</th>
+                    <th scope="col" class="name-row">Nazwa</th>
+                    <th scope="col" class="value-row text-center">Ilość</th>
+                    <th scope="col" class="value-row text-center">Cena</th>
+                    <th scope="col" class="value-row text-center">Waga</th>
+                    <th scope="col" class="action-row text-center">Akcje</th>
                 </tr>
             </thead>
             <tbody>
@@ -64,7 +64,7 @@
                 }
                 <tr>
                     <td class="">
-                        <label class="name-label">All equipment: </label>
+                        <label class="name-label">Cały ekwipunek: </label>
                     </td>
                     <td >
                     </td>
@@ -87,11 +87,11 @@
               Class="equipment-actions"
               Style="width:100%; flex-wrap:nowrap !important;">
         <MudStack Row="true" Spacing="1" Style="flex-wrap:nowrap !important; flex-shrink:1; min-width:0;">
-            <button @onclick="@(()=>AddCustomEquipment())" class="add-trait equipment-action-btn">Add new</button>
-            <button @onclick="@(()=>AddExistingEquipment())" class="add-trait equipment-action-btn">Existing items</button>
+            <button @onclick="@(()=>AddCustomEquipment())" class="add-trait equipment-action-btn">Dodaj nowy</button>
+            <button @onclick="@(()=>AddExistingEquipment())" class="add-trait equipment-action-btn">Istniejące przedmioty</button>
             @if (AllParams.Character.IsApproved == true && PageMode == false)
             {
-                <button @onclick="@(()=>GoToItemPage())" class="add-trait equipment-action-btn">Details</button>
+                <button @onclick="@(()=>GoToItemPage())" class="add-trait equipment-action-btn">Szczegóły</button>
             }
         </MudStack>
         @if (AllParams?.Character is not null && AllParams?.Character.Id > 0)
@@ -101,7 +101,7 @@
                     <img src="@MyIcon.Imperial" width="22" height="22" alt="" />
                     <span>@Gold.ToString("F4")</span>
                 </MudStack>
-                <button @onclick="GoToRecords" class="add-trait equipment-action-btn">Purse</button>
+                <button @onclick="GoToRecords" class="add-trait equipment-action-btn">Sakiewka</button>
             </MudStack>
         }
     </MudStack>
@@ -158,7 +158,7 @@
         var parameters = new DialogParameters<CreateEquipmentSlotDialog> {  { x => x.NewSlot, NewSlot },
                                                                           { x => x.AllParams, AllParams } };
 
-        var dialog = await DialogService.ShowAsync<CreateEquipmentSlotDialog>("Create new item", parameters, await SetOptions());
+        var dialog = await DialogService.ShowAsync<CreateEquipmentSlotDialog>("Utwórz nowy przedmiot", parameters, await SetOptions());
         var result = await dialog.Result;
         if (result?.Data is not null && !result.Canceled)
         {
@@ -182,7 +182,7 @@
         var parameters = new DialogParameters<ExistingEquipmentSelectDialog> {  { x => x.SelectedEquipment, SelectedEquipment },
                                                                                 { x => x.AllParams, AllParams } };
 
-        var dialog = await DialogService.ShowAsync<ExistingEquipmentSelectDialog>("Create new item", parameters, await SetOptions());
+        var dialog = await DialogService.ShowAsync<ExistingEquipmentSelectDialog>("Utwórz nowy przedmiot", parameters, await SetOptions());
         var result = await dialog.Result;
 
         if (result?.Data is null) return;
@@ -215,7 +215,7 @@
                                                                             { x => x.IsInfoMode, IsInfoMode },
                                                                             { x => x.AllParams, AllParams } };
 
-        var dialog = await DialogService.ShowAsync<CreateEquipmentSlotDialog>("Edit item", parameters, await SetOptions());
+        var dialog = await DialogService.ShowAsync<CreateEquipmentSlotDialog>("Edytuj przedmiot", parameters, await SetOptions());
         var result = await dialog.Result;
         if (result?.Data is null) return;
         if (!result.Canceled)
@@ -228,9 +228,9 @@
     private async Task DeleteEquipment(EquipmentSlotDTO slot)
     {
         bool? result = await DialogService.ShowMessageBoxAsync(
-            "Warning",
-            $"Are you sure you want to delete {slot.Equipment.Name}?",
-            yesText: "Yes", cancelText: "No");
+            "Ostrzeżenie",
+            $"Czy na pewno chcesz usunąć {slot.Equipment.Name}?",
+            yesText: "Tak", cancelText: "Nie");
         if (result is null || result == false)
         {
             return;
@@ -269,7 +269,7 @@
     {
         var parameters = new DialogParameters<WealthRecordsDialog> {  { x => x.CharacterId, AllParams.Character.Id } };
 
-        var dialog = await DialogService.ShowAsync<WealthRecordsDialog>("Record dialog", parameters, await SetOptions());
+        var dialog = await DialogService.ShowAsync<WealthRecordsDialog>("Rejestr sakiewki", parameters, await SetOptions());
         var result = await dialog.Result;
         if (result?.Data is null) return;
         if (!result.Canceled)

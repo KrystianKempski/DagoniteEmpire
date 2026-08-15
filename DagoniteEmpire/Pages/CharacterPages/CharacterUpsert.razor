@@ -25,7 +25,7 @@
 @using DA_Models
 @using DagoniteEmpire.Pages.Components
 @using System.Text.Json
-<PageTitle>Dagonie Empire | Character</PageTitle>
+<PageTitle>Dagonie Empire | Postać</PageTitle>
 @inject NavigationManager _navigationManager
 <div class="on-top-dialog">
 
@@ -47,24 +47,24 @@
                         <MudHidden Breakpoint="Breakpoint.LgAndUp" Invert="true">
 
                             <div class="save-btn"> 
-                                <button @onclick="UpsertCharacter" class="btn btn-primary">Save</button>
+                                <button @onclick="UpsertCharacter" class="btn btn-primary">Zapisz</button>
 
                             </div>
                         </MudHidden> 
                         <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
 
                             <div class="save-btn down"> 
-                                <button @onclick="UpsertCharacter" class="btn btn-primary">Save</button>
+                                <button @onclick="UpsertCharacter" class="btn btn-primary">Zapisz</button>
 
                             </div>
                         </MudHidden> 
                     }
                     <section class="section-create-character" @key="@("character-form-" + Id)">
                         <div class="container-fluid">
-                            <h3 class="char-title card-title p-3 m-0">@Title character</h3>
+                            <h3 class="char-title card-title p-3 m-0">@Title postać</h3>
                             <div class="row">
                                 <div class="form-group col-8 col-md-3 px-1">
-                                    <label>Character name</label>
+                                    <label>Nazwa postaci</label>
                                     @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
                                     {
                                         <input type="text" @bind-value="NPCName" class="form-control"></input>
@@ -75,7 +75,7 @@
                                     }
                                 </div>
                                 <div class="form-group col-4 col-md-1 px-1">
-                                    <label>Age</label>
+                                    <label>Wiek</label>
                                     @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
                                     {
                                         <InputNumber  @bind-Value="NPCAge" class="form-control col-2"></InputNumber>
@@ -87,7 +87,7 @@
                                 </div>
 
                                 <div class="form-group col-8 col-md-3 px-1">
-                                    <label>Character Type</label>
+                                    <label>Typ postaci</label>
                                     @if (CanEditCharacterType)
                                     {
                                         <InputSelect @bind-Value="AllParams.Character.NPCType" class="form-select" @bind-Value:after="CharacterTypeHandle">
@@ -108,12 +108,12 @@
                                     }
                                 </div>
                                 <div class="form-group col-4 col-md-1 px-1">
-                                    <label>Finished</label>
+                                    <label>Ukończona</label>
                                     <MudCheckBox Disabled="@((UserInfo?.IsAdminOrMG == false))" @bind-Value="@IsApproved" Size="Size.Medium"></MudCheckBox>
                                 </div>
                                 <div class="col-8 col-md-4 px-1">
                                     <MudStack Spacing="0">
-                                        <label>Current date</label>
+                                        <label>Obecna data</label>
                                         <DateComponent Date="CurrentDate" Editable="UserInfo?.IsAdminOrMG == true"></DateComponent>
                                     </MudStack>
                                 </div>       
@@ -138,7 +138,7 @@
 
                                 <div class="traits p-2">
                                     <MudPaper Class="p-2 m-0 w-100 h-100">
-                                        <h3 class="p-3 m-0 text-center">TRAITS</h3>
+                                        <h3 class="p-3 m-0 text-center">CECHY</h3>
                                         <div class="trait-container">
                                             <TraitsComponent OnTraitsChange="TraitsChange" @bind-Traits="@AllParams.TraitsCharacter" TraitType="@SD.TraitType_Character"></TraitsComponent>
                                         </div>
@@ -158,7 +158,7 @@
 
                                 <div class="traits p-2">
                                     <MudPaper Class="p-2 m-0 w-100 h-100">
-                                        <h3 class="p-3 m-0 text-center">LANGUAGES</h3>
+                                        <h3 class="p-3 m-0 text-center">JĘZYKI</h3>
                                         <div class="trait-container">
                                             <LanguagesComponent OnLanguagesChange="LanguagesChange"></LanguagesComponent>
                                         </div>
@@ -169,7 +169,7 @@
                                 {
                                     <div class="traits p-2">
                                         <MudPaper Class="p-2 m-0 w-100 h-100">
-                                            <h3 class="p-3 m-0 text-center">TEMPORARY STATES</h3>
+                                            <h3 class="p-3 m-0 text-center">STANY TYMCZASOWE</h3>
                                             <div class="trait-container">
                                                 <TraitsComponent OnTraitsChange="TraitsChange" @bind-Traits="@AllParams.TraitsTemporary" TraitType="@SD.TraitType_Temporary"></TraitsComponent>
                                             </div>
@@ -183,11 +183,11 @@
                     <section class="section-create-character" @key="@("character-skills-" + Id)">
                         <div class="container-fluid">
                             <div class="row">
-                                <h3 class="p-3 m-0 text-center">SPECIAL SKILLS</h3>
+                                <h3 class="p-3 m-0 text-center">UMIEJĘTNOŚCI SPECJALNE</h3>
                                 @if(AllParams.Character.IsApproved == false)
                                 {
 
-                                    <button class="btn btn-secondary" style="width: 180px; margin-left:10px; " @onclick="AutoChooseRelatedAttributesForSpecialSkills">Autoselect attributes</button>
+                                    <button class="btn btn-secondary" style="width: 180px; margin-left:10px; " @onclick="AutoChooseRelatedAttributesForSpecialSkills">Autowybór atrybutów</button>
                                 }
                                 <div class="specialskills">
 
@@ -202,7 +202,7 @@
                         </div>
                     </section>
                     <div class="form-group py-2">
-                        <NavLink href="character" class="btn btn-secondary">Back to list</NavLink>
+                        <NavLink href="character" class="btn btn-secondary">Powrót do listy</NavLink>
                     </div>
 
                 }
@@ -237,7 +237,7 @@
     public int Id { get; set; }
     private AllParamsModel AllParams { get; set; }
     private IDisposable? registration;
-    private string Title { get; set; } = "Create";
+    private string Title { get; set; } = "Utwórz";
     public bool IsLoading { get; set; } = true;
     private bool IsLeaveAllowed { get; set; } = true;
     private bool IsDukeAllowed { get; set; } = false;
@@ -275,22 +275,22 @@
 
             if (AllParams.Profession.Name == string.Empty || AllParams.Profession.Description == string.Empty || AllParams.Profession.RelatedAttributeName == string.Empty)
             {
-                _ = _jsRuntime.ToastrWarning("You must add class name, description and related class attribute to approve character");                
+                _ = _jsRuntime.ToastrWarning("Aby zatwierdzić postać, dodaj nazwę profesji, opis i powiązany atrybut profesji");                
                 return;
             }
             if (AllParams.CurrentRace.Name == string.Empty || AllParams.CurrentRace.Description == string.Empty )
             {
-                _ = _jsRuntime.ToastrWarning("You must choose race to approve character");
+                _ = _jsRuntime.ToastrWarning("Aby zatwierdzić postać, wybierz rasę");
                 return;
             }
             if (AllParams.Character.NPCName == string.Empty || AllParams.Character.Description == string.Empty)
             {
-                _ = _jsRuntime.ToastrWarning("You must finish name and description to approve character");
+                _ = _jsRuntime.ToastrWarning("Aby zatwierdzić postać, uzupełnij nazwę i opis");
                 return;
             }
             if (string.IsNullOrEmpty(AllParams.Character.IconUrl))
             {
-                _ = _jsRuntime.ToastrWarning("You must create a character icon to approve character");
+                _ = _jsRuntime.ToastrWarning("Aby zatwierdzić postać, utwórz ikonę postaci");
                 return;
             }
             AllParams.Character.IsApproved = value;
@@ -336,7 +336,7 @@
             else
             {
                 //update
-                Title = "Edit";
+                Title = "Edytuj";
                 await LoadCharacter();
             }
             RefreshDukePermissions();
@@ -363,7 +363,7 @@
         catch (Exception ex)
         {
             IsLoading = false;
-            await _jsRuntime.ToastrError("Error while initialize: " + ex.ToString());
+            await _jsRuntime.ToastrError("Błąd podczas inicjalizacji: " + ex.ToString());
         }
     }
 
@@ -442,7 +442,7 @@
             && UserInfo?.IsAdminOrMG != true)
         {
             IsLoading = false;
-            await _jsRuntime.ToastrWarning("Character type Duke is not available for your account.");
+            await _jsRuntime.ToastrWarning("Typ postaci Duke nie jest dostępny dla Twojego konta.");
             StateHasChanged();
             return;
         }
@@ -671,7 +671,7 @@
         catch (Exception ex)
         {
             IsLoading = false;
-            await _jsRuntime.ToastrError("Error while adding character: " + ex.Message);
+            await _jsRuntime.ToastrError("Błąd podczas dodawania postaci: " + ex.Message);
             IsLeaveAllowed = true;
             _navigationManager.NavigateTo("/character");
         }
@@ -708,7 +708,7 @@
         catch (Exception ex)
         {
             IsLoading = false;
-            await _jsRuntime.ToastrError("Error while deleting: " + ex.ToString());
+            await _jsRuntime.ToastrError("Błąd podczas usuwania: " + ex.ToString());
         }
     }
 
@@ -753,7 +753,7 @@
         catch (Exception ex)
         {
             IsLoading = false;
-            await _jsRuntime.ToastrError("Error in character sheet version. Please create new one: " + ex.Message);
+            await _jsRuntime.ToastrError("Błąd w wersji karty postaci. Utwórz nową: " + ex.Message);
         }
     }
 
@@ -848,7 +848,7 @@
         if (savedLanguageIds.SequenceEqual(currentLanguageIds))
             return true;
 
-        await _jsRuntime.ToastrWarning("You cannot change languages on a finished character.");
+        await _jsRuntime.ToastrWarning("Nie możesz zmieniać języków ukończonej postaci.");
         AllParams.Languages = (await _languageRepository.GetForCharacter(characterId)).ToList();
         return false;
     }

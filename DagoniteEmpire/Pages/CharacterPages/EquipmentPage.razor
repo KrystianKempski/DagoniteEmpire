@@ -14,10 +14,10 @@
 @inject NavigationManager _navigationManager
 @inject IUserService _userService
 @inject IJSRuntime _jsRuntime
-<PageTitle>Dagonie Empire | Equipment</PageTitle>
+<PageTitle>Dagonie Empire | Ekwipunek</PageTitle>
 <div class="on-top-dialog">
 
-    <_LeavePage ComponentDescription="equipment" IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click"></_LeavePage>
+    <_LeavePage ComponentDescription="ekwipunku" IsParentComponentProcessing=IsLoading LeaveConfirmation="ConfirmLeave_Click"></_LeavePage>
 </div>
 
 <MudContainer MaxWidth="MaxWidth.False" Class="px-2">
@@ -84,7 +84,7 @@
 @if (IsLeaveAllowed == false)
 {
     <div class="equipment-save-btn" style="position: fixed; right: 24px; bottom: 24px; z-index: 2000; margin: 0; padding: 0;">
-        <button type="button" @onclick="SaveChanges" class="btn btn-primary">Save</button>
+        <button type="button" @onclick="SaveChanges" class="btn btn-primary">Zapisz</button>
     </div>
 }
 
@@ -148,7 +148,7 @@
         catch (Exception ex)
         {
             IsLoading = false;
-            await _jsruntime.ToastrError("Error while initialize: " + ex.ToString());
+            await _jsruntime.ToastrError("Błąd podczas inicjalizacji: " + ex.ToString());
         }
     }
     private async Task AuthorizeEntry()
@@ -226,7 +226,7 @@
         catch (Exception ex)
         {
             IsLoading = false;
-            await _jsRuntime.ToastrError("Error while changing equipment: " + ex.Message);
+            await _jsRuntime.ToastrError("Błąd podczas zmiany ekwipunku: " + ex.Message);
         }
         IsLoading = false;
         IsLeaveAllowed = true;

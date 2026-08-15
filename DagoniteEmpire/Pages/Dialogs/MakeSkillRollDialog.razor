@@ -13,20 +13,20 @@
     <TitleContent>
         <MudText Typo="Typo.h6">
             <img src="@MyIcon.Dice" width="40" height="40" />
-            Skill roll
+            Rzut na umiejętność
         </MudText>
     </TitleContent>
     <DialogContent>
 
         <MudGrid>
             <MudItem xs="12">
-                <MudSwitch @bind-Value="IsOppositeRoll" Color="Color.Primary">Is opposite roll</MudSwitch>
+                <MudSwitch @bind-Value="IsOppositeRoll" Color="Color.Primary">Rzut przeciwstawny</MudSwitch>
             </MudItem>
             <MudItem xs="6">
                 @* ATTACKER *@
                 <MudPaper Elevation="1" Class="pa-2 h-100">
 
-                    <MudSelect Value="@Roller" T="string" Required="true" ValueChanged="SelectCharacterRolling" Label="Select Rolling character">
+                    <MudSelect Value="@Roller" T="string" Required="true" ValueChanged="SelectCharacterRolling" Label="Wybierz postać rzucającą">
                         <MudSelectItem Value="@string.Empty">@string.Empty</MudSelectItem>
                         @foreach(var attacker in CharacterAllParams) {
                             @if (attacker is not null )
@@ -45,7 +45,7 @@
 
                     @if (SelectedMobRolling is not null)
                     {
-                        <MudSelect T="string" Required="true" @bind-Value="@MobRollSkillKey" Label="Select skill">
+                        <MudSelect T="string" Required="true" @bind-Value="@MobRollSkillKey" Label="Wybierz umiejętność">
                             @foreach (var skill in RollerMobSkills)
                             {
                                 <MudSelectItem Value="@skill.Key">@skill.Label (@skill.Value)</MudSelectItem>
@@ -54,14 +54,14 @@
                     }
                     else
                     {
-                        <MudSelect ReadOnly="SelectedCharacterRolling is null" T="string" Required="true" @bind-Value="@BaseSkillRollName" Label="Select base skill">
+                        <MudSelect ReadOnly="SelectedCharacterRolling is null" T="string" Required="true" @bind-Value="@BaseSkillRollName" Label="Wybierz umiejętność bazową">
                             @foreach (var baseSkill in SD.BaseSkills.All)
                             {
                                 <MudSelectItem Value="@baseSkill">@baseSkill</MudSelectItem>
                             }
                         </MudSelect>
 
-                        <MudSelect ReadOnly="BaseSkillRollName == string.Empty || SelectedCharacterRolling is null" T="SpecialSkillDTO" Required="true" @bind-Value="@SpecialSkillRoll" Label="Select special skill">
+                        <MudSelect ReadOnly="BaseSkillRollName == string.Empty || SelectedCharacterRolling is null" T="SpecialSkillDTO" Required="true" @bind-Value="@SpecialSkillRoll" Label="Wybierz umiejętność specjalną">
                             @if(BaseSkillRollName != string.Empty && SelectedCharacterRolling is not null)
                             {
                                 @foreach (var baseSkill in SelectedCharacterRolling.SpecialSkills.GetAllSection(BaseSkillRollName))
@@ -73,7 +73,7 @@
                     }
 
                     <MudStack Class="pt-1" Row AlignItems="AlignItems.Center" Spacing="1">
-                        <MudText Typo="Typo.body2">Add bonus</MudText>
+                        <MudText Typo="Typo.body2">Dodaj bonus</MudText>
                         <MudFab Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAttackerBonus"/>
                         <MudFab Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Remove" OnClick="RemoveAttackerBonus" />
                     </MudStack>
@@ -93,7 +93,7 @@
                 @if (IsOppositeRoll == false)
                 {
                     <MudPaper Elevation="1" Class="pa-2 h-100">
-                        <MudSelect T="int" Required="true" @bind-Value="DifficultyValue" Label="Select difficulty">
+                        <MudSelect T="int" Required="true" @bind-Value="DifficultyValue" Label="Wybierz trudność">
                             @foreach (var defender in SD.DifficultyLevel.ToList())
                             {
                                 <MudSelectItem Value="@defender.Value">@defender.Key</MudSelectItem>
@@ -106,7 +106,7 @@
                 {                
                     @* DEFENDER *@                
                     <MudPaper Elevation="1" Class="pa-2 h-100">
-                        <MudSelect Value="@Defender" T="string" Required="true" ValueChanged="SelectDefender" Label="Select Defender">
+                        <MudSelect Value="@Defender" T="string" Required="true" ValueChanged="SelectDefender" Label="Wybierz obrońcę">
                             <MudSelectItem Value="@string.Empty">@string.Empty</MudSelectItem>
                             @foreach (var defender in CharacterAllParams)
                             {
@@ -126,7 +126,7 @@
 
                         @if (SelectedMobDefending is not null)
                         {
-                            <MudSelect T="string" Required="true" @bind-Value="@MobDefenceSkillKey" Label="Select skill">
+                            <MudSelect T="string" Required="true" @bind-Value="@MobDefenceSkillKey" Label="Wybierz umiejętność">
                                 @foreach (var skill in DefenderMobSkills)
                                 {
                                     <MudSelectItem Value="@skill.Key">@skill.Label (@skill.Value)</MudSelectItem>
@@ -135,14 +135,14 @@
                         }
                         else
                         {
-                            <MudSelect ReadOnly="SelectedCharacterDefending is null" T="string" Required="true" @bind-Value="@BaseSkillDefenceName" Label="Select base skill">
+                            <MudSelect ReadOnly="SelectedCharacterDefending is null" T="string" Required="true" @bind-Value="@BaseSkillDefenceName" Label="Wybierz umiejętność bazową">
                                 @foreach (var baseSkill in SD.BaseSkills.All)
                                 {
                                     <MudSelectItem Value="@baseSkill">@baseSkill</MudSelectItem>
                                 }
                             </MudSelect> 
 
-                            <MudSelect ReadOnly="BaseSkillDefenceName == string.Empty || SelectedCharacterDefending is null" T="SpecialSkillDTO" Required="true" @bind-Value="@SpecialSkillDefence" Label="Select special skill">
+                            <MudSelect ReadOnly="BaseSkillDefenceName == string.Empty || SelectedCharacterDefending is null" T="SpecialSkillDTO" Required="true" @bind-Value="@SpecialSkillDefence" Label="Wybierz umiejętność specjalną">
                                 @if (BaseSkillDefenceName != string.Empty && SelectedCharacterDefending is not null)
                                 {
                                     @foreach (var baseSkill in SelectedCharacterDefending.SpecialSkills.GetAllSection(BaseSkillDefenceName))
@@ -154,7 +154,7 @@
                         }
 
                         <MudStack Class="pt-1" Row AlignItems="AlignItems.Center" Spacing="1">
-                            <MudText Typo="Typo.body2">Add bonus</MudText>
+                        <MudText Typo="Typo.body2">Dodaj bonus</MudText>
                             <MudFab Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="AddDefenderBonus" />
                             <MudFab Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Remove" OnClick="RemoveDefenderBonus" />
                         </MudStack>
@@ -169,7 +169,7 @@
                 }
             </MudItem>
             <MudItem xs="12">
-                <MudButton Class="p-2 m-2 w-100 justify-content-center"  Variant="Variant.Filled" Color="Color.Primary" OnClick="MakeRoll">Roll!</MudButton>
+                <MudButton Class="p-2 m-2 w-100 justify-content-center"  Variant="Variant.Filled" Color="Color.Primary" OnClick="MakeRoll">Rzuć!</MudButton>
             </MudItem>
 
             <MudItem xs="12">
@@ -200,8 +200,8 @@
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Exit</MudButton>
-        <MudButton Color="Color.Error" OnClick="SaveSequenceBtn">Save</MudButton>
+        <MudButton OnClick="Cancel">Wyjdź</MudButton>
+        <MudButton Color="Color.Error" OnClick="SaveSequenceBtn">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -259,17 +259,17 @@
 
     private static IReadOnlyList<MobSkillEntry> BuildMobSkills(MobDTO mob) =>
     [
-        new("attack", "Attack", mob.AttackSkillValue),
-        new("dodge", "Dodge", mob.DodgeSkillValue),
-        new("shield", "Shield", mob.ShieldSkillValue),
-        new("armor", "Armor", mob.ArmorSkillValue),
-        new("parry", "Parry", mob.ParrySkillValue),
-        new("pain-resistance", "Pain resistance", mob.PainResSkillValue),
-        new("lifting", "Lifting", mob.LiftingSkillValue),
-        new("wrestling", "Wrestling", mob.WrestlingSkillValue),
-        new("perception", "Perception", mob.PerceptionSkillValue),
-        new("willpower", "Willpower", mob.WillpowerSkillValue),
-        new("charisma", "Charisma", mob.CharismaSkillValue),
+        new("attack", "Atak", mob.AttackSkillValue),
+        new("dodge", "Unik", mob.DodgeSkillValue),
+        new("shield", "Tarcza", mob.ShieldSkillValue),
+        new("armor", "Pancerz", mob.ArmorSkillValue),
+        new("parry", "Parowanie", mob.ParrySkillValue),
+        new("pain-resistance", "Odporność na ból", mob.PainResSkillValue),
+        new("lifting", "Podnoszenie", mob.LiftingSkillValue),
+        new("wrestling", "Zapasy", mob.WrestlingSkillValue),
+        new("perception", "Percepcja", mob.PerceptionSkillValue),
+        new("willpower", "Siła woli", mob.WillpowerSkillValue),
+        new("charisma", "Charyzma", mob.CharismaSkillValue),
     ];
 
     private static bool TryGetMobSkill(IReadOnlyList<MobSkillEntry> skills, string key, out MobSkillEntry entry)
@@ -379,7 +379,7 @@
         }
         catch(Exception ex)
         {
-            Snackbar.Add("Error while selecting Attacker: " + ex.Message);
+            Snackbar.Add("Błąd podczas wybierania atakującego: " + ex.Message);
         }
     }
 
@@ -412,7 +412,7 @@
         }
         catch(Exception ex)
         {
-            Snackbar.Add("Error while selecting Defender: " + ex.Message);
+            Snackbar.Add("Błąd podczas wybierania obrońcy: " + ex.Message);
         }
     }
 
@@ -474,7 +474,7 @@
         if (!IsRollerReady() || string.IsNullOrEmpty(RollerName)
             || (IsOppositeRoll && (!IsDefenderReady() || string.IsNullOrEmpty(DefenderName))))
         {
-            Snackbar.Add("Some component is missing", Severity.Warning);
+            Snackbar.Add("Brakuje jakiegoś elementu", Severity.Warning);
             return;
         }
 
@@ -484,17 +484,17 @@
 
         if (!IsOppositeRoll)
         {
-            ResultStringMG += $"{RichText.BoldText(RollerName)} is making an {SD.GetDifficultyName(DifficultyValue)} {RichText.BoldText(rollerSkill.Name)} skill check";
+            ResultStringMG += $"{RichText.BoldText(RollerName)} wykonuje sprawdzian umiejętności {RichText.BoldText(rollerSkill.Name)} o trudności {SD.GetDifficultyName(DifficultyValue)}";
             ResultStringMG.NewLine();
-            ResultStringMG += $"{RollerName} skill value: {sumOfAll}";
+            ResultStringMG += $"Wartość umiejętności {RollerName}: {sumOfAll}";
             ResultStringMG.NewLine();
             foreach (var item in AdditionalAttackerBonuses)
             {
                 sumOfAll += item.Second;
-                ResultStringMG += $"Bonus from {item.First}: {item.Second}";
+                ResultStringMG += $"Bonus od {item.First}: {item.Second}";
                 ResultStringMG.NewLine();
             }
-            ResultStringMG += $"Difficulty level: {DifficultyValue}";
+            ResultStringMG += $"Poziom trudności: {DifficultyValue}";
             ResultStringMG.NewLine();
         }
 
@@ -502,32 +502,32 @@
         if (IsOppositeRoll)
         {
             var defenderSkill = GetDefenderSkill();
-            ResultStringMG += $"{RichText.BoldText(RollerName)} is making an opposite {rollerSkill.Name} skill check vs. {RichText.BoldText(DefenderName)} {defenderSkill.Name} skill";
+            ResultStringMG += $"{RichText.BoldText(RollerName)} wykonuje przeciwstawny sprawdzian umiejętności {rollerSkill.Name} przeciwko umiejętności {defenderSkill.Name} postaci {RichText.BoldText(DefenderName)}";
             ResultStringMG.NewLine();
-            ResultStringMG += $"{RollerName} skill value: {rollerSkill.Value}";
+            ResultStringMG += $"Wartość umiejętności {RollerName}: {rollerSkill.Value}";
             ResultStringMG.NewLine();
             foreach (var item in AdditionalAttackerBonuses)
             {
-                ResultStringMG += $"Bonus from {item.First}: {item.Second}";
+                ResultStringMG += $"Bonus od {item.First}: {item.Second}";
                 ResultStringMG.NewLine();
             }
-            ResultStringMG += $"{DefenderName} skill value: {defenderSkill.Value}";
+            ResultStringMG += $"Wartość umiejętności {DefenderName}: {defenderSkill.Value}";
             ResultStringMG.NewLine();
             foreach (var item in AdditionalDefenderBonuses)
             {
-                ResultStringMG += $"Bonus from {item.First}: {item.Second}";
+                ResultStringMG += $"Bonus od {item.First}: {item.Second}";
                 ResultStringMG.NewLine();
             }
 
             var bonusesAttacker = new List<Pair<string, int>>
             {
-                new("skill", rollerSkill.Value)
+                new("umiejętność", rollerSkill.Value)
             };
             bonusesAttacker.AddRange(AdditionalAttackerBonuses);
 
             var bonusesDefender = new List<Pair<string, int>>
             {
-                new("skill", defenderSkill.Value)
+                new("umiejętność", defenderSkill.Value)
             };
             bonusesDefender.AddRange(AdditionalDefenderBonuses);
 
@@ -548,7 +548,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add("Error while rolling: " + ex.Message, Severity.Error);
+            Snackbar.Add("Błąd podczas rzucania: " + ex.Message, Severity.Error);
         }
     }
 
@@ -558,16 +558,16 @@
         {
             if (string.IsNullOrEmpty(RollResultString))
             {
-                Snackbar.Add("Make a roll first", Severity.Warning);
+                Snackbar.Add("Najpierw wykonaj rzut", Severity.Warning);
                 return;
             }
 
             MudDialog.Close(DialogResult.Ok(new SkillRollDialogResult(RollResultString, WrapForThread: true)));
-            Snackbar.Add("Roll added", Severity.Success);
+            Snackbar.Add("Rzut dodany", Severity.Success);
         }
         catch(Exception ex)
         {
-            Snackbar.Add("Error while saving: " + ex.Message, Severity.Error);
+            Snackbar.Add("Błąd podczas zapisywania: " + ex.Message, Severity.Error);
         }
     }    
 }

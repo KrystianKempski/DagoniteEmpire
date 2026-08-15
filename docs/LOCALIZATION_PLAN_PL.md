@@ -194,11 +194,12 @@ Strony scaffoldowane ASP.NET (angielskie): logowanie, rejestracja, 2FA, zarządz
 - [x] `Account/Shared/*.razor` (`StatusMessage` — przełącznik koloru na prefiks „Błąd")
 - [ ] Komunikaty walidacji / `DataAnnotations` z frameworka — **odłożone (Faza 2b/10)**, patrz QUESTIONS
 
-### Faza 3 — System postaci 🟡 (L) — ~18 + 5 + część Dialogs
+### Faza 3 — System postaci 🟡 (L) — ~18 + 5 + część Dialogs ✅ UKOŃCZONA
 Rdzeń rozgrywki gracza-bohatera.
-- [ ] `Pages/Components/*` (PanelCharacterComponent, Attribute/BaseSkills/SpecialSkills/Traits, Race, Profession, Equipment, Portrait, Languages, Date, BattleStats…)
-- [ ] `Pages/CharacterPages/*` (CharacterList, CharacterUpsert, ProfessionPage, EquipmentPage, HealthPage)
-- [ ] Dialogi postaci w `Pages/Dialogs/*` (CreateTrait, CreateWound, CreateRace, CreateProfession(+Skill), AddStatus, SelectLanguage, MakeSkillRoll, Spell, HumanRaceTraits, ExistingTrait/Equipment…)
+- [x] `Pages/Components/*` (PanelCharacter, Attribute/BaseSkills/SpecialSkills/Traits, Race, Profession, Equipment, Portrait, Languages, Date, BattleStats, BattleMap, BattleDrawer, MobsList)
+- [x] `Pages/CharacterPages/*` (CharacterList, CharacterUpsert, ProfessionPage, EquipmentPage, HealthPage)
+- [x] Dialogi postaci w `Pages/Dialogs/*` (CreateTrait, CreateWound, CreateRace, CreateProfession(+Skill), AddStatus, SelectLanguage, MakeSkillRoll, Spell, HumanRaceTraits, ExistingTrait/Equipment, EquipmentTemplateSelect, CreateEquipmentSlot, CharDescription, WealthRecords)
+- [ ] Drobne odłożone: waluty (lore), DataLabel mobilne, TraitLabel z DTO, wynik rzutu (Faza 8) — patrz QUESTIONS
 
 ### Faza 4 — Kampania i czat 🟡 (M) — ~3 + Dialogs + Chat
 - [ ] `Pages/Campaign/*` (CampaignList, ChapterList, ChapterThread)

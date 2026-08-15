@@ -18,19 +18,19 @@
                          Hideable="false" SortMode="@SortMode.None" Groupable="false" Elevation="2" ColumnResizeMode="ResizeMode.None" SelectOnRowClick="false" SelectedItemsChanged="@SelectedItemsChanged">
                 <Columns>
                     <SelectColumn  T="TraitDTO" />
-                    <PropertyColumn CellStyle="max-width:80px;" Editable="false" Property="x => x.Name" Title="Name" />
-                    <PropertyColumn Editable="false" Property="x => x.SummaryDescr" Title="Description" />
+                    <PropertyColumn CellStyle="max-width:80px;" Editable="false" Property="x => x.Name" Title="Nazwa" />
+                    <PropertyColumn Editable="false" Property="x => x.SummaryDescr" Title="Opis" />
                     @if (TraitType == SD.TraitType_Temporary)
                     {
-                        <PropertyColumn CellStyle="max-width:40px;" Editable="true" Property="x => x.TraitValue" Title="Duration" />
+                        <PropertyColumn CellStyle="max-width:40px;" Editable="true" Property="x => x.TraitValue" Title="Czas trwania" />
                     }
                 </Columns>
             </MudDataGrid>
         </div>
     </DialogContent>
         <DialogActions>
-            <MudButton OnClick="OnCancelBtnClick">Cancel</MudButton>
-            <MudButton Color="Color.Error" OnClick="OnSaveTraitBtnClick">Save</MudButton>
+            <MudButton OnClick="OnCancelBtnClick">Anuluj</MudButton>
+            <MudButton Color="Color.Error" OnClick="OnSaveTraitBtnClick">Zapisz</MudButton>
         </DialogActions>
     </MudDialog>
 
@@ -46,7 +46,7 @@
     private string TraitName = "";
     private MudDataGrid<TraitDTO> Grid = null;
     private IEnumerable<TraitDTO> Traits { get; set; }
-    public string HeaderName { get; set; } = "Add existing traits";
+    public string HeaderName { get; set; } = "Dodaj istniejące cechy";
     private string IconSource = MyIcon.Ability;
 
     protected override async Task OnInitializedAsync()
@@ -71,13 +71,13 @@
 
         switch (TraitType)
         {
-            case SD.TraitType_Character: TraitName = "trait"; break;
-            case SD.TraitType_Temporary: TraitName = "state"; break;
-            case SD.TraitType_Gear: TraitName = "item trait"; break;
-            case SD.TraitType_Profession: TraitName = "skill"; break;
-            case SD.TraitType_Race: TraitName = "trait"; break;
+            case SD.TraitType_Character: TraitName = "cechy"; break;
+            case SD.TraitType_Temporary: TraitName = "statusy"; break;
+            case SD.TraitType_Gear: TraitName = "cechy przedmiotu"; break;
+            case SD.TraitType_Profession: TraitName = "umiejętności"; break;
+            case SD.TraitType_Race: TraitName = "cechy"; break;
         }
-        HeaderName = "Add " + TraitName + "s " + "from existing";
+        HeaderName = "Dodaj " + TraitName + " z istniejących";
 
         switch (TraitType)
         {
@@ -115,9 +115,9 @@
         {
             string text = "";
             if (MultiRowSelection)
-                text = "Selected " + TraitName + "s added";
+                text = "Wybrane " + TraitName + " dodano";
             else
-                text = ChosenTraits.First().Name + " selected";
+                text = ChosenTraits.First().Name + " wybrano";
             Snackbar.Add(text, Severity.Success);
         }
     }
