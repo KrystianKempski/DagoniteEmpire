@@ -3,6 +3,13 @@
 @layout DagoniteEmpire.Shared.MainLayout
 @inject NavigationManager NavigationManager
 
+<div class="barony-mobile-block">
+    <div class="barony-mobile-block__card">
+        <span class="barony-mobile-block__title">Not available on mobile yet</span>
+        <span class="barony-mobile-block__hint">The Barony view needs a larger screen. Please open it on a desktop.</span>
+    </div>
+</div>
+
 <div class="barony-scope @(IsDomainPanel ? "barony-scope--domain-panel" : "") @(IsBuildingsCatalog ? "barony-scope--buildings-catalog" : "") @(IsMarchMap ? "barony-scope--march-map" : "") @(IsBattleMap ? "barony-scope--battle-map" : "")">
     <DemoModeBanner />
     <CascadingValue Value="@_viewOptions">
