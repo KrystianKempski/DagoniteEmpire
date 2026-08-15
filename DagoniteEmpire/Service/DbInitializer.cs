@@ -2901,56 +2901,111 @@ namespace DagoniteEmpire.Service
 
         private static async Task EnsureGenericDemoBaronAsync(ApplicationDbContext contex)
         {
-            const string sourceName = "Thaddeus Direbolt";
-            const string demoName = "Aldric Emberfall";
+            var snapshot = DA_Models.DemoBaronSeed.Load();
+            var demoName = snapshot.NpcName;
 
-            if (await contex.Characters.AnyAsync(c => c.NPCName == demoName))
-                return;
-
-            var source = await contex.Characters
-                .AsNoTracking()
-                .Include(c => c.Attributes)
-                .Include(c => c.BaseSkills)
+            var existing = await contex.Characters
                 .Include(c => c.SpecialSkills)
-                .Include(c => c.EquipmentSlots)
-                .Include(c => c.Languages)
-                .FirstOrDefaultAsync(c => c.NPCName == sourceName);
+                .FirstOrDefaultAsync(c => c.NPCName == demoName);
 
-            if (source is null)
-            {
-                // Production/fresh databases have no hand-made "Thaddeus Direbolt" to clone from,
-                // so build the demo baron from the standard code-embedded character template instead.
-                // Without this the demo endpoints throw "source character not found" → HTTP 500.
-                var templated = await BuildDemoBaronFromTemplateAsync(contex, demoName);
-                ApplyDemoBaronSkillProfile(templated);
-                contex.Characters.Add(templated);
-                await contex.SaveChangesAsync();
+            // Already seeded with the full sheet — nothing to do.
+            if (existing is not null
+                && existing.ProfessionId > 0
+                && (existing.SpecialSkills?.Count ?? 0) >= snapshot.SpecialSkills.Length)
                 return;
+
+            // A previously seeded but incomplete demo baron: drop it and rebuild from the snapshot.
+            if (existing is not null)
+            {
+                var stale = await contex.Characters
+                    .Include(c => c.Attributes)
+                    .Include(c => c.BaseSkills)
+                    .Include(c => c.SpecialSkills)
+                    .Include(c => c.EquipmentSlots)
+                    .Include(c => c.Languages)
+                    .FirstAsync(c => c.Id == existing.Id);
+                contex.Characters.Remove(stale);
+                await contex.SaveChangesAsync();
+            }
+
+            var created = await BuildDemoBaronFromSnapshotAsync(contex, snapshot);
+            contex.Characters.Add(created);
+            await contex.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Materialises the demo baron from the embedded snapshot of the hand-authored
+        /// "Aldric Emberfall" (see <see cref="DA_Models.DemoBaronSeed"/>). Foreign keys
+        /// (profession, race, languages) are resolved by name — creating the profession/race
+        /// when absent — so every database seeds an identical, fully populated character.
+        /// </summary>
+        private static async Task<Character> BuildDemoBaronFromSnapshotAsync(
+            ApplicationDbContext contex, DA_Models.DemoBaronSeed.CharacterData snapshot)
+        {
+            int professionId = 0;
+            if (snapshot.Profession is { } prof)
+            {
+                var profession = await contex.Professions
+                    .FirstOrDefaultAsync(p => p.Name == prof.Name);
+                if (profession is null)
+                {
+                    profession = new Profession
+                    {
+                        Name = prof.Name,
+                        Description = prof.Description ?? string.Empty,
+                        RelatedAttributeName = prof.RelatedAttributeName ?? string.Empty,
+                        ClassLevel = prof.ClassLevel,
+                        CurrentFocusPoints = prof.CurrentFocusPoints,
+                        IsApproved = prof.IsApproved,
+                        IsUniversal = prof.IsUniversal,
+                        CasterType = (SpellcasterType)prof.CasterType,
+                    };
+                    contex.Professions.Add(profession);
+                    await contex.SaveChangesAsync();
+                }
+                professionId = profession.Id;
+            }
+
+            int? raceId = null;
+            if (snapshot.Race is { } raceData)
+            {
+                var race = await contex.Races
+                    .FirstOrDefaultAsync(r => r.Name == raceData.Name);
+                if (race is null)
+                {
+                    race = new Race
+                    {
+                        Name = raceData.Name,
+                        Index = raceData.Index,
+                        Description = raceData.Description ?? string.Empty,
+                        RaceApproved = raceData.RaceApproved,
+                    };
+                    contex.Races.Add(race);
+                    await contex.SaveChangesAsync();
+                }
+                raceId = race.Id;
             }
 
             var created = new Character
             {
-                UserName = source.UserName,
-                Relation = source.Relation,
-                NPCName = demoName,
-                Description =
-                    "A former adventurer who now rules as a practical baron. Veteran of border expeditions, " +
-                    "strong in melee command and battle leadership, while still keeping a blacksmith's and " +
-                    "craftsman's discipline.",
-                Age = source.Age,
-                ImageUrl = "/images/aldric.jpg",
-                IconUrl = "/images/aldric-icon.webp",
-                NPCType = SD.NPCType.Duke,
-                AttributePoints = source.AttributePoints,
-                CurrentExpPoints = source.CurrentExpPoints,
-                UsedExpPoints = source.UsedExpPoints,
-                TraitBalance = source.TraitBalance,
-                RaceId = source.RaceId,
+                UserName = SD.DemoBaronTemplateUserName,
+                Relation = (Relation)snapshot.Relation,
+                NPCName = snapshot.NpcName,
+                Description = snapshot.Description,
+                Age = snapshot.Age,
+                ImageUrl = snapshot.ImageUrl,
+                IconUrl = snapshot.IconUrl,
+                NPCType = snapshot.NpcType ?? SD.NPCType.Duke,
+                AttributePoints = snapshot.AttributePoints,
+                CurrentExpPoints = snapshot.CurrentExpPoints,
+                UsedExpPoints = snapshot.UsedExpPoints,
+                TraitBalance = snapshot.TraitBalance,
+                WeaponSet = snapshot.WeaponSet,
+                DateNumber = snapshot.DateNumber,
+                RaceId = raceId,
+                ProfessionId = professionId,
                 IsApproved = true,
-                ProfessionId = source.ProfessionId,
-                WeaponSet = source.WeaponSet,
-                DateNumber = source.DateNumber,
-                Attributes = source.Attributes?
+                Attributes = snapshot.Attributes
                     .OrderBy(a => a.Index)
                     .Select(a => new DA_DataAccess.CharacterClasses.Attribute
                     {
@@ -2966,7 +3021,7 @@ namespace DagoniteEmpire.Service
                         HealthBonus = a.HealthBonus,
                     })
                     .ToList(),
-                BaseSkills = source.BaseSkills?
+                BaseSkills = snapshot.BaseSkills
                     .OrderBy(s => s.Index)
                     .Select(s => new BaseSkill
                     {
@@ -2984,10 +3039,7 @@ namespace DagoniteEmpire.Service
                         RelatedAttribute2 = s.RelatedAttribute2,
                     })
                     .ToList(),
-                SpecialSkills = source.SpecialSkills?
-                    .OrderBy(s => s.RelatedBaseSkillName)
-                    .ThenBy(s => s.Index)
-                    .ThenBy(s => s.Name)
+                SpecialSkills = snapshot.SpecialSkills
                     .Select(s => new SpecialSkill
                     {
                         Name = s.Name,
@@ -3007,211 +3059,26 @@ namespace DagoniteEmpire.Service
                         Editable = s.Editable,
                     })
                     .ToList(),
-                EquipmentSlots = source.EquipmentSlots?
-                    .OrderBy(s => s.Id)
-                    .Select(s => new EquipmentSlot
+                EquipmentSlots = snapshot.EquipmentSlots
+                    .Select(e => new EquipmentSlot
                     {
-                        Count = s.Count,
-                        EquipmentID = s.EquipmentID,
-                        IsEquipped = s.IsEquipped,
-                        SlotType = s.SlotType,
+                        Count = e.Count,
+                        EquipmentID = e.EquipmentID,
+                        IsEquipped = e.IsEquipped,
+                        SlotType = e.SlotType,
                     })
                     .ToList(),
             };
 
-            if (source.Languages is { Count: > 0 })
+            if (snapshot.Languages.Length > 0)
             {
-                var languageIds = source.Languages.Select(l => l.Id).ToList();
+                var names = snapshot.Languages;
                 created.Languages = await contex.Languages
-                    .Where(l => languageIds.Contains(l.Id))
+                    .Where(l => names.Contains(l.Name))
                     .ToListAsync();
             }
 
-            ApplyDemoBaronSkillProfile(created);
-
-            contex.Characters.Add(created);
-            await contex.SaveChangesAsync();
-        }
-
-        /// <summary>
-        /// Builds the persistent demo-baron source character from the standard code-embedded
-        /// character template (<see cref="DA_Models.CharacterSeeder"/>) so it exists on any
-        /// database, including fresh production ones that lack the hand-made clone source.
-        /// </summary>
-        private static async Task<Character> BuildDemoBaronFromTemplateAsync(ApplicationDbContext contex, string demoName)
-        {
-            var warriorProfession = await contex.Professions
-                .FirstOrDefaultAsync(p => p.Name == "Warrior");
-
-            if (warriorProfession is null)
-            {
-                warriorProfession = new Profession
-                {
-                    Name = "Warrior",
-                    Description = "A battle-hardened fighter who relies on raw strength and melee discipline.",
-                    RelatedAttributeName = "Strength",
-                    IsApproved = true,
-                    ClassLevel = 2,
-                };
-
-                contex.Professions.Add(warriorProfession);
-                await contex.SaveChangesAsync();
-            }
-
-            var raceId = await contex.Races
-                .OrderByDescending(r => r.RaceApproved)
-                .ThenBy(r => r.Id)
-                .Select(r => (int?)r.Id)
-                .FirstOrDefaultAsync();
-
-            var created = new Character
-            {
-                UserName = SD.DemoBaronTemplateUserName,
-                NPCName = demoName,
-                Description =
-                    "A former adventurer who now rules as a practical baron. Veteran of border expeditions, " +
-                    "strong in melee command and battle leadership, while still keeping a blacksmith's and " +
-                    "craftsman's discipline.",
-                Age = 42,
-                ImageUrl = "/images/aldric.jpg",
-                IconUrl = "/images/aldric-icon.webp",
-                NPCType = SD.NPCType.Duke,
-                IsApproved = true,
-                ProfessionId = warriorProfession.Id,
-                RaceId = raceId,
-                Attributes = DA_Models.CharacterSeeder.GetAttributes().Values
-                    .OrderBy(a => a.Index)
-                    .Select(a => new DA_DataAccess.CharacterClasses.Attribute
-                    {
-                        Name = a.Name,
-                        Index = a.Index,
-                    })
-                    .ToList(),
-                BaseSkills = DA_Models.CharacterSeeder.GetBaseSkills()
-                    .OrderBy(s => s.Index)
-                    .Select(s => new BaseSkill
-                    {
-                        Name = s.Name,
-                        Index = s.Index,
-                        RelatedAttribute1 = s.RelatedAttribute1,
-                        RelatedAttribute2 = s.RelatedAttribute2,
-                    })
-                    .ToList(),
-                SpecialSkills = DA_Models.CharacterSeeder.GetSpecialSkills()
-                    .OrderBy(s => s.RelatedBaseSkillName)
-                    .ThenBy(s => s.Index)
-                    .ThenBy(s => s.Name)
-                    .Select(s => new SpecialSkill
-                    {
-                        Name = s.Name,
-                        Index = s.Index,
-                        RelatedAttribute1 = s.RelatedAttribute1,
-                        RelatedAttribute2 = s.RelatedAttribute2,
-                        RelatedBaseSkillName = s.RelatedBaseSkillName,
-                        ChosenAttribute = s.ChosenAttribute,
-                    })
-                    .ToList(),
-            };
-
-            var common = (await contex.Languages.ToListAsync())
-                .FirstOrDefault(l => SD.Languages.IsCommon(l.Name));
-            if (common is not null)
-                created.Languages = new List<Language> { common };
-
             return created;
-        }
-
-        private static void ApplyDemoBaronSkillProfile(Character character)
-        {
-            if (character.Attributes is not null)
-            {
-                BoostAttribute(character.Attributes, "Strength", 4);
-                BoostAttribute(character.Attributes, "Charisma", 5);
-                BoostAttribute(character.Attributes, "Intelligence", 1);
-                BoostAttribute(character.Attributes, "Willpower", 1);
-            }
-
-            if (character.BaseSkills is not null)
-            {
-                SetBaseSkill(character.BaseSkills, "Melee", 6);
-                SetBaseSkill(character.BaseSkills, "Athletics", 5);
-                SetBaseSkill(character.BaseSkills, "Talk", 5);
-                SetBaseSkill(character.BaseSkills, "Knowledge", 5);
-                SetBaseSkill(character.BaseSkills, "Craft", 6);
-            }
-
-            if (character.SpecialSkills is not null)
-            {
-                SetSpecialSkill(character.SpecialSkills, "Acting", 1);
-                SetSpecialSkill(character.SpecialSkills, "Animals care", 1);
-                SetSpecialSkill(character.SpecialSkills, "Armor", 3);
-                SetSpecialSkill(character.SpecialSkills, "Balance", 1);
-                SetSpecialSkill(character.SpecialSkills, "Bluff", 3);
-                SetSpecialSkill(character.SpecialSkills, "Climbing", 1);
-                SetSpecialSkill(character.SpecialSkills, "Diplomacy", 3);
-                SetSpecialSkill(character.SpecialSkills, "Dirty tricks", 2);
-                SetSpecialSkill(character.SpecialSkills, "Dodge", 3);
-                SetSpecialSkill(character.SpecialSkills, "Geography", 2);
-                SetSpecialSkill(character.SpecialSkills, "Geology and mining", 2);
-                SetSpecialSkill(character.SpecialSkills, "Handcraft", 4);
-                SetSpecialSkill(character.SpecialSkills, "Hearing", 1);
-                SetSpecialSkill(character.SpecialSkills, "Heraldry", 1);
-                SetSpecialSkill(character.SpecialSkills, "History and religion", 2);
-                SetSpecialSkill(character.SpecialSkills, "Shields", 3);
-                SetSpecialSkill(character.SpecialSkills, "Strategy and tactics", 5);
-                SetSpecialSkill(character.SpecialSkills, "Inspire", 4);
-                SetSpecialSkill(character.SpecialSkills, "Intimidate", 3);
-                SetSpecialSkill(character.SpecialSkills, "Jumping", 1);
-                SetSpecialSkill(character.SpecialSkills, "Lifting", 2);
-                SetSpecialSkill(character.SpecialSkills, "Linguistics", 5);
-                SetSpecialSkill(character.SpecialSkills, "Mathematics and logic", 2);
-                SetSpecialSkill(character.SpecialSkills, "Metallurgy and blacksmithing", 5);
-                SetSpecialSkill(character.SpecialSkills, "Pain Resistance", 4);
-                SetSpecialSkill(character.SpecialSkills, "Persuasion", 4);
-                SetSpecialSkill(character.SpecialSkills, "Pickpocketing", 4);
-                SetSpecialSkill(character.SpecialSkills, "Plants and mushrooms", 3);
-                SetSpecialSkill(character.SpecialSkills, "Public speech", 4);
-                SetSpecialSkill(character.SpecialSkills, "Riding", 3);
-                SetSpecialSkill(character.SpecialSkills, "Running", 2);
-                SetSpecialSkill(character.SpecialSkills, "Sense motives", 1);
-                SetSpecialSkill(character.SpecialSkills, "Sense of direction", 2);
-                SetSpecialSkill(character.SpecialSkills, "Sneak", 3);
-                SetSpecialSkill(character.SpecialSkills, "Survival", 3);
-                SetSpecialSkill(character.SpecialSkills, "Swimming", 1);
-                SetSpecialSkill(character.SpecialSkills, "Swords and sabres", 5);
-                SetSpecialSkill(character.SpecialSkills, "Tend wounds", 2);
-                SetSpecialSkill(character.SpecialSkills, "Threatening", 3);
-                SetSpecialSkill(character.SpecialSkills, "Torture", 2);
-                SetSpecialSkill(character.SpecialSkills, "Trade", 2);
-                SetSpecialSkill(character.SpecialSkills, "Trapping", 1);
-                SetSpecialSkill(character.SpecialSkills, "Vigilance", 2);
-                SetSpecialSkill(character.SpecialSkills, "Wilderness knowledge", 3);
-                SetSpecialSkill(character.SpecialSkills, "Wrestling", 4);
-            }
-        }
-
-        private static void BoostAttribute(IEnumerable<DA_DataAccess.CharacterClasses.Attribute> attributes, string name, int add)
-        {
-            var attr = attributes.FirstOrDefault(a => string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase));
-            if (attr is null)
-                return;
-            attr.BaseBonus += add;
-        }
-
-        private static void SetBaseSkill(IEnumerable<BaseSkill> skills, string name, int value)
-        {
-            var skill = skills.FirstOrDefault(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase));
-            if (skill is null)
-                return;
-            skill.BaseBonus = value;
-        }
-
-        private static void SetSpecialSkill(IEnumerable<SpecialSkill> skills, string name, int value)
-        {
-            var skill = skills.FirstOrDefault(s => string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase));
-            if (skill is null)
-                return;
-            skill.BaseBonus = value;
         }
 
         /// <summary>Reseed catalog when empty, legacy Polish, or outdated farm/mine/quarry/sawmill names.</summary>
