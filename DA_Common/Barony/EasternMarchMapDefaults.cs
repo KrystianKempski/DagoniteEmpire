@@ -7,6 +7,13 @@ namespace DA_Common.Barony
     {
         private const string ResourceName = "DA_Common.Barony.SeedData.eastern-march-map.json";
 
+        /// <summary>
+        /// Bump when the authored map changes and every environment should adopt it. The seeder overwrites
+        /// any stored map whose <see cref="MarchMapDocument.SeedVersion"/> is lower (legacy/procedural = 0),
+        /// while MG edits made after adopting this version keep the stamp and are preserved.
+        /// </summary>
+        public const int CurrentSeedVersion = 1;
+
         private static readonly JsonSerializerOptions JsonOptions = new()
         {
             PropertyNameCaseInsensitive = true,
@@ -34,6 +41,7 @@ namespace DA_Common.Barony
                 var doc = JsonSerializer.Deserialize<MarchMapDocument>(reader.ReadToEnd(), JsonOptions);
                 if (doc is null || doc.Nodes is null || doc.Nodes.Count == 0)
                     return null;
+                doc.SeedVersion = CurrentSeedVersion;
                 return doc;
             }
             catch

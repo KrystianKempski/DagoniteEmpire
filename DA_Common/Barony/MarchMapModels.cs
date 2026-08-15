@@ -32,6 +32,9 @@ namespace DA_Common.Barony
     {
         public const string DefaultImageUrl = "/maps/eastern-march.jpg";
 
+        /// <summary>Authored-seed revision baked into this payload; 0 = legacy/procedural. See <see cref="EasternMarchMapDefaults.CurrentSeedVersion"/>.</summary>
+        public int SeedVersion { get; set; }
+
         public string ImageUrl { get; set; } = DefaultImageUrl;
         public List<MarchMapNode> Nodes { get; set; } = new();
         public List<MarchMapRoute> Routes { get; set; } = new();

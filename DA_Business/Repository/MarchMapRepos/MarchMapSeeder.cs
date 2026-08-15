@@ -15,17 +15,40 @@ namespace DA_Business.Repository.MarchMapRepos
 
         public static async Task EnsureInitializedAsync(ApplicationDbContext ctx)
         {
-            var exists = await ctx.MarchMapStates.AnyAsync(x => x.Id == MarchMapState.GlobalId);
-            if (exists)
+            var row = await ctx.MarchMapStates.FirstOrDefaultAsync(x => x.Id == MarchMapState.GlobalId);
+            if (row is not null && ReadSeedVersion(row.PayloadJson) >= EasternMarchMapDefaults.CurrentSeedVersion)
                 return;
 
             var seed = EasternMarchMapDefaults.CreateSeedDocument();
-            ctx.MarchMapStates.Add(new MarchMapState
+            var payload = JsonSerializer.Serialize(seed, JsonOptions);
+            if (row is null)
             {
-                Id = MarchMapState.GlobalId,
-                PayloadJson = JsonSerializer.Serialize(seed, JsonOptions),
-            });
+                ctx.MarchMapStates.Add(new MarchMapState
+                {
+                    Id = MarchMapState.GlobalId,
+                    PayloadJson = payload,
+                });
+            }
+            else
+            {
+                row.PayloadJson = payload;
+            }
+
             await ctx.SaveChangesAsync();
+        }
+
+        private static int ReadSeedVersion(string? payloadJson)
+        {
+            if (string.IsNullOrWhiteSpace(payloadJson))
+                return 0;
+            try
+            {
+                return JsonSerializer.Deserialize<MarchMapDocument>(payloadJson, JsonOptions)?.SeedVersion ?? 0;
+            }
+            catch
+            {
+                return 0;
+            }
         }
     }
 }
