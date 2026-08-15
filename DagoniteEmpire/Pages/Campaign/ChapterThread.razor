@@ -50,14 +50,14 @@ else
                     StartIcon="@Icons.Material.Filled.MenuBook"
                     Size="Size.Large"
                     OnClick="OpenBattleLog"
-                    Title="Battle log"
-                    aria-label="Open battle log" />
+                    Title="Dziennik bitwy"
+                    aria-label="Otwórz dziennik bitwy" />
             <MudFab Color="Color.Error"
                     StartIcon="@Icons.Material.Filled.GridOn"
                     Size="Size.Large"
                     OnClick="OpenBattleMap"
-                    Title="Tactical map"
-                    aria-label="Open tactical map" />
+                    Title="Mapa taktyczna"
+                    aria-label="Otwórz mapę taktyczną" />
         </div>
     }
 
@@ -69,7 +69,7 @@ else
                            OnClick="ToggleDrawer"
                            Variant="Variant.Filled"
                            Color="Color.Surface">
-                    Characters
+                    Postacie
                 </MudButton>
             </div>
         </MudHidden>
@@ -88,14 +88,14 @@ else
                         <MudGrid Justify="Justify.Center" Spacing="1">
                             @if (OngoingBattle)
                             {
-                                <MudItem xs="12"><MudButton FullWidth OnClick="NextTurn">Next turn</MudButton></MudItem>
+                                <MudItem xs="12"><MudButton FullWidth OnClick="NextTurn">Następna tura</MudButton></MudItem>
                                 <MudItem xs="12"><MudButton FullWidth Variant="Variant.Filled" Color="Color.Error" OnClick="SwichBattlePhase">@BattleButton</MudButton></MudItem>
-                                <MudItem xs="12"><MudText Align="Align.Center">Turn: @BattlePhase?.CurrentTurn</MudText></MudItem>
+                                <MudItem xs="12"><MudText Align="Align.Center">Tura: @BattlePhase?.CurrentTurn</MudText></MudItem>
                                 <MudItem xs="6">
                                     <MudButton FullWidth OnClick="GenerateFightSequence">
                                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
                                             <img src="@MyIcon.Attack" width="22" height="22" alt="" />
-                                            <span>Fight</span>
+                                            <span>Walka</span>
                                         </MudStack>
                                     </MudButton>
                                 </MudItem>
@@ -103,7 +103,7 @@ else
                                     <MudButton FullWidth OnClick="MakeSkillRoll">
                                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
                                             <img src="@MyIcon.Dice" width="22" height="22" alt="" />
-                                            <span>Make a roll</span>
+                                            <span>Wykonaj rzut</span>
                                         </MudStack>
                                     </MudButton>
                                 </MudItem>
@@ -115,7 +115,7 @@ else
                                     <MudButton FullWidth OnClick="MakeSkillRoll">
                                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
                                             <img src="@MyIcon.Dice" width="22" height="22" alt="" />
-                                            <span>Make a roll</span>
+                                            <span>Wykonaj rzut</span>
                                         </MudStack>
                                     </MudButton>
                                 </MudItem>
@@ -124,14 +124,14 @@ else
                                 <MudButton FullWidth OnClick="AddExistingMob">
                                     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
                                         <img src="@MyIcon.Goblin" width="22" height="22" alt="" />
-                                        <span>Existing mobs</span>
+                                        <span>Istniejące potwory</span>
                                     </MudStack>
                                 </MudButton>
                             </MudItem>
-                            <MudItem xs="6"><MudButton FullWidth OnClick="AddTemporaryStatus">Add status</MudButton></MudItem>
+                            <MudItem xs="6"><MudButton FullWidth OnClick="AddTemporaryStatus">Dodaj status</MudButton></MudItem>
                             @if (ShowBaronyResourcesButton)
                             {
-                                <MudItem xs="12"><MudButton FullWidth OnClick="AddBaronyResourcesPost">Barony resources</MudButton></MudItem>
+                                <MudItem xs="12"><MudButton FullWidth OnClick="AddBaronyResourcesPost">Zasoby baronii</MudButton></MudItem>
                             }
                         </MudGrid>
                     }
@@ -184,14 +184,14 @@ else
                         <MudGrid Justify="Justify.Center" Spacing="1">
                             @if (OngoingBattle)
                             {
-                                <MudItem xs="12"><MudButton FullWidth OnClick="NextTurn">Next turn</MudButton></MudItem>
+                                <MudItem xs="12"><MudButton FullWidth OnClick="NextTurn">Następna tura</MudButton></MudItem>
                                 <MudItem xs="12"><MudButton FullWidth Variant="Variant.Filled" Color="Color.Error" OnClick="SwichBattlePhase">@BattleButton</MudButton></MudItem>
-                                <MudItem xs="12"><MudText Align="Align.Center">Turn: @BattlePhase?.CurrentTurn</MudText></MudItem>
+                                <MudItem xs="12"><MudText Align="Align.Center">Tura: @BattlePhase?.CurrentTurn</MudText></MudItem>
                                 <MudItem xs="6">
                                     <MudButton FullWidth OnClick="GenerateFightSequence">
                                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
                                             <img src="@MyIcon.Attack" width="22" height="22" alt="" />
-                                            <span>Fight</span>
+                                            <span>Walka</span>
                                         </MudStack>
                                     </MudButton>
                                 </MudItem>
@@ -199,7 +199,7 @@ else
                                     <MudButton FullWidth OnClick="MakeSkillRoll">
                                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
                                             <img src="@MyIcon.Dice" width="22" height="22" alt="" />
-                                            <span>Make a roll</span>
+                                            <span>Wykonaj rzut</span>
                                         </MudStack>
                                     </MudButton>
                                 </MudItem>
@@ -211,7 +211,7 @@ else
                                     <MudButton FullWidth OnClick="MakeSkillRoll">
                                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
                                             <img src="@MyIcon.Dice" width="22" height="22" alt="" />
-                                            <span>Make a roll</span>
+                                            <span>Wykonaj rzut</span>
                                         </MudStack>
                                     </MudButton>
                                 </MudItem>
@@ -220,14 +220,14 @@ else
                                 <MudButton FullWidth OnClick="AddExistingMob">
                                     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
                                         <img src="@MyIcon.Goblin" width="22" height="22" alt="" />
-                                        <span>Existing mobs</span>
+                                        <span>Istniejące potwory</span>
                                     </MudStack>
                                 </MudButton>
                             </MudItem>
-                            <MudItem xs="6"><MudButton FullWidth OnClick="AddTemporaryStatus">Add status</MudButton></MudItem>
+                            <MudItem xs="6"><MudButton FullWidth OnClick="AddTemporaryStatus">Dodaj status</MudButton></MudItem>
                             @if (ShowBaronyResourcesButton)
                             {
-                                <MudItem xs="12"><MudButton FullWidth OnClick="AddBaronyResourcesPost">Barony resources</MudButton></MudItem>
+                                <MudItem xs="12"><MudButton FullWidth OnClick="AddBaronyResourcesPost">Zasoby baronii</MudButton></MudItem>
                             }
                         </MudGrid>
                     }
@@ -266,7 +266,7 @@ else
         @if (OngoingBattle)
         {
             <MudAlert Elevation="12" Severity="Severity.Error" Variant="Variant.Filled" Class="mb-2">
-                Battle in progress!
+                Trwa bitwa!
             </MudAlert>
         }
 
@@ -275,11 +275,11 @@ else
         @if (Chapter is not null)
         {
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="flex-wrap">
-                <MudText Typo="Typo.h4">Chapter: @Chapter.Name</MudText>
+                <MudText Typo="Typo.h4">Rozdział: @Chapter.Name</MudText>
                 <WikiNavLink ChapterName="@Chapter.Name" Label="Archiwum wiki" />
             </MudStack>
             <MudText Class="py-2 flex-grow-1" Typo="Typo.h6">@Chapter.Date, @Chapter.DayTime, @Chapter.Place</MudText>
-            <MudText Typo="Typo.caption">Started at: @Chapter.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
+            <MudText Typo="Typo.caption">Rozpoczęto: @Chapter.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
 
             @if (_showBackToEnd)
             {
@@ -290,7 +290,7 @@ else
                                EndIcon="@Icons.Material.Filled.KeyboardArrowDown"
                                OnClick="ScrollToLatest"
                                Class="back-to-latest-btn">
-                        Go back
+                        Wróć
                     </MudButton>
                 </div>
             }
@@ -318,12 +318,12 @@ else
                                             <MudText Typo="Typo.h6" Class="battle-summary-title flex-grow-1 mb-0">@GetBattleSummaryHeader(post)</MudText>
                                             @if (IsBattleEndedPost(post) && TryGetBattlePhaseIdFromPost(post, out var _))
                                             {
-                                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.MenuBook" aria-label="battle log" Title="Open battle log" OnClick="@(() => OpenBattleLogForPost(post))" />
+                                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.MenuBook" aria-label="dziennik bitwy" Title="Otwórz dziennik bitwy" OnClick="@(() => OpenBattleLogForPost(post))" />
                                             }
                                             @if (CanEditBattleSummaryPost(post))
                                             {
-                                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit turn summary" OnClick="@(() => EditPost(post))" />
-                                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="delete turn summary" OnClick="@(() => DeletePost(post))" />
+                                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edytuj podsumowanie tury" OnClick="@(() => EditPost(post))" />
+                                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="usuń podsumowanie tury" OnClick="@(() => DeletePost(post))" />
                                             }
                                         </MudStack>
                                         <div class="ql-snow ql-content" style="border-width:0">
@@ -343,17 +343,17 @@ else
                                                 <MudImage Src="@(post.AlternativeImageUrl ?? post.Character.ImageUrl)" Alt="Avatar" Elevation="25" Class="rounded-lg" Style="max-width:130px;" />
                                                 @if (CharacterAllParams.Any() && CharacterAllParams.ContainsKey(post.CharacterId) && CharacterAllParams[post.CharacterId] is not null)
                                                 {
-                                                    <MudText Align="Align.Center" Class="pt-2" Typo="Typo.caption">Posts: @CharacterAllParams[post.CharacterId]!.Character.NumberOfPosts.ToString()</MudText>
+                                                    <MudText Align="Align.Center" Class="pt-2" Typo="Typo.caption">Wpisy: @CharacterAllParams[post.CharacterId]!.Character.NumberOfPosts.ToString()</MudText>
                                                 }
                                             </MudPaper>
                                         }
                                         <MudPaper Class="d-flex flex-column pa-2 flex-grow-1">
                                             <MudStack Spacing="0" Row="true">
-                                                <MudText Class="flex-grow-1" Typo="Typo.caption">Posted at: @post.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
+                                                <MudText Class="flex-grow-1" Typo="Typo.caption">Napisano: @post.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
                                                 @if (UserInfo?.SelectedCharacter is not null && (post.CharacterId == UserInfo.SelectedCharacter.Id || UserInfo.CharacterMG == true))
                                                 {
-                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
-                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="@(()=>DeletePost(post))"></MudIconButton>
+                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edytuj" OnClick="@(()=>EditPost(post))"></MudIconButton>
+                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="usuń" OnClick="@(()=>DeletePost(post))"></MudIconButton>
                                                 }
                                             </MudStack>
                                             <div class="ql-snow ql-content" style="border-width:0">
@@ -369,7 +369,7 @@ else
                     }
                     else
                     {
-                        <MudText>No posts yet</MudText>
+                        <MudText>Brak wpisów</MudText>
                     }
                 </MudStack>
             </MudHidden>
@@ -390,12 +390,12 @@ else
                                                 <MudText Typo="Typo.h6" Class="battle-summary-title flex-grow-1 mb-0">@GetBattleSummaryHeader(post)</MudText>
                                                 @if (IsBattleEndedPost(post) && TryGetBattlePhaseIdFromPost(post, out var _))
                                                 {
-                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.MenuBook" aria-label="battle log" Title="Open battle log" OnClick="@(() => OpenBattleLogForPost(post))" />
+                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.MenuBook" aria-label="dziennik bitwy" Title="Otwórz dziennik bitwy" OnClick="@(() => OpenBattleLogForPost(post))" />
                                                 }
                                                 @if (CanEditBattleSummaryPost(post))
                                                 {
-                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit turn summary" OnClick="@(() => EditPost(post))" />
-                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="delete turn summary" OnClick="@(() => DeletePost(post))" />
+                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edytuj podsumowanie tury" OnClick="@(() => EditPost(post))" />
+                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="usuń podsumowanie tury" OnClick="@(() => DeletePost(post))" />
                                                 }
                                             </MudStack>
                                             <div class="ql-snow ql-content" style="border-width:0">
@@ -418,7 +418,7 @@ else
                                                 <MudText Class="flex-grow-1 pl-1" Align="Align.Left" Typo="Typo.h6">@(post.AlternativeName ?? post.Character.NPCName)</MudText>
                                                 @if (UserInfo?.SelectedCharacter is not null && (post.CharacterId == UserInfo.SelectedCharacter.Id || UserInfo.CharacterMG == true))
                                                 {
-                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
+                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edytuj" OnClick="@(()=>EditPost(post))"></MudIconButton>
                                                 }
                                             </MudStack>
                                             <div class="ql-snow ql-content" style="border-width:0">
@@ -426,7 +426,7 @@ else
                                                     @((MarkupString)(post.Content ?? string.Empty))
                                                 </div>
                                             </div>
-                                            <MudText Typo="Typo.caption">Posted at: @post.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
+                                            <MudText Typo="Typo.caption">Napisano: @post.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
                                         </MudPaper>
                                     }
                                 }
@@ -434,7 +434,7 @@ else
                         }
                         else
                         {
-                            <MudText>No posts yet</MudText>
+                            <MudText>Brak wpisów</MudText>
                         }
                     </MudStack>
                 </div>
@@ -507,8 +507,8 @@ else
                         }
                         @if (UserInfo?.IsAdminOrMG == true)
                         {
-                            <MudSelect @bind-Value="GmAsMob" T="MobDTO" Label="Select Mob" Class="post-dock__mob-select">
-                                <MudSelectItem Value="GmMobOption">GM</MudSelectItem>
+                            <MudSelect @bind-Value="GmAsMob" T="MobDTO" Label="Wybierz potwora" Class="post-dock__mob-select">
+                                <MudSelectItem Value="GmMobOption">MG</MudSelectItem>
                                 @foreach (var mob in Mobs)
                                 {
                                     <MudSelectItem Value="mob">@mob.Name</MudSelectItem>
@@ -545,8 +545,8 @@ else
     private bool OngoingBattle = false;
     private bool IsEditMode = false;
     private bool _isBaronCampaign;
-    private string SendButtonText { get; set; } = "Send Post";
-    private string BattleButton { get; set; } = "Start Battle";
+    private string SendButtonText { get; set; } = "Wyślij wpis";
+    private string BattleButton { get; set; } = "Rozpocznij bitwę";
     private bool _open = false;
     private int _participantsRenderKey;
     private bool _showDrawerPanelLayout = true;
@@ -764,7 +764,7 @@ else
 
             await AppendPostByIdAsync(postId, forceScrollDown: false);
             StateHasChanged();
-            SnackBar.Add("New post added!", Severity.Info);
+            SnackBar.Add("Dodano nowy wpis!", Severity.Info);
         });
     }
 
@@ -795,7 +795,7 @@ else
         {
             Posts.RemoveAll(p => p.Id == postId);
             StateHasChanged();
-            SnackBar.Add("A post was deleted.", Severity.Info);
+            SnackBar.Add("Usunięto wpis.", Severity.Info);
         });
     }
 
@@ -996,7 +996,7 @@ else
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error in LoadForSelectedCharacter");
-            SnackBar.Add("Error: " + ex.Message, Severity.Error);
+            SnackBar.Add("Błąd: " + ex.Message, Severity.Error);
         }
     }
 
@@ -1039,7 +1039,7 @@ else
                 if (BattlePhase is not null)
                 {
                     OngoingBattle = BattlePhase.BattleOngoing;
-                    BattleButton = OngoingBattle ? "End Battle" : "Start Battle";
+                    BattleButton = OngoingBattle ? "Zakończ bitwę" : "Rozpocznij bitwę";
                 }
 
                 // Load for selected character
@@ -1056,7 +1056,7 @@ else
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading chapter {ChapterId}", Id);
-            SnackBar.Add("Error loading chapter: " + ex.Message, Severity.Error);
+            SnackBar.Add("Błąd wczytywania rozdziału: " + ex.Message, Severity.Error);
         }
         finally
         {
@@ -1162,7 +1162,7 @@ else
                     }
                 }
                 IsEditMode = false;
-                SendButtonText = "Send Post";
+                SendButtonText = "Wyślij wpis";
             }
             else
             {
@@ -1217,7 +1217,7 @@ else
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error creating post");
-            SnackBar.Add("Error creating post: " + ex.Message, Severity.Error);
+            SnackBar.Add("Błąd tworzenia wpisu: " + ex.Message, Severity.Error);
             IsLoading = false;
             StateHasChanged();
         }
@@ -1229,7 +1229,7 @@ else
         NewPost = post;
         IsEditMode = true;
         _editorExpanded = true;
-        SendButtonText = IsBattleSummaryPost(post) ? "Save battle summary" : "Edit Post";
+        SendButtonText = IsBattleSummaryPost(post) ? "Zapisz podsumowanie bitwy" : "Edytuj wpis";
         if (PostEditor is not null)
         {
             await PostEditor.LoadHTMLContent(NewPost.Content ?? string.Empty);
@@ -1239,9 +1239,9 @@ else
     private async Task DeletePost(PostDTO post)
     {
         bool? result = await DialogService.ShowMessageBoxAsync(
-            "Warning",
-            "Are you sure you want to delete this post?",
-            yesText: "Yes", cancelText: "No");
+            "Uwaga",
+            "Czy na pewno chcesz usunąć ten wpis?",
+            yesText: "Tak", cancelText: "Nie");
         if (result is null || result == false)
         {
             return;
@@ -1266,7 +1266,7 @@ else
         IsEditMode = false;
         _editorExpanded = false;
         _editorFullScreen = false;
-        SendButtonText = "Send Post";
+        SendButtonText = "Wyślij wpis";
         _shouldLoadPostEditor = false;
         _pendingPostEditorHtml = null;
         _pendingPostEditorQuote = false;
@@ -1296,7 +1296,7 @@ else
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error loading last page for chapter {ChapterId}", Id);
-            SnackBar.Add("Error loading last page: " + ex.Message, Severity.Error);
+            SnackBar.Add("Błąd wczytywania ostatniej strony: " + ex.Message, Severity.Error);
         }
     }
 
@@ -1419,14 +1419,14 @@ else
 
         BattlePhase = new(Chapter.CampaignId, Id);
         OngoingBattle = true;
-        BattleButton = "End Battle";
+        BattleButton = "Zakończ bitwę";
         if (BattlePhase is not null)
             BattlePhase = await _battlePhaseRepository.Update(BattlePhase);
         else
             return;
 
         await PostBattleStartSummaryAsync(participants);
-        SnackBar.Add("Battle started!", Severity.Error);
+        SnackBar.Add("Rozpoczęto bitwę!", Severity.Error);
     }
 
     private void OpenCombatRulesWiki() =>
@@ -1436,7 +1436,7 @@ else
     {
         if (BattlePhase is null || BattlePhase.Id < 1)
         {
-            SnackBar.Add("No ongoing battle.", Severity.Warning);
+            SnackBar.Add("Brak trwającej bitwy.", Severity.Warning);
             return;
         }
 
@@ -1451,7 +1451,7 @@ else
     {
         if (!TryGetBattlePhaseIdFromPost(post, out var phaseId))
         {
-            SnackBar.Add("Battle log is not available for this battle.", Severity.Warning);
+            SnackBar.Add("Dziennik bitwy jest niedostępny dla tej bitwy.", Severity.Warning);
             return;
         }
 
@@ -1462,7 +1462,7 @@ else
     }
 
     private async Task ShowBattleLogDialogAsync(DialogParameters<BattleLogDialog> parameters) =>
-        await DialogService.ShowAsync<BattleLogDialog>("Battle log", parameters, await SetDialogOptions(MaxWidth.Medium));
+        await DialogService.ShowAsync<BattleLogDialog>("Dziennik bitwy", parameters, await SetDialogOptions(MaxWidth.Medium));
 
     private async Task NextTurn()
     {
@@ -1470,12 +1470,12 @@ else
         var nextTurn = currentTurn + 1;
         bool? confirmed = await DialogMessageBox.ShowCompactAsync(
             DialogService,
-            "Next turn",
+            "Następna tura",
             currentTurn > 0
-                ? $"End turn {currentTurn}, start turn {nextTurn}?"
-                : "Advance to next battle turn?",
-            "Temporary states lose 1 turn",
-            yesText: "Next turn");
+                ? $"Zakończyć turę {currentTurn} i rozpocząć turę {nextTurn}?"
+                : "Przejść do następnej tury bitwy?",
+            "Tymczasowe stany tracą 1 turę",
+            yesText: "Następna tura");
         if (confirmed is not true)
             return;
 
@@ -1497,7 +1497,7 @@ else
                 catch (Exception ex)
                 {
                     Logger.LogWarning(ex, "Failed to post turn summary for chapter {ChapterId}", Id);
-                    SnackBar.Add("Turn summary post failed, but turn states were still advanced.", Severity.Warning);
+                    SnackBar.Add("Nie udało się dodać podsumowania tury, ale stany tury zostały zaktualizowane.", Severity.Warning);
                 }
             }
 
@@ -1505,7 +1505,7 @@ else
             {
                 BattlePhase.CurrentTurn++;
                 BattlePhase = await _battlePhaseRepository.Update(BattlePhase);
-                SnackBar.Add($"Turn {BattlePhase.CurrentTurn} started", Severity.Info);
+                SnackBar.Add($"Rozpoczęto turę {BattlePhase.CurrentTurn}", Severity.Info);
             }
 
             await RefreshBattleParticipantsAsync();
@@ -1514,7 +1514,7 @@ else
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error in Next turn action for chapter {ChapterId}", Id);
-            SnackBar.Add($"Error in Next turn action: " + ex.Message, Severity.Error);
+            SnackBar.Add($"Błąd podczas wykonywania akcji następnej tury: " + ex.Message, Severity.Error);
         }
     }
 
@@ -1636,11 +1636,11 @@ else
     {
         bool? result = await DialogMessageBox.ShowCompactAsync(
             DialogService,
-            "End battle",
-            "End battle now?",
-            "All temporary states will be cleared",
-            yesText: "Yes",
-            cancelText: "No");
+            "Zakończ bitwę",
+            "Zakończyć bitwę teraz?",
+            "Wszystkie tymczasowe stany zostaną wyczyszczone",
+            yesText: "Tak",
+            cancelText: "Nie");
         if (result is null || result == false)
         {
             return;
@@ -1678,7 +1678,7 @@ else
             mob.States = BattleTurnService.ResolveEndOfBattleMobStates(mob.States);
             await _mobRepository.Update(mob);
         }
-        BattleButton = "Start Battle";
+        BattleButton = "Rozpocznij bitwę";
         if (BattlePhase is not null)
         {
             var rounds = BattlePhase.CurrentTurn;
@@ -1689,7 +1689,7 @@ else
             BattlePhase = null;
             await LoadMobs();
             await LoadChapter(goToLastPage: true);
-            SnackBar.Add($"Battle Ended", Severity.Normal);
+            SnackBar.Add($"Zakończono bitwę", Severity.Normal);
         }
     }
 
@@ -1704,7 +1704,7 @@ else
             { x => x.ChapterId, Id }
         };
 
-        var dialog = await DialogService.ShowAsync<CreateFightSequenceDialog>("Fight sequence", parameters, await SetFightDialogOptions());
+        var dialog = await DialogService.ShowAsync<CreateFightSequenceDialog>("Sekwencja walki", parameters, await SetFightDialogOptions());
         var result = await dialog.Result;
 
         if (result is not null && !result.Canceled && result.Data is FightSequenceDialogResult fightResult)
@@ -1721,7 +1721,7 @@ else
 
             if (UserInfo?.CharacterMG != true)
             {
-                SnackBar.Add("Selected character is not Game Master — review the fight result before posting.", Severity.Warning, config =>
+                SnackBar.Add("Wybrana postać nie jest Mistrzem Gry — sprawdź wynik walki przed opublikowaniem.", Severity.Warning, config =>
                 {
                     config.VisibleStateDuration = 60_000;
                     config.ShowCloseIcon = true;
@@ -1813,7 +1813,7 @@ else
         }
         catch (Exception ex)
         {
-            SnackBar.Add("Error while calculating fight: " + ex.Message, Severity.Error);
+            SnackBar.Add("Błąd podczas obliczania walki: " + ex.Message, Severity.Error);
         }
     }
 
@@ -1883,7 +1883,7 @@ else
             { x => x.CampaignId, Chapter.CampaignId }
         };
 
-        var dialog = await DialogService.ShowAsync<ExistingMobsDialog>("Existing mobs", parameters, await SetDialogOptions());
+        var dialog = await DialogService.ShowAsync<ExistingMobsDialog>("Istniejące potwory", parameters, await SetDialogOptions());
         var result = await dialog.Result;
 
         if (result is not null && result.Data is not null && !result.Canceled)
@@ -2019,7 +2019,7 @@ else
             { x => x.Mobs, Mobs }
         };
 
-        var dialog = await DialogService.ShowAsync<MakeSkillRollDialog>("Skill roll", parameters, await SetSkillRollDialogOptions());
+        var dialog = await DialogService.ShowAsync<MakeSkillRollDialog>("Rzut na umiejętność", parameters, await SetSkillRollDialogOptions());
         var result = await dialog.Result;
 
         if (result is not null && !result.Canceled && result.Data is MakeSkillRollDialog.SkillRollDialogResult rollResult)
@@ -2040,7 +2040,7 @@ else
             { x => x.Mobs, Mobs }
         };
 
-        var dialog = await DialogService.ShowAsync<AddStatusDialog>("Add status", parameters, await SetDialogOptions(MaxWidth.ExtraSmall));
+        var dialog = await DialogService.ShowAsync<AddStatusDialog>("Dodaj status", parameters, await SetDialogOptions(MaxWidth.ExtraSmall));
         var result = await dialog.Result;
 
         if (result is not null && !result.Canceled)
@@ -2063,7 +2063,7 @@ else
             return;
 
         var dialog = await DialogService.ShowAsync<AddBaronyResourcesPostDialog>(
-            "Add barony resources",
+            "Dodaj zasoby baronii",
             new DialogParameters<AddBaronyResourcesPostDialog>(),
             await SetDialogOptions(MaxWidth.ExtraSmall));
         var result = await dialog.Result;
@@ -2073,7 +2073,7 @@ else
         var actor = await ResolveGameMasterActorAsync();
         if (actor is null)
         {
-            SnackBar.Add("No character available to assign this post.", Severity.Warning);
+            SnackBar.Add("Brak postaci, do której można przypisać ten wpis.", Severity.Warning);
             return;
         }
 
@@ -2211,7 +2211,7 @@ else
             await _baronyRepo.UpdateBarony(barony);
         }
 
-        SnackBar.Add("Barony resources applied.", Severity.Success);
+        SnackBar.Add("Zastosowano zasoby baronii.", Severity.Success);
     }
 
     private async Task<BaronyDTO?> ResolveBaronCampaignBaronyAsync()
@@ -2400,7 +2400,7 @@ else
             FullScreen = isFs,
             CloseButton = true
         };
-        await DialogService.ShowAsync<BattleMapDialog>("Tactical Map", parameters, options);
+        await DialogService.ShowAsync<BattleMapDialog>("Mapa taktyczna", parameters, options);
     }
 
     // Incapacitating state for the tactical map (greys the token). Dead takes priority.

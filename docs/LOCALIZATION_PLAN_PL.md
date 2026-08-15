@@ -202,10 +202,13 @@ Rdzeń rozgrywki gracza-bohatera.
 - [x] Waluty (lore) → Imperiale/Talary/Halerze/Miedziaki (WealthRecordsDialog); DataLabel mobilne w ProfessionPage spolszczone
 - [ ] Odłożone do Fazy 8: TraitLabel z DTO, nazwy trudności / wynik rzutu — patrz QUESTIONS
 
-### Faza 4 — Kampania i czat 🟡 (M) — ~3 + Dialogs + Chat
-- [ ] `Pages/Campaign/*` (CampaignList, ChapterList, ChapterThread)
-- [ ] `Pages/Dialogs/CreateCampaignDialog.razor`, `CreateChapterDialog.razor`
-- [ ] Komponenty czatu / wpisów (jeśli dot. UI, nie treści userów)
+### Faza 4 — Kampania i czat � (M) — 3 + 2 Dialogs ✅ UKOŃCZONA
+- [x] `Pages/Campaign/*` (CampaignList, ChapterList, ChapterThread)
+- [x] `Pages/Dialogs/CreateCampaignDialog.razor`, `CreateChapterDialog.razor`
+- [x] Chrome wątku/czatu (przyciski, snackbary, dialogi, breadcrumbs, etykiety edytora)
+- [ ] Odłożone do Fazy 8 (sprzężone z danymi/pipeline walki): klucze `AlternativeName`
+  („Battle turn/started/ended"), `GetBattleSummaryHeader`/`GetBattleSummaryContent`,
+  generowane treści postów (podsumowania tur, „Barony resources update")
 
 ### Faza 5 — Baronia: strony główne 🟡 (L) — 22 plików
 - [ ] `Pages/Barony/*`: ArmyPage, AudiencesPage, BaronCardPage, BudgetPage, BuildingsPage, DomainPanel, KnownLordsPage, LettersPage, LordsSeatPage, MarchMapPage, NotesPage, OfficesPage, ProjectsPage, RelationsPage, ResourcesPage, TerrainPage, TradeGoodsPage, BattleMapPage, BaronyLayout, DemoEnter, DemoModeBanner, StyleLab

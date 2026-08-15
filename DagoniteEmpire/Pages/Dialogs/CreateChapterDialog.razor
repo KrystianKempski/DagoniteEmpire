@@ -5,20 +5,20 @@
     <TitleContent>
         <MudText Typo="Typo.h6">
             <img src="@MyIcon.Scroll" width="40px" height="40px" class="pr-2" />
-            @Title Chapter
+            @Title rozdział
         </MudText>
     </TitleContent>
     <DialogContent>
         <MudForm @bind-IsValid="@success">
 
-            <MudTextField Required @bind-Value="@NewChapter.Name" Label="Chapter name" />
-            <MudTextField Required @bind-Value="@NewChapter.Description" Label="Description" Lines="3" />
+            <MudTextField Required @bind-Value="@NewChapter.Name" Label="Nazwa rozdziału" />
+            <MudTextField Required @bind-Value="@NewChapter.Description" Label="Opis" Lines="3" />
             <MudStack Spacing="1" Row>
-                <MudTextField Required @bind-Value="@NewChapter.DayTime" Label="Daytime" />
+                <MudTextField Required @bind-Value="@NewChapter.DayTime" Label="Pora dnia" />
                 <DateComponent Date="Date" Editable="true"></DateComponent>
             </MudStack>
-            <MudTextField Required @bind-Value="@NewChapter.Place" Label="Location" />
-            <MudText Typo="Typo.caption">Choose player characters for chapter</MudText>
+            <MudTextField Required @bind-Value="@NewChapter.Place" Label="Miejsce" />
+            <MudText Typo="Typo.caption">Wybierz postacie graczy do rozdziału</MudText>
             <MudChipSet T="CharacterDTO" @bind-SelectedValues="SelectedCharacters" CheckMark SelectionMode="MudBlazor.SelectionMode.MultiSelection">
                 @if (true)
                 {
@@ -34,8 +34,8 @@
         </MudForm>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Error" Disabled="@(!success)" OnClick="CreateChapter">SAVE</MudButton>
+        <MudButton OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Color="Color.Error" Disabled="@(!success)" OnClick="CreateChapter">ZAPISZ</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -46,7 +46,7 @@
     [Parameter] public List<CharacterDTO> AllCharacters { get; set; } = new List<CharacterDTO>();
     [Parameter] public bool IsEdit { get; set; } = false;
     private DateModel Date; 
-    private string Title = "Create";
+    private string Title = "Utwórz";
     private bool success = false;
     private IReadOnlyCollection<CharacterDTO> SelectedCharacters { get; set; }
     private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
@@ -65,7 +65,7 @@
 
         if (IsEdit)
         {
-            Title = "Edit";
+            Title = "Edytuj";
             int index = 0;
             foreach (var character in AllCharacters.OrderBy(c => c.Id))
             {
@@ -104,8 +104,8 @@
 
         MudDialog.Close(DialogResult.Ok(NewChapter));
         if (IsEdit)
-            Snackbar.Add("Chapter edited", Severity.Success);
+            Snackbar.Add("Zedytowano rozdział", Severity.Success);
         else 
-            Snackbar.Add("Chapter created", Severity.Success);
+            Snackbar.Add("Utworzono rozdział", Severity.Success);
     }
 }

@@ -14,21 +14,21 @@
 @inject CallbackService callbackService
 @implements IDisposable
 
-<PageTitle>Dagonie Empire | Campaigns</PageTitle>
+<PageTitle>Dagonitowe Imperium | Kampanie</PageTitle>
 <MudContainer Class="px-3" Fixed="false">
     @if (IsLoading == true){
         <LoadingPage></LoadingPage>
     }else{
         <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
               
-        <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Bookmark" width="40px" height="40px" class="pr-2" />Avalible campaigns for: @UserInfo?.SelectedCharacter?.NPCName</MudText>
+        <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Bookmark" width="40px" height="40px" class="pr-2" />Dostępne kampanie dla: @UserInfo?.SelectedCharacter?.NPCName</MudText>
         
        
         @if (UserInfo?.IsAdminOrMG == true)
         {
             <div class="camp">
                 <MudPaper Height="100px" Width="100%" Class="pa-3 mb-3 justify-content-center align-content-center" Style="cursor: pointer;" @onclick="CreateCampaign">
-                    <MudText Typo="Typo.h5" Align="Align.Center"> Add new Campaign...</MudText>
+                    <MudText Typo="Typo.h5" Align="Align.Center"> Dodaj nową kampanię...</MudText>
                 </MudPaper>
             </div>
         }
@@ -67,14 +67,14 @@
                                                Variant="Variant.Text"
                                                OnClick="@(() => GoToLastPost(camp))"
                                                OnClickStopPropagation="true"
-                                               aria-label="last post"
-                                               Title="Last post">
-                                        <img src="@MyIcon.ScrollWhite" alt="Last post" width="20" height="20" />
+                                               aria-label="ostatni wpis"
+                                               Title="Ostatni wpis">
+                                        <img src="@MyIcon.ScrollWhite" alt="Ostatni wpis" width="20" height="20" />
                                     </MudButton>
                                     @if (UserInfo?.IsAdminOrMG == true)
                                     {
-                                        <MudIconButton Class="pa-1" Style="color: white;" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditCampaign(camp))" OnClickStopPropagation="true"></MudIconButton>
-                                        <MudIconButton Class="pa-1" Style="color: white;" Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="@(()=>DeleteCampaign(camp.Id))" OnClickStopPropagation="true"></MudIconButton>
+                                        <MudIconButton Class="pa-1" Style="color: white;" Icon="@Icons.Material.Filled.Edit" aria-label="edytuj" OnClick="@(()=>EditCampaign(camp))" OnClickStopPropagation="true"></MudIconButton>
+                                        <MudIconButton Class="pa-1" Style="color: white;" Icon="@Icons.Material.Filled.Delete" aria-label="usuń" OnClick="@(()=>DeleteCampaign(camp.Id))" OnClickStopPropagation="true"></MudIconButton>
                                     }
                                 </MudStack>
                                 <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.8);">@camp.CreatedDate.ToString("dd-MM-yyyy")</MudText>
@@ -92,7 +92,7 @@
             }
             else
             {
-                <MudText Class="pt-3" Typo="Typo.h5">Not signed into any adventures yet</MudText>
+                <MudText Class="pt-3" Typo="Typo.h5">Nie zapisano jeszcze do żadnej przygody</MudText>
             }
         </MudStack>
     }
@@ -108,7 +108,7 @@
     private IEnumerable<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
     private List<CampaignDTO> Campaigns { get; set; } = new List<CampaignDTO>();
     public bool IsLoading { get; set; } = true;
-    private string Title { get; set; } = "Your characters";
+    private string Title { get; set; } = "Twoje postacie";
     public CampaignDTO NewCampaign { get; set; } = new();
 
     public UserInfo? UserInfo { get; set; }
@@ -186,7 +186,7 @@
         StateHasChanged();
         _items = new List<BreadcrumbItem>
         {
-            new BreadcrumbItem("Campaigns", href: $"/campaignlist/"),
+            new BreadcrumbItem("Kampanie", href: $"/campaignlist/"),
         };
 
         await LoadForSelectedCharacter();
@@ -199,7 +199,7 @@
 
         var parameters = new DialogParameters<CreateCampaignDialog> { { x => x.NewCampaign, NewCampaign } };
 
-        var dialog = await DialogService.ShowAsync<CreateCampaignDialog>("Create Campaign", parameters);
+        var dialog = await DialogService.ShowAsync<CreateCampaignDialog>("Utwórz kampanię", parameters);
         var result = await dialog.Result;
 
         if (!result.Canceled)
@@ -215,7 +215,7 @@
     {
         var parameters = new DialogParameters<CreateCampaignDialog> { { x => x.NewCampaign, camp }, { x => x.IsEdit, true } };
 
-        var dialog = await DialogService.ShowAsync<CreateCampaignDialog>("Edit Campaign", parameters);
+        var dialog = await DialogService.ShowAsync<CreateCampaignDialog>("Edytuj kampanię", parameters);
         var result = await dialog.Result;
 
 
@@ -233,9 +233,9 @@
     private async Task DeleteCampaign(int id)
     {
         bool? result = await DialogService.ShowMessageBoxAsync(
-          "Warning",
-          "Are you sure you want to delete this campaign?",
-          yesText: "Yes", cancelText: "No");
+          "Uwaga",
+          "Czy na pewno chcesz usunąć tę kampanię?",
+          yesText: "Tak", cancelText: "Nie");
 
         if (result is null || result == false)
         {
@@ -280,7 +280,7 @@
             var chapters = (await _chapterRepository.GetAll(campaign.Id)).ToList();
             if (!chapters.Any())
             {
-                _snackBar.Add("This campaign does not have any chapters yet.", Severity.Info);
+                _snackBar.Add("Ta kampania nie ma jeszcze żadnych rozdziałów.", Severity.Info);
                 return;
             }
 
@@ -303,7 +303,7 @@
 
             if (latestChapter.ChapterId == 0)
             {
-                _snackBar.Add("No posts have been written in this campaign yet.", Severity.Info);
+                _snackBar.Add("W tej kampanii nie napisano jeszcze żadnych wpisów.", Severity.Info);
                 return;
             }
 
@@ -311,7 +311,7 @@
         }
         catch (Exception e)
         {
-            _snackBar.Add("Error while going to latest post: " + e.Message, Severity.Error);
+            _snackBar.Add("Błąd podczas przechodzenia do ostatniego wpisu: " + e.Message, Severity.Error);
         }
     }
 

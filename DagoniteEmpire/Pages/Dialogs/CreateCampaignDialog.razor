@@ -5,14 +5,14 @@
     <TitleContent>
         <MudText Typo="Typo.h6">
             <img src="@MyIcon.Bookmark" width="40px" height="40px" class="pr-2" />
-            @Title Campaign
+            @Title kampanię
         </MudText>
     </TitleContent>
     <DialogContent>        
         <MudForm @bind-IsValid="@success">
-        <MudTextField Required @bind-Value="@NewCampaign.Name" Label="Campaign name" />
-        <MudTextField Required @bind-Value="@NewCampaign.Description" Label="Description" Lines="5" />
-        <MudText Typo="Typo.caption">Choose player characters for campaign</MudText>
+        <MudTextField Required @bind-Value="@NewCampaign.Name" Label="Nazwa kampanii" />
+        <MudTextField Required @bind-Value="@NewCampaign.Description" Label="Opis" Lines="5" />
+        <MudText Typo="Typo.caption">Wybierz postacie graczy do kampanii</MudText>
         <MudChipSet T="CharacterDTO" @bind-SelectedValues="SelectedCharacters" CheckMark SelectionMode="MudBlazor.SelectionMode.MultiSelection">
             @if(true)
             {
@@ -27,7 +27,7 @@
         </MudForm>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton OnClick="Cancel">Anuluj</MudButton>
         <MudButton Color="Color.Error" Disabled="@(!success)" OnClick="CreateCampaign">@Title</MudButton>
     </DialogActions>
 </MudDialog>
@@ -40,7 +40,7 @@
     private IReadOnlyCollection<CharacterDTO> SelectedCharacters = new List<CharacterDTO>();
     private List<CharacterDTO> Characters { get; set; } = new List<CharacterDTO>();
     private IEnumerable<CharacterDTO> AllCharacters { get; set; } = new List<CharacterDTO>();
-    private string Title { get; set; } = "Create";
+    private string Title { get; set; } = "Utwórz";
     private List<bool> IncludedList = new List<bool>();
     private bool success = false;
 
@@ -54,7 +54,7 @@
         }
         if (IsEdit)
         {
-            Title = "Edit";
+            Title = "Edytuj";
             int index = 0;
             foreach (var character in AllCharacters.OrderBy(c => c.Id))
             {
@@ -85,9 +85,9 @@
         NewCampaign.CreatedDate = DateTime.Now;
         MudDialog.Close(DialogResult.Ok(NewCampaign));
         if (IsEdit)
-          Snackbar.Add("Campaign Edited", Severity.Success);
+          Snackbar.Add("Zedytowano kampanię", Severity.Success);
         else
-          Snackbar.Add("Campaign created", Severity.Success);
+          Snackbar.Add("Utworzono kampanię", Severity.Success);
 
     }
 }
