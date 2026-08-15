@@ -3,24 +3,24 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Confirm  leave</h5>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" @onclick="()=>OnLeaveConfirmation(false)">
+                <h5 class="modal-title" id="exampleModalLabel">Potwierdź opuszczenie</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Zamknij" @onclick="()=>OnLeaveConfirmation(false)">
                     <span aria-hidden="true">&times;</span>
                 </button>
 
             </div>
             <div class="modal-body">
-                Are you sure you want to leave? 
-                Changes to @ComponentDescription will not be saved
+                Czy na pewno opuścić stronę? 
+                Zmiany w @ComponentDescription nie zostaną zapisane
             </div>
             @if (IsParentComponentProcessing == true)
             {
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" disabled @onclick="()=>OnLeaveConfirmation(false)" data-bs-dismiss="modal">
-                        Cancel
+                        Anuluj
                     </button>
                     <button type="button" class="btn btn-danger" disabled @onclick="()=>OnLeaveConfirmation(true)">
-                        Processing...
+                        Przetwarzanie...
                     </button>
                 </div>
             }
@@ -28,10 +28,10 @@
             {
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @onclick="()=>OnLeaveConfirmation(false)" data-bs-dismiss="modal">
-                        Cancel
+                        Anuluj
                     </button>
                     <button type="button" class="btn btn-danger" @onclick="()=>OnLeaveConfirmation(true)">
-                        Leave
+                        Opuść
                     </button>
                 </div>
             }
@@ -48,7 +48,7 @@
     [Parameter]
     public EventCallback<bool> LeaveConfirmation { get; set; }
     [Parameter]
-    public string ComponentDescription { get; set; } = "character";
+    public string ComponentDescription { get; set; } = "postaci";
 
     private async Task OnLeaveConfirmation(bool isConfirmation)
     {

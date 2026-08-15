@@ -179,13 +179,13 @@ Legenda ryzyka: 🟢 niskie, 🟡 średnie, 🔴 wysokie (dużo logiki/asercji w
 - [ ] Ustalić kolejność priorytetów (poniższa domyślna: od najczęściej używanych ekranów).
 - [ ] Dodać do repo-memory notatkę o konwencjach tłumaczeń.
 
-### Faza 1 — Nawigacja i chrome aplikacji 🟢 (S) — ~10 plików
+### Faza 1 — Nawigacja i chrome aplikacji 🟢 (S) — ~10 plików ✅ UKOŃCZONA
 Najczęściej widziane elementy; szybki, widoczny efekt.
-- [ ] `Shared/NavMenu.razor` (nagłówek „Dagonite Empire" → **„Dagonitowe Imperium"**)
-- [ ] `Shared/CharacterNavButtons.razor` (Character list, Character, Class, Equipment, Health, Campaign, Last post, Wiki, Baronia, Panel MG + komunikaty)
-- [ ] `Shared/MainLayout.razor`, `Shared/LoginDisplay.razor`, `Shared/LoadingPage.razor`
-- [ ] `Shared/ScribeDrawer.razor`, `_DeleteConfirmation.razor`, `_LeavePage.razor`
-- [ ] `Pages/Index.razor`, root `App.razor` / `Routes.razor` (tytuły, meta)
+- [x] `Shared/NavMenu.razor` (nagłówek → „Dagonitowe Imperium")
+- [x] `Shared/CharacterNavButtons.razor` (etykiety + wszystkie komunikaty snackbar)
+- [x] `Shared/MainLayout.razor`, `Shared/LoginDisplay.razor` (`LoadingPage.razor` — brak tekstu)
+- [x] `_DeleteConfirmation.razor`, `_LeavePage.razor` (`ScribeDrawer.razor` — pominięty, moduł Scribe)
+- [x] `Pages/Index.razor`, `App.razor`, `Routes.razor` (tytuły, meta, `lang="pl"`)
 
 ### Faza 2 — Konto / Tożsamość (Identity) 🟢 (M) — 19 + 13 + 7 plików
 Strony scaffoldowane ASP.NET (angielskie): logowanie, rejestracja, 2FA, zarządzanie kontem.

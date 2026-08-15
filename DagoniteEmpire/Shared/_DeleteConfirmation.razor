@@ -3,23 +3,23 @@
     <div class="modal-content">
 
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Confirm Delete</h5>
-        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" @onclick="()=>OnDeleteConfirmation(false)">
+        <h5 class="modal-title" id="exampleModalLabel">Potwierdź usunięcie</h5>
+        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Zamknij" @onclick="()=>OnDeleteConfirmation(false)">
           <span aria-hidden="true">&times;</span>
         </button>
 
       </div>
       <div class="modal-body">
-                Are you sure you want to delete @DeletingComponentName?
+                Czy na pewno usunąć @DeletingComponentName?
       </div>
             @if(IsParentComponentProcessing == true)
             {
                 <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" disabled @onclick="()=>OnDeleteConfirmation(false)" data-bs-dismiss="modal">
-                  Cancel
+                  Anuluj
                 </button>
                 <button type="button" class="btn btn-danger" disabled @onclick="()=>OnDeleteConfirmation(true)">
-                  Processing...
+                  Przetwarzanie...
                 </button>
               </div>
             }
@@ -27,10 +27,10 @@
             {
                  <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" @onclick="()=>OnDeleteConfirmation(false)" data-bs-dismiss="modal">
-                  Cancel
+                  Anuluj
                 </button>
                 <button type="button" class="btn btn-danger" @onclick="()=>OnDeleteConfirmation(true)">
-                  Delete
+                  Usuń
                 </button>
               </div>
             }

@@ -5,16 +5,16 @@
         <Found Context="routeData">
             <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
                 <NotAuthorized>
-                    <p> uh oh! You are not authorized. Log in to see content.</p>
+                    <p> Ups! Brak uprawnień. Zaloguj się, aby zobaczyć treść.</p>
                 </NotAuthorized>
 
             </AuthorizeRouteView>
             <FocusOnNavigate RouteData="@routeData" Selector="h1" />
         </Found>
         <NotFound>
-            <PageTitle>Not found</PageTitle>
+            <PageTitle>Nie znaleziono</PageTitle>
             <LayoutView Layout="@typeof(MainLayout)">
-                <p role="alert">Sorry, there's nothing at this address.</p>
+                <p role="alert">Przepraszamy, pod tym adresem nic nie ma.</p>
             </LayoutView>
         </NotFound>
     </Router>
