@@ -3,11 +3,11 @@
 @inherits BaronyPageBase
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 
-<PageTitle>Dagonite Empire | Lord's Seat</PageTitle>
+<PageTitle>Dagonitowe Imperium | Siedziba Lorda</PageTitle>
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading lord's seat...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Ładowanie siedziby lorda...</span>
 }
 else if (LoadError is not null)
 {
@@ -15,13 +15,13 @@ else if (LoadError is not null)
 }
 else if (_seat is not null)
 {
-    <BaronyPageHeader Title="Lord's Seat" HelpKey="lords-seat">
+    <BaronyPageHeader Title="Siedziba Lorda" HelpKey="lords-seat">
         <Summary>
             <span class="projects-summary">
-                <span class="projects-summary__item">@_seat.Rooms.Count chamber@(_seat.Rooms.Count == 1 ? "" : "s")</span>
+                <span class="projects-summary__item">@_seat.Rooms.Count komnat@(_seat.Rooms.Count == 1 ? "a" : "y")</span>
                 @if (_seat.Rooms.Any(r => r.IsRuin))
                 {
-                    <span class="projects-summary__item">@_seat.Rooms.Count(r => r.IsRuin) ruin(s)</span>
+                    <span class="projects-summary__item">@_seat.Rooms.Count(r => r.IsRuin) ruina(y)</span>
                 }
             </span>
         </Summary>

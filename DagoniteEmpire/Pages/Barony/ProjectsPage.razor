@@ -3,11 +3,11 @@
 @inherits BaronyPageBase
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 
-<PageTitle>Dagonite Empire | Projects</PageTitle>
+<PageTitle>Dagonitowe Imperium | Projekty</PageTitle>
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading projects...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Ładowanie projektów...</span>
 }
 else if (LoadError is not null)
 {
@@ -15,20 +15,20 @@ else if (LoadError is not null)
 }
 else if (_overview is not null)
 {
-    <BaronyPageHeader Title="Projects" HelpKey="projects">
+    <BaronyPageHeader Title="Projekty" HelpKey="projects">
         <Summary>
             <span class="projects-summary">
                 @if (_allocatingCount > 0)
                 {
-                    <span class="projects-summary__item">@_allocatingCount awaiting resources</span>
+                    <span class="projects-summary__item">@_allocatingCount oczekuje na zasoby</span>
                 }
                 @if (_inProgressCount > 0)
                 {
-                    <span class="projects-summary__item projects-summary__item--active">@_inProgressCount in progress</span>
+                    <span class="projects-summary__item projects-summary__item--active">@_inProgressCount w toku</span>
                 }
                 @if (_allocatingCount == 0 && _inProgressCount == 0)
                 {
-                    <span class="projects-summary__item">@_projects.Count project@(_projects.Count == 1 ? "" : "s")</span>
+                    <span class="projects-summary__item">@_projects.Count projekt@(_projects.Count == 1 ? "" : "y")</span>
                 }
             </span>
         </Summary>

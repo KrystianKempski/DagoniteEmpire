@@ -9,11 +9,11 @@
 @inject IDialogService _dialogService
 @inject IJSRuntime _js
 
-<PageTitle>Dagonite Empire | Barony Notes</PageTitle>
+<PageTitle>Dagonitowe Imperium | Notatki baronii</PageTitle>
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Ładowanie...</span>
 }
 else if (LoadError is not null)
 {
@@ -22,12 +22,12 @@ else if (LoadError is not null)
 else if (Barony is not null)
 {
     <div class="barony-notes__page">
-        <BaronyPageHeader Title="Notes" HelpKey="notes" ShowSectionToggle="false" />
+        <BaronyPageHeader Title="Notatki" HelpKey="notes" ShowSectionToggle="false" />
 
         <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
             @(IsGmScope
-                ? "Private Game Master space — only you (the MG) can see this. The baron player has no access."
-                : "Private planning space — only you can see this. The Game Master has no access.")
+                ? "Prywatna przestrzeń Mistrza Gry — tylko Ty (MG) możesz to zobaczyć. Gracz barona nie ma dostępu."
+                : "Prywatna przestrzeń planowania — tylko Ty możesz to zobaczyć. Mistrz Gry nie ma dostępu.")
         </MudText>
 
         <MudTabs Elevation="0"
@@ -37,15 +37,15 @@ else if (Barony is not null)
                  @bind-ActivePanelIndex="_activeTab"
                  Class="terrain-brush-tabs barony-notes__tabs"
                  PanelClass="pt-3">
-            <MudTabPanel Text="Journal">
+            <MudTabPanel Text="Dziennik">
             <div class="barony-notes__journal">
                 <div class="barony-notes__layout">
                     <aside class="barony-notes__threads">
                         <div class="barony-notes__threads-head">
-                            <span>Threads</span>
+                            <span>Wątki</span>
                             <MudIconButton Icon="@Icons.Material.Filled.Add"
                                            Size="Size.Small"
-                                           aria-label="New note"
+                                           aria-label="Nowa notatka"
                                            OnClick="NewThreadAsync" />
                         </div>
                         <ul class="barony-notes__thread-list">
@@ -66,14 +66,14 @@ else if (Barony is not null)
                             <div class="barony-notes__placeholder">
                                 <MudIcon Icon="@Icons.Material.Filled.NoteAdd" Size="Size.Large" />
                                 <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                                    No notes yet. Create your first thread.
+                                    Brak notatek. Utwórz swój pierwszy wątek.
                                 </MudText>
                                 <MudButton Variant="Variant.Filled"
                                            Class="barony-turn-btn barony-turn-btn--solid"
                                            Size="Size.Small"
                                            StartIcon="@Icons.Material.Filled.Add"
                                            OnClick="NewThreadAsync">
-                                    New thread
+                                    Nowy wątek
                                 </MudButton>
                             </div>
                         }
@@ -85,22 +85,22 @@ else if (Barony is not null)
                                               Margin="Margin.Dense"
                                               Immediate="false"
                                               OnBlur="SaveTitleAsync"
-                                              Placeholder="Untitled note"
+                                              Placeholder="Notatka bez tytułu"
                                               Class="barony-notes__title-field" />
-                                <MudTooltip Text="@(_isDirty ? "Unsaved changes" : "Saved")">
+                                <MudTooltip Text="@(_isDirty ? "Niezapisane zmiany" : "Zapisano")">
                                     <MudIcon Icon="@(_isDirty ? Icons.Material.Filled.Sync : Icons.Material.Filled.CloudDone)"
                                              Size="Size.Small"
                                              Class="@($"barony-notes__status {(_isDirty ? "barony-notes__status--pending" : "barony-notes__status--saved")}")" />
                                 </MudTooltip>
                                 <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
                                                Size="Size.Small"
-                                               aria-label="Delete note"
+                                               aria-label="Usuń notatkę"
                                                Class="barony-notes__delete-btn"
                                                OnClick="() => DeleteThreadAsync(_selected)" />
                             </div>
 
                             <div class="barony-notes__editor">
-                                <BlazoredTextEditor @ref="_editor" @key="_editorEpoch" Placeholder="Write your plans, ideas, reminders…">
+                                <BlazoredTextEditor @ref="_editor" @key="_editorEpoch" Placeholder="Zapisz swoje plany, pomysły, przypomnienia…">
                                     <ToolbarContent>@JournalToolbar()</ToolbarContent>
                                     <EditorContent></EditorContent>
                                 </BlazoredTextEditor>
@@ -111,7 +111,7 @@ else if (Barony is not null)
             </div>
         </MudTabPanel>
 
-        <MudTabPanel Text="Sticky notes">
+        <MudTabPanel Text="Karteczki">
             <div class="barony-notes__sticky">
                 <div class="barony-notes__sticky-toolbar">
                     <MudButton Variant="Variant.Filled"
@@ -119,10 +119,10 @@ else if (Barony is not null)
                                Size="Size.Small"
                                StartIcon="@Icons.Material.Filled.Add"
                                OnClick="AddStickyAsync">
-                        Add sticky
+                        Dodaj karteczkę
                     </MudButton>
                     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                        Drag cards to reorder. Changes save automatically.
+                        Przeciągnij karty, aby zmienić kolejność. Zmiany zapisują się automatycznie.
                     </MudText>
                 </div>
 
@@ -131,7 +131,7 @@ else if (Barony is not null)
                     <div class="barony-notes__placeholder">
                         <MudIcon Icon="@Icons.Material.Filled.StickyNote2" Size="Size.Large" />
                         <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                            No sticky notes yet. Add your first idea, plan or reminder.
+                            Brak karteczek. Dodaj swój pierwszy pomysł, plan lub przypomnienie.
                         </MudText>
                     </div>
                 }
@@ -151,29 +151,29 @@ else if (Barony is not null)
                                  @ondrop="() => OnStickyDropAsync(s.Id)"
                                  @ondrop:preventDefault="true">
                                 <div class="barony-notes__sticky-head">
-                                    <span class="barony-notes__sticky-grip" title="Drag to reorder">⠿</span>
+                                    <span class="barony-notes__sticky-grip" title="Przeciągnij, aby zmienić kolejność">⠿</span>
                                     <div class="barony-notes__sticky-colors">
                                         @foreach (var c in StickyPalette)
                                         {
                                             <button type="button"
                                                     class="barony-notes__sticky-swatch @((s.Color ?? DefaultStickyColor) == c ? "barony-notes__sticky-swatch--active" : "")"
                                                     style="@($"background:{c};")"
-                                                    title="Change colour"
+                                                    title="Zmień kolor"
                                                     @onclick="() => SetStickyColorAsync(s, c)"></button>
                                         }
                                     </div>
                                     <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
                                                    Size="Size.Small"
-                                                   aria-label="Delete sticky"
+                                                   aria-label="Usuń karteczkę"
                                                    OnClick="() => DeleteStickyAsync(s)" />
                                 </div>
                                 <input class="barony-notes__sticky-title"
-                                       placeholder="Title"
+                                       placeholder="Tytuł"
                                        @bind="s.Title"
                                        @bind:event="oninput"
                                        @onblur="() => SaveStickyAsync(s)" />
                                 <textarea class="barony-notes__sticky-body"
-                                          placeholder="Write a note, idea or plan…"
+                                          placeholder="Zapisz notatkę, pomysł lub plan…"
                                           @bind="s.BodyHtml"
                                           @bind:event="oninput"
                                           @onblur="() => SaveStickyAsync(s)"></textarea>
@@ -184,20 +184,20 @@ else if (Barony is not null)
             </div>
         </MudTabPanel>
 
-        <MudTabPanel Text="Reminders">
+        <MudTabPanel Text="Przypomnienia">
             <div class="barony-notes__reminders">
                 <div class="barony-notes__reminder-add">
                     <input class="barony-notes__reminder-text"
-                           placeholder="Remind me to…"
+                           placeholder="Przypomnij mi, aby…"
                            @bind="_newReminderText"
                            @bind:event="oninput"
                            @onkeydown="OnReminderKeyDown" />
                     <div class="barony-notes__reminder-in">
-                        <span>in</span>
+                        <span>za</span>
                         <input type="number" min="1" max="999"
                                class="barony-notes__reminder-turns"
                                @bind="_newReminderTurns" />
-                        <span>turn@(_newReminderTurns == 1 ? "" : "s") → <b>T@(CurrentTurn + Math.Max(1, _newReminderTurns))</b></span>
+                        <span>@(_newReminderTurns == 1 ? "turę" : "tur") → <b>T@(CurrentTurn + Math.Max(1, _newReminderTurns))</b></span>
                     </div>
                     <MudButton Variant="Variant.Filled"
                                Class="barony-turn-btn barony-turn-btn--solid"
@@ -205,12 +205,12 @@ else if (Barony is not null)
                                StartIcon="@Icons.Material.Filled.AddAlarm"
                                Disabled="@string.IsNullOrWhiteSpace(_newReminderText)"
                                OnClick="AddReminderAsync">
-                        Add reminder
+                        Dodaj przypomnienie
                     </MudButton>
                 </div>
 
                 <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
-                    Current turn: <b>T@(CurrentTurn)</b>. Reminders light up when your barony reaches the target turn.
+                    Bieżąca tura: <b>T@(CurrentTurn)</b>. Przypomnienia zaświecą się, gdy Twoja baronia osiągnie docelową turę.
                 </MudText>
 
                 @if (_reminders.Count == 0)
@@ -218,7 +218,7 @@ else if (Barony is not null)
                     <div class="barony-notes__placeholder">
                         <MudIcon Icon="@Icons.Material.Filled.NotificationsActive" Size="Size.Large" />
                         <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                            No reminders yet. Add one above to be nudged in a few turns.
+                            Brak przypomnień. Dodaj jedno powyżej, aby otrzymać powiadomienie za kilka tur.
                         </MudText>
                     </div>
                 }
@@ -231,7 +231,7 @@ else if (Barony is not null)
                             <div class="barony-notes__reminder-card @(r.IsDone ? "barony-notes__reminder-card--done" : "") @(isDue ? "barony-notes__reminder-card--due" : "")">
                                 <MudIconButton Icon="@(r.IsDone ? Icons.Material.Filled.CheckCircle : (isDue ? Icons.Material.Filled.NotificationsActive : Icons.Material.Outlined.Notifications))"
                                                Size="Size.Small"
-                                               aria-label="Toggle done"
+                                               aria-label="Przełącz ukończenie"
                                                Class="barony-notes__reminder-toggle"
                                                OnClick="() => ToggleReminderDoneAsync(r)" />
                                 <div class="barony-notes__reminder-main">
@@ -240,7 +240,7 @@ else if (Barony is not null)
                                 </div>
                                 <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
                                                Size="Size.Small"
-                                               aria-label="Delete reminder"
+                                               aria-label="Usuń przypomnienie"
                                                OnClick="() => DeleteReminderAsync(r)" />
                             </div>
                         }
@@ -293,7 +293,7 @@ else if (Barony is not null)
     private string LocalDraftKey => $"barony-journal-{BaronyId}-{_selected?.Id ?? 0}";
 
     private static string ThreadTitle(BaronyPlayerNoteDTO t) =>
-        string.IsNullOrWhiteSpace(t.Title) ? "Untitled note" : t.Title!;
+        string.IsNullOrWhiteSpace(t.Title) ? "Notatka bez tytułu" : t.Title!;
 
     private RenderFragment JournalToolbar() => __builder =>
     {
@@ -332,7 +332,7 @@ else if (Barony is not null)
 
         _threads = await _notesRepo.GetNotes(BaronyId, BaronyPlayerNoteType.Journal, NoteScope);
         if (_threads.Count == 0)
-            _threads.Add(await CreateThreadAsync("Note 1"));
+            _threads.Add(await CreateThreadAsync("Notatka 1"));
 
         SetActiveThread(_threads[0]);
 
@@ -432,7 +432,7 @@ else if (Barony is not null)
         await StopAutoSaveAsync();
         await FlushCurrentAsync();
 
-        var created = await CreateThreadAsync($"Note {_threads.Count + 1}");
+        var created = await CreateThreadAsync($"Notatka {_threads.Count + 1}");
         _threads.Add(created);
         SetActiveThread(created);
         StateHasChanged();
@@ -459,7 +459,7 @@ else if (Barony is not null)
         if (_selected is null)
             return;
 
-        var title = string.IsNullOrWhiteSpace(_titleEdit) ? "Untitled note" : _titleEdit.Trim();
+        var title = string.IsNullOrWhiteSpace(_titleEdit) ? "Notatka bez tytułu" : _titleEdit.Trim();
         if (title == (_selected.Title ?? ""))
             return;
 
@@ -489,10 +489,10 @@ else if (Barony is not null)
             return;
 
         var ok = await _dialogService.ShowMessageBoxAsync(
-            "Delete note",
-            $"Delete \"{ThreadTitle(thread)}\" permanently? This cannot be undone.",
-            yesText: "Delete",
-            cancelText: "Cancel");
+            "Usuń notatkę",
+            $"Usunąć \"{ThreadTitle(thread)}\" na stałe? Tej operacji nie można cofnąć.",
+            yesText: "Usuń",
+            cancelText: "Anuluj");
         if (ok != true)
             return;
 
@@ -552,10 +552,10 @@ else if (Barony is not null)
     private async Task DeleteStickyAsync(BaronyPlayerNoteDTO s)
     {
         var ok = await _dialogService.ShowMessageBoxAsync(
-            "Delete sticky note",
-            "Delete this sticky note permanently? This cannot be undone.",
-            yesText: "Delete",
-            cancelText: "Cancel");
+            "Usuń karteczkę",
+            "Usunąć tę karteczkę na stałe? Tej operacji nie można cofnąć.",
+            yesText: "Usuń",
+            cancelText: "Anuluj");
         if (ok != true)
             return;
 
@@ -617,14 +617,14 @@ else if (Barony is not null)
     {
         var due = r.DueTurn ?? 0;
         if (r.IsDone)
-            return $"Done \u00b7 target T{due}";
+            return $"Ukończono \u00b7 cel T{due}";
         if (CurrentTurn >= due)
         {
             var over = CurrentTurn - due;
-            return over == 0 ? $"Due now \u00b7 T{due}" : $"Overdue by {over} turn{(over == 1 ? "" : "s")} \u00b7 T{due}";
+            return over == 0 ? $"Termin teraz \u00b7 T{due}" : $"Zaległe o {over} tur{(over == 1 ? "ę" : "")} \u00b7 T{due}";
         }
         var left = due - CurrentTurn;
-        return $"In {left} turn{(left == 1 ? "" : "s")} \u00b7 T{due}";
+        return $"Za {left} tur{(left == 1 ? "ę" : "")} \u00b7 T{due}";
     }
 
     private async Task OnReminderKeyDown(KeyboardEventArgs e)
@@ -668,10 +668,10 @@ else if (Barony is not null)
     private async Task DeleteReminderAsync(BaronyPlayerNoteDTO r)
     {
         var ok = await _dialogService.ShowMessageBoxAsync(
-            "Delete reminder",
-            "Delete this reminder permanently? This cannot be undone.",
-            yesText: "Delete",
-            cancelText: "Cancel");
+            "Usuń przypomnienie",
+            "Usunąć to przypomnienie na stałe? Tej operacji nie można cofnąć.",
+            yesText: "Usuń",
+            cancelText: "Anuluj");
         if (ok != true)
             return;
 

@@ -3,11 +3,11 @@
 @inherits BaronyPageBase
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 
-<PageTitle>Dagonite Empire | Relations</PageTitle>
+<PageTitle>Dagonitowe Imperium | Relacje</PageTitle>
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading relations...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Ładowanie relacji...</span>
 }
 else if (LoadError is not null)
 {
@@ -15,10 +15,10 @@ else if (LoadError is not null)
 }
 else if (_overview is not null)
 {
-    <BaronyPageHeader Title="Relations" HelpKey="relations">
+    <BaronyPageHeader Title="Relacje" HelpKey="relations">
         <Summary>
             <span class="projects-summary">
-                <span class="projects-summary__item">@_relations.Count contact@(_relations.Count == 1 ? "" : "s")</span>
+                <span class="projects-summary__item">@_relations.Count kontakt@(_relations.Count == 1 ? "" : "y")</span>
             </span>
         </Summary>
     </BaronyPageHeader>

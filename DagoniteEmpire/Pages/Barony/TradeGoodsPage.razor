@@ -3,11 +3,11 @@
 @inherits BaronyPageBase
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 
-<PageTitle>Dagonite Empire | Trade</PageTitle>
+<PageTitle>Dagonitowe Imperium | Handel</PageTitle>
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading trade...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Ładowanie handlu...</span>
 }
 else if (LoadError is not null)
 {
@@ -15,20 +15,20 @@ else if (LoadError is not null)
 }
 else
 {
-    <BaronyPageHeader Title="Trade" HelpKey="trade-goods">
+    <BaronyPageHeader Title="Handel" HelpKey="trade-goods">
         <Summary>
             <span class="projects-summary">
-                <span class="projects-summary__item">@_availability.AvailableKeys.Count / @TradeGoodsCatalog.All.Count available</span>
-                <span class="projects-summary__item">@_availability.ProducedKeys.Count produced</span>
-                <span class="projects-summary__item">@_availability.TreatyReceivedKeys.Count from trade</span>
+                <span class="projects-summary__item">@_availability.AvailableKeys.Count / @TradeGoodsCatalog.All.Count dostępne</span>
+                <span class="projects-summary__item">@_availability.ProducedKeys.Count produkowane</span>
+                <span class="projects-summary__item">@_availability.TreatyReceivedKeys.Count z handlu</span>
             </span>
         </Summary>
     </BaronyPageHeader>
 
     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-        Goods are available when produced by a city building or terrain improvement, or received via an MG-approved trade treaty.
-        Only locally produced goods (or MG overrides) can be granted in treaties — treaty imports cannot be re-exported.
-        Available goods, luxury access, route economy, and treaty gold (customs / sweeteners) all feed Domain Panel → Decrees and Technologies.
+        Towary są dostępne, gdy są produkowane przez budynek miejski lub ulepszenie terenu, albo otrzymane poprzez traktat handlowy zatwierdzony przez MG.
+        Tylko towary produkowane lokalnie (lub nadpisania MG) mogą być przyznane w traktatach — import z traktatu nie może być reeksportowany.
+        Dostępne towary, dostęp do dóbr luksusowych, ekonomia szlaków i złoto z traktatów (cła / zachęty) zasilają Panel Domeny → Dekrety i Technologie.
     </MudText>
 
     <TradeGoodsPpbSummarySection Selected="@AvailableGoods"
@@ -130,7 +130,7 @@ else
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save trade treaties: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać traktatów handlowych: " + ex.Message, Severity.Error);
             _treaties = await _baronyRepo.GetTradeTreaties(Barony.Id);
             await ReloadAvailabilityAsync();
         }
@@ -154,7 +154,7 @@ else
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save luxury goods access: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać dostępu do dóbr luksusowych: " + ex.Message, Severity.Error);
             _luxuryKey = await _baronyRepo.GetLuxuryGoodsAccessKey(Barony.Id);
         }
         finally
@@ -183,7 +183,7 @@ else
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save trade good override: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać nadpisania towaru: " + ex.Message, Severity.Error);
             await ReloadAvailabilityAsync();
         }
         finally

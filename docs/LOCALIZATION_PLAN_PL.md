@@ -210,9 +210,14 @@ Rdzeń rozgrywki gracza-bohatera.
   („Battle turn/started/ended"), `GetBattleSummaryHeader`/`GetBattleSummaryContent`,
   generowane treści postów (podsumowania tur, „Barony resources update")
 
-### Faza 5 — Baronia: strony główne 🟡 (L) — 22 plików
-- [ ] `Pages/Barony/*`: ArmyPage, AudiencesPage, BaronCardPage, BudgetPage, BuildingsPage, DomainPanel, KnownLordsPage, LettersPage, LordsSeatPage, MarchMapPage, NotesPage, OfficesPage, ProjectsPage, RelationsPage, ResourcesPage, TerrainPage, TradeGoodsPage, BattleMapPage, BaronyLayout, DemoEnter, DemoModeBanner, StyleLab
-- [ ] Uwaga: `BattleMapPage.razor` i `MarchMapPage.razor` są bardzo duże — traktować jako osobne pod-zadania.
+### Faza 5 — Baronia: strony główne � (L) — 22 pliki ✅ UKOŃCZONA
+- [x] `Pages/Barony/*`: ArmyPage, AudiencesPage, BaronCardPage, BudgetPage, BuildingsPage, DomainPanel, KnownLordsPage, LettersPage, LordsSeatPage, MarchMapPage, NotesPage, OfficesPage, ProjectsPage, RelationsPage, ResourcesPage, TerrainPage, TradeGoodsPage, BattleMapPage, BaronyLayout, DemoEnter, DemoModeBanner, StyleLab
+- [x] `BattleMapPage.razor` (5797 wierszy) i `MarchMapPage.razor` — chrome UI + snackbary + dialogi spolszczone
+- [ ] Odłożone do Fazy 7 (katalogi DA_Common): `*.DisplayName` katalogów (terrain/trade/resource),
+  `BudgetSource.*`, `Season` (wartości z backendu wyświetlane w UI) — spolszczyć razem z katalogami
+- [ ] Odłożone do Fazy 8 (pipeline walki/logów): narracja dziennika bitwy w BattleMapPage
+  („{token.Label} uses Full Defense…", wzory ataku k6), `AddUnitLogEntry`/`SaveAsync(systemMessage:…)`,
+  komunikat sprzężony kluczem `"…juz dodana"` (Contains), skróty statów Atk/Def/Dmg/Arm/Prc/Disc/Mv
 
 ### Faza 6 — Baronia: komponenty 🔴 (XL) — 136 plików
 Największa i najbardziej pracochłonna faza. Podzielić na pod-partie tematyczne:

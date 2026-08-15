@@ -5,11 +5,11 @@
 @inject IDialogService _dialogService
 @inject IJSRuntime JS
 
-<PageTitle>Dagonite Empire | Buildings</PageTitle>
+<PageTitle>Dagonitowe Imperium | Budynki</PageTitle>
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading building catalog...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Ładowanie katalogu budynków...</span>
 }
 else if (LoadError is not null)
 {
@@ -18,34 +18,34 @@ else if (LoadError is not null)
 else
 {
     <div class="buildings-page">
-        <BaronyPageHeader Title="Buildings" HelpKey="buildings" ShowSectionToggle="false">
+        <BaronyPageHeader Title="Budynki" HelpKey="buildings" ShowSectionToggle="false">
             <Summary>
-                <span class="buildings-catalog-count">@FilteredCount of @_templates.Count entries</span>
+                <span class="buildings-catalog-count">@FilteredCount z @_templates.Count pozycji</span>
             </Summary>
         </BaronyPageHeader>
 
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="buildings-page__intro">
-            Catalog of buildings and terrain improvements. PPB columns use separate additive (+) and percent (%) subcolumns. Click headers to sort.
+            Katalog budynków i ulepszeń terenu. Kolumny PPB używają osobnych podkolumn addytywnych (+) i procentowych (%). Kliknij nagłówki, aby sortować.
             @if (CanEdit)
             {
-                <text> Use the hammer on a city building to start a construction project (adds to Domain Panel when finished).</text>
+                <text> Użyj młotka na budynku miejskim, aby rozpocząć projekt budowy (dodaje do Panelu Domeny po ukończeniu).</text>
             }
         </MudText>
 
         @if (_templates.Count == 0)
         {
             <MudAlert Severity="Severity.Info" Dense="true">
-                The building catalog is empty.
+                Katalog budynków jest pusty.
                 @if (CanManageAsMg)
                 {
-                    <text> Use <strong>Add building</strong> below to create the first template.</text>
+                    <text> Użyj <strong>Dodaj budynek</strong> poniżej, aby utworzyć pierwszy szablon.</text>
                 }
             </MudAlert>
         }
 
         <div class="buildings-catalog-filters">
                 <MudTextField @bind-Value="_nameFilter"
-                              Placeholder="Filter by name…"
+                              Placeholder="Filtruj po nazwie…"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Immediate="true"
@@ -55,7 +55,7 @@ else
                               Class="buildings-catalog-filters__name"
                               Disabled="@(_templates.Count == 0)" />
                 <MudSelect T="string"
-                           Label="Type"
+                           Label="Typ"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Clearable="true"
@@ -63,8 +63,8 @@ else
                            Class="buildings-catalog-filters__kind"
                            @bind-Value="_kindFilter"
                            Disabled="@(_templates.Count == 0)">
-                    <MudSelectItem Value="@BuildingKind.Building">Building</MudSelectItem>
-                    <MudSelectItem Value="@BuildingKind.Improvement">Improvement</MudSelectItem>
+                    <MudSelectItem Value="@BuildingKind.Building">Budynek</MudSelectItem>
+                    <MudSelectItem Value="@BuildingKind.Improvement">Ulepszenie</MudSelectItem>
                 </MudSelect>
                 @if (CanManageAsMg)
                 {
@@ -72,7 +72,7 @@ else
                                Class="barony-turn-btn barony-turn-btn--solid buildings-catalog-filters__add"
                                StartIcon="@Icons.Material.Filled.Add"
                                OnClick="OpenCreateTemplateDialogAsync">
-                        Add building
+                        Dodaj budynek
                     </MudButton>
                 }
         </div>
@@ -82,7 +82,7 @@ else
             @if (FilteredCount == 0)
             {
                 <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">
-                    No buildings match the current filters.
+                    Żaden budynek nie pasuje do bieżących filtrów.
                 </MudAlert>
             }
             else
@@ -146,7 +146,7 @@ else
         };
 
         var dialog = await _dialogService.ShowAsync<CreateBuildingTemplateDialog>(
-            "New catalog entry",
+            "Nowa pozycja katalogu",
             parameters,
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseOnEscapeKey = true });
 
@@ -158,11 +158,11 @@ else
         {
             var saved = await _baronyRepo.SaveBuildingTemplate(template);
             await ReloadTemplatesAsync();
-            _snackBar.Add($"Catalog entry “{saved.Name}” created.", Severity.Success);
+            _snackBar.Add($"Utworzono pozycję katalogu “{saved.Name}”.", Severity.Success);
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save catalog entry: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać pozycji katalogu: " + ex.Message, Severity.Error);
         }
     }
 
@@ -173,7 +173,7 @@ else
 
         if (!string.Equals(template.Kind, BuildingKind.Building, StringComparison.OrdinalIgnoreCase))
         {
-            _snackBar.Add("Terrain improvements are built from the Terrain map.", Severity.Info);
+            _snackBar.Add("Ulepszenia terenu buduje się z Mapy terenu.", Severity.Info);
             return;
         }
 
@@ -184,7 +184,7 @@ else
         };
 
         var dialog = await _dialogService.ShowAsync<CreateCityBuildingProjectDialog>(
-            "New building project",
+            "Nowy projekt budowy",
             parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
 
@@ -195,11 +195,11 @@ else
         try
         {
             await _baronyRepo.SaveProject(project);
-            _snackBar.Add("Building project added — see the Projects tab.", Severity.Success);
+            _snackBar.Add("Dodano projekt budowy — zobacz zakładkę Projekty.", Severity.Success);
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not create project: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się utworzyć projektu: " + ex.Message, Severity.Error);
         }
     }
 
@@ -220,7 +220,7 @@ else
         };
 
         var dialog = await _dialogService.ShowAsync<CreateBuildingTemplateDialog>(
-            "Edit catalog entry",
+            "Edytuj pozycję katalogu",
             parameters,
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseOnEscapeKey = true });
 
@@ -232,11 +232,11 @@ else
         {
             var saved = await _baronyRepo.SaveBuildingTemplate(edited);
             await ReloadTemplatesAsync();
-            _snackBar.Add($"Catalog entry “{saved.Name}” updated.", Severity.Success);
+            _snackBar.Add($"Zaktualizowano pozycję katalogu “{saved.Name}”.", Severity.Success);
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not update catalog entry: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zaktualizować pozycji katalogu: " + ex.Message, Severity.Error);
         }
     }
 
@@ -247,7 +247,7 @@ else
 
         var confirmed = await JS.InvokeAsync<bool>(
             "confirm",
-            $"Delete catalog entry \"{template.Name}\"? This cannot be undone.");
+            $"Usunąć pozycję katalogu \"{template.Name}\"? Tej operacji nie można cofnąć.");
 
         if (!confirmed)
             return;
@@ -256,11 +256,11 @@ else
         {
             await _baronyRepo.DeleteBuildingTemplate(template.Id);
             await ReloadTemplatesAsync();
-            _snackBar.Add($"Catalog entry “{template.Name}” deleted.", Severity.Success);
+            _snackBar.Add($"Usunięto pozycję katalogu “{template.Name}”.", Severity.Success);
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not delete catalog entry: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się usunąć pozycji katalogu: " + ex.Message, Severity.Error);
         }
     }
 

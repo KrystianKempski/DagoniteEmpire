@@ -5,11 +5,11 @@
 @inject ICharacterRepository _characterRepo
 @inject IDialogService _dialogService
 
-<PageTitle>Dagonite Empire | Domain Panel</PageTitle>
+<PageTitle>Dagonitowe Imperium | Panel Domeny</PageTitle>
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading barony...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Ładowanie baronii...</span>
 }
 else if (LoadError is not null)
 {
@@ -17,94 +17,94 @@ else if (LoadError is not null)
 }
 else if (_overview is not null)
 {
-    <div class="barony-meta-bar" aria-label="Barony status">
+    <div class="barony-meta-bar" aria-label="Status baronii">
         @if (CanManageAsMg)
         {
-            <BaronyHudTip Title="Barony" Text="@BaronyUiTooltips.MetaBaronyNameMg">
+            <BaronyHudTip Title="Baronia" Text="@BaronyUiTooltips.MetaBaronyNameMg">
                 <BaronySwitcher />
             </BaronyHudTip>
         }
         else
         {
-            <BaronyHudTip Title="Barony" Text="@BaronyUiTooltips.MetaBaronyName">
+            <BaronyHudTip Title="Baronia" Text="@BaronyUiTooltips.MetaBaronyName">
                 <div class="barony-meta-bar__name">@_overview.Barony.Name</div>
             </BaronyHudTip>
         }
         <div class="barony-meta-bar__stats">
-            <BaronyHudTip Title="Year" Text="@BaronyUiTooltips.MetaYear">
+            <BaronyHudTip Title="Rok" Text="@BaronyUiTooltips.MetaYear">
                 <span class="barony-meta-bar__stat">
-                    <span class="barony-meta-bar__label">Year</span>
+                    <span class="barony-meta-bar__label">Rok</span>
                     <span class="barony-meta-bar__value">@_overview.Barony.Year</span>
                 </span>
             </BaronyHudTip>
-            <BaronyHudTip Title="Season" Text="@BaronyUiTooltips.MetaSeason">
+            <BaronyHudTip Title="Pora roku" Text="@BaronyUiTooltips.MetaSeason">
                 <span class="barony-meta-bar__stat">
-                    <span class="barony-meta-bar__label">Season</span>
+                    <span class="barony-meta-bar__label">Pora roku</span>
                     <span class="barony-meta-bar__value">@SeasonEn(_overview.Barony.Season)</span>
                 </span>
             </BaronyHudTip>
-            <BaronyHudTip Title="Turn" Text="@BaronyUiTooltips.MetaTurn">
+            <BaronyHudTip Title="Tura" Text="@BaronyUiTooltips.MetaTurn">
                 <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
-                    <span class="barony-meta-bar__label">Turn</span>
+                    <span class="barony-meta-bar__label">Tura</span>
                     <span class="barony-meta-bar__value">@_overview.Barony.TurnNumber</span>
                 </span>
             </BaronyHudTip>
-            <BaronyHudTip Title="Size" Text="@BaronyUiTooltips.MetaSize">
+            <BaronyHudTip Title="Rozmiar" Text="@BaronyUiTooltips.MetaSize">
                 <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
-                    <span class="barony-meta-bar__label">Size</span>
+                    <span class="barony-meta-bar__label">Rozmiar</span>
                     <span class="barony-meta-bar__value">@_overview.Barony.Size</span>
                 </span>
             </BaronyHudTip>
-            <BaronyHudTip Title="Loyalty" Text="@BaronyUiTooltips.MetaPpbTurnTotal(Ppb.Loyalty, _grandTotal[Ppb.Loyalty])">
+            <BaronyHudTip Title="Lojalność" Text="@BaronyUiTooltips.MetaPpbTurnTotal(Ppb.Loyalty, _grandTotal[Ppb.Loyalty])">
                 <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
-                    <span class="barony-meta-bar__label">Loyalty</span>
+                    <span class="barony-meta-bar__label">Lojalność</span>
                     <span class="barony-meta-bar__value @SignedClass(_grandTotal[Ppb.Loyalty])">@FmtAdd(_grandTotal[Ppb.Loyalty])</span>
                 </span>
             </BaronyHudTip>
-            <BaronyHudTip Title="Stability" Text="@BaronyUiTooltips.MetaPpbTurnTotal(Ppb.Stability, _grandTotal[Ppb.Stability])">
+            <BaronyHudTip Title="Stabilność" Text="@BaronyUiTooltips.MetaPpbTurnTotal(Ppb.Stability, _grandTotal[Ppb.Stability])">
                 <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
-                    <span class="barony-meta-bar__label">Stability</span>
+                    <span class="barony-meta-bar__label">Stabilność</span>
                     <span class="barony-meta-bar__value @SignedClass(_grandTotal[Ppb.Stability])">@FmtAdd(_grandTotal[Ppb.Stability])</span>
                 </span>
             </BaronyHudTip>
-            <BaronyHudTip Title="Economy" Text="@BaronyUiTooltips.MetaPpbTurnTotal(Ppb.Economy, _grandTotal[Ppb.Economy])">
+            <BaronyHudTip Title="Gospodarka" Text="@BaronyUiTooltips.MetaPpbTurnTotal(Ppb.Economy, _grandTotal[Ppb.Economy])">
                 <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
-                    <span class="barony-meta-bar__label">Economy</span>
+                    <span class="barony-meta-bar__label">Gospodarka</span>
                     <span class="barony-meta-bar__value @SignedClass(_grandTotal[Ppb.Economy])">@FmtAdd(_grandTotal[Ppb.Economy])</span>
                 </span>
             </BaronyHudTip>
-            <BaronyHudTip Title="Unrest" Text="@BaronyUiTooltips.MetaUnrest">
+            <BaronyHudTip Title="Niepokój" Text="@BaronyUiTooltips.MetaUnrest">
                 @if (CanManageAsMg)
                 {
                     <button type="button"
                             class="barony-meta-bar__stat barony-meta-bar__stat--centered barony-meta-bar__stat--clickable"
                             @onclick="EditUnrestAsync">
-                        <span class="barony-meta-bar__label">Unrest</span>
+                        <span class="barony-meta-bar__label">Niepokój</span>
                         <span class="barony-meta-bar__value @(_overview.Barony.Unrest > 0 ? "barony-meta-bar__value--neg" : "")">@_overview.Barony.Unrest</span>
                     </button>
                 }
                 else
                 {
                     <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
-                        <span class="barony-meta-bar__label">Unrest</span>
+                        <span class="barony-meta-bar__label">Niepokój</span>
                         <span class="barony-meta-bar__value @(_overview.Barony.Unrest > 0 ? "barony-meta-bar__value--neg" : "")">@_overview.Barony.Unrest</span>
                     </span>
                 }
             </BaronyHudTip>
-            <BaronyHudTip Title="Conjuncture" Text="@BaronyUiTooltips.MetaConjuncture(_overview.Barony.ConjunctureDice, _overview.Barony.ConjunctureModifier)">
+            <BaronyHudTip Title="Koniunktura" Text="@BaronyUiTooltips.MetaConjuncture(_overview.Barony.ConjunctureDice, _overview.Barony.ConjunctureModifier)">
                 @if (CanManageAsMg)
                 {
                     <button type="button"
                             class="barony-meta-bar__stat barony-meta-bar__stat--centered barony-meta-bar__stat--clickable"
                             @onclick="EditConjunctureAsync">
-                        <span class="barony-meta-bar__label">Conjuncture</span>
+                        <span class="barony-meta-bar__label">Koniunktura</span>
                         <span class="barony-meta-bar__value @ConjunctureSignedClass(_overview.Barony.Conjuncture)">@_overview.Barony.Conjuncture</span>
                     </button>
                 }
                 else
                 {
                     <span class="barony-meta-bar__stat barony-meta-bar__stat--centered">
-                        <span class="barony-meta-bar__label">Conjuncture</span>
+                        <span class="barony-meta-bar__label">Koniunktura</span>
                         <span class="barony-meta-bar__value @ConjunctureSignedClass(_overview.Barony.Conjuncture)">@_overview.Barony.Conjuncture</span>
                     </span>
                 }
@@ -112,12 +112,12 @@ else if (_overview is not null)
         </div>
     </div>
 
-    <BaronyPageHeader Title="Domain Panel" HelpKey="domain">
+    <BaronyPageHeader Title="Panel Domeny" HelpKey="domain">
         <Actions>
             @if (_overview is not null && _overview.Barony.PlayerTurnReady)
             {
-                <BaronyTooltip Text="Player marked this turn finished">
-                    <span class="barony-turn-ready-chip">Ready for MG</span>
+                <BaronyTooltip Text="Gracz oznaczył tę turę jako zakończoną">
+                    <span class="barony-turn-ready-chip">Gotowe dla MG</span>
                 </BaronyTooltip>
             }
             @if (CanEdit && !CanManageAsMg)
@@ -128,7 +128,7 @@ else if (_overview is not null)
                                Size="Size.Small"
                                Class="barony-turn-btn barony-turn-btn--ghost"
                                OnClick="UndoEndTurnAsync">
-                        Undo End Turn
+                        Cofnij zakończenie tury
                     </MudButton>
                 }
                 else
@@ -137,7 +137,7 @@ else if (_overview is not null)
                                Size="Size.Small"
                                Class="barony-turn-btn barony-turn-btn--solid"
                                OnClick="EndTurnAsync">
-                        End Turn
+                        Zakończ turę
                     </MudButton>
                 }
             }
@@ -149,7 +149,7 @@ else if (_overview is not null)
                                Size="Size.Small"
                                Class="barony-turn-btn barony-turn-btn--ghost"
                                OnClick="UndoEndTurnAsync">
-                        Clear ready
+                        Wyczyść gotowość
                     </MudButton>
                 }
                 else if (CanEdit)
@@ -158,7 +158,7 @@ else if (_overview is not null)
                                Size="Size.Small"
                                Class="barony-turn-btn barony-turn-btn--ghost"
                                OnClick="EndTurnAsync">
-                        End Turn
+                        Zakończ turę
                     </MudButton>
                 }
                 <MudButton Variant="Variant.Filled"
@@ -166,7 +166,7 @@ else if (_overview is not null)
                            Class="barony-turn-btn barony-turn-btn--solid"
                            Disabled="@(_resolvingTurn)"
                            OnClick="ResolveTurnAsync">
-                    Resolve Turn
+                    Rozstrzygnij turę
                 </MudButton>
             }
         </Actions>
@@ -208,14 +208,14 @@ else if (_overview is not null)
     <ArmySection Rows="@_armyRows" />
     <CommunityPenaltiesSection Rows="@_communityRows" />
 
-    <BaronySection Title="Barony Summary">
+    <BaronySection Title="Podsumowanie baronii">
         <Summary>
             <PpbSummaryChips Vector="@_grandTotal" />
         </Summary>
         <ChildContent>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                final = Σ additive + scalable_additive × (Σ percent / 100).
-                Percent scales positive additives only.
+                wartość końcowa = Σ dodatki + skalowalne_dodatki × (Σ procent / 100).
+                Procent skaluje tylko dodatnie dodatki.
             </MudText>
             <div style="overflow-x:auto;">
                 <table class="ppb-table ppb-table--summary ppb-table--lined">
@@ -228,7 +228,7 @@ else if (_overview is not null)
                     </colgroup>
                     <thead>
                         <tr>
-                            <th class="ppb-row-label summary-col-component">Component</th>
+                            <th class="ppb-row-label summary-col-component">Składnik</th>
                             @foreach (var info in PpbCatalog.All)
                             {
                                 <th>
@@ -385,7 +385,7 @@ else if (_overview is not null)
         };
 
         var dialog = await _dialogService.ShowAsync<UnrestEditDialog>(
-            "Unrest",
+            "Niepokój",
             parameters,
             new DialogOptions
             {
@@ -404,12 +404,12 @@ else if (_overview is not null)
             await _baronyRepo.UpdateBarony(_overview.Barony);
             if (Barony is not null)
                 Barony.Unrest = _overview.Barony.Unrest;
-            _snackBar.Add("Unrest updated.", Severity.Success);
+            _snackBar.Add("Zaktualizowano niepokój.", Severity.Success);
             await ReloadOverviewAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save unrest: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać niepokoju: " + ex.Message, Severity.Error);
         }
     }
 
@@ -425,7 +425,7 @@ else if (_overview is not null)
         };
 
         var dialog = await _dialogService.ShowAsync<ConjunctureEditDialog>(
-            "Conjuncture",
+            "Koniunktura",
             parameters,
             new DialogOptions
             {
@@ -450,12 +450,12 @@ else if (_overview is not null)
                 Barony.ConjunctureDice = _overview.Barony.ConjunctureDice;
                 Barony.ConjunctureModifier = _overview.Barony.ConjunctureModifier;
             }
-            _snackBar.Add("Conjuncture updated.", Severity.Success);
+            _snackBar.Add("Zaktualizowano koniunkturę.", Severity.Success);
             await ReloadOverviewAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save conjuncture: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać koniunktury: " + ex.Message, Severity.Error);
         }
     }
 
@@ -465,10 +465,10 @@ else if (_overview is not null)
             return;
 
         var confirm = await _dialogService.ShowMessageBoxAsync(
-            "End turn?",
-            "Confirm that you have nothing left to do this turn. The Game Master can then resolve the turn.",
-            yesText: "End Turn",
-            cancelText: "Cancel");
+            "Zakończyć turę?",
+            "Potwierdź, że nie masz już nic do zrobienia w tej turze. Mistrz Gry może wtedy rozstrzygnąć turę.",
+            yesText: "Zakończ turę",
+            cancelText: "Anuluj");
         if (confirm != true)
             return;
 
@@ -478,12 +478,12 @@ else if (_overview is not null)
             if (_overview is not null)
                 _overview.Barony.PlayerTurnReady = true;
             Barony.PlayerTurnReady = true;
-            _snackBar.Add("Turn marked finished — waiting for the Game Master.", Severity.Success);
+            _snackBar.Add("Tura oznaczona jako zakończona — oczekiwanie na Mistrza Gry.", Severity.Success);
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not end turn: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zakończyć tury: " + ex.Message, Severity.Error);
         }
     }
 
@@ -498,12 +498,12 @@ else if (_overview is not null)
             if (_overview is not null)
                 _overview.Barony.PlayerTurnReady = false;
             Barony.PlayerTurnReady = false;
-            _snackBar.Add("End-turn mark cleared.", Severity.Info);
+            _snackBar.Add("Usunięto oznaczenie zakończenia tury.", Severity.Info);
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not clear ready flag: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się usunąć oznaczenia gotowości: " + ex.Message, Severity.Error);
         }
     }
 
@@ -514,12 +514,12 @@ else if (_overview is not null)
 
         var ready = _overview.Barony.PlayerTurnReady;
         var confirm = await _dialogService.ShowMessageBoxAsync(
-            "Resolve turn?",
+            "Rozstrzygnąć turę?",
             ready
-                ? "Apply income, complete ready projects, roll conjuncture, and advance the calendar."
-                : "The player has not marked End Turn yet. Resolve anyway?",
-            yesText: "Resolve Turn",
-            cancelText: "Cancel");
+                ? "Nalicz dochód, ukończ gotowe projekty, rzuć na koniunkturę i przesuń kalendarz."
+                : "Gracz nie oznaczył jeszcze zakończenia tury. Rozstrzygnąć mimo to?",
+            yesText: "Rozstrzygnij turę",
+            cancelText: "Anuluj");
         if (confirm != true)
             return;
 
@@ -560,11 +560,11 @@ else if (_overview is not null)
             {
                 { x => x.Report, report },
             };
-            await _dialogService.ShowAsync<TurnResolveReportDialog>("Turn resolved", parameters);
+            await _dialogService.ShowAsync<TurnResolveReportDialog>("Tura rozstrzygnięta", parameters);
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not resolve turn: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się rozstrzygnąć tury: " + ex.Message, Severity.Error);
         }
         finally
         {
@@ -594,28 +594,28 @@ else if (_overview is not null)
 
     private static string PpbShort(Ppb p) => p switch
     {
-        Ppb.Food => "Food",
-        Ppb.Economy => "Econ",
+        Ppb.Food => "Żyw",
+        Ppb.Economy => "Gosp",
         Ppb.Production => "Prod",
-        Ppb.Loyalty => "Loy",
+        Ppb.Loyalty => "Loj",
         Ppb.Stability => "Stab",
-        Ppb.Law => "Law",
-        Ppb.Corruption => "Corr",
-        Ppb.Science => "Sci",
-        Ppb.Magic => "Mag",
-        Ppb.Culture => "Cult",
-        Ppb.Intelligence => "Intel",
-        Ppb.Defense => "Def",
-        Ppb.Treasury => "Gold",
+        Ppb.Law => "Prawo",
+        Ppb.Corruption => "Korup",
+        Ppb.Science => "Nauka",
+        Ppb.Magic => "Magia",
+        Ppb.Culture => "Kult",
+        Ppb.Intelligence => "Wyw",
+        Ppb.Defense => "Obr",
+        Ppb.Treasury => "Złoto",
         _ => p.ToString(),
     };
 
     private static string SeasonEn(string season) => season switch
     {
-        "Winter" => "Winter",
-        "Spring" => "Spring",
-        "Summer" => "Summer",
-        "Fall" => "Autumn",
+        "Winter" => "Zima",
+        "Spring" => "Wiosna",
+        "Summer" => "Lato",
+        "Fall" => "Jesień",
         _ => season,
     };
 

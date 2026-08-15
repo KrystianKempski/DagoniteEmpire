@@ -8,11 +8,11 @@
 @using DA_Business.Repository.MarchMapRepos
 @using Microsoft.AspNetCore.WebUtilities
 
-<PageTitle>Dagonite Empire | March map</PageTitle>
+<PageTitle>Dagonitowe Imperium | Mapa marchii</PageTitle>
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading march map...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Ładowanie mapy marchii...</span>
 }
 else if (LoadError is not null)
 {
@@ -28,28 +28,28 @@ else
                         <MudIconButton Icon="@Icons.Material.Filled.HelpOutline"
                                        Size="Size.Small"
                                        Class="barony-page-header__help-btn"
-                                       aria-label="Help: March map"
+                                       aria-label="Pomoc: Mapa marchii"
                                        OnClick="OpenMarchHelpAsync" />
                     </div>
                     <span class="march-map-legend">
-                        <span class="march-map-legend__item"><i class="march-map-legend__swatch march-map-legend__swatch--road"></i> Road</span>
-                        <span class="march-map-legend__item"><i class="march-map-legend__swatch march-map-legend__swatch--river"></i> River</span>
-                        <span class="march-map-legend__item"><i class="march-map-legend__dot march-map-legend__dot--capital"></i> Capital</span>
-                        <span class="march-map-legend__item"><i class="march-map-legend__dot march-map-legend__dot--large-city"></i> Large city</span>
-                        <span class="march-map-legend__item"><i class="march-map-legend__dot march-map-legend__dot--city"></i> City</span>
-                        <span class="march-map-legend__item"><i class="march-map-legend__dot march-map-legend__dot--village"></i> Village</span>
+                        <span class="march-map-legend__item"><i class="march-map-legend__swatch march-map-legend__swatch--road"></i> Droga</span>
+                        <span class="march-map-legend__item"><i class="march-map-legend__swatch march-map-legend__swatch--river"></i> Rzeka</span>
+                        <span class="march-map-legend__item"><i class="march-map-legend__dot march-map-legend__dot--capital"></i> Stolica</span>
+                        <span class="march-map-legend__item"><i class="march-map-legend__dot march-map-legend__dot--large-city"></i> Duże miasto</span>
+                        <span class="march-map-legend__item"><i class="march-map-legend__dot march-map-legend__dot--city"></i> Miasto</span>
+                        <span class="march-map-legend__item"><i class="march-map-legend__dot march-map-legend__dot--village"></i> Wioska</span>
                         @if (_playerBarony is not null)
                         {
-                            <span class="march-map-legend__item"><i class="march-map-legend__dot march-map-legend__dot--player-seat"></i> Your seat</span>
+                            <span class="march-map-legend__item"><i class="march-map-legend__dot march-map-legend__dot--player-seat"></i> Twoja siedziba</span>
                         }
                         <span class="march-map-legend__item">
-                            <MudIcon Icon="@Icons.Material.Filled.Lock" Class="march-map-legend__lock-icon" /> Blocked
+                            <MudIcon Icon="@Icons.Material.Filled.Lock" Class="march-map-legend__lock-icon" /> Zablokowane
                         </span>
                     </span>
                     <span class="march-map-legend march-map-legend--toggles">
                         <label class="march-map-legend__toggle">
                             <input type="checkbox" checked="@_showProducedGoods" @onchange="OnShowProducedGoodsChanged" />
-                            <span>Show goods</span>
+                            <span>Pokaż towary</span>
                         </label>
                     </span>
                     @if (_tradeRouteOverlays.Count > 0)
@@ -77,7 +77,7 @@ else
                                        Size="Size.Small"
                                        Class="@(_tool == MarchMapCanvas.MarchMapTool.DesignRoute ? "baron-influence-save-btn" : "march-map-toolbar__btn")"
                                        OnClick="ToggleDesignRoute">
-                                Design route
+                                Zaprojektuj trasę
                             </MudButton>
                         }
 
@@ -87,7 +87,7 @@ else
                                        Size="Size.Small"
                                        Class="@(_editMode ? "baron-influence-save-btn" : "march-map-toolbar__btn")"
                                        OnClick="ToggleEditMode">
-                                @(_editMode ? "Editing" : "Edit map")
+                                @(_editMode ? "Edytowanie" : "Edytuj mapę")
                             </MudButton>
                         }
                     </div>
@@ -97,27 +97,27 @@ else
                         <div class="march-map-edit-panel__body">
                             @if (_playerSeatNodeId is null)
                             {
-                                <MudText Typo="Typo.body2">Your barony seat is not on the map — trade routes cannot be designed.</MudText>
+                                <MudText Typo="Typo.body2">Siedziba Twojej baronii nie znajduje się na mapie — nie można projektować tras handlowych.</MudText>
                             }
                             else if (_designPath is null)
                             {
                                 @if (_routeDesignManual)
                                 {
                                     <MudText Typo="Typo.body2" Class="mb-2">
-                                        Build the path from <strong>@(_document.Nodes.FirstOrDefault(n => string.Equals(n.Id, _playerSeatNodeId, StringComparison.OrdinalIgnoreCase))?.Label ?? "your seat")</strong>:
-                                        click a highlighted neighbor, then the next, until you reach the partner.
+                                        Zbuduj trasę od <strong>@(_document.Nodes.FirstOrDefault(n => string.Equals(n.Id, _playerSeatNodeId, StringComparison.OrdinalIgnoreCase))?.Label ?? "twoja siedziba")</strong>:
+                                        kliknij podświetlonego sąsiada, potem kolejnego, aż dotrzesz do partnera.
                                     </MudText>
                                     <div class="d-flex flex-wrap gap-2 mb-2">
-                                        <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="UndoManualRouteStep" Disabled="@(_manualPathNodeIds.Count <= 1)">Undo</MudButton>
-                                        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="CancelManualRouteDesign">Cancel</MudButton>
+                                        <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="UndoManualRouteStep" Disabled="@(_manualPathNodeIds.Count <= 1)">Cofnij</MudButton>
+                                        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="CancelManualRouteDesign">Anuluj</MudButton>
                                     </div>
                                 }
                                 else
                                 {
                                     <MudText Typo="Typo.body2" Class="mb-2">
-                                        Click a city for the shortest route, or design the path seat by seat.
+                                        Kliknij miasto, aby wyznaczyć najkrótszą trasę, albo zaprojektuj trasę siedziba po siedzibie.
                                     </MudText>
-                                    <MudButton Variant="Variant.Outlined" Size="Size.Small" Class="mb-2" OnClick="StartManualRouteDesign">Manual design</MudButton>
+                                    <MudButton Variant="Variant.Outlined" Size="Size.Small" Class="mb-2" OnClick="StartManualRouteDesign">Projektowanie ręczne</MudButton>
                                 }
                             }
                             else
@@ -127,17 +127,17 @@ else
                                     → @string.Join(" → ", _designPath.TransitNodes.Select(n => n.Label))
                                     @( _designPath.TransitNodes.Any() ? " → " : "")
                                     <strong>@_designPath.End.Label</strong>
-                                    · toll @_designCustoms.ToString("0.##") gold/turn
-                                    · Economy +@_designEconomy.ToString("0.##")
+                                    · cło @_designCustoms.ToString("0.##") złota/turę
+                                    · Gospodarka +@_designEconomy.ToString("0.##")
                                 </MudText>
                                 <div class="d-flex flex-wrap gap-2">
                                     <MudButton Variant="Variant.Filled"
                                                Size="Size.Small"
                                                Class="baron-influence-save-btn"
                                                OnClick="ConfirmDesignRouteAsync">
-                                        Continue to treaty
+                                        Przejdź do traktatu
                                     </MudButton>
-                                    <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="ClearDesignPath">Clear</MudButton>
+                                    <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="ClearDesignPath">Wyczyść</MudButton>
                                 </div>
                             }
                         </div>
@@ -146,22 +146,22 @@ else
                     {
                         <div class="march-map-edit-panel__body march-map-edit-panel__tools">
                             <MudToggleGroup T="MarchMapCanvas.MarchMapTool" Value="_tool" ValueChanged="OnToolChanged" Size="Size.Small" Class="march-map-tool-toggle" SelectionMode="SelectionMode.SingleSelection" CheckMark="false">
-                                <MudToggleItem Value="MarchMapCanvas.MarchMapTool.Move">Move</MudToggleItem>
-                                <MudToggleItem Value="MarchMapCanvas.MarchMapTool.Connect">Connect</MudToggleItem>
-                                <MudToggleItem Value="MarchMapCanvas.MarchMapTool.EditLinks">Edit links</MudToggleItem>
-                                <MudToggleItem Value="MarchMapCanvas.MarchMapTool.AddPlace">Add place</MudToggleItem>
+                                <MudToggleItem Value="MarchMapCanvas.MarchMapTool.Move">Przesuń</MudToggleItem>
+                                <MudToggleItem Value="MarchMapCanvas.MarchMapTool.Connect">Połącz</MudToggleItem>
+                                <MudToggleItem Value="MarchMapCanvas.MarchMapTool.EditLinks">Edytuj połączenia</MudToggleItem>
+                                <MudToggleItem Value="MarchMapCanvas.MarchMapTool.AddPlace">Dodaj miejsce</MudToggleItem>
                             </MudToggleGroup>
                             <span class="march-map-toolbar__link-kind">
-                                <MudText Typo="Typo.caption">New link:</MudText>
+                                <MudText Typo="Typo.caption">Nowe połączenie:</MudText>
                                 <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small" Class="march-map-link-kind-group">
-                                    <MudButton Class="@LinkKindClass(MarchRouteKind.Road)" OnClick="() => SetLinkKind(MarchRouteKind.Road)">Road</MudButton>
-                                    <MudButton Class="@LinkKindClass(MarchRouteKind.River)" OnClick="() => SetLinkKind(MarchRouteKind.River)">River</MudButton>
+                                    <MudButton Class="@LinkKindClass(MarchRouteKind.Road)" OnClick="() => SetLinkKind(MarchRouteKind.Road)">Droga</MudButton>
+                                    <MudButton Class="@LinkKindClass(MarchRouteKind.River)" OnClick="() => SetLinkKind(MarchRouteKind.River)">Rzeka</MudButton>
                                 </MudButtonGroup>
                             </span>
                             @if (_tool == MarchMapCanvas.MarchMapTool.AddPlace)
                             {
                                 <MudSelect T="string"
-                                           Label="New place type"
+                                           Label="Typ nowego miejsca"
                                            @bind-Value="_newPlaceKind"
                                            Variant="Variant.Outlined"
                                            Margin="Margin.Dense"
@@ -173,12 +173,12 @@ else
                                 </MudSelect>
                             }
                             <MudTextField @bind-Value="_document.ImageUrl"
-                                          Label="Image URL"
+                                          Label="Adres URL obrazu"
                                           Variant="Variant.Outlined"
                                           Margin="Margin.Dense"
                                           FullWidth="true"
                                           @bind-Value:after="SaveMapAsync" />
-                            <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="ResetSeedAsync">Reset layout</MudButton>
+                            <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="ResetSeedAsync">Resetuj układ</MudButton>
                         </div>
                     }
                 </aside>
@@ -300,7 +300,7 @@ else
 
             changed = true;
             if (CanManageAsMg)
-                _snackBar.Add($"Removed {missingLord.Count} place(s) without a linked lord ({string.Join(", ", missingLord.Select(n => n.Label))}).", Severity.Info);
+                _snackBar.Add($"Usunięto {missingLord.Count} miejsc(e) bez przypisanego lorda ({string.Join(", ", missingLord.Select(n => n.Label))}).", Severity.Info);
         }
 
         if (changed && CanManageAsMg)
@@ -465,7 +465,7 @@ else
 
         if (_playerSeatNodeId is null)
         {
-            _snackBar.Add("Your barony seat is not on the map.", Severity.Warning);
+            _snackBar.Add("Siedziba Twojej baronii nie znajduje się na mapie.", Severity.Warning);
             return;
         }
 
@@ -477,13 +477,13 @@ else
 
         if (string.Equals(node.Id, _playerSeatNodeId, StringComparison.OrdinalIgnoreCase))
         {
-            _snackBar.Add("Select a different city as the trade partner.", Severity.Info);
+            _snackBar.Add("Wybierz inne miasto jako partnera handlowego.", Severity.Info);
             return;
         }
 
         if (string.IsNullOrWhiteSpace(node.LordKey))
         {
-            _snackBar.Add($"“{node.Label}” has no linked lord — ask the MG to fix the map.", Severity.Error);
+            _snackBar.Add($"“{node.Label}” nie ma przypisanego lorda — poproś MG o poprawienie mapy.", Severity.Error);
             return;
         }
 
@@ -491,7 +491,7 @@ else
             _document, _playerSeatNodeId, node.Id, _blockedLordKeys);
         if (path is null)
         {
-            _snackBar.Add("No trade route — a seat may be blocked or roads are incomplete.", Severity.Warning);
+            _snackBar.Add("Brak trasy handlowej — siedziba może być zablokowana lub drogi są niekompletne.", Severity.Warning);
             ClearDesignPath();
             return;
         }
@@ -504,7 +504,7 @@ else
     {
         if (!_manualReachableNodeIds.Any(id => string.Equals(id, node.Id, StringComparison.OrdinalIgnoreCase)))
         {
-            _snackBar.Add("Pick a neighboring city directly linked to the previous step (not blocked).", Severity.Info);
+            _snackBar.Add("Wybierz sąsiednie miasto bezpośrednio połączone z poprzednim krokiem (niezablokowane).", Severity.Info);
             return;
         }
 
@@ -517,7 +517,7 @@ else
     {
         if (_playerSeatNodeId is null)
         {
-            _snackBar.Add("Your barony seat is not on the map.", Severity.Warning);
+            _snackBar.Add("Siedziba Twojej baronii nie znajduje się na mapie.", Severity.Warning);
             return;
         }
 
@@ -549,7 +549,7 @@ else
             var path = MarchMapTradePathfinder.PathFromNodeIds(_document, _manualPathNodeIds);
             if (path is null)
             {
-                _snackBar.Add("Invalid manual route — clear and try again.", Severity.Error);
+                _snackBar.Add("Nieprawidłowa trasa ręczna — wyczyść i spróbuj ponownie.", Severity.Error);
                 CancelManualRouteDesign();
                 return;
             }
@@ -600,7 +600,7 @@ else
 
         var options = new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseOnEscapeKey = true };
         var dialog = await _dialogService.ShowAsync<TradeTreatyEditDialog>(
-            _editingTreaty is null ? "New trade treaty" : "Edit trade treaty",
+            _editingTreaty is null ? "Nowy traktat handlowy" : "Edytuj traktat handlowy",
             parameters,
             options);
         var result = await dialog.Result;
@@ -632,7 +632,7 @@ else
         _editingTreaty = saved;
         RefreshTradeRouteOverlays();
         _snackBar.Add(
-            CanManageAsMg ? "Trade treaty saved." : "Trade treaty submitted for MG approval.",
+            CanManageAsMg ? "Traktat handlowy zapisany." : "Traktat handlowy przesłany do zatwierdzenia przez MG.",
             Severity.Success);
         NotifyResourceHud();
     }
@@ -685,12 +685,11 @@ else
                 affected.Select(FormatTreatyTitleForBlockDialog));
 
             var confirm = await _dialogService.ShowMessageBoxAsync(
-                "Block trade?",
-                $"Blocking {lordLabel} will remove {affected.Count} trade " +
-                $"treat{(affected.Count == 1 ? "y" : "ies")} that pass through or end at this seat:\n\n" +
-                $"{treatyList}\n\nContinue?",
-                yesText: "Block and remove treaties",
-                cancelText: "Cancel");
+                "Zablokować handel?",
+                $"Zablokowanie {lordLabel} usunie {affected.Count} traktatów handlowych, które przechodzą przez tę siedzibę lub się w niej kończą:\n\n" +
+                $"{treatyList}\n\nKontynuować?",
+                yesText: "Zablokuj i usuń traktaty",
+                cancelText: "Anuluj");
 
             if (confirm != true)
             {
@@ -711,7 +710,7 @@ else
             }
 
             _snackBar.Add(
-                $"Removed {affected.Count} trade treat{(affected.Count == 1 ? "y" : "ies")} blocked by this seat.",
+                $"Usunięto {affected.Count} traktatów handlowych zablokowanych przez tę siedzibę.",
                 Severity.Info);
             NotifyResourceHud();
         }
@@ -727,8 +726,8 @@ else
 
         var lord = KnownLordsCatalog.FindByKey(treaty.CounterpartyLordKey);
         return lord is not null
-            ? $"• Treaty with {lord.Name} {lord.House}"
-            : $"• Treaty ({treaty.CounterpartyLordKey})";
+            ? $"• Traktat z {lord.Name} {lord.House}"
+            : $"• Traktat ({treaty.CounterpartyLordKey})";
     }
 
     private async Task ApplyBlockedLordKeysAsync(HashSet<string> keys)
@@ -741,7 +740,7 @@ else
             SetDesignPath(MarchMapTradePathfinder.FindShortestPath(
                 _document, _playerSeatNodeId!, endId, _blockedLordKeys));
             if (_designPath is null)
-                _snackBar.Add("Current design route is no longer reachable.", Severity.Warning);
+                _snackBar.Add("Bieżąca projektowana trasa nie jest już osiągalna.", Severity.Warning);
         }
 
         await InvokeAsync(StateHasChanged);
@@ -769,7 +768,7 @@ else
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save march map: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać mapy marchii: " + ex.Message, Severity.Error);
         }
         finally
         {
@@ -787,6 +786,6 @@ else
         ResolvePlayerSeat();
         RefreshTradeRouteOverlays();
         ClearDesignPath();
-        _snackBar.Add("Map reset to default seed layout.", Severity.Info);
+        _snackBar.Add("Mapa zresetowana do domyślnego układu początkowego.", Severity.Info);
     }
 }

@@ -6,11 +6,11 @@
 @inject IDialogService _dialogService
 @inject ISnackbar _snackBar
 
-<PageTitle>Dagonite Empire | Barony Resources</PageTitle>
+<PageTitle>Dagonitowe Imperium | Zasoby baronii</PageTitle>
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Ładowanie...</span>
 }
 else if (LoadError is not null)
 {
@@ -18,9 +18,9 @@ else if (LoadError is not null)
 }
 else if (_overview is not null)
 {
-    <BaronyPageHeader Title="Resources" HelpKey="resources" />
+    <BaronyPageHeader Title="Zasoby" HelpKey="resources" />
 
-    <BaronySection Title="Current Resource Stocks">
+    <BaronySection Title="Bieżące zapasy zasobów">
         <Summary>
             <PpbSummaryChips Vector="@_stocksGlance" Columns="@ResourceCatalog.All" />
         </Summary>
@@ -29,38 +29,38 @@ else if (_overview is not null)
         </ChildContent>
     </BaronySection>
 
-    <BaronySection Title="Expected Income This Turn">
+    <BaronySection Title="Oczekiwany dochód w tej turze">
         <Summary>
             <PpbSummaryChips Vector="@_expectedGlance" Columns="@ResourceCatalog.All" />
         </Summary>
         <ChildContent>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Domain Panel grand total for cumulative resources.
-                Gold already subtracts liege tribute (Budget Fief expense: gross income × tribute %).
-                Applied to stocks on Resolve Turn. Audience grants land immediately under Resource Balance.
+                Suma całkowita Panelu Domeny dla zasobów skumulowanych.
+                Złoto już odejmuje trybut lenny (wydatek Budżet Lenno: dochód brutto × % trybutu).
+                Zastosowane do zapasów przy Rozliczeniu tury. Nadania z audiencji trafiają natychmiast do Bilansu zasobów.
             </MudText>
             <div style="overflow-x:auto;">
-                <ResourceVectorTable Rows="@_expectedRows" NameHeader="Source" />
+                <ResourceVectorTable Rows="@_expectedRows" NameHeader="Źródło" />
             </div>
         </ChildContent>
     </BaronySection>
 
-    <BaronySection Title="Resource Balance">
+    <BaronySection Title="Bilans zasobów">
         <Summary>
             <PpbSummaryChips Vector="@_balanceSum" Columns="@ResourceCatalog.All" />
         </Summary>
         <ChildContent>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Σ is the sum of every row below and must match Current Resource Stocks / HUD.
-                Audience grants are added to stocks as soon as they are awarded.
-                On Resolve Turn the ledger is cleared: opening stock + Domain Panel income + grants from projects
-                completed that resolve; mid-turn allocations and Add Source rows live only until the next Resolve.
+                Σ to suma wszystkich poniższych wierszy i musi zgadzać się z Bieżącymi zapasami zasobów / HUD.
+                Nadania z audiencji są dodawane do zapasów, gdy tylko zostaną przyznane.
+                Przy Rozliczeniu tury rejestr jest czyszczony: zapas początkowy + dochód z Panelu Domeny + nadania z ukończonych
+                projektów, które się rozliczają; alokacje w trakcie tury i wiersze Dodaj źródło istnieją tylko do następnego Rozliczenia.
             </MudText>
             <div style="overflow-x:auto;">
                 <ResourceVectorTable Rows="@_balanceRows"
                                     Summary="@_balanceSum"
-                                    SummaryLabel="Σ balance"
-                                    NameHeader="Source"
+                                    SummaryLabel="Σ bilans"
+                                    NameHeader="Źródło"
                                     OnEdit="EditBalanceRowAsync"
                                     OnDelete="DeleteBalanceRowAsync" />
             </div>
@@ -70,7 +70,7 @@ else if (_overview is not null)
                     <MudButton Variant="Variant.Outlined"
                                StartIcon="@Icons.Material.Filled.Add"
                                OnClick="AddSourceAsync">
-                        Add Source
+                        Dodaj źródło
                     </MudButton>
                 </div>
             }
@@ -203,8 +203,8 @@ else if (_overview is not null)
         {
             new()
             {
-                Label = "Domain Panel grand total",
-                Description = "Expected cumulative PPB when the turn ends. Gold already subtracts liege tribute (Budget Fief).",
+                Label = "Suma całkowita Panelu Domeny",
+                Description = "Oczekiwane skumulowane PPB na koniec tury. Złoto już odejmuje trybut lenny (Budżet Lenno).",
                 Values = _expectedIncome,
                 IsSystem = true,
             },
@@ -215,18 +215,18 @@ else if (_overview is not null)
         {
             new()
             {
-                Label = "Stock from previous turn",
+                Label = "Zapas z poprzedniej tury",
                 Description = canEditStartStock
-                    ? "Snapshot at last Resolve Turn (before income and project grants). Editable by GM."
-                    : "Stocks carried in at the start of this turn (before income).",
+                    ? "Migawka przy ostatnim Rozliczeniu tury (przed dochodem i nadaniami z projektów). Edytowalne przez MG."
+                    : "Zapasy przeniesione na początek tej tury (przed dochodem).",
                 Values = prevStock,
                 IsSystem = true,
                 CanEdit = canEditStartStock,
             },
             new()
             {
-                Label = "Income from previous turn",
-                Description = "Domain Panel / Budget expected income applied at last Resolve Turn.",
+                Label = "Dochód z poprzedniej tury",
+                Description = "Oczekiwany dochód z Panelu Domeny / Budżetu zastosowany przy ostatnim Rozliczeniu tury.",
                 Values = prevIncome,
                 IsSystem = true,
             },
@@ -250,7 +250,7 @@ else if (_overview is not null)
             _balanceRows.Add(new ResourceTableRow
             {
                 Label = BaronAudiencePpb.SummaryRowName,
-                Description = "Cumulative resources granted through audiences this turn — already in Current Resource Stocks.",
+                Description = "Skumulowane zasoby przyznane przez audiencje w tej turze — już w Bieżących zapasach zasobów.",
                 Values = audienceGrants,
                 IsSystem = true,
             });
@@ -261,7 +261,7 @@ else if (_overview is not null)
             _balanceRows.Add(new ResourceTableRow
             {
                 Label = BaronAdventurePpb.SummaryRowName,
-                Description = "Cumulative resources granted through campaign adventures this turn — already in Current Resource Stocks.",
+                Description = "Skumulowane zasoby przyznane przez przygody kampanii w tej turze — już w Bieżących zapasach zasobów.",
                 Values = adventureGrants,
                 IsSystem = true,
             });
@@ -271,8 +271,8 @@ else if (_overview is not null)
         {
             _balanceRows.Add(new ResourceTableRow
             {
-                Label = "Project costs",
-                Description = "Resources already allocated to open projects this turn (left your stocks).",
+                Label = "Koszty projektów",
+                Description = "Zasoby już przydzielone do otwartych projektów w tej turze (opuściły twoje zapasy).",
                 Values = projectCosts,
                 IsSystem = true,
             });
@@ -310,7 +310,7 @@ else if (_overview is not null)
             return;
         }
 
-        if (row.Label == "Stock from previous turn")
+        if (row.Label == "Zapas z poprzedniej tury")
             await EditPreviousTurnStockAsync();
     }
 
@@ -344,7 +344,7 @@ else if (_overview is not null)
         };
 
         var dialog = await _dialogService.ShowAsync<PreviousTurnIncomeEditDialog>(
-            "Edit stock from previous turn",
+            "Edytuj zapas z poprzedniej tury",
             parameters,
             new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true });
 
@@ -364,12 +364,12 @@ else if (_overview is not null)
             _overview.Barony.FoodInGranaries = stocks[Ppb.Food];
             _overview.Barony.TreasuryGold = stocks[Ppb.Treasury];
             await _baronyRepo.UpdateBarony(_overview.Barony);
-            _snackBar.Add("Stock saved.", Severity.Success);
+            _snackBar.Add("Zapisano zapas.", Severity.Success);
             await ReloadAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać: " + ex.Message, Severity.Error);
         }
     }
 
@@ -390,7 +390,7 @@ else if (_overview is not null)
         };
 
         var dialog = await _dialogService.ShowAsync<ResourceSourceEditDialog>(
-            isNew ? "Add Source" : "Edit Source",
+            isNew ? "Dodaj źródło" : "Edytuj źródło",
             parameters,
             new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true });
 
@@ -403,12 +403,12 @@ else if (_overview is not null)
             await _baronyRepo.SaveResourceSource(saved);
             // Mirror Budget transfers: ledger row + actual stock change.
             await ApplyStockDeltaAsync(ResourceCatalog.Subtract(ResourceCatalog.Slice(saved.Additive), previous));
-            _snackBar.Add(isNew ? "Source added and stocks updated." : "Source updated and stocks adjusted.", Severity.Success);
+            _snackBar.Add(isNew ? "Dodano źródło i zaktualizowano zapasy." : "Zaktualizowano źródło i skorygowano zapasy.", Severity.Success);
             await ReloadAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save source: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać źródła: " + ex.Message, Severity.Error);
         }
     }
 
@@ -418,22 +418,22 @@ else if (_overview is not null)
             return;
 
         var confirm = await _dialogService.ShowMessageBoxAsync(
-            "Remove source",
-            $"Remove ledger line “{row.Label}”? Current stocks are not changed — edit the source to zero first if you want to reverse a grant.",
-            yesText: "Remove",
-            cancelText: "Cancel");
+            "Usuń źródło",
+            $"Usunąć wiersz rejestru “{row.Label}”? Bieżące zapasy nie zmienią się — najpierw wyzeruj źródło, jeśli chcesz cofnąć nadanie.",
+            yesText: "Usuń",
+            cancelText: "Anuluj");
         if (confirm != true)
             return;
 
         try
         {
             await _baronyRepo.DeleteResourceSource(id);
-            _snackBar.Add("Source removed.", Severity.Success);
+            _snackBar.Add("Usunięto źródło.", Severity.Success);
             await ReloadAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not remove source: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się usunąć źródła: " + ex.Message, Severity.Error);
         }
     }
 

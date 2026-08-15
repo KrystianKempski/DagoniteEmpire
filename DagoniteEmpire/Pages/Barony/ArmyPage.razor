@@ -5,11 +5,11 @@
 @inject ISnackbar _snackBar
 @inject IBaronyBattleMapRepository _battleMapRepo
 
-<PageTitle>Dagonite Empire | Army</PageTitle>
+<PageTitle>Dagonitowe Imperium | Armia</PageTitle>
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading army...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Ładowanie armii...</span>
 }
 else if (LoadError is not null)
 {
@@ -17,12 +17,12 @@ else if (LoadError is not null)
 }
 else if (Barony is not null)
 {
-    <BaronyPageHeader Title="Army" HelpKey="army">
+    <BaronyPageHeader Title="Armia" HelpKey="army">
         <Summary>
             <span class="projects-summary">
-                <span class="projects-summary__item">@_units.Count unit@(_units.Count == 1 ? "" : "s")</span>
-                <span class="projects-summary__item">@_units.Count(u => u.IsTraining) in training</span>
-                <span class="projects-summary__item">@_units.Count(u => u.IsActive) active</span>
+                <span class="projects-summary__item">@_units.Count oddział@(_units.Count == 1 ? "" : "y")</span>
+                <span class="projects-summary__item">@_units.Count(u => u.IsTraining) w szkoleniu</span>
+                <span class="projects-summary__item">@_units.Count(u => u.IsActive) aktywne</span>
             </span>
         </Summary>
     </BaronyPageHeader>
@@ -30,56 +30,56 @@ else if (Barony is not null)
     @if (_battleInProgress)
     {
         <MudAlert Severity="Severity.Warning" Class="my-2" Dense="true">
-            A battle is in progress. Unit cards are locked — HP and roster updates apply when the Game Master presses <b>End battle</b> on the Battle Map.
+            Trwa bitwa. Karty oddziałów są zablokowane — aktualizacje HP i składu zastosują się, gdy Mistrz Gry naciśnie <b>Zakończ bitwę</b> na Mapie Bitwy.
         </MudAlert>
     }
 
-    <BaronySection Title="Units">
+    <BaronySection Title="Oddziały">
         <Summary>
-            <span class="projects-summary__item">Two cards per row · same layout as the generator preview</span>
+            <span class="projects-summary__item">Dwie karty w rzędzie · ten sam układ co podgląd generatora</span>
         </Summary>
         <ChildContent>
             <div class="army-roster-summary">
-                <div class="army-roster-summary__title">Army totals</div>
+                <div class="army-roster-summary__title">Sumy armii</div>
                 <div class="army-roster-summary__grid">
-                    <BaronyTooltip Title="Units"
-                                   Text="Number of units in the roster (training + active).">
+                    <BaronyTooltip Title="Oddziały"
+                                   Text="Liczba oddziałów w składzie (szkolone + aktywne).">
                         <div class="army-roster-summary__item">
-                            <span class="army-roster-summary__label">Units</span>
+                            <span class="army-roster-summary__label">Oddziały</span>
                             <span class="army-roster-summary__value">@_rosterUnits</span>
                         </div>
                     </BaronyTooltip>
-                    <BaronyTooltip Title="Troops"
-                                   Text="Sum of troop counts across all units.">
+                    <BaronyTooltip Title="Liczebność"
+                                   Text="Suma liczebności wszystkich oddziałów.">
                         <div class="army-roster-summary__item">
-                            <span class="army-roster-summary__label">Troops</span>
+                            <span class="army-roster-summary__label">Liczebność</span>
                             <span class="army-roster-summary__value">@_rosterTroops</span>
                         </div>
                     </BaronyTooltip>
-                    <BaronyTooltip Title="Wage / turn"
-                                   Text="Sum of wages for Active units (paid each turn once graduated). Training units are excluded until Active.">
+                    <BaronyTooltip Title="Żołd / tura"
+                                   Text="Suma żołdu aktywnych oddziałów (wypłacany co turę po ukończeniu szkolenia). Oddziały w szkoleniu są wyłączone do czasu aktywacji.">
                         <div class="army-roster-summary__item">
-                            <span class="army-roster-summary__label">Gold / turn</span>
+                            <span class="army-roster-summary__label">Złoto / tura</span>
                             <span class="army-roster-summary__value army-roster-summary__value--gold">
                                 @_rosterWage
                                 <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
                             </span>
                         </div>
                     </BaronyTooltip>
-                    <BaronyTooltip Title="Food upkeep / turn"
-                                   Text="Sum of food upkeep for Active units each turn.">
+                    <BaronyTooltip Title="Utrzymanie żywności / tura"
+                                   Text="Suma utrzymania żywności aktywnych oddziałów co turę.">
                         <div class="army-roster-summary__item">
-                            <span class="army-roster-summary__label">Food / turn</span>
+                            <span class="army-roster-summary__label">Żywność / tura</span>
                             <span class="army-roster-summary__value army-roster-summary__value--food">
                                 @_rosterFood.ToString("0.#")
                                 <BaronyResourceIcon Resource="Ppb.Food" Size="xs" />
                             </span>
                         </div>
                     </BaronyTooltip>
-                    <BaronyTooltip Title="Defense upkeep / turn"
-                                   Text="Sum of Defense upkeep for Active units each turn.">
+                    <BaronyTooltip Title="Utrzymanie obrony / tura"
+                                   Text="Suma utrzymania obrony aktywnych oddziałów co turę.">
                         <div class="army-roster-summary__item">
-                            <span class="army-roster-summary__label">Defense / turn</span>
+                            <span class="army-roster-summary__label">Obrona / tura</span>
                             <span class="army-roster-summary__value army-roster-summary__value--defense">
                                 @_rosterDefense
                                 <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" />
@@ -90,15 +90,15 @@ else if (Barony is not null)
                 @if (_units.Any(u => u.IsTraining))
                 {
                     <MudText Typo="Typo.caption" Class="army-roster-summary__note">
-                        Upkeep totals count Active units only
-                        (@_units.Count(u => u.IsActive) active · @_units.Count(u => u.IsTraining) still training).
+                        Sumy utrzymania liczą tylko aktywne oddziały
+                        (@_units.Count(u => u.IsActive) aktywne · @_units.Count(u => u.IsTraining) wciąż w szkoleniu).
                     </MudText>
                 }
             </div>
 
             @if (_units.Count == 0)
             {
-                <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No units yet. Use the generator below.</MudText>
+                <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">Brak oddziałów. Użyj generatora poniżej.</MudText>
             }
             else
             {
@@ -174,10 +174,10 @@ else if (Barony is not null)
         await ReloadAsync();
         var recruit = UnitRecruitSelectionCatalog.Find(result.Unit.RecruitSelectionKey);
         var msg = result.Unit.IsActive
-            ? $"Unit “{result.Unit.Name}” ready."
-            : $"Training project “{result.Project.Name}” created — fund it on Projects.";
+            ? $"Oddział “{result.Unit.Name}” gotowy."
+            : $"Utworzono projekt szkolenia “{result.Project.Name}” — sfinansuj go w Projektach.";
         if (recruit?.EventEffect is not null)
-            msg += $" Event “{recruit.EventEffect.Name}” started.";
+            msg += $" Rozpoczęto wydarzenie “{recruit.EventEffect.Name}”.";
         _snackBar.Add(msg, Severity.Success);
     }
 }

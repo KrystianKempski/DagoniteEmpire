@@ -5,11 +5,11 @@
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 @inject IDialogService _dialogService
 
-<PageTitle>Dagonite Empire | Letters</PageTitle>
+<PageTitle>Dagonitowe Imperium | Listy</PageTitle>
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading letters...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Wczytywanie listów...</span>
 }
 else if (LoadError is not null)
 {
@@ -17,12 +17,12 @@ else if (LoadError is not null)
 }
 else if (Barony is not null)
 {
-    <BaronyPageHeader Title="Letters" HelpKey="letters">
+    <BaronyPageHeader Title="Listy" HelpKey="letters">
         <Summary>
             <span class="projects-summary">
-                <span class="projects-summary__item">@_threads.Count thread@(_threads.Count == 1 ? "" : "s")</span>
+                <span class="projects-summary__item">@_threads.Count @(_threads.Count == 1 ? "wątek" : "wątków")</span>
                 <span class="projects-summary__item">
-                    Inbound / turn: Eastern March @BaronLetterRules.MaxInboundEasternMarchPerTurn · Empire/Other @BaronLetterRules.MaxInboundEmpirePerTurn
+                    Przychodzące / tura: Eastern March @BaronLetterRules.MaxInboundEasternMarchPerTurn · Imperium/Inne @BaronLetterRules.MaxInboundEmpirePerTurn
                 </span>
             </span>
         </Summary>
@@ -39,7 +39,7 @@ else if (Barony is not null)
                                StartIcon="@Icons.Material.Filled.Add"
                                OnClick="@(() => CreateThreadAsync(isInbound: false))"
                                Disabled="@_busy">
-                        New thread
+                        Nowy wątek
                     </MudButton>
                 }
                 @if (CanWriteAsGm)
@@ -50,14 +50,14 @@ else if (Barony is not null)
                                StartIcon="@Icons.Material.Filled.Mail"
                                OnClick="@(() => CreateThreadAsync(isInbound: true))"
                                Disabled="@_busy">
-                        New thread to baron
+                        Nowy wątek do barona
                     </MudButton>
                 }
             </div>
 
             @if (_threads.Count == 0)
             {
-                <MudText Typo="Typo.body2" Class="baron-mail__empty">No letter threads yet.</MudText>
+                <MudText Typo="Typo.body2" Class="baron-mail__empty">Brak wątków listów.</MudText>
             }
             else
             {
@@ -86,15 +86,15 @@ else if (Barony is not null)
                                             <div class="baron-mail__thread-title">
                                                 @if (unread)
                                                 {
-                                                    <BaronyTooltip Text="Unread">
+                                                    <BaronyTooltip Text="Nieprzeczytane">
                                                         <span class="baron-mail__dot"></span>
                                                     </BaronyTooltip>
                                                 }
-                                                <span>@(string.IsNullOrWhiteSpace(thread.Title) ? "(no title)" : thread.Title)</span>
+                                                <span>@(string.IsNullOrWhiteSpace(thread.Title) ? "(bez tytułu)" : thread.Title)</span>
                                             </div>
                                             <div class="baron-mail__thread-meta">
                                                 @thread.CorrespondentName
-                                                · @VisibleMessageCount(thread) letter@(VisibleMessageCount(thread) == 1 ? "" : "s")
+                                                · @VisibleMessageCount(thread) @(VisibleMessageCount(thread) == 1 ? "list" : "listów")
                                                 @{
                                                     var last = thread.LastDeliveredMessage;
                                                 }
@@ -117,9 +117,9 @@ else if (Barony is not null)
             @if (_selected is null)
             {
                 <div class="baron-mail__placeholder">
-                    <MudText Typo="Typo.h6">Select a thread</MudText>
+                    <MudText Typo="Typo.h6">Wybierz wątek</MudText>
                     <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                        Or start a new one. Messages stay in the thread — no new tiles per letter.
+                        Albo rozpocznij nowy. Wiadomości pozostają w wątku — bez nowych kafelków dla każdego listu.
                     </MudText>
                 </div>
             }
@@ -140,7 +140,7 @@ else if (Barony is not null)
                         else
                         {
                             <h2 class="baron-mail__title" @ondblclick="BeginEditTitle">
-                                @(string.IsNullOrWhiteSpace(_selected.Title) ? "(no title)" : _selected.Title)
+                                @(string.IsNullOrWhiteSpace(_selected.Title) ? "(bez tytułu)" : _selected.Title)
                             </h2>
                         }
                         <div class="baron-mail__header-meta">
@@ -149,13 +149,13 @@ else if (Barony is not null)
                             {
                                 <text> · @_selected.CorrespondentTitle</text>
                             }
-                            · @_receivedThisTurn/@MaxInboundForSelected from this person this turn
+                            · @_receivedThisTurn/@MaxInboundForSelected od tej osoby w tej turze
                         </div>
                     </div>
                     <div class="baron-mail__header-actions">
                         @if (CanWriteAsGm || CanWriteAsBaron)
                         {
-                            <BaronyTooltip Text="Rename thread">
+                            <BaronyTooltip Text="Zmień nazwę wątku">
                                 <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                Size="Size.Small"
                                                OnClick="BeginEditTitle" />
@@ -163,7 +163,7 @@ else if (Barony is not null)
                         }
                         @if (CanWriteAsGm)
                         {
-                            <BaronyTooltip Text="Delete thread">
+                            <BaronyTooltip Text="Usuń wątek">
                                 <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                Size="Size.Small"
                                                Color="Color.Error"
@@ -186,16 +186,16 @@ else if (Barony is not null)
                                 <span class="baron-mail__post-when">
                                     @if (post.IsDraft)
                                     {
-                                        <text>Draft</text>
+                                        <text>Wersja robocza</text>
                                     }
                                     else
                                     {
-                                        <text>@post.FormatInWorldDate() · Turn @post.TurnNumber</text>
+                                        <text>@post.FormatInWorldDate() · Tura @post.TurnNumber</text>
                                     }
                                 </span>
                                 @if (isLastOutbound && !_editingLastLetter)
                                 {
-                                    <BaronyTooltip Text="Edit letter">
+                                    <BaronyTooltip Text="Edytuj list">
                                         <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                        Size="Size.Small"
                                                        OnClick="BeginEditLastLetterAsync" />
@@ -203,7 +203,7 @@ else if (Barony is not null)
                                 }
                                 @if (CanWriteAsGm && post.IsDraft)
                                 {
-                                    <BaronyTooltip Text="Delete draft">
+                                    <BaronyTooltip Text="Usuń wersję roboczą">
                                         <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                        Size="Size.Small"
                                                        Color="Color.Error"
@@ -212,7 +212,7 @@ else if (Barony is not null)
                                 }
                                 else if (CanWriteAsBaron && post.IsDraft && !post.IsInbound)
                                 {
-                                    <BaronyTooltip Text="Delete draft">
+                                    <BaronyTooltip Text="Usuń wersję roboczą">
                                         <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                        Size="Size.Small"
                                                        Color="Color.Error"
@@ -230,7 +230,7 @@ else if (Barony is not null)
 
                     @if (!VisiblePosts(_selected).Any())
                     {
-                        <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No messages in this thread yet.</MudText>
+                        <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">Brak wiadomości w tym wątku.</MudText>
                     }
                 </div>
 
@@ -238,7 +238,7 @@ else if (Barony is not null)
                 {
                     <div class="baron-mail__composer baron-mail__composer--waiting">
                         <MudText Typo="Typo.body2">
-                            Waiting for a reply — you can’t send another letter in this thread yet.
+                            Oczekiwanie na odpowiedź — nie możesz jeszcze wysłać kolejnego listu w tym wątku.
                         </MudText>
                         <MudButton Variant="Variant.Outlined"
                                    Size="Size.Small"
@@ -246,7 +246,7 @@ else if (Barony is not null)
                                    StartIcon="@Icons.Material.Filled.Edit"
                                    OnClick="BeginEditLastLetterAsync"
                                    Disabled="@_busy">
-                            Edit last letter
+                            Edytuj ostatni list
                         </MudButton>
                     </div>
                 }
@@ -256,15 +256,15 @@ else if (Barony is not null)
                         <div class="baron-mail__composer-label">
                             @if (_editingLastLetter)
                             {
-                                <text>Editing your last letter…</text>
+                                <text>Edytowanie ostatniego listu…</text>
                             }
                             else if (_composeInbound)
                             {
-                                <text>Write to the baron…</text>
+                                <text>Napisz do barona…</text>
                             }
                             else
                             {
-                                <text>Write as the baron…</text>
+                                <text>Napisz jako baron…</text>
                             }
                             @if (_saveHint is not null)
                             {
@@ -272,7 +272,7 @@ else if (Barony is not null)
                             }
                         </div>
                         <div class="baron-letter-editor baron-mail__editor @ComposerHandClass">
-                            <BlazoredTextEditor @ref="_editor" @key="_editorEpoch" Placeholder="Write your letter…">
+                            <BlazoredTextEditor @ref="_editor" @key="_editorEpoch" Placeholder="Napisz swój list…">
                                 <ToolbarContent>@Toolbar()</ToolbarContent>
                                 <EditorContent></EditorContent>
                             </BlazoredTextEditor>
@@ -284,13 +284,13 @@ else if (Barony is not null)
                                            Class="barony-turn-btn barony-turn-btn--ghost"
                                            OnClick="CancelEditLastLetterAsync"
                                            Disabled="@_busy">
-                                    Cancel
+                                    Anuluj
                                 </MudButton>
                                 <MudButton Class="barony-turn-btn barony-turn-btn--solid"
                                            Variant="Variant.Filled"
                                            OnClick="SaveEditAsync"
                                            Disabled="@_busy">
-                                    Save
+                                    Zapisz
                                 </MudButton>
                             }
                             else
@@ -299,7 +299,7 @@ else if (Barony is not null)
                                            Variant="Variant.Filled"
                                            OnClick="SendAsync"
                                            Disabled="@_busy">
-                                    Send
+                                    Wyślij
                                 </MudButton>
                             }
                         </div>
@@ -309,7 +309,7 @@ else if (Barony is not null)
                 {
                     <div class="baron-mail__composer baron-mail__composer--readonly">
                         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                            You can read this thread, but composing is not available for your role here.
+                            Możesz czytać ten wątek, ale tworzenie wiadomości nie jest dostępne dla twojej roli.
                         </MudText>
                     </div>
                 }
@@ -516,8 +516,8 @@ else if (Barony is not null)
                 ? ""
                 : $" · {SeasonLabel(season)}{(year > 0 ? $" {year}" : "")}";
             var label = isCurrent
-                ? $"This turn (T{turn}){seasonLabel}"
-                : $"Turn {turn}{seasonLabel}";
+                ? $"Ta tura (T{turn}){seasonLabel}"
+                : $"Tura {turn}{seasonLabel}";
 
             var threads = g
                 .OrderBy(t => t.CreatedAtUtc)
@@ -746,7 +746,7 @@ else if (Barony is not null)
         };
 
         var dialog = await _dialogService.ShowAsync<NewLetterThreadDialog>(
-            isInbound ? "New thread to baron" : "New thread",
+            isInbound ? "Nowy wątek do barona" : "Nowy wątek",
             parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
 
@@ -789,11 +789,11 @@ else if (Barony is not null)
             await _baronyRepo.SaveLetterThread(_selected);
             var listed = _threads.FirstOrDefault(t => t.Id == _selected.Id);
             if (listed is not null) listed.Title = title;
-            _snackBar.Add("Thread renamed.", Severity.Success);
+            _snackBar.Add("Zmieniono nazwę wątku.", Severity.Success);
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Rename failed: " + ex.Message, Severity.Error);
+            _snackBar.Add("Zmiana nazwy nie powiodła się: " + ex.Message, Severity.Error);
         }
     }
 
@@ -801,10 +801,10 @@ else if (Barony is not null)
     {
         if (_selected is null || !CanWriteAsGm) return;
         var ok = await _dialogService.ShowMessageBoxAsync(
-            "Delete thread",
-            $"Delete “{_selected.Title}” and all messages?",
-            yesText: "Delete",
-            cancelText: "Cancel");
+            "Usuń wątek",
+            $"Usunąć „{_selected.Title}” i wszystkie wiadomości?",
+            yesText: "Usuń",
+            cancelText: "Anuluj");
         if (ok != true) return;
 
         try
@@ -817,7 +817,7 @@ else if (Barony is not null)
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Delete failed: " + ex.Message, Severity.Error);
+            _snackBar.Add("Usuwanie nie powiodło się: " + ex.Message, Severity.Error);
         }
     }
 
@@ -840,7 +840,7 @@ else if (Barony is not null)
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Delete failed: " + ex.Message, Severity.Error);
+            _snackBar.Add("Usuwanie nie powiodło się: " + ex.Message, Severity.Error);
         }
     }
 
@@ -851,7 +851,7 @@ else if (Barony is not null)
 
         if (CanWriteAsBaron && BaronIsAwaitingReply(_selected))
         {
-            _snackBar.Add("Wait for a reply before sending another letter in this thread.", Severity.Warning);
+            _snackBar.Add("Poczekaj na odpowiedź przed wysłaniem kolejnego listu w tym wątku.", Severity.Warning);
             return;
         }
 
@@ -864,7 +864,7 @@ else if (Barony is not null)
             if (_receivedThisTurn >= maxInbound)
             {
                 _snackBar.Add(
-                    $"This correspondent already sent {_receivedThisTurn}/{maxInbound} letters this turn.",
+                    $"Ten korespondent wysłał już {_receivedThisTurn}/{maxInbound} listów w tej turze.",
                     Severity.Warning);
                 return;
             }
@@ -880,7 +880,7 @@ else if (Barony is not null)
             var html = await TryGetEditorHtmlAsync(_editor, _draft.BodyHtml) ?? _draft.BodyHtml;
             if (IsEffectivelyEmptyHtml(html))
             {
-                _snackBar.Add("Write something before sending.", Severity.Warning);
+                _snackBar.Add("Napisz coś przed wysłaniem.", Severity.Warning);
                 StartAutoSaveLoop();
                 return;
             }
@@ -917,19 +917,19 @@ else if (Barony is not null)
             var sent = await _baronyRepo.SaveLetterMessage(_draft);
             if (sent.IsDraft)
             {
-                _snackBar.Add("Send failed: message stayed as draft.", Severity.Error);
+                _snackBar.Add("Wysyłanie nie powiodło się: wiadomość pozostała jako wersja robocza.", Severity.Error);
                 StartAutoSaveLoop();
                 return;
             }
 
             // Baron: reload into edit-last-letter mode. GM: reload may create a new inbound draft.
             _skipNextDraftPersist = true;
-            _snackBar.Add("Letter sent.", Severity.Success);
+            _snackBar.Add("List wysłany.", Severity.Success);
             await ReloadAsync(selectThreadId: _selected.Id);
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Send failed: " + ex.Message, Severity.Error);
+            _snackBar.Add("Wysyłanie nie powiodło się: " + ex.Message, Severity.Error);
             if (_canUseComposer) StartAutoSaveLoop();
         }
         finally
@@ -953,7 +953,7 @@ else if (Barony is not null)
             var html = await TryGetEditorHtmlAsync(_editor, _draft.BodyHtml) ?? _draft.BodyHtml;
             if (IsEffectivelyEmptyHtml(html))
             {
-                _snackBar.Add("Letter cannot be empty.", Severity.Warning);
+                _snackBar.Add("List nie może być pusty.", Severity.Warning);
                 StartAutoSaveLoop();
                 return;
             }
@@ -972,12 +972,12 @@ else if (Barony is not null)
             _editor = null;
             _shouldLoadEditor = false;
             _saveHint = null;
-            _snackBar.Add("Letter updated.", Severity.Success);
+            _snackBar.Add("List zaktualizowany.", Severity.Success);
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Save failed: " + ex.Message, Severity.Error);
+            _snackBar.Add("Zapis nie powiódł się: " + ex.Message, Severity.Error);
             StartAutoSaveLoop();
         }
         finally
@@ -1076,7 +1076,7 @@ else if (Barony is not null)
             else if (_draft.IsDraft) _selected.Messages.Add(CloneMessage(_draft));
         }
 
-        _saveHint = silent ? $"auto-saved {DateTime.Now:HH:mm:ss}" : $"saved {DateTime.Now:HH:mm:ss}";
+        _saveHint = silent ? $"auto-zapisano {DateTime.Now:HH:mm:ss}" : $"zapisano {DateTime.Now:HH:mm:ss}";
         await InvokeAsync(StateHasChanged);
     }
 

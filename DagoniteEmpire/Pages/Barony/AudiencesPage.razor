@@ -8,11 +8,11 @@
 @using DA_DataAccess.Chat
 @using DA_Models.CharacterModels
 
-<PageTitle>Dagonite Empire | Audiences</PageTitle>
+<PageTitle>Dagonitowe Imperium | Audiencje</PageTitle>
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading audiences...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Ładowanie audiencji...</span>
 }
 else if (LoadError is not null)
 {
@@ -20,17 +20,17 @@ else if (LoadError is not null)
 }
 else if (Barony is not null)
 {
-    <BaronyPageHeader Title="Audiences" HelpKey="audiences">
+    <BaronyPageHeader Title="Audiencje" HelpKey="audiences">
         <Summary>
             <span class="projects-summary">
-                <span class="projects-summary__item">@CurrentTurnActive.Count this turn</span>
-                <span class="projects-summary__item">@DeferredWaiting.Count deferred</span>
-                <span class="projects-summary__item">Archive: @AudienceOnly.Count(IsArchiveEntry)</span>
+                <span class="projects-summary__item">@CurrentTurnActive.Count w tej turze</span>
+                <span class="projects-summary__item">@DeferredWaiting.Count odroczonych</span>
+                <span class="projects-summary__item">Archiwum: @AudienceOnly.Count(IsArchiveEntry)</span>
             </span>
         </Summary>
     </BaronyPageHeader>
 
-    <BaronySection Title="Audience summary">
+    <BaronySection Title="Podsumowanie audiencji">
             <Summary>
                 <div class="baron-audience__summary-chips">
                     <PpbSummaryChips Vector="@SummaryAdditive" />
@@ -55,11 +55,11 @@ else if (Barony is not null)
             </Summary>
             <ChildContent>
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                    Additive PPB → Domain Panel Events · cumulative resources → Resource Balance (stocks immediately) · PHP → Baron Card (From Adventures).
+                    Dodatki PPB → Wydarzenia Panelu Domeny · skumulowane zasoby → Bilans zasobów (od razu do zapasów) · PHP → Karta Barona (Z przygód).
                 </MudText>
                 @if (AudienceSummaryRows.Count == 0 && CouncilSummary is null)
                 {
-                    <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No audience grants this turn yet.</MudText>
+                    <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">Brak przyznań z audiencji w tej turze.</MudText>
                 }
                 else
                 {
@@ -77,7 +77,7 @@ else if (Barony is not null)
                             </colgroup>
                             <thead>
                                 <tr>
-                                    <th class="ppb-row-label city-building-col-name">Audience</th>
+                                    <th class="ppb-row-label city-building-col-name">Audiencja</th>
                                     @foreach (var info in PpbCatalog.All)
                                     {
                                         <th>
@@ -136,7 +136,7 @@ else if (Barony is not null)
                                     </tr>
                                 }
                                 <tr class="ppb-summary-row">
-                                    <td class="ppb-row-label city-building-col-name">Σ audiences</td>
+                                    <td class="ppb-row-label city-building-col-name">Σ audiencje</td>
                                     @foreach (var info in PpbCatalog.All)
                                     {
                                         <td class="@PpbCellStyle.ValueClass(info.Key, SummaryAdditive[info.Key])"><b>@FmtAdd(SummaryAdditive[info.Key])</b></td>
@@ -152,23 +152,23 @@ else if (Barony is not null)
             </ChildContent>
         </BaronySection>
 
-        <BaronySection Title="Council">
+        <BaronySection Title="Rada">
             <Summary>
                 <span class="projects-summary">
-                    <span class="projects-summary__item">@CurrentCouncilTopics.Count open</span>
-                    <span class="projects-summary__item">Archive: @CouncilArchive.Count</span>
+                    <span class="projects-summary__item">@CurrentCouncilTopics.Count otwartych</span>
+                    <span class="projects-summary__item">Archiwum: @CouncilArchive.Count</span>
                 </span>
             </Summary>
             <ChildContent>
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
-                    Council topics for this turn. At Resolve Turn, open topics move to archive and a new blank session opens.
-                    MG Speak as lists all courtiers from Court.
+                    Tematy rady na tę turę. Przy Rozstrzygnięciu tury otwarte tematy trafiają do archiwum, a otwiera się nowa pusta sesja.
+                    „Mów jako” MG wypisuje wszystkich dworzan z Dworu.
                 </MudText>
 
                 @if (CurrentCouncilTopics.Count == 0)
                 {
                     <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                        No open Council topics this turn.
+                        Brak otwartych tematów rady w tej turze.
                     </MudText>
                 }
                 else
@@ -194,7 +194,7 @@ else if (Barony is not null)
 
                 @if (CouncilArchive.Count > 0)
                 {
-                    <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Previous Council topics</MudText>
+                    <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Poprzednie tematy rady</MudText>
                     <div class="project-card-grid">
                         @foreach (var a in CouncilArchive)
                         {
@@ -213,20 +213,20 @@ else if (Barony is not null)
             </ChildContent>
         </BaronySection>
 
-        <BaronySection Title="Audiences">
+        <BaronySection Title="Audiencje">
             <Summary>
                 <span class="projects-summary">
-                    <span class="projects-summary__item">@CurrentTurnActive.Count open</span>
+                    <span class="projects-summary__item">@CurrentTurnActive.Count otwartych</span>
                     @if (DeferredWaiting.Count > 0)
                     {
-                        <span class="projects-summary__item">@DeferredWaiting.Count deferred</span>
+                        <span class="projects-summary__item">@DeferredWaiting.Count odroczonych</span>
                     }
                     <span class="projects-summary__item">T@(Barony.TurnNumber)</span>
                 </span>
             </Summary>
             <ChildContent>
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
-                    Click an audience card header to expand or collapse the dialogue.
+                    Kliknij nagłówek karty audiencji, aby rozwinąć lub zwinąć dialog.
                 </MudText>
 
                 @if (CanWriteAsGm)
@@ -236,7 +236,7 @@ else if (Barony is not null)
                                    StartIcon="@Icons.Material.Filled.Add"
                                    OnClick="CreateAudienceAsync"
                                    Disabled="_busy">
-                            New audience
+                            Nowa audiencja
                         </MudButton>
                     </div>
                 }
@@ -244,10 +244,10 @@ else if (Barony is not null)
                 @if (CurrentTurnActive.Count == 0)
                 {
                     <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                        No open audiences this turn.
+                        Brak otwartych audiencji w tej turze.
                         @if (CanWriteAsGm)
                         {
-                            <text> Add one above.</text>
+                            <text> Dodaj jedną powyżej.</text>
                         }
                     </MudText>
                 }
@@ -274,7 +274,7 @@ else if (Barony is not null)
 
                 @if (DeferredWaiting.Count > 0)
                 {
-                    <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Deferred — continue next turn</MudText>
+                    <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Odroczone — kontynuacja w następnej turze</MudText>
                     <div class="project-card-grid">
                         @foreach (var a in DeferredWaiting)
                         {
@@ -291,16 +291,16 @@ else if (Barony is not null)
             </ChildContent>
         </BaronySection>
 
-        <BaronySection Title="Archive" DefaultOpen="false">
+        <BaronySection Title="Archiwum" DefaultOpen="false">
             <Summary>
                 <span class="projects-summary">
-                    <span class="projects-summary__item">@AudienceOnly.Count(IsArchiveEntry) archived</span>
+                    <span class="projects-summary__item">@AudienceOnly.Count(IsArchiveEntry) zarchiwizowanych</span>
                 </span>
             </Summary>
             <ChildContent>
                 @if (ArchiveFolders.Count == 0)
                 {
-                    <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No archived audiences yet.</MudText>
+                    <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">Brak zarchiwizowanych audiencji.</MudText>
                 }
                 else
                 {
@@ -312,7 +312,7 @@ else if (Barony is not null)
                                     class="baron-audience__folder-summary"
                                     @onclick="@(() => ToggleArchiveFolder(folder.Turn))">
                                 <span>@(open ? "▾" : "▸")</span>
-                                <span>Turn @folder.Turn</span>
+                                <span>Tura @folder.Turn</span>
                                 <span class="baron-audience__folder-count">@folder.Items.Count</span>
                             </button>
                             @if (open)
@@ -498,7 +498,7 @@ else if (Barony is not null)
 
     private async Task CreateAudienceAsync()
     {
-        var dialog = await _dialogService.ShowAsync<NewAudienceDialog>("New audience",
+        var dialog = await _dialogService.ShowAsync<NewAudienceDialog>("Nowa audiencja",
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
         var result = await dialog.Result;
         if (result is null || result.Canceled || result.Data is not NewAudienceDialog.NewAudienceResult data)
@@ -524,7 +524,7 @@ else if (Barony is not null)
                 TurnNumber = Barony.TurnNumber,
             });
             await ReloadAsync();
-            _snackBar.Add("Audience granted.", Severity.Success);
+            _snackBar.Add("Udzielono audiencji.", Severity.Success);
         }
         catch (Exception ex)
         {
@@ -542,7 +542,7 @@ else if (Barony is not null)
         {
             { x => x.Audience, a },
         };
-        var dialog = await _dialogService.ShowAsync<AudienceResourcesDialog>("Add resources", parameters,
+        var dialog = await _dialogService.ShowAsync<AudienceResourcesDialog>("Dodaj zasoby", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
         var result = await dialog.Result;
         if (result is null || result.Canceled || result.Data is not AudienceResourcesDialog.AudienceResourcesResult data)
@@ -585,7 +585,7 @@ else if (Barony is not null)
 
             await ReloadAsync();
             NotifyResourceHud();
-            _snackBar.Add("Resources added.", Severity.Success);
+            _snackBar.Add("Dodano zasoby.", Severity.Success);
         }
         catch (Exception ex)
         {
@@ -611,7 +611,7 @@ else if (Barony is not null)
             { x => x.CanManage, CanWriteAsGm },
         };
         var dialog = await _dialogService.ShowAsync<ProjectEditDialog>(
-            "Add Project",
+            "Dodaj projekt",
             parameters,
             new DialogOptions
             {
@@ -644,7 +644,7 @@ else if (Barony is not null)
             saved.BaronyId = BaronyId;
             var created = await _baronyRepo.SaveProject(saved);
 
-            var body = $"Created project \"{created.Name}\".";
+            var body = $"Utworzono projekt \"{created.Name}\".";
             if (!string.IsNullOrWhiteSpace(created.Description))
                 body += $" {created.Description.Trim()}";
 
@@ -658,7 +658,7 @@ else if (Barony is not null)
             });
 
             await ReloadAsync();
-            _snackBar.Add("Project added.", Severity.Success);
+            _snackBar.Add("Dodano projekt.", Severity.Success);
         }
         catch (Exception ex)
         {
@@ -686,7 +686,7 @@ else if (Barony is not null)
 
             if (campaign is null || campaign.Id <= 0)
             {
-                _snackBar.Add("No campaign found for this baron. Create a barony campaign first.", Severity.Warning);
+                _snackBar.Add("Nie znaleziono kampanii dla tego barona. Najpierw utwórz kampanię baronii.", Severity.Warning);
                 return;
             }
 
@@ -705,7 +705,7 @@ else if (Barony is not null)
                 {
                     CampaignId = campaign.Id,
                     Name = chapterName,
-                    Description = $"From audience \"{a.Title}\" with {a.PetitionerName} (turn {a.TurnNumber}).",
+                    Description = $"Z audiencji \"{a.Title}\" z {a.PetitionerName} (tura {a.TurnNumber}).",
                     CreatedDate = DateTime.Now,
                     Characters = new List<CharacterDTO>
                     {
@@ -734,8 +734,8 @@ else if (Barony is not null)
             await ReloadAsync();
             _snackBar.Add(
                 createdNow
-                    ? $"Chapter created: \"{chapter.Name}\"."
-                    : $"Chapter already exists: \"{chapter.Name}\".",
+                    ? $"Utworzono rozdział: \"{chapter.Name}\"."
+                    : $"Rozdział już istnieje: \"{chapter.Name}\".",
                 createdNow ? Severity.Success : Severity.Info);
         }
         catch (Exception ex)
@@ -781,7 +781,7 @@ else if (Barony is not null)
         {
             { x => x.Subtitle, $"{a.Title} — {a.PetitionerName}" },
         };
-        var dialog = await _dialogService.ShowAsync<ResolveAudienceDialog>("Resolve audience", parameters,
+        var dialog = await _dialogService.ShowAsync<ResolveAudienceDialog>("Rozstrzygnij audiencję", parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
         var result = await dialog.Result;
         if (result is null || result.Canceled || result.Data is not ResolveAudienceDialog.ResolveAudienceResult data)
@@ -792,7 +792,7 @@ else if (Barony is not null)
         {
             await _baronyRepo.ResolveAudience(a.Id, data.GmSummary, data.OutcomeNotes);
             await ReloadAsync();
-            _snackBar.Add("Audience resolved.", Severity.Success);
+            _snackBar.Add("Rozstrzygnięto audiencję.", Severity.Success);
         }
         catch (Exception ex)
         {
@@ -807,9 +807,9 @@ else if (Barony is not null)
     private async Task DeferAsync(BaronAudienceDTO a)
     {
         var ok = await _dialogService.ShowMessageBoxAsync(
-            "Defer audience",
-            $"Defer \"{a.Title}\" to next turn? It will reopen with the last exchange.",
-            yesText: "Defer", cancelText: "Cancel");
+            "Odrocz audiencję",
+            $"Odroczyć \"{a.Title}\" do następnej tury? Zostanie ponownie otwarta z ostatnią wymianą.",
+            yesText: "Odrocz", cancelText: "Anuluj");
         if (ok != true) return;
 
         _busy = true;
@@ -817,7 +817,7 @@ else if (Barony is not null)
         {
             await _baronyRepo.DeferAudience(a.Id);
             await ReloadAsync();
-            _snackBar.Add("Audience deferred.", Severity.Info);
+            _snackBar.Add("Odroczono audiencję.", Severity.Info);
         }
         catch (Exception ex)
         {
@@ -832,9 +832,9 @@ else if (Barony is not null)
     private async Task DismissAsync(BaronAudienceDTO a)
     {
         var ok = await _dialogService.ShowMessageBoxAsync(
-            "Dismiss audience",
-            $"Dismiss \"{a.Title}\"? The petitioner will leave without a resolution.",
-            yesText: "Dismiss", cancelText: "Cancel");
+            "Oddal audiencję",
+            $"Oddalić \"{a.Title}\"? Petent odejdzie bez rozstrzygnięcia.",
+            yesText: "Oddal", cancelText: "Anuluj");
         if (ok != true) return;
 
         _busy = true;
@@ -842,7 +842,7 @@ else if (Barony is not null)
         {
             await _baronyRepo.DismissAudience(a.Id);
             await ReloadAsync();
-            _snackBar.Add("Audience dismissed.", Severity.Info);
+            _snackBar.Add("Oddalono audiencję.", Severity.Info);
         }
         catch (Exception ex)
         {
@@ -864,19 +864,19 @@ else if (Barony is not null)
 
     private static string PpbShort(Ppb p) => p switch
     {
-        Ppb.Food => "Food",
-        Ppb.Economy => "Econ",
+        Ppb.Food => "Żyw",
+        Ppb.Economy => "Gosp",
         Ppb.Production => "Prod",
-        Ppb.Loyalty => "Loy",
+        Ppb.Loyalty => "Loj",
         Ppb.Stability => "Stab",
-        Ppb.Law => "Law",
-        Ppb.Corruption => "Corr",
-        Ppb.Science => "Sci",
-        Ppb.Magic => "Mag",
-        Ppb.Culture => "Cult",
-        Ppb.Intelligence => "Intel",
-        Ppb.Defense => "Def",
-        Ppb.Treasury => "Gold",
+        Ppb.Law => "Prawo",
+        Ppb.Corruption => "Korup",
+        Ppb.Science => "Nauka",
+        Ppb.Magic => "Magia",
+        Ppb.Culture => "Kult",
+        Ppb.Intelligence => "Wyw",
+        Ppb.Defense => "Obr",
+        Ppb.Treasury => "Złoto",
         _ => p.ToString(),
     };
 }

@@ -5,11 +5,11 @@
 @inject IDialogService _dialogService
 @inject IJSRuntime JS
 
-<PageTitle>Dagonite Empire | Terrain</PageTitle>
+<PageTitle>Dagonitowe Imperium | Teren</PageTitle>
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading terrain map...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Ładowanie mapy terenu...</span>
 }
 else if (LoadError is not null)
 {
@@ -18,15 +18,15 @@ else if (LoadError is not null)
 else
 {
     <div class="terrain-page">
-        <BaronyPageHeader Title="Terrain" HelpKey="terrain" ShowSectionToggle="false">
+        <BaronyPageHeader Title="Teren" HelpKey="terrain" ShowSectionToggle="false">
             <Summary>
-                <span class="terrain-page__summary">@_tileIndex.Count / @TotalCells tiles defined</span>
+                <span class="terrain-page__summary">@_tileIndex.Count / @TotalCells zdefiniowanych pól</span>
             </Summary>
         </BaronyPageHeader>
 
         @if (CanManageAsMg)
         {
-            <BaronySection Title="Brushes & layers" DefaultOpen="false">
+            <BaronySection Title="Pędzle i warstwy" DefaultOpen="false">
                 <ChildContent>
                     <div class="terrain-page__mg-editor">
                         <div class="terrain-page__brushes">
@@ -36,19 +36,19 @@ else
                                      Border="false"
                                      ApplyEffectsToContainer="false"
                                      Class="terrain-brush-tabs">
-                                <MudTabPanel Text="Off">
+                                <MudTabPanel Text="Wył.">
                                     <div class="terrain-brush">
                                         <MudText Typo="Typo.caption" Class="terrain-brush__hint">
-                                            No brush selected. Hover tiles to inspect the map.
+                                            Nie wybrano pędzla. Najedź na pola, aby zbadać mapę.
                                         </MudText>
                                         <div class="terrain-brush__body"></div>
                                     </div>
                                 </MudTabPanel>
-                                <MudTabPanel Text="Fertility">
+                                <MudTabPanel Text="Żyzność">
                                     <TerrainFertilityBrush Value="@_brushFertility"
                                                            ValueChanged="v => _brushFertility = v" />
                                 </MudTabPanel>
-                                <MudTabPanel Text="Terrain type">
+                                <MudTabPanel Text="Typ terenu">
                                     <TerrainTypeBrush SubMode="@_terrainTypeSubMode"
                                                       SubModeChanged="v => _terrainTypeSubMode = v"
                                                       BaseTypeValue="@_brushBaseType"
@@ -56,7 +56,7 @@ else
                                                       FeatureValue="@_brushFeature"
                                                       FeatureValueChanged="v => _brushFeature = v" />
                                 </MudTabPanel>
-                                <MudTabPanel Text="Domain">
+                                <MudTabPanel Text="Domena">
                                     <TerrainDomainBrush Domains="@_mapDomains"
                                                         TileCountsByDomainId="@DomainTileCounts"
                                                         SelectedDomainId="@_selectedDomainId"
@@ -66,7 +66,7 @@ else
                                                         OnEditDomain="OpenEditDomainDialogAsync"
                                                         OnDeleteDomain="DeleteDomainAsync" />
                                 </MudTabPanel>
-                                <MudTabPanel Text="Fief">
+                                <MudTabPanel Text="Lenno">
                                     <TerrainFiefBrush Fiefs="@_fiefs"
                                                       DomainsById="@_domainsById"
                                                       TileCountsByFiefId="@FiefTileCounts"
@@ -77,15 +77,15 @@ else
                                                       OnEditFief="OpenEditFiefDialogAsync"
                                                       OnDeleteFief="DeleteFiefAsync" />
                                 </MudTabPanel>
-                                <MudTabPanel Text="Resources">
+                                <MudTabPanel Text="Zasoby">
                                     <TerrainResourceBrush Value="@_brushResource"
                                                           ValueChanged="v => _brushResource = v" />
                                 </MudTabPanel>
-                                <MudTabPanel Text="Improvements">
+                                <MudTabPanel Text="Ulepszenia">
                                     <TerrainImprovementBrush Value="@_brushImprovement"
                                                              ValueChanged="OnBrushImprovementChanged" />
                                 </MudTabPanel>
-                                <MudTabPanel Text="Map Size">
+                                <MudTabPanel Text="Rozmiar mapy">
                                     <TerrainMapSizePanel Width="@GridWidth"
                                                          Height="@GridHeight"
                                                          OnResize="ResizeMapAsync" />
@@ -169,7 +169,7 @@ else
 
     private int? _hoverX;
     private int? _hoverY;
-    private string _hoverTileInfo = "Hover a tile for details.";
+    private string _hoverTileInfo = "Najedź na pole, aby zobaczyć szczegóły.";
     private IReadOnlyList<string> _hoverTileLines = Array.Empty<string>();
     private int _brushTabIndex;
     private int _brushFertility = 3;
@@ -255,10 +255,10 @@ else
         if (shrinking)
         {
             var confirm = await _dialogService.ShowMessageBoxAsync(
-                "Shrink map?",
-                "Tiles removed from the edge (and any improvements on them) will be deleted permanently. Continue?",
-                yesText: "Shrink",
-                cancelText: "Cancel");
+                "Zmniejszyć mapę?",
+                "Pola usunięte z krawędzi (oraz wszelkie ulepszenia na nich) zostaną trwale usunięte. Kontynuować?",
+                yesText: "Zmniejsz",
+                cancelText: "Anuluj");
             if (confirm != true)
                 return;
         }
@@ -269,7 +269,7 @@ else
             Barony.TerrainMapWidth = width;
             Barony.TerrainMapHeight = height;
             await LoadMapDataAsync();
-            _snackBar.Add($"Map resized to {width}×{height}.", Severity.Success);
+            _snackBar.Add($"Zmieniono rozmiar mapy na {width}×{height}.", Severity.Success);
             StateHasChanged();
         }
         catch (Exception ex)
@@ -318,31 +318,31 @@ else
 
         if (!_tileIndex.TryGetValue((cell.X, cell.Y), out var tile) || tile.Id <= 0)
         {
-            _snackBar.Add("This tile is not ready yet.", Severity.Warning);
+            _snackBar.Add("To pole nie jest jeszcze gotowe.", Severity.Warning);
             return;
         }
 
         if (_playerPrimaryDomainId is not int primaryId || tile.MapDomainId != primaryId)
         {
-            _snackBar.Add("You can only start construction on tiles in your domain.", Severity.Info);
+            _snackBar.Add("Budowę można rozpocząć tylko na polach w twojej domenie.", Severity.Info);
             return;
         }
 
         if (_improvementByTileId.ContainsKey(tile.Id))
         {
-            _snackBar.Add("This tile already has an improvement.", Severity.Info);
+            _snackBar.Add("To pole ma już ulepszenie.", Severity.Info);
             return;
         }
 
         if (_constructionByTileId.TryGetValue(tile.Id, out var existing))
         {
-            _snackBar.Add($"A construction project is already planned here: {existing.Name}.", Severity.Info);
+            _snackBar.Add($"Tutaj zaplanowano już projekt budowy: {existing.Name}.", Severity.Info);
             return;
         }
 
         if (TerrainImprovementCatalogMap.IsWaterTile(tile.BaseType))
         {
-            _snackBar.Add("Cannot place improvements on water.", Severity.Warning);
+            _snackBar.Add("Nie można umieszczać ulepszeń na wodzie.", Severity.Warning);
             return;
         }
 
@@ -357,8 +357,8 @@ else
                 placeable.Add(t);
             else if (HerdStockRequirements.TryGetRequiredGoodKey(t.Name, out _))
             {
-                var good = HerdStockRequirements.RequiredGoodDisplayName(t.Name) ?? "stock";
-                lockedHerd.Add($"{t.Name} (needs {good})");
+                var good = HerdStockRequirements.RequiredGoodDisplayName(t.Name) ?? "zapasu";
+                lockedHerd.Add($"{t.Name} (wymaga: {good})");
             }
         }
 
@@ -367,13 +367,13 @@ else
             if (lockedHerd.Count > 0)
             {
                 _snackBar.Add(
-                    "Herd improvements need breeding stock from trade first: " + string.Join("; ", lockedHerd),
+                    "Ulepszenia hodowlane wymagają najpierw zwierząt hodowlanych z handlu: " + string.Join("; ", lockedHerd),
                     Severity.Info);
             }
             else
             {
                 _snackBar.Add(
-                    "Nothing from the improvement catalog can be built on this tile (check terrain, features, and resources).",
+                    "Nic z katalogu ulepszeń nie może zostać zbudowane na tym polu (sprawdź teren, cechy i zasoby).",
                     Severity.Info);
             }
             return;
@@ -388,7 +388,7 @@ else
         };
 
         var dialog = await _dialogService.ShowAsync<CreateBuildingProjectDialog>(
-            "New building project",
+            "Nowy projekt budowy",
             parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
 
@@ -401,12 +401,12 @@ else
             var saved = await _baronyRepo.SaveProject(project);
             if (saved.TileId is int tid)
                 _constructionByTileId[tid] = saved;
-            _snackBar.Add("Building project added — see the Projects tab.", Severity.Success);
+            _snackBar.Add("Dodano projekt budowy — zobacz zakładkę Projekty.", Severity.Success);
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not create project: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się utworzyć projektu: " + ex.Message, Severity.Error);
         }
     }
 
@@ -419,7 +419,7 @@ else
         var playerDomain = _mapDomains.FirstOrDefault(d => d.IsPrimary);
         if (playerDomain is null)
         {
-            var lordName = UserInfo?.SelectedCharacter?.NPCName ?? "Unknown Lord";
+            var lordName = UserInfo?.SelectedCharacter?.NPCName ?? "Nieznany władca";
             playerDomain = await _baronyRepo.SaveMapDomain(new TerrainMapDomainDTO
             {
                 BaronyId = Barony.Id,
@@ -486,13 +486,13 @@ else
 
         if (_fiefs.Any(f => f.SeniorDomainId == domainId && !TerrainMapVisuals.IsProtectedDefaultFief(f)))
         {
-            _snackBar.Add("Cannot delete a domain that is a senior for other fiefs.", Severity.Warning);
+            _snackBar.Add("Nie można usunąć domeny, która jest seniorem dla innych lenn.", Severity.Warning);
             return;
         }
 
         var confirmed = await JS.InvokeAsync<bool>(
             "confirm",
-            $"Are you sure you want to delete domain \"{domain.Name}\"?");
+            $"Czy na pewno chcesz usunąć domenę \"{domain.Name}\"?");
         if (!confirmed)
             return;
 
@@ -732,7 +732,7 @@ else
 
         var confirmed = await JS.InvokeAsync<bool>(
             "confirm",
-            $"Are you sure you want to delete fief \"{fief.Name}\"?");
+            $"Czy na pewno chcesz usunąć lenno \"{fief.Name}\"?");
         if (!confirmed)
             return;
 
@@ -793,7 +793,7 @@ else
         else
         {
             _hoverTileLines = Array.Empty<string>();
-            _hoverTileInfo = "Hover a tile for details.";
+            _hoverTileInfo = "Najedź na pole, aby zobaczyć szczegóły.";
         }
         StateHasChanged();
         return Task.CompletedTask;
@@ -990,7 +990,7 @@ else
 
         if (TerrainImprovementCatalogMap.IsWaterTile(tile.BaseType))
         {
-            _snackBar.Add("Cannot place improvements on water.", Severity.Warning);
+            _snackBar.Add("Nie można umieszczać ulepszeń na wodzie.", Severity.Warning);
             return;
         }
 
@@ -1011,7 +1011,7 @@ else
             }
             catch (Exception ex)
             {
-                _snackBar.Add("Failed to remove improvement: " + ex.Message, Severity.Error);
+                _snackBar.Add("Nie udało się usunąć ulepszenia: " + ex.Message, Severity.Error);
                 return;
             }
 
@@ -1119,7 +1119,7 @@ else
             {
                 var reason = TerrainImprovementCatalogMap.FailureReason(
                     nextName, tile.Fertility, tile.Resource, tile.FeaturesMask, tile.BaseType)
-                    ?? "Cannot place this improvement on this tile.";
+                    ?? "Nie można umieścić tego ulepszenia na tym polu.";
                 _snackBar.Add(reason, Severity.Warning);
                 return;
             }
@@ -1176,7 +1176,7 @@ else
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Failed to save improvement: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać ulepszenia: " + ex.Message, Severity.Error);
             return;
         }
 
@@ -1206,7 +1206,7 @@ else
             string.Equals(t.Name, templateName, StringComparison.OrdinalIgnoreCase));
         if (template is null)
         {
-            _snackBar.Add($"Catalog entry “{templateName}” not found. Restart the app to reseed Buildings.", Severity.Error);
+            _snackBar.Add($"Nie znaleziono wpisu katalogu „{templateName}”. Uruchom aplikację ponownie, aby ponownie zainicjować Budynki.", Severity.Error);
             return false;
         }
 
@@ -1275,7 +1275,7 @@ else
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Failed to refresh settlement PPB: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się odświeżyć PPB osady: " + ex.Message, Severity.Error);
         }
     }
 
@@ -1312,7 +1312,7 @@ else
 
         var confirmed = await JS.InvokeAsync<bool>(
             "confirm",
-            "Are you sure? This will clear data on all tiles for the selected layer.");
+            "Czy na pewno? Spowoduje to wyczyszczenie danych na wszystkich polach dla wybranej warstwy.");
         if (!confirmed)
             return;
 
@@ -1380,7 +1380,7 @@ else
                 }
                 catch (Exception ex)
                 {
-                    _snackBar.Add("Failed to clear improvement: " + ex.Message, Severity.Error);
+                    _snackBar.Add("Nie udało się wyczyścić ulepszenia: " + ex.Message, Severity.Error);
                 }
             }
 
@@ -1423,7 +1423,7 @@ else
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Failed to save terrain tile: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać pola terenu: " + ex.Message, Severity.Error);
         }
     }
 
@@ -1455,7 +1455,7 @@ else
             return new[]
             {
                 $"[{x}, {y}]",
-                "Plains with unknown fertility",
+                "Równiny o nieznanej żyzności",
             };
         }
 
@@ -1473,7 +1473,7 @@ else
         }
         else if (tile.Id > 0 && _constructionByTileId.TryGetValue(tile.Id, out var construction))
         {
-            title = $"[{x}, {y}] Under construction: {construction.Name}";
+            title = $"[{x}, {y}] W budowie: {construction.Name}";
         }
 
         return new[] { title, BuildTileProse(tile) };
@@ -1489,7 +1489,7 @@ else
             .Select(f => TerrainFeature.DisplayName(f).ToLowerInvariant())
             .ToList();
         if (features.Count > 0)
-            chunks.Add($"{terrain} with {JoinFeatureNames(features)}");
+            chunks.Add($"{terrain} z {JoinFeatureNames(features)}");
         else
             chunks.Add(terrain);
 
@@ -1497,13 +1497,13 @@ else
             chunks.Add(TerrainFertility.Phrase(tile.Fertility));
 
         if (tile.MapDomainId is int domainId && _domainsById.TryGetValue(domainId, out var domain))
-            chunks.Add($"{domain.Name} (lord {domain.LordName})");
+            chunks.Add($"{domain.Name} (władca {domain.LordName})");
 
         if (tile.FiefId is int fiefId && _fiefIndex.TryGetValue(fiefId, out var fief))
-            chunks.Add($"fief of {TerrainMapVisuals.FiefChipTitle(fief)}");
+            chunks.Add($"lenno {TerrainMapVisuals.FiefChipTitle(fief)}");
 
         if (!string.IsNullOrWhiteSpace(tile.Resource))
-            chunks.Add($"{TerrainResource.DisplayName(tile.Resource).ToLowerInvariant()} deposit");
+            chunks.Add($"złoże {TerrainResource.DisplayName(tile.Resource).ToLowerInvariant()}");
 
         return string.Join(", ", chunks);
     }
@@ -1513,8 +1513,8 @@ else
         if (names.Count == 1)
             return names[0];
         if (names.Count == 2)
-            return $"{names[0]} and {names[1]}";
-        return string.Join(", ", names.Take(names.Count - 1)) + " and " + names[^1];
+            return $"{names[0]} i {names[1]}";
+        return string.Join(", ", names.Take(names.Count - 1)) + " i " + names[^1];
     }
 
     private string TileDetailText(int x, int y) => string.Join("; ", TileDetailLines(x, y));

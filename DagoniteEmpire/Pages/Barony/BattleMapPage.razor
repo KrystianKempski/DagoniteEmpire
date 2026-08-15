@@ -14,11 +14,11 @@
 @inject ILogger<BattleMapPage> Logger
 @implements IAsyncDisposable
 
-<PageTitle>Dagonite Empire | Battle</PageTitle>
+<PageTitle>Dagonitowe Imperium | Bitwa</PageTitle>
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading battle map...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Wczytywanie mapy bitwy...</span>
 }
 else if (LoadError is not null)
 {
@@ -26,26 +26,26 @@ else if (LoadError is not null)
 }
 else if (Map is null)
 {
-    <MudAlert Severity="Severity.Warning" Class="my-2">Could not load battle map.</MudAlert>
+    <MudAlert Severity="Severity.Warning" Class="my-2">Nie udało się wczytać mapy bitwy.</MudAlert>
 }
 else if (!CanManageAsMg && !Map.IsActive)
 {
     <MudAlert Severity="Severity.Info" Class="my-2">
-        Battle Map is not visible yet. Wait for the Game Master to show the map so you can deploy your units.
+        Mapa bitwy nie jest jeszcze widoczna. Poczekaj, aż Mistrz Gry pokaże mapę, abyś mógł rozstawić swoje oddziały.
     </MudAlert>
 }
 else
 {
     <div class="bbm-page">
-        <BaronyPageHeader Title="Battle" HelpKey="battle-map" ShowSectionToggle="false">
+        <BaronyPageHeader Title="Bitwa" HelpKey="battle-map" ShowSectionToggle="false">
             <Summary>
                 <span class="bbm-phase-chip">@PhaseLabel</span>
                 @if (IsMovementPhase && ActiveToken is not null)
                 {
                     <span class="bbm-turn-chip bbm-turn-chip--@(ActiveToken.IsEnemy ? "enemy" : "ally")">
-                        @(ActiveToken.IsEnemy ? "Enemy order" : "Baron's order")
+                        @(ActiveToken.IsEnemy ? "Rozkaz przeciwnika" : "Rozkaz barona")
                         · @ActiveToken.Label
-                        · @GetPlanBudget(ActiveToken) move left
+                        · @GetPlanBudget(ActiveToken) ruchu pozostało
                         @if (ActiveToken.HasPath)
                         {
                             var end = ActiveToken.PlannedEnd();
@@ -55,11 +55,11 @@ else
                 }
                 else if (IsAttackPlanningPhase)
                 {
-                    <span class="bbm-turn-chip">Round @Map.TurnState.Round — attack planning</span>
+                    <span class="bbm-turn-chip">Runda @Map.TurnState.Round — planowanie ataku</span>
                 }
                 else if (IsCombatPhase)
                 {
-                    <span class="bbm-turn-chip">Round @Map.TurnState.Round — combat</span>
+                    <span class="bbm-turn-chip">Runda @Map.TurnState.Round — walka</span>
                 }
             </Summary>
         </BaronyPageHeader>
@@ -74,7 +74,7 @@ else
                                        Size="Size.Small"
                                        Class="@(_mapEditMode ? "baron-influence-save-btn" : "march-map-toolbar__btn")"
                                        OnClick="ToggleMapEdit">
-                                @(_mapEditMode ? "Editing" : "Map edit")
+                                @(_mapEditMode ? "Edycja" : "Edytuj mapę")
                             </MudButton>
                         </div>
                         @if (_mapEditMode)
@@ -87,9 +87,9 @@ else
                                                 Class="march-map-tool-toggle"
                                                 SelectionMode="SelectionMode.SingleSelection"
                                                 CheckMark="false">
-                                    <MudToggleItem Value="@("tiles")" Text="Tiles" />
-                                    <MudToggleItem Value="@("text")" Text="Text" />
-                                    <MudToggleItem Value="@("erase")" Text="Eraser" />
+                                    <MudToggleItem Value="@("tiles")" Text="Pola" />
+                                    <MudToggleItem Value="@("text")" Text="Tekst" />
+                                    <MudToggleItem Value="@("erase")" Text="Gumka" />
                                 </MudToggleGroup>
 
                                 @if (_tool == "tiles")
@@ -101,13 +101,13 @@ else
                                                     Class="march-map-tool-toggle"
                                                     SelectionMode="SelectionMode.SingleSelection"
                                                     CheckMark="false">
-                                        <MudToggleItem Value="@("color")" Text="Color" />
-                                        <MudToggleItem Value="@("deploy")" Text="Deploy" />
-                                        <MudToggleItem Value="@("difficult")" Text="Difficult" />
+                                        <MudToggleItem Value="@("color")" Text="Kolor" />
+                                        <MudToggleItem Value="@("deploy")" Text="Rozstaw" />
+                                        <MudToggleItem Value="@("difficult")" Text="Trudny" />
                                         <MudToggleItem Value="@("impassable")">
-                                            <span class="bbm-toggle-twoline">Impass<br />able</span>
+                                            <span class="bbm-toggle-twoline">Nieprze<br />jezdny</span>
                                         </MudToggleItem>
-                                        <MudToggleItem Value="@("normal")" Text="Clear cell" />
+                                        <MudToggleItem Value="@("normal")" Text="Wyczyść pole" />
                                     </MudToggleGroup>
                                     @if (_tileBrush == "color")
                                     {
@@ -126,7 +126,7 @@ else
                                 @if (_tool == "text" && _selectedCell is not null)
                                 {
                                     <MudTextField T="string"
-                                                  Label="@($"Text ({FormatCell(_selectedCell.Value.X, _selectedCell.Value.Y)})")"
+                                                  Label="@($"Tekst ({FormatCell(_selectedCell.Value.X, _selectedCell.Value.Y)})")"
                                                   Value="@GetCellText(_selectedCell.Value.X, _selectedCell.Value.Y)"
                                                   ValueChanged="OnCellTextMudChanged"
                                                   Immediate="false"
@@ -138,7 +138,7 @@ else
                                            Color="Color.Error"
                                            Class="march-map-toolbar__btn"
                                            OnClick="ClearMap">
-                                    Clear map
+                                    Wyczyść mapę
                                 </MudButton>
                             </div>
                         }
@@ -189,30 +189,30 @@ else
                         @if (WaitingForOpponentOrder)
                         {
                             <span class="bbm-map-wait">
-                                Enemy order: @ActiveToken!.Label — waiting for the Game Master.
+                                Rozkaz przeciwnika: @ActiveToken!.Label — oczekiwanie na Mistrza Gry.
                             </span>
                         }
                         else if (WaitingForMovementResolve)
                         {
                             <span class="bbm-map-wait">
-                                All movement orders set — waiting for the Game Master to resolve.
+                                Wszystkie rozkazy ruchu ustawione — oczekiwanie na rozstrzygnięcie przez Mistrza Gry.
                             </span>
                         }
                         else if (IsAttackPlanningPhase && CanManageAsMg)
                         {
                             @if (Map.TurnState.BaronPhaseReady)
                             {
-                                <span class="bbm-map-ready">Baron is ready</span>
+                                <span class="bbm-map-ready">Baron gotowy</span>
                             }
                             else
                             {
-                                <span class="bbm-map-wait">Waiting for baron ready</span>
+                                <span class="bbm-map-wait">Oczekiwanie na gotowość barona</span>
                             }
                         }
                         else if (IsAttackPlanningPhase && CanEdit && Map.TurnState.BaronPhaseReady)
                         {
                             <span class="bbm-map-ready">
-                                Ready — waiting for the Game Master to begin combat.
+                                Gotowe — oczekiwanie, aż Mistrz Gry rozpocznie walkę.
                             </span>
                         }
                     </div>
@@ -230,7 +230,7 @@ else
                             <button type="button"
                                     class="bbm-map-btn bbm-map-btn--solid"
                                     @onclick="BeginBattle">
-                                Begin battle
+                                Rozpocznij bitwę
                             </button>
                         }
                         @if (ShowMovementControls)
@@ -239,14 +239,14 @@ else
                                     class="bbm-map-btn bbm-map-btn--solid"
                                     @onclick="FinishMove"
                                     disabled="@(_isResolvingMovement || _isResolvingCombat)">
-                                Finish move
+                                Zakończ ruch
                             </button>
                             @if (CanUndoMove)
                             {
                                 <button type="button"
                                         class="bbm-map-btn bbm-map-btn--ghost"
                                         @onclick="UndoMoveStep">
-                                    Undo
+                                    Cofnij
                                 </button>
                             }
                         }
@@ -256,7 +256,7 @@ else
                                     class="bbm-map-btn @(AllMovementOrdersFinished ? "bbm-map-btn--solid" : "bbm-map-btn--ghost")"
                                     @onclick="ResolveMovementPhase"
                                     disabled="@(_isResolvingMovement || _isResolvingCombat)">
-                                Resolve all movement
+                                Rozstrzygnij cały ruch
                             </button>
                         }
                         @if (CanManageAsMg && IsCombatPhase)
@@ -265,7 +265,7 @@ else
                                     class="bbm-map-btn bbm-map-btn--solid"
                                     @onclick="EndCombatPhase"
                                     disabled="@(_isResolvingMovement || _isResolvingCombat)">
-                                End combat / next round
+                                Zakończ walkę / następna runda
                             </button>
                         }
                         @if (CanManageAsMg && IsBattlePhase)
@@ -274,7 +274,7 @@ else
                                     class="bbm-map-btn bbm-map-btn--end-battle bbm-map-btn--compact"
                                     @onclick="EndBattle"
                                     disabled="@(_isResolvingMovement || _isResolvingCombat)">
-                                End battle
+                                Zakończ bitwę
                             </button>
                         }
                         @if (IsAttackPlanningPhase && !_isResolvingCombat)
@@ -284,7 +284,7 @@ else
                                 <button type="button"
                                         class="bbm-map-btn bbm-map-btn--ghost bbm-map-btn--compact"
                                         @onclick="AutoAssignAttackTargets">
-                                    Auto-assign attacks
+                                    Automatycznie przydziel ataki
                                 </button>
                             }
                             @if (CanManageAsMg)
@@ -292,7 +292,7 @@ else
                                 <button type="button"
                                         class="bbm-map-btn bbm-map-btn--solid bbm-map-btn--compact"
                                         @onclick="AdvanceToCombat">
-                                    Begin combat
+                                    Rozpocznij walkę
                                 </button>
                             }
                             else if (CanEdit && !Map.TurnState.BaronPhaseReady)
@@ -300,7 +300,7 @@ else
                                 <button type="button"
                                         class="bbm-map-btn bbm-map-btn--solid bbm-map-btn--compact"
                                         @onclick="MarkBaronPhaseReady">
-                                    I'm ready
+                                    Jestem gotów
                                 </button>
                             }
                         }
@@ -311,20 +311,20 @@ else
                 {
                     <button type="button"
                             class="bbm-map-log-toggle"
-                            title="Show battle log"
+                            title="Pokaż dziennik bitwy"
                             @onclick="() => _battleLogCollapsed = false">
                         <span class="bbm-map-log-toggle__icon" aria-hidden="true"></span>
-                        <span class="bbm-map-log-toggle__label">Log</span>
+                        <span class="bbm-map-log-toggle__label">Dziennik</span>
                     </button>
                 }
                 else
                 {
                     <div class="bbm-map-log">
                         <div class="bbm-map-log__head">
-                            <span class="bbm-map-log__title">Battle log</span>
+                            <span class="bbm-map-log__title">Dziennik bitwy</span>
                             <button type="button"
                                     class="bbm-map-log__hide"
-                                    title="Hide battle log"
+                                    title="Ukryj dziennik bitwy"
                                     @onclick="() => _battleLogCollapsed = true">
                                 ▾
                             </button>
@@ -343,19 +343,19 @@ else
                             }
                             @if (Map.Log.Count == 0)
                             {
-                                <div class="bbm-map-log__empty">No entries yet.</div>
+                                <div class="bbm-map-log__empty">Brak wpisów.</div>
                             }
                         </div>
                         <div class="bbm-map-log__chat">
-                            <input class="bbm-input bbm-map-log__input" placeholder="Message…" @bind="_chatDraft" @onkeydown="OnChatKey" />
-                            <button type="button" class="bbm-map-btn bbm-map-btn--ghost bbm-map-log__send" @onclick="SendChat">Send</button>
+                            <input class="bbm-input bbm-map-log__input" placeholder="Wiadomość…" @bind="_chatDraft" @onkeydown="OnChatKey" />
+                            <button type="button" class="bbm-map-btn bbm-map-btn--ghost bbm-map-log__send" @onclick="SendChat">Wyślij</button>
                         </div>
                     </div>
                 }
             </section>
 
             <aside class="bbm-side-pane">
-                <BaronySection Title="Your forces">
+                <BaronySection Title="Twoje siły">
                     <div class="bbm-force-list">
                         @foreach (var unit in _activeUnits)
                         {
@@ -370,7 +370,7 @@ else
                                 <div class="bbm-force-card__top">
                                     <button type="button"
                                             class="bbm-force-icon-btn"
-                                            title="Change icon"
+                                            title="Zmień ikonę"
                                             @onclick="() => OpenAllyIconPicker(unit.Id)"
                                             @onclick:stopPropagation="true">
                                         @if (!string.IsNullOrEmpty(iconPath))
@@ -384,7 +384,7 @@ else
                                     </button>
                                     <div class="bbm-force-card__identity">
                                         <strong class="bbm-force-card__name bbm-name--ally">@unit.Name</strong>
-                                        <span class="bbm-force-card__hp">HP @hpNow/@hpMax@(isBroken ? " — fled" : "")</span>
+                                        <span class="bbm-force-card__hp">HP @hpNow/@hpMax@(isBroken ? " — uciekł" : "")</span>
                                         @if (onMap is not null)
                                         {
                                             @ForceStatusBadges(onMap)
@@ -396,7 +396,7 @@ else
                                             <button type="button"
                                                     class="barony-turn-btn--ghost bbm-mini-btn"
                                                     @onclick="() => PickDeployUnit(unit.Id)">
-                                                @(_deployUnitId == unit.Id ? "Click deploy…" : "Deploy")
+                                                @(_deployUnitId == unit.Id ? "Kliknij, aby rozstawić…" : "Rozstaw")
                                             </button>
                                         }
                                         else if (onMap is not null && IsSetupPhase && CanEdit)
@@ -404,7 +404,7 @@ else
                                             <button type="button"
                                                     class="barony-turn-btn--ghost bbm-mini-btn"
                                                     @onclick="() => RecallUnit(unit.Id)">
-                                                Recall
+                                                Wycofaj
                                             </button>
                                         }
                                     </div>
@@ -429,7 +429,7 @@ else
                                     <span class="@(allyIronclad ? "bbm-force-stat--boost" : null)">Arm @(allyIronclad ? $"{allyArmEff} (+2)" : allyArmEff.ToString())</span>@(unitPierce > 0 ? $" · Prc {unitPierce}" : "") ·
                                     Disc @(onMap?.Discipline ?? unit.Discipline) ·
                                     <span class="@(allyFullDef ? "bbm-force-stat--down" : null)">Mv @allyMvEff</span> ·
-                                    @(onMap?.TroopCount ?? unit.TroopCount) men
+                                    @(onMap?.TroopCount ?? unit.TroopCount) ludzi
                                 </div>
                                 @if (onMap is not null)
                                 {
@@ -439,12 +439,12 @@ else
                         }
                         @if (_activeUnits.Count == 0)
                         {
-                            <p class="bbm-empty">No Active units in Army.</p>
+                            <p class="bbm-empty">Brak aktywnych oddziałów w Armii.</p>
                         }
                     </div>
                 </BaronySection>
 
-                <BaronySection Title="Enemy forces">
+                <BaronySection Title="Siły przeciwnika">
                     <div class="bbm-force-list">
                         @foreach (var enemy in Map.Tokens.Where(t => t.IsEnemy))
                         {
@@ -454,7 +454,7 @@ else
                                 <div class="bbm-force-card__top">
                                     <button type="button"
                                             class="bbm-force-icon-btn"
-                                            title="@(CanManageAsMg ? "Change icon" : enemy.Label)"
+                                            title="@(CanManageAsMg ? "Zmień ikonę" : enemy.Label)"
                                             disabled="@(!CanManageAsMg)"
                                             @onclick="() => OpenEnemyIconPicker(enemy.Id)"
                                             @onclick:stopPropagation="true">
@@ -478,12 +478,12 @@ else
                                             <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                            Size="Size.Small"
                                                            Color="Color.Default"
-                                                           title="Edit enemy"
+                                                           title="Edytuj przeciwnika"
                                                            OnClick="@(() => BeginEditEnemy(enemy.Id))" />
                                             <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                            Size="Size.Small"
                                                            Color="Color.Error"
-                                                           title="Remove enemy"
+                                                           title="Usuń przeciwnika"
                                                            OnClick="@(() => RemoveEnemyTokenAsync(enemy.Id))" />
                                         </span>
                                     }
@@ -501,7 +501,7 @@ else
                                     <span class="@(enemy.IroncladActive ? "bbm-force-stat--boost" : null)">Arm @(enemy.IroncladActive ? $"{enemyArmEff} (+2)" : enemyArmEff.ToString())</span>@(enemy.Pierce > 0 ? $" · Prc {enemy.Pierce}" : "") ·
                                     Disc @enemy.Discipline ·
                                     <span class="@(enemy.FullDefense ? "bbm-force-stat--down" : null)">Mv @enemyMvEff</span> ·
-                                    @enemy.TroopCount men
+                                    @enemy.TroopCount ludzi
                                 </div>
                                 @CommanderAbilityBadges(enemy)
                             </div>
@@ -512,7 +512,7 @@ else
                                 <div class="bbm-force-card__top bbm-enemy-form__top">
                                     <button type="button"
                                             class="bbm-force-icon-btn"
-                                            title="Choose icon"
+                                            title="Wybierz ikonę"
                                             @onclick="OpenDraftIconPicker">
                                         @{
                                             var draftPath = BattleTokenIconCatalog.PathFor(_enemyDraft.IconKey);
@@ -526,46 +526,46 @@ else
                                             <span>?</span>
                                         }
                                     </button>
-                                    <input class="bbm-input bbm-enemy-name" placeholder="Name" @bind="_enemyDraft.Label" />
+                                    <input class="bbm-input bbm-enemy-name" placeholder="Nazwa" @bind="_enemyDraft.Label" />
                                     <button type="button"
                                             class="bbm-map-btn bbm-map-btn--ghost bbm-enemy-add-btn"
                                             @onclick="OpenEnemyAbilityDialogAsync">
-                                        Dodaj zdolnosc
+                                        Dodaj zdolność
                                     </button>
                                     @if (_editingEnemyTokenId is not null)
                                     {
                                         <button type="button"
                                                 class="bbm-map-btn bbm-map-btn--ghost bbm-enemy-add-btn"
                                                 @onclick="CancelEditEnemy">
-                                            Cancel
+                                            Anuluj
                                         </button>
                                         <button type="button"
                                                 class="bbm-map-btn bbm-map-btn--solid bbm-enemy-add-btn"
                                                 @onclick="SaveEditedEnemyAsync">
-                                            Edit
+                                            Zapisz
                                         </button>
                                     }
                                     else
                                     {
                                         <button type="button" class="bbm-map-btn bbm-map-btn--solid bbm-enemy-add-btn" @onclick="AddEnemyToken">
-                                            Add
+                                            Dodaj
                                         </button>
                                     }
                                 </div>
                                 <div class="bbm-enemy-stats">
-                                    <label>Attack <input type="number" @bind="_enemyDraft.Attack" /></label>
-                                    <label>Defence <input type="number" @bind="_enemyDraft.Defense" /></label>
-                                    <label>Damage <input type="number" @bind="_enemyDraft.Damage" /></label>
+                                    <label>Atak <input type="number" @bind="_enemyDraft.Attack" /></label>
+                                    <label>Obrona <input type="number" @bind="_enemyDraft.Defense" /></label>
+                                    <label>Obrażenia <input type="number" @bind="_enemyDraft.Damage" /></label>
                                     <label>HP <input type="number" @bind="_enemyDraft.Hp" /></label>
-                                    <label>Armor <input type="number" @bind="_enemyDraft.Armor" /></label>
-                                    <label>Discipline <input type="number" @bind="_enemyDraft.Discipline" /></label>
-                                    <label>Men <input type="number" @bind="_enemyDraft.TroopCount" /></label>
-                                    <label>Move <input type="number" @bind="_enemyDraft.Move" /></label>
-                                    <label>Range <input type="number" @bind="_enemyDraft.Range" title="0 = melee only; >0 = ranged unit" /></label>
-                                    <label>Pierce <input type="number" @bind="_enemyDraft.Pierce" title="Armor cut through by this unit's attacks; 0 = none" /></label>
+                                    <label>Pancerz <input type="number" @bind="_enemyDraft.Armor" /></label>
+                                    <label>Dyscyplina <input type="number" @bind="_enemyDraft.Discipline" /></label>
+                                    <label>Ludzi <input type="number" @bind="_enemyDraft.TroopCount" /></label>
+                                    <label>Ruch <input type="number" @bind="_enemyDraft.Move" /></label>
+                                    <label>Zasięg <input type="number" @bind="_enemyDraft.Range" title="0 = tylko zwarcie; >0 = oddział dystansowy" /></label>
+                                    <label>Przebicie <input type="number" @bind="_enemyDraft.Pierce" title="Pancerz przebijany przez ataki tego oddziału; 0 = brak" /></label>
                                     <label>
-                                        Mounted
-                                        <input type="checkbox" @bind="_enemyDraft.Mounted" title="Needed for mount-based abilities" />
+                                        Konny
+                                        <input type="checkbox" @bind="_enemyDraft.Mounted" title="Wymagane dla zdolności związanych z wierzchowcem" />
                                     </label>
                                 </div>
                                 @if (_enemyDraft.CommanderAbilities.Count > 0)
@@ -577,7 +577,7 @@ else
                                             <span class="bbm-enemy-ability-chip" title="@ab?.DescriptionEn">
                                                 @(ab?.NameEn ?? key)
                                                 <button type="button"
-                                                        title="Remove"
+                                                        title="Usuń"
                                                         @onclick:stopPropagation="true"
                                                         @onclick="() => RemoveEnemyAbility(key)">
                                                     ×
@@ -590,12 +590,12 @@ else
                         }
                         else if (!Map.Tokens.Any(t => t.IsEnemy))
                         {
-                            <p class="bbm-empty">No enemies on the map yet.</p>
+                            <p class="bbm-empty">Brak przeciwników na mapie.</p>
                         }
                     </div>
                 </BaronySection>
 
-                <BaronySection Title="Actions">
+                <BaronySection Title="Akcje">
                     @if (CanManageAsMg)
                     {
                         <div class="bbm-actions">
@@ -605,7 +605,7 @@ else
                                     <button type="button"
                                             class="bbm-map-btn bbm-map-btn--ghost"
                                             @onclick="() => OnActiveChanged(false)">
-                                        Hide map
+                                        Ukryj mapę
                                     </button>
                                 }
                                 else
@@ -613,14 +613,14 @@ else
                                     <button type="button"
                                             class="bbm-map-btn bbm-map-btn--solid"
                                             @onclick="() => OnActiveChanged(true)">
-                                        Show map
+                                        Pokaż mapę
                                     </button>
                                 }
                             </div>
                             <p class="bbm-hint" style="margin-top:0.35rem;">
                                 @(Map.IsActive
-                                    ? "The baron can see this map and deploy units into the green zone."
-                                    : "Show the map to the baron so they can deploy units before battle starts.")
+                                    ? "Baron widzi tę mapę i może rozstawiać oddziały w zielonej strefie."
+                                    : "Pokaż mapę baronowi, aby mógł rozstawić oddziały przed rozpoczęciem bitwy.")
                             </p>
                         </div>
                     }
@@ -635,10 +635,10 @@ else
                     {
                         <p class="bbm-hint" style="margin-top:0.5rem;">
                             @(IsMovementPhase
-                                ? "Plan a path: place destination, lock, optional facing turn (1 move). Or rotate in place with the facing icon. Use the bar below to undo or finish."
+                                ? "Zaplanuj ścieżkę: ustaw cel, zablokuj, opcjonalny obrót (1 ruch). Albo obróć się w miejscu ikoną kierunku. Użyj paska poniżej, aby cofnąć lub zakończyć."
                                 : IsAttackPlanningPhase
-                                    ? "Select a unit, then click a highlighted enemy to assign an attack. Ranged units shoot at distance (no return fire) unless engaged in melee."
-                                    : "Combat phase — damage is resolving; wait for the Game Master to advance.")
+                                    ? "Wybierz oddział, następnie kliknij podświetlonego przeciwnika, aby przydzielić atak. Oddziały dystansowe strzelają z odległości (bez ognia zwrotnego), o ile nie są związane walką w zwarciu."
+                                    : "Faza walki — obrażenia są rozliczane; poczekaj, aż Mistrz Gry przejdzie dalej.")
                         </p>
                         <ol class="bbm-initiative">
                             @for (var i = 0; i < Map.TurnState.InitiativeOrder.Count; i++)
@@ -647,7 +647,7 @@ else
                                 var tok = Map.Tokens.FirstOrDefault(t => t.Id == id);
                                 if (tok is null) continue;
                                 <li class="@(IsMovementPhase && i == Map.TurnState.CurrentIndex ? "current" : null)">
-                                    <span class="bbm-init-side @(tok.IsEnemy ? "enemy" : "ally")">@(tok.IsEnemy ? "E" : "B")</span>
+                                    <span class="bbm-init-side @(tok.IsEnemy ? "enemy" : "ally")">@(tok.IsEnemy ? "P" : "B")</span>
                                     <span class="@(tok.IsEnemy ? "bbm-name--enemy" : "bbm-name--ally")">@tok.Label</span>
                                     <span class="bbm-force-meta">(@tok.InitiativeTotal)</span>
                                     @if (IsMovementPhase && tok.HasPath)
@@ -655,11 +655,11 @@ else
                                         if (!FogEnemyMovementPlans || !tok.IsEnemy)
                                         {
                                             var end = tok.PlannedEnd();
-                                            <span class="bbm-force-meta"> → @FormatCell(end.X, end.Y) (@tok.Path.Count step@(tok.Path.Count == 1 ? "" : "s"))</span>
+                                            <span class="bbm-force-meta"> → @FormatCell(end.X, end.Y) (@tok.Path.Count krok@(tok.Path.Count == 1 ? "" : "i"))</span>
                                         }
                                         else if (IsEnemyPlanRevealedToBaron(tok))
                                         {
-                                            <span class="bbm-force-meta">@(IsFacingOnlyPlan(tok) ? " ↻ turning" : " → orders given")</span>
+                                            <span class="bbm-force-meta">@(IsFacingOnlyPlan(tok) ? " ↻ obrót" : " → wydano rozkazy")</span>
                                         }
                                     }
                                 </li>
@@ -673,7 +673,7 @@ else
                             .ToList();
                         @if (recentCombat.Count > 0)
                         {
-                            <p class="bbm-hint" style="margin-top:0.6rem;">Recent combat summary:</p>
+                            <p class="bbm-hint" style="margin-top:0.6rem;">Podsumowanie ostatniej walki:</p>
                             <ul class="bbm-initiative" style="margin-top:0.2rem;">
                                 @foreach (var entry in recentCombat)
                                 {
@@ -1007,7 +1007,7 @@ else
             return;
         if (unit.CurrentHp <= 0)
         {
-            _snackBar.Add("Broken units (0 HP) cannot be deployed.", Severity.Warning);
+            _snackBar.Add("Rozbite oddziały (0 HP) nie mogą być rozstawiane.", Severity.Warning);
             return;
         }
         _deployUnitId = unitId;
@@ -1026,7 +1026,7 @@ else
             [nameof(BattleTokenIconPickerDialog.SelectedKey)] = currentKey ?? "shield",
         };
         var dialog = await _dialogService.ShowAsync<BattleTokenIconPickerDialog>(
-            "Choose icon",
+            "Wybierz ikonę",
             parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
         var result = await dialog.Result;
@@ -1140,11 +1140,11 @@ else
                     if (!CanTarget(attacker, planClicked))
                     {
                         if (attacker.Range > 0 && IsPinned(attacker) && !AreAdjacent(attacker, planClicked))
-                            _snackBar.Add($"{attacker.Label} is engaged — can only fight adjacent enemies.", Severity.Warning);
+                            _snackBar.Add($"{attacker.Label} jest związany walką — może walczyć tylko z sąsiednimi przeciwnikami.", Severity.Warning);
                         else if (attacker.Range > 0)
-                            _snackBar.Add("Target is out of range.", Severity.Warning);
+                            _snackBar.Add("Cel poza zasięgiem.", Severity.Warning);
                         else
-                            _snackBar.Add("Unit is not adjacent to the selected target.", Severity.Warning);
+                            _snackBar.Add("Oddział nie sąsiaduje z wybranym celem.", Severity.Warning);
                     }
                     else
                     {
@@ -1152,7 +1152,7 @@ else
                         if (IsLockedChargeAttack(attacker))
                         {
                             _snackBar.Add(
-                                $"{attacker.Label}'s charge attack is locked and cannot be changed.",
+                                $"Atak szarży oddziału {attacker.Label} jest zablokowany i nie może zostać zmieniony.",
                                 Severity.Warning);
                             RefreshRange();
                             return;
@@ -1229,23 +1229,23 @@ else
             return;
         if (unit.CurrentHp <= 0)
         {
-            _snackBar.Add("Broken units (0 HP) cannot be deployed.", Severity.Warning);
+            _snackBar.Add("Rozbite oddziały (0 HP) nie mogą być rozstawiane.", Severity.Warning);
             _deployUnitId = null;
             return;
         }
         if (Map.Tokens.Any(t => t.UnitId == unitId))
         {
-            _snackBar.Add("Unit already on the map.", Severity.Warning);
+            _snackBar.Add("Oddział już na mapie.", Severity.Warning);
             return;
         }
         if (!IsDeployCell(x, y))
         {
-            _snackBar.Add("Deploy only inside the deployment zone.", Severity.Warning);
+            _snackBar.Add("Rozstawiaj tylko w strefie rozstawienia.", Severity.Warning);
             return;
         }
         if (!CanPlace(x, y, 1))
         {
-            _snackBar.Add("Cell occupied.", Severity.Warning);
+            _snackBar.Add("Pole zajęte.", Severity.Warning);
             return;
         }
 
@@ -1303,10 +1303,10 @@ else
             return;
 
         var confirm = await _dialogService.ShowMessageBoxAsync(
-            "Remove enemy?",
-            $"Remove “{token.Label}” from the battle map?",
-            yesText: "Remove",
-            cancelText: "Cancel");
+            "Usunąć przeciwnika?",
+            $"Usunąć „{token.Label}” z mapy bitwy?",
+            yesText: "Usuń",
+            cancelText: "Anuluj");
         if (confirm != true)
             return;
 
@@ -1351,7 +1351,7 @@ else
             CancelEditEnemy();
         if (string.IsNullOrWhiteSpace(_enemyDraft.Label))
         {
-            _snackBar.Add("Enemy name required.", Severity.Warning);
+            _snackBar.Add("Wymagana nazwa przeciwnika.", Severity.Warning);
             return;
         }
         var abilityError = ValidateEnemyDraftAbilitiesSet();
@@ -1363,7 +1363,7 @@ else
         _placingEnemy = true;
         _deployUnitId = null;
         _tool = "token";
-        _snackBar.Add("Click a cell to place the enemy token.", Severity.Info);
+        _snackBar.Add("Kliknij pole, aby umieścić żeton przeciwnika.", Severity.Info);
     }
 
     private void BeginEditEnemy(string tokenId)
@@ -1396,7 +1396,7 @@ else
 
         if (string.IsNullOrWhiteSpace(_enemyDraft.Label))
         {
-            _snackBar.Add("Enemy name required.", Severity.Warning);
+            _snackBar.Add("Wymagana nazwa przeciwnika.", Severity.Warning);
             return;
         }
         var abilityError = ValidateEnemyDraftAbilitiesSet();
@@ -1464,7 +1464,7 @@ else
         }
         if (Map is null || !CanPlace(x, y, 1))
         {
-            _snackBar.Add("Cannot place here.", Severity.Warning);
+            _snackBar.Add("Nie można tu umieścić.", Severity.Warning);
             return;
         }
         var hp = Math.Max(1, _enemyDraft.Hp);
@@ -1556,8 +1556,8 @@ else
         if (!CanControlToken(token))
         {
             _snackBar.Add(token.IsEnemy
-                ? "Enemy units are moved by the Game Master."
-                : "You cannot move this token.", Severity.Warning);
+                ? "Oddziałami przeciwnika porusza Mistrz Gry."
+                : "Nie możesz poruszać tym żetonem.", Severity.Warning);
             return false;
         }
 
@@ -1569,7 +1569,7 @@ else
         {
             if (!token.IsEnemy && !IsDeployFootprint(nx, ny, size))
             {
-                _snackBar.Add("Allies stay in the deployment zone during setup.", Severity.Warning);
+                _snackBar.Add("Sojusznicy pozostają w strefie rozstawienia podczas przygotowań.", Severity.Warning);
                 return false;
             }
             if (!CanPlace(nx, ny, size, token.Id))
@@ -1586,13 +1586,13 @@ else
         if (!IsMovementPhase)
         {
             if (IsCombatPhase)
-                _snackBar.Add("Movement is locked during the combat phase.", Severity.Info);
+                _snackBar.Add("Ruch jest zablokowany w fazie walki.", Severity.Info);
             return false;
         }
 
         if (ActiveTokenId != token.Id)
         {
-            _snackBar.Add("Wait for this unit's movement order.", Severity.Warning);
+            _snackBar.Add("Poczekaj na rozkaz ruchu tego oddziału.", Severity.Warning);
             return false;
         }
 
@@ -1639,33 +1639,33 @@ else
         if (token.ChargeBonus)
         {
             _snackBar.Add(
-                "A charging unit takes no further orders — undo to replan.", Severity.Warning);
+                "Szarżujący oddział nie przyjmuje dalszych rozkazów — cofnij, aby zaplanować ponownie.", Severity.Warning);
             return false;
         }
 
         if (budget <= 0)
         {
-            _snackBar.Add("No movement left — Finish move or clear path.", Severity.Warning);
+            _snackBar.Add("Brak pozostałego ruchu — zakończ ruch lub wyczyść ścieżkę.", Severity.Warning);
             return false;
         }
 
         var reachable = ComputeReachableAnchorsFrom(token, fromX, fromY, budget);
         if (!reachable.Contains((nx, ny)))
         {
-            _snackBar.Add("Out of movement range.", Severity.Warning);
+            _snackBar.Add("Poza zasięgiem ruchu.", Severity.Warning);
             return false;
         }
 
         if (!CanPlaceWaypoint(token, nx, ny))
         {
-            _snackBar.Add("Destination blocked (unit or another order).", Severity.Warning);
+            _snackBar.Add("Cel zablokowany (oddział lub inny rozkaz).", Severity.Warning);
             return false;
         }
 
         var cost = EstimateMoveCostFrom(token, fromX, fromY, nx, ny, budget);
         if (cost < 0 || cost > budget)
         {
-            _snackBar.Add("Not enough movement.", Severity.Warning);
+            _snackBar.Add("Za mało ruchu.", Severity.Warning);
             return false;
         }
 
@@ -1699,8 +1699,8 @@ else
             {
                 _snackBar.Add(
                     freeHits == 1
-                        ? $"{token.Label} is engaged — moving at all costs a free half-strength hit."
-                        : $"{token.Label} is engaged — moving at all costs {freeHits} free half-strength hits.",
+                        ? $"{token.Label} jest związany walką — jakikolwiek ruch kosztuje darmowe trafienie o połowicznej sile."
+                        : $"{token.Label} jest związany walką — jakikolwiek ruch kosztuje {freeHits} darmowych trafień o połowicznej sile.",
                     Severity.Warning);
             }
         }
@@ -1739,14 +1739,14 @@ else
 
         if (token.ChargeBonus)
         {
-            _snackBar.Add("This unit is already charging — undo to replan.", Severity.Warning);
+            _snackBar.Add("Ten oddział już szarżuje — cofnij, aby zaplanować ponownie.", Severity.Warning);
             return Task.CompletedTask;
         }
 
         var (_, _, budget) = GetTipPlanOrigin(token);
         if (budget < 3)
         {
-            _snackBar.Add("Need at least 3 move points to charge.", Severity.Warning);
+            _snackBar.Add("Potrzeba co najmniej 3 punktów ruchu do szarży.", Severity.Warning);
             return Task.CompletedTask;
         }
 
@@ -1798,7 +1798,7 @@ else
 
         if (!TryBuildChargePath(token, facing, previewOnly: false, out var built) || built is null)
         {
-            _snackBar.Add(built?.FailReason ?? "Charge failed — path blocked before 2 tiles.", Severity.Warning);
+            _snackBar.Add(built?.FailReason ?? "Szarża nieudana — ścieżka zablokowana przed 2 polami.", Severity.Warning);
             CancelChargeEdit();
             return;
         }
@@ -1888,8 +1888,8 @@ else
                 Waypoints = new(),
                 RemainingAfter = budget,
                 FailReason = minSteps == 3
-                    ? "Charge in this direction needs at least 3 tiles (3 move)."
-                    : "Charge in this direction needs at least 2 diagonal tiles (3 move).",
+                    ? "Szarża w tym kierunku wymaga co najmniej 3 pól (3 ruchu)."
+                    : "Szarża w tym kierunku wymaga co najmniej 2 pól po skosie (3 ruchu).",
             };
             return false;
         }
@@ -1930,7 +1930,7 @@ else
                 if (steps < minSteps)
                 {
                     blockedEarly = true;
-                    fail = "Charge path blocked before minimum distance.";
+                    fail = "Ścieżka szarży zablokowana przed minimalnym dystansem.";
                 }
                 break;
             }
@@ -1982,8 +1982,8 @@ else
                 Waypoints = waypoints,
                 RemainingAfter = remaining,
                 FailReason = fail ?? (minSteps == 3
-                    ? "Charge needs at least 3 clear straight tiles."
-                    : "Charge needs at least 2 clear diagonal tiles (3 move)."),
+                    ? "Szarża wymaga co najmniej 3 wolnych pól w linii prostej."
+                    : "Szarża wymaga co najmniej 2 wolnych pól po skosie (3 ruchu)."),
             };
             return false;
         }
@@ -2113,7 +2113,7 @@ else
         if (token.ChargeBonus)
         {
             _snackBar.Add(
-                "A charging unit takes no further orders — undo to replan.", Severity.Warning);
+                "Szarżujący oddział nie przyjmuje dalszych rozkazów — cofnij, aby zaplanować ponownie.", Severity.Warning);
             return Task.CompletedTask;
         }
 
@@ -2124,7 +2124,7 @@ else
         {
             if (token.RemainingMove < 1 && !CommanderFreeFacingAvailable(token, inPlace: true))
             {
-                _snackBar.Add("Need at least 1 move point to change facing.", Severity.Warning);
+                _snackBar.Add("Potrzeba co najmniej 1 punktu ruchu do zmiany kierunku.", Severity.Warning);
                 return Task.CompletedTask;
             }
 
@@ -2144,7 +2144,7 @@ else
         if (tip.RemainingMoveAfter < 1 && tip.FacingCostPaid <= 0
             && !CommanderFreeFacingAvailable(token, tipInPlace))
         {
-            _snackBar.Add("Need at least 1 move point to change facing.", Severity.Warning);
+            _snackBar.Add("Potrzeba co najmniej 1 punktu ruchu do zmiany kierunku.", Severity.Warning);
             return Task.CompletedTask;
         }
 
@@ -2205,7 +2205,7 @@ else
             {
                 if (tip.RemainingMoveAfter < 1)
                 {
-                    _snackBar.Add("Need 1 move point to change facing.", Severity.Warning);
+                    _snackBar.Add("Potrzeba 1 punktu ruchu do zmiany kierunku.", Severity.Warning);
                     CancelFacingEdit();
                     return;
                 }
@@ -2340,7 +2340,7 @@ else
         };
 
         var dialog = await _dialogService.ShowAsync<EnemyCommanderAbilityDialog>(
-            "Dodaj zdolnosc kapitana", parameters, options);
+            "Dodaj zdolność kapitana", parameters, options);
         var result = await dialog.Result;
         if (result.Canceled || result.Data is not string key)
             return;
@@ -2794,7 +2794,7 @@ else
 
         if (assigned == 0 && cleared == 0)
         {
-            _snackBar.Add("No attack targets could be auto-assigned.", Severity.Info);
+            _snackBar.Add("Nie udało się automatycznie przydzielić żadnych celów ataku.", Severity.Info);
             return;
         }
 
@@ -3300,7 +3300,7 @@ else
             return;
         if (Map.Tokens.Count == 0)
         {
-            _snackBar.Add("Place at least one token before beginning.", Severity.Warning);
+            _snackBar.Add("Umieść co najmniej jeden żeton przed rozpoczęciem.", Severity.Warning);
             return;
         }
 
@@ -3494,7 +3494,7 @@ else
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to mark fled unit {UnitId} as 0 HP for barony {BaronyId}", uid, BaronyId);
-            _snackBar.Add($"Failed to update Army HP for {fled.Label}.", Severity.Error);
+            _snackBar.Add($"Nie udało się zaktualizować HP w Armii dla {fled.Label}.", Severity.Error);
         }
     }
 
@@ -3557,7 +3557,7 @@ else
             FullWidth = true,
         };
         var dialog = await _dialogService.ShowAsync<BattleXpSummaryDialog>(
-            "Battle XP summary", parameters, options);
+            "Podsumowanie XP bitwy", parameters, options);
         var result = await dialog.Result;
         if (result is null || result.Canceled || result.Data is not BaronyBattleXpSummaryDTO edited)
             return null;
@@ -3756,7 +3756,7 @@ else
             FullWidth = true,
         };
         var dialog = await _dialogService.ShowAsync<BattleXpSummaryDialog>(
-            "Battle XP summary", parameters, options);
+            "Podsumowanie XP bitwy", parameters, options);
         var result = await dialog.Result;
         if (result is null || result.Canceled || result.Data is not true)
             return;
@@ -3774,10 +3774,10 @@ else
             return;
 
         var confirm = await _dialogService.ShowMessageBoxAsync(
-            "End battle?",
-            "This ends the battle immediately, writes a summary to the log, and syncs baron unit HP to the Army tab — regardless of who is left on the field.",
-            yesText: "End battle",
-            cancelText: "Cancel");
+            "Zakończyć bitwę?",
+            "Natychmiast kończy bitwę, zapisuje podsumowanie w dzienniku i synchronizuje HP oddziałów barona z zakładką Armia — niezależnie od tego, kto pozostał na polu.",
+            yesText: "Zakończ bitwę",
+            cancelText: "Anuluj");
         if (confirm != true)
             return;
 
@@ -3855,7 +3855,7 @@ else
         await SaveAsync(systemMessage: "Battle ended. Ally HP and XP synced to Army.");
         _selectedTokenId = null;
         RefreshRange();
-        _snackBar.Add("Battle ended — Army HP and XP updated.", Severity.Success);
+        _snackBar.Add("Bitwa zakończona — zaktualizowano HP i XP w Armii.", Severity.Success);
     }
 
     /// <summary>Writes CurrentHp for every ally that entered the battle; returns summary lines.</summary>
@@ -3905,7 +3905,7 @@ else
         {
             Logger.LogError(ex, "Failed to sync battle HP to Army for barony {BaronyId}", BaronyId);
             lines.Add("ERROR: failed to sync some HP values to Army — check server logs.");
-            _snackBar.Add("Failed to sync some HP values to Army.", Severity.Error);
+            _snackBar.Add("Nie udało się zsynchronizować niektórych wartości HP z Armią.", Severity.Error);
         }
 
         _allyStartHp.Clear();
@@ -3946,7 +3946,7 @@ else
 
         if (!CanControlToken(active))
         {
-            _snackBar.Add("Not your order.", Severity.Warning);
+            _snackBar.Add("To nie twój rozkaz.", Severity.Warning);
             return;
         }
 
@@ -4017,7 +4017,7 @@ else
 
         if (!active.HasPath)
         {
-            _snackBar.Add("Nothing to undo.", Severity.Info);
+            _snackBar.Add("Nic do cofnięcia.", Severity.Info);
             return;
         }
 
@@ -4041,7 +4041,7 @@ else
             var last = Map.TurnState.CurrentIndex >= Map.TurnState.InitiativeOrder.Count - 1;
             if (!last)
             {
-                _snackBar.Add("Only the Game Master can resolve all movement early.", Severity.Warning);
+                _snackBar.Add("Tylko Mistrz Gry może wcześniej rozstrzygnąć cały ruch.", Severity.Warning);
                 return;
             }
         }
@@ -4859,20 +4859,20 @@ else
             var sample = string.Join(", ", missingOrders.Take(6).Select(t => t.Label));
             var suffix = missingOrders.Count > 6 ? " ..." : string.Empty;
             var proceed = await _dialogService.ShowMessageBoxAsync(
-                "Unassigned attacks",
-                $"Not every unit with an attack opportunity has a target: {sample}{suffix}. End attack planning anyway?",
-                yesText: "Yes, begin combat",
-                cancelText: "Go back");
+                "Nieprzydzielone ataki",
+                $"Nie każdy oddział z możliwością ataku ma cel: {sample}{suffix}. Zakończyć planowanie ataku mimo to?",
+                yesText: "Tak, rozpocznij walkę",
+                cancelText: "Wróć");
             if (proceed != true)
                 return;
         }
         else if (!Map.TurnState.BaronPhaseReady)
         {
             var proceed = await _dialogService.ShowMessageBoxAsync(
-                "Baron not ready",
-                "The baron has not pressed I'm ready yet. Begin combat anyway?",
-                yesText: "Yes, begin combat",
-                cancelText: "Go back");
+                "Baron nie jest gotowy",
+                "Baron nie nacisnął jeszcze „Jestem gotów”. Rozpocząć walkę mimo to?",
+                yesText: "Tak, rozpocznij walkę",
+                cancelText: "Wróć");
             if (proceed != true)
                 return;
         }
@@ -4938,10 +4938,10 @@ else
             return;
 
         var confirm = await _dialogService.ShowMessageBoxAsync(
-            "Clear map?",
-            "This will remove all painted terrain, text, and tokens, and return the battle to setup. This cannot be undone.",
-            yesText: "Clear map",
-            cancelText: "Cancel");
+            "Wyczyścić mapę?",
+            "Spowoduje to usunięcie całego namalowanego terenu, tekstu i żetonów oraz powrót bitwy do przygotowań. Tej operacji nie można cofnąć.",
+            yesText: "Wyczyść mapę",
+            cancelText: "Anuluj");
 
         if (confirm != true)
             return;
@@ -5040,7 +5040,7 @@ else
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to save barony battle map");
-            _snackBar.Add("Failed to save battle map.", Severity.Error);
+            _snackBar.Add("Nie udało się zapisać mapy bitwy.", Severity.Error);
         }
     }
 

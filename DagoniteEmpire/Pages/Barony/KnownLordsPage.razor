@@ -3,11 +3,11 @@
 @inherits BaronyPageBase
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 
-<PageTitle>Dagonite Empire | Lords</PageTitle>
+<PageTitle>Dagonitowe Imperium | Lordowie</PageTitle>
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading known lords...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Ładowanie znanych lordów...</span>
 }
 else if (LoadError is not null)
 {
@@ -15,16 +15,16 @@ else if (LoadError is not null)
 }
 else
 {
-    <BaronyPageHeader Title="Lords" HelpKey="known-lords">
+    <BaronyPageHeader Title="Lordowie" HelpKey="known-lords">
         <Summary>
             <span class="projects-summary">
-                <span class="projects-summary__item">@_lords.Count lord@(_lords.Count == 1 ? "" : "s")</span>
+                <span class="projects-summary__item">@_lords.Count lord@(_lords.Count == 1 ? "" : "owie")</span>
             </span>
         </Summary>
     </BaronyPageHeader>
 
     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-        Shared roster for every barony — lords of the Eastern March, their holdings, and trade goods.
+        Wspólna lista dla każdej baronii — lordowie Wschodniej Marchii, ich posiadłości i towary handlowe.
     </MudText>
 
     <KnownLordsSection BaronyId="@Barony!.Id"

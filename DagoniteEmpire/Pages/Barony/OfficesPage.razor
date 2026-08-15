@@ -4,11 +4,11 @@
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 @inject IDialogService _dialogService
 
-<PageTitle>Dagonite Empire | Court</PageTitle>
+<PageTitle>Dagonitowe Imperium | Dwór</PageTitle>
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading offices...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Ładowanie urzędów...</span>
 }
 else if (LoadError is not null)
 {
@@ -16,11 +16,11 @@ else if (LoadError is not null)
 }
 else if (Barony is not null)
 {
-    <BaronyPageHeader Title="Court" HelpKey="offices">
+    <BaronyPageHeader Title="Dwór" HelpKey="offices">
         <Summary>
-            <BaronyTooltip Text="Combined upkeep of all offices per turn">
+            <BaronyTooltip Text="Łączne utrzymanie wszystkich urzędów na turę">
                 <div class="offices-cost-total">
-                    <span class="offices-cost-total__label">Σ advisor upkeep</span>
+                    <span class="offices-cost-total__label">Σ utrzymanie doradców</span>
                     <span class="offices-cost-total__value">@FmtUpkeep(_totalUpkeep)</span>
                 </div>
             </BaronyTooltip>
@@ -52,7 +52,7 @@ else if (Barony is not null)
                    Class="mt-2"
                    StartIcon="@Icons.Material.Filled.Add"
                    OnClick="AddOfficeAsync">
-            Add Office
+            Dodaj urząd
         </MudButton>
     }
 }
@@ -101,7 +101,7 @@ else if (Barony is not null)
         };
 
         var dialog = await _dialogService.ShowAsync<AddOfficeDialog>(
-            "Add Office",
+            "Dodaj urząd",
             parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
 
@@ -110,7 +110,7 @@ else if (Barony is not null)
             return;
 
         await _baronyRepo.SaveAdvisor(draft);
-        _snackBar.Add("Office created.", Severity.Success);
+        _snackBar.Add("Utworzono urząd.", Severity.Success);
         await ReloadAsync();
     }
 
@@ -142,7 +142,7 @@ else if (Barony is not null)
     {
         if (!CanManageAsMg) return;
         var dialog = await _dialogService.ShowAsync<AvailableAdvisorEditDialog>(
-            draft.Id > 0 ? "Edit court person" : "Add court person",
+            draft.Id > 0 ? "Edytuj osobę dworu" : "Dodaj osobę dworu",
             new DialogParameters<AvailableAdvisorEditDialog> { { x => x.Advisor, draft } },
             new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseOnEscapeKey = true });
         var result = await dialog.Result;
@@ -151,7 +151,7 @@ else if (Barony is not null)
 
         saved.BaronyId = Barony!.Id;
         await _baronyRepo.SaveAvailableAdvisor(saved);
-        _snackBar.Add("Court person saved.", Severity.Success);
+        _snackBar.Add("Zapisano osobę dworu.", Severity.Success);
         await ReloadAsync();
     }
 
@@ -159,7 +159,7 @@ else if (Barony is not null)
     {
         if (!CanManageAsMg || person.Id <= 0) return;
         await _baronyRepo.DeleteAvailableAdvisor(person.Id);
-        _snackBar.Add("Court person removed.", Severity.Success);
+        _snackBar.Add("Usunięto osobę dworu.", Severity.Success);
         await ReloadAsync();
     }
 
@@ -170,7 +170,7 @@ else if (Barony is not null)
 
         person.BaronyId = Barony!.Id;
         await _baronyRepo.SaveAvailableAdvisor(person);
-        _snackBar.Add("Court sources saved.", Severity.Success);
+        _snackBar.Add("Zapisano źródła dworu.", Severity.Success);
         await ReloadAsync();
     }
 }

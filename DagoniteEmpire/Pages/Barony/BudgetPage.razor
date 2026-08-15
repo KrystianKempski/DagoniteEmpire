@@ -5,11 +5,11 @@
 @inject ICharacterRepository _characterRepo
 @inject IDialogService _dialogService
 
-<PageTitle>Dagonite Empire | Barony Budget</PageTitle>
+<PageTitle>Dagonitowe Imperium | Budżet baronii</PageTitle>
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Ładowanie...</span>
 }
 else if (LoadError is not null)
 {
@@ -17,31 +17,31 @@ else if (LoadError is not null)
 }
 else if (_overview is not null)
 {
-    <BaronyPageHeader Title="Budget" HelpKey="budget" />
+    <BaronyPageHeader Title="Budżet" HelpKey="budget" />
 
-    <BaronySection Title="Gold Overview">
+    <BaronySection Title="Przegląd złota">
         <Summary>
             <span class="budget-overview-chips">
-                <span>Treasury <b>@Num(_overview.Barony.TreasuryGold)</b></span>
-                <span>Purse <b>@Num(_overview.Barony.BaronPurseGold)</b></span>
-                <span>Turn <b style="color:@(_turnBalance >= 0 ? "var(--barony-pos)" : "var(--barony-neg)")">@Num(_turnBalance)</b></span>
+                <span>Skarbiec <b>@Num(_overview.Barony.TreasuryGold)</b></span>
+                <span>Sakiewka <b>@Num(_overview.Barony.BaronPurseGold)</b></span>
+                <span>Tura <b style="color:@(_turnBalance >= 0 ? "var(--barony-pos)" : "var(--barony-neg)")">@Num(_turnBalance)</b></span>
             </span>
         </Summary>
         <ChildContent>
             <MudGrid>
                 <MudItem xs="12" md="4">
-                    <div class="barony-stat"><span class="barony-stat__label">Barony Treasury</span><span class="barony-stat__value">@Num(_overview.Barony.TreasuryGold)</span></div>
+                    <div class="barony-stat"><span class="barony-stat__label">Skarbiec baronii</span><span class="barony-stat__value">@Num(_overview.Barony.TreasuryGold)</span></div>
                 </MudItem>
                 <MudItem xs="12" md="4">
-                    <div class="barony-stat"><span class="barony-stat__label">Baron Purse</span><span class="barony-stat__value">@Num(_overview.Barony.BaronPurseGold)</span></div>
+                    <div class="barony-stat"><span class="barony-stat__label">Sakiewka barona</span><span class="barony-stat__value">@Num(_overview.Barony.BaronPurseGold)</span></div>
                 </MudItem>
                 <MudItem xs="12" md="4">
                     <div class="barony-stat">
-                        <span class="barony-stat__label">Treasury Turn Balance</span>
+                        <span class="barony-stat__label">Bilans tury skarbca</span>
                         <span class="barony-stat__value" style="color:@(_turnBalance >= 0 ? "var(--barony-pos)" : "var(--barony-neg)")">@Num(_turnBalance)</span>
                     </div>
                     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                        Domain Panel Gold (@Num(_domainPanelGold)) − liege tribute (@Num(_liegeTribute))
+                        Złoto z Panelu Domeny (@Num(_domainPanelGold)) − trybut dla seniora (@Num(_liegeTribute))
                     </MudText>
                 </MudItem>
             </MudGrid>
@@ -50,8 +50,8 @@ else if (_overview is not null)
                 <div class="d-flex flex-wrap align-center gap-3 mt-3">
                     <MudNumericField T="decimal"
                                      @bind-Value="_liegeTributePercent"
-                                     Label="Liege tribute % (pay senior)"
-                                     HelperText="Share of gross gold income paid to the senior before expenses. Default 15%."
+                                     Label="Trybut dla seniora % (płatny seniorowi)"
+                                     HelperText="Część dochodu brutto w złocie płacona seniorowi przed wydatkami. Domyślnie 15%."
                                      Variant="Variant.Outlined"
                                      Margin="Margin.Dense"
                                      Min="0"
@@ -59,8 +59,8 @@ else if (_overview is not null)
                                      Style="max-width:14rem;" />
                     <MudNumericField T="decimal"
                                      @bind-Value="_vassalTributePercent"
-                                     Label="Vassal fief % (keep from villages)"
-                                     HelperText="Share of village gold on vassal fiefs kept by the baron. Default 15%."
+                                     Label="Lenno wasalne % (zatrzymywane z wiosek)"
+                                     HelperText="Część złota z wiosek na lennach wasalnych zatrzymywana przez barona. Domyślnie 15%."
                                      Variant="Variant.Outlined"
                                      Margin="Margin.Dense"
                                      Min="0"
@@ -70,39 +70,39 @@ else if (_overview is not null)
                                Class="baron-influence-save-btn"
                                Disabled="@(!_tributeRatesDirty)"
                                OnClick="SaveTributeRatesAsync">
-                        Save rates
+                        Zapisz stawki
                     </MudButton>
                 </div>
             }
             else
             {
                 <MudText Typo="Typo.caption" Class="mt-2" Style="color:var(--barony-muted);">
-                    Liege tribute: @_liegeTributePercent.ToString("0.#")% of gross income (@Num(_grossGoldIncome) → @Num(_liegeTribute) gold).
-                    Vassal fief share: @_vassalTributePercent.ToString("0.#")% of village gold on vassal lands.
+                    Trybut dla seniora: @_liegeTributePercent.ToString("0.#")% dochodu brutto (@Num(_grossGoldIncome) → @Num(_liegeTribute) złota).
+                    Udział lenna wasalnego: @_vassalTributePercent.ToString("0.#")% złota z wiosek na ziemiach wasalnych.
                 </MudText>
             }
         </ChildContent>
     </BaronySection>
 
-    <BaronySection Title="Barony Treasury">
+    <BaronySection Title="Skarbiec baronii">
         <Summary>
             <span class="budget-overview-chips">
-                <span>Income <b class="ppb-cell-pos">@Fmt(_totalIncome)</b></span>
-                <span>Expenses <b class="ppb-cell-neg">@Fmt(_totalExpense)</b></span>
+                <span>Dochód <b class="ppb-cell-pos">@Fmt(_totalIncome)</b></span>
+                <span>Wydatki <b class="ppb-cell-neg">@Fmt(_totalExpense)</b></span>
             </span>
         </Summary>
         <ChildContent>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Gold income/expenses from Domain Panel section totals (Final Gold already includes %).
-                Fief income is village gold (moved out of Improvements); Fief expense is liege tribute.
-                Turn balance = Domain Panel Final Gold − liege tribute.
+                Dochód/wydatki w złocie z sum sekcji Panelu Domeny (Złoto końcowe zawiera już %).
+                Dochód z lenna to złoto z wiosek (przeniesione z Ulepszeń); wydatek lenna to trybut dla seniora.
+                Bilans tury = Złoto końcowe Panelu Domeny − trybut dla seniora.
             </MudText>
             <MudGrid>
                 <MudItem xs="12" md="6">
                     <div class="barony-card">
-                        <div class="barony-card__title">Income</div>
+                        <div class="barony-card__title">Dochód</div>
                         <table class="ppb-table ppb-table--lined">
-                            <thead><tr><th class="ppb-row-label">Source</th><th>Gold</th></tr></thead>
+                            <thead><tr><th class="ppb-row-label">Źródło</th><th>Złoto</th></tr></thead>
                             <tbody>
                                 @foreach (var line in _incomeLines)
                                 {
@@ -116,7 +116,7 @@ else if (_overview is not null)
                                     </tr>
                                 }
                                 <tr class="ppb-summary-row">
-                                    <td class="ppb-row-label">Σ income</td>
+                                    <td class="ppb-row-label">Σ dochód</td>
                                     <td class="ppb-cell-pos"><b>@Fmt(_totalIncome)</b></td>
                                 </tr>
                             </tbody>
@@ -125,9 +125,9 @@ else if (_overview is not null)
                 </MudItem>
                 <MudItem xs="12" md="6">
                     <div class="barony-card">
-                        <div class="barony-card__title">Expenses</div>
+                        <div class="barony-card__title">Wydatki</div>
                         <table class="ppb-table ppb-table--lined">
-                            <thead><tr><th class="ppb-row-label">Source</th><th>Gold</th></tr></thead>
+                            <thead><tr><th class="ppb-row-label">Źródło</th><th>Złoto</th></tr></thead>
                             <tbody>
                                 @foreach (var line in _expenseLines)
                                 {
@@ -141,7 +141,7 @@ else if (_overview is not null)
                                     </tr>
                                 }
                                 <tr class="ppb-summary-row">
-                                    <td class="ppb-row-label">Σ expenses</td>
+                                    <td class="ppb-row-label">Σ wydatki</td>
                                     <td class="ppb-cell-neg"><b>@Fmt(_totalExpense)</b></td>
                                 </tr>
                             </tbody>
@@ -152,33 +152,33 @@ else if (_overview is not null)
         </ChildContent>
     </BaronySection>
 
-    <BaronySection Title="Baron Purse">
+    <BaronySection Title="Sakiewka barona">
         <Summary>
             <span class="budget-overview-chips">
-                <span>Purse <b>@Num(_overview.Barony.BaronPurseGold)</b></span>
-                <span>Ledger <b class="@ValueClass(_purseBalance)">@Fmt(_purseBalance)</b></span>
+                <span>Sakiewka <b>@Num(_overview.Barony.BaronPurseGold)</b></span>
+                <span>Rejestr <b class="@ValueClass(_purseBalance)">@Fmt(_purseBalance)</b></span>
             </span>
         </Summary>
         <ChildContent>
             @if (CanEdit)
             {
                 <div class="barony-card mb-3">
-                    <div class="barony-card__title">Transfer Between Treasury and Purse</div>
+                    <div class="barony-card__title">Transfer między skarbcem a sakiewką</div>
                     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                        Transfers update balances and are logged in the purse ledger and Resources → Resource Balance.
+                        Transfery aktualizują salda i są zapisywane w rejestrze sakiewki oraz w Zasoby → Bilans zasobów.
                     </MudText>
                     <MudStack Row="true" Spacing="2" AlignItems="AlignItems.End" Wrap="Wrap.Wrap">
-                        <MudNumericField T="decimal" @bind-Value="_transferAmount" Label="Amount" Min="0" HideSpinButtons="true" Style="max-width:140px;" />
-                        <MudButton Variant="Variant.Outlined" OnClick="TransferToPurseAsync">Treasury → Purse</MudButton>
-                        <MudButton Variant="Variant.Outlined" OnClick="TransferToTreasuryAsync">Purse → Treasury</MudButton>
+                        <MudNumericField T="decimal" @bind-Value="_transferAmount" Label="Kwota" Min="0" HideSpinButtons="true" Style="max-width:140px;" />
+                        <MudButton Variant="Variant.Outlined" OnClick="TransferToPurseAsync">Skarbiec → Sakiewka</MudButton>
+                        <MudButton Variant="Variant.Outlined" OnClick="TransferToTreasuryAsync">Sakiewka → Skarbiec</MudButton>
                     </MudStack>
                 </div>
             }
 
             <div class="barony-card mb-2">
-                <div class="barony-card__title">Purse Income &amp; Expenses</div>
+                <div class="barony-card__title">Dochód i wydatki sakiewki</div>
                 <table class="ppb-table ppb-table--lined">
-                    <thead><tr><th class="ppb-row-label">Source</th><th>Gold</th></tr></thead>
+                    <thead><tr><th class="ppb-row-label">Źródło</th><th>Złoto</th></tr></thead>
                     <tbody>
                         @foreach (var src in _purseSources)
                         {
@@ -191,10 +191,10 @@ else if (_overview is not null)
                                         @if (CanManageAsMg)
                                         {
                                             <span class="city-building-name-actions">
-                                                <BaronyTooltip Text="Edit">
+                                                <BaronyTooltip Text="Edytuj">
                                                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => EditPurseSourceAsync(src))" />
                                                 </BaronyTooltip>
-                                                <BaronyTooltip Text="Remove">
+                                                <BaronyTooltip Text="Usuń">
                                                     <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeletePurseSourceAsync(src))" />
                                                 </BaronyTooltip>
                                             </span>
@@ -206,10 +206,10 @@ else if (_overview is not null)
                         }
                         @if (_purseSources.Count == 0)
                         {
-                            <tr><td class="ppb-row-label" colspan="2" style="color:var(--barony-muted);font-weight:400;">No purse sources yet.</td></tr>
+                            <tr><td class="ppb-row-label" colspan="2" style="color:var(--barony-muted);font-weight:400;">Brak źródeł sakiewki.</td></tr>
                         }
                         <tr class="ppb-summary-row">
-                            <td class="ppb-row-label">Σ purse ledger</td>
+                            <td class="ppb-row-label">Σ rejestr sakiewki</td>
                             <td class="@ValueClass(_purseBalance)"><b>@Fmt(_purseBalance)</b></td>
                         </tr>
                     </tbody>
@@ -222,7 +222,7 @@ else if (_overview is not null)
                     <MudButton Variant="Variant.Outlined"
                                StartIcon="@Icons.Material.Filled.Add"
                                OnClick="AddPurseSourceAsync">
-                        Add Purse Source
+                        Dodaj źródło sakiewki
                     </MudButton>
                 </div>
             }
@@ -231,10 +231,10 @@ else if (_overview is not null)
 }
 
 @code {
-    private const string TransferToPurseName = "Transfer from treasury";
-    private const string TransferToTreasuryName = "Transfer to treasury";
-    private const string TransferToPurseResourceName = "Transfer to baron purse";
-    private const string TransferFromPurseResourceName = "Transfer from baron purse";
+    private const string TransferToPurseName = "Transfer ze skarbca";
+    private const string TransferToTreasuryName = "Transfer do skarbca";
+    private const string TransferToPurseResourceName = "Transfer do sakiewki barona";
+    private const string TransferFromPurseResourceName = "Transfer z sakiewki barona";
 
     private BaronyOverviewDTO? _overview;
     private CharacterDTO? _character;
@@ -334,57 +334,57 @@ else if (_overview is not null)
         _incomeLines = new List<BudgetLine>
         {
             Line(BudgetSource.Advisors, advIn,
-                "Sum of positive Gold (+) from Domain Panel → Advisors."),
+                "Suma dodatniego Złota (+) z Panelu Domeny → Doradcy."),
             Line(BudgetSource.Fief, fiefIn,
-                "Gold from villages on the Domain Panel (Terrain Improvements), after vassal fief share "
-                + $"({_vassalTributePercent:0.#}% on vassal lands; full gold on demesne). "
+                "Złoto z wiosek w Panelu Domeny (Ulepszenia terenu), po udziale lenna wasalnego "
+                + $"({_vassalTributePercent:0.#}% na ziemiach wasalnych; pełne złoto w domenie). "
                 + FiefTributeFormulas.VassalCatalogDescription),
             Line(BudgetSource.Buildings, bldIn,
-                "Sum of positive Gold (+) from Domain Panel → City and Buildings."),
+                "Suma dodatniego Złota (+) z Panelu Domeny → Miasto i budynki."),
             Line(BudgetSource.SocialGroups, socIn,
-                "Sum of positive Gold (+) from Domain Panel → Social Groups."),
+                "Suma dodatniego Złota (+) z Panelu Domeny → Grupy społeczne."),
             Line(BudgetSource.Improvements, impIn,
-                "Sum of positive Gold (+) from Domain Panel → Terrain Improvements, excluding villages "
-                + "(village gold is under Fief)."),
+                "Suma dodatniego Złota (+) z Panelu Domeny → Ulepszenia terenu, z wyłączeniem wiosek "
+                + "(złoto z wiosek jest w Lennie)."),
             Line(BudgetSource.Decrees, decIn,
-                "Sum of positive Gold (+) from Domain Panel → Decrees and Technologies."),
+                "Suma dodatniego Złota (+) z Panelu Domeny → Dekrety i technologie."),
             Line(BudgetSource.Events, evtIn,
-                "Sum of positive Gold (+) from Domain Panel → Events active this turn."),
+                "Suma dodatniego Złota (+) z Panelu Domeny → Wydarzenia aktywne w tej turze."),
             Line(BudgetSource.Army, armyIn,
-                "Sum of positive Gold (+) from Domain Panel → Army (normally none; wages are expenses)."),
+                "Suma dodatniego Złota (+) z Panelu Domeny → Armia (zwykle brak; żołd to wydatki)."),
             Line(BudgetSource.Community, comIn,
-                "Sum of positive Gold (+) from Domain Panel → Community (includes net Economy profit)."),
+                "Suma dodatniego Złota (+) z Panelu Domeny → Społeczność (obejmuje zysk netto z Gospodarki)."),
             Line(BudgetSource.PercentModifiers, scalingIncome,
-                "Remainder so Income − Expenses (before Fief tribute) equals Domain Panel Final Gold."),
+                "Reszta, aby Dochód − Wydatki (przed trybutem lenna) równały się Złotu końcowemu Panelu Domeny."),
             Line(BudgetSource.Other, 0,
-                "Miscellaneous treasury income. Placeholder for later custom sources."),
+                "Różne dochody skarbca. Miejsce na późniejsze własne źródła."),
         };
 
         _expenseLines = new List<BudgetLine>
         {
             Line(BudgetSource.Advisors, advEx,
-                "Negative Gold from Advisors (including each office’s upkeep)."),
+                "Ujemne Złoto od Doradców (w tym utrzymanie każdego urzędu)."),
             Line(BudgetSource.Fief, _liegeTribute,
                 FiefTributeFormulas.ExplainLiege(_grossGoldIncome, _liegeTributePercent, _liegeTribute)
                 + "\n\n" + FiefTributeFormulas.LiegeCatalogDescription),
             Line(BudgetSource.Buildings, bldEx,
-                "Sum of negative Gold (−) from Domain Panel → City and Buildings."),
+                "Suma ujemnego Złota (−) z Panelu Domeny → Miasto i budynki."),
             Line(BudgetSource.SocialGroups, socEx,
-                "Sum of negative Gold (−) from Domain Panel → Social Groups."),
+                "Suma ujemnego Złota (−) z Panelu Domeny → Grupy społeczne."),
             Line(BudgetSource.Improvements, impEx,
-                "Sum of negative Gold (−) from Domain Panel → Terrain Improvements."),
+                "Suma ujemnego Złota (−) z Panelu Domeny → Ulepszenia terenu."),
             Line(BudgetSource.Decrees, decEx,
-                "Sum of negative Gold (−) from Domain Panel → Decrees and Technologies."),
+                "Suma ujemnego Złota (−) z Panelu Domeny → Dekrety i technologie."),
             Line(BudgetSource.Events, evtEx,
-                "Sum of negative Gold (−) from Domain Panel → Events active this turn."),
+                "Suma ujemnego Złota (−) z Panelu Domeny → Wydarzenia aktywne w tej turze."),
             Line(BudgetSource.Army, armyEx,
-                "Wages of Active units from Domain Panel → Army (Training units excluded)."),
+                "Żołd aktywnych oddziałów z Panelu Domeny → Armia (oddziały w szkoleniu wykluczone)."),
             Line(BudgetSource.Community, comEx,
-                "Sum of negative Gold (−) from Domain Panel → Community."),
+                "Suma ujemnego Złota (−) z Panelu Domeny → Społeczność."),
             Line(BudgetSource.PercentModifiers, scalingExpense,
-                "Remainder so Income − Expenses (before Fief tribute) equals Domain Panel Final Gold."),
+                "Reszta, aby Dochód − Wydatki (przed trybutem lenna) równały się Złotu końcowemu Panelu Domeny."),
             Line(BudgetSource.Other, 0,
-                "Miscellaneous treasury expenses. Placeholder for later custom sources."),
+                "Różne wydatki skarbca. Miejsce na późniejsze własne źródła."),
         };
 
         _totalIncome = _incomeLines.Sum(l => l.Gold);
@@ -414,12 +414,12 @@ else if (_overview is not null)
                 Barony.LiegeTributePercent = _overview.Barony.LiegeTributePercent;
                 Barony.VassalTributePercent = _overview.Barony.VassalTributePercent;
             }
-            _snackBar.Add("Fief tribute rates saved.", Severity.Success);
+            _snackBar.Add("Zapisano stawki trybutu lennego.", Severity.Success);
             await ReloadAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save tribute rates: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać stawek trybutu: " + ex.Message, Severity.Error);
         }
     }
 
@@ -428,11 +428,11 @@ else if (_overview is not null)
 
     private static string? PurseTooltip(BaronPurseSourceDTO src)
     {
-        var kind = src.Amount >= 0 ? "Income" : "Expense";
+        var kind = src.Amount >= 0 ? "Dochód" : "Wydatek";
         var amount = PpbFormat.Additive(src.Amount);
         if (string.IsNullOrWhiteSpace(src.Description))
-            return $"{kind} to the Baron’s purse: {amount} gold.";
-        return $"{kind}: {amount} gold.\n\n{src.Description.Trim()}";
+            return $"{kind} do sakiewki barona: {amount} złota.";
+        return $"{kind}: {amount} złota.\n\n{src.Description.Trim()}";
     }
 
     /// <summary>Per-row positive Gold from a Domain Panel section.</summary>
@@ -451,7 +451,7 @@ else if (_overview is not null)
         var amount = PpbFormat.Round(Math.Min(_transferAmount, _overview.Barony.TreasuryGold));
         if (amount <= 0)
         {
-            _snackBar.Add("Not enough funds in treasury.", Severity.Warning);
+            _snackBar.Add("Za mało środków w skarbcu.", Severity.Warning);
             return;
         }
 
@@ -466,7 +466,7 @@ else if (_overview is not null)
             {
                 BaronyId = _overview.Barony.Id,
                 Name = TransferToPurseName,
-                Description = $"Moved {PpbFormat.Number(amount)} gold from the barony treasury into the Baron’s purse.",
+                Description = $"Przeniesiono {PpbFormat.Number(amount)} złota ze skarbca baronii do sakiewki barona.",
                 Amount = amount,
             });
 
@@ -476,17 +476,17 @@ else if (_overview is not null)
             {
                 BaronyId = _overview.Barony.Id,
                 Name = TransferToPurseResourceName,
-                Description = $"Treasury → purse transfer of {PpbFormat.Number(amount)} gold (Resources balance / Budget).",
+                Description = $"Transfer skarbiec → sakiewka na {PpbFormat.Number(amount)} złota (Bilans zasobów / Budżet).",
                 Additive = goldOut,
             });
 
             _transferAmount = 0;
-            _snackBar.Add($"Transferred {Num(amount)} to baron purse.", Severity.Success);
+            _snackBar.Add($"Przeniesiono {Num(amount)} do sakiewki barona.", Severity.Success);
             await ReloadAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Transfer failed: " + ex.Message, Severity.Error);
+            _snackBar.Add("Transfer nie powiódł się: " + ex.Message, Severity.Error);
             await ReloadAsync();
         }
     }
@@ -499,7 +499,7 @@ else if (_overview is not null)
         var amount = PpbFormat.Round(Math.Min(_transferAmount, _overview.Barony.BaronPurseGold));
         if (amount <= 0)
         {
-            _snackBar.Add("Not enough funds in purse.", Severity.Warning);
+            _snackBar.Add("Za mało środków w sakiewce.", Severity.Warning);
             return;
         }
 
@@ -514,7 +514,7 @@ else if (_overview is not null)
             {
                 BaronyId = _overview.Barony.Id,
                 Name = TransferToTreasuryName,
-                Description = $"Moved {PpbFormat.Number(amount)} gold from the Baron’s purse back into the barony treasury.",
+                Description = $"Przeniesiono {PpbFormat.Number(amount)} złota z sakiewki barona z powrotem do skarbca baronii.",
                 Amount = -amount,
             });
 
@@ -524,17 +524,17 @@ else if (_overview is not null)
             {
                 BaronyId = _overview.Barony.Id,
                 Name = TransferFromPurseResourceName,
-                Description = $"Purse → treasury transfer of {PpbFormat.Number(amount)} gold (Resources balance / Budget).",
+                Description = $"Transfer sakiewka → skarbiec na {PpbFormat.Number(amount)} złota (Bilans zasobów / Budżet).",
                 Additive = goldIn,
             });
 
             _transferAmount = 0;
-            _snackBar.Add($"Transferred {Num(amount)} to treasury.", Severity.Success);
+            _snackBar.Add($"Przeniesiono {Num(amount)} do skarbca.", Severity.Success);
             await ReloadAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Transfer failed: " + ex.Message, Severity.Error);
+            _snackBar.Add("Transfer nie powiódł się: " + ex.Message, Severity.Error);
             await ReloadAsync();
         }
     }
@@ -565,7 +565,7 @@ else if (_overview is not null)
         };
 
         var dialog = await _dialogService.ShowAsync<BaronPurseSourceEditDialog>(
-            isNew ? "Add Purse Source" : "Edit Purse Source",
+            isNew ? "Dodaj źródło sakiewki" : "Edytuj źródło sakiewki",
             parameters,
             new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true });
 
@@ -576,12 +576,12 @@ else if (_overview is not null)
         try
         {
             await _baronyRepo.SavePurseSource(saved);
-            _snackBar.Add(isNew ? "Purse source added." : "Purse source updated.", Severity.Success);
+            _snackBar.Add(isNew ? "Dodano źródło sakiewki." : "Zaktualizowano źródło sakiewki.", Severity.Success);
             await ReloadAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save purse source: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać źródła sakiewki: " + ex.Message, Severity.Error);
         }
     }
 
@@ -591,22 +591,22 @@ else if (_overview is not null)
             return;
 
         var confirm = await _dialogService.ShowMessageBoxAsync(
-            "Remove purse source",
-            $"Remove “{src.Name}”?",
-            yesText: "Remove",
-            cancelText: "Cancel");
+            "Usuń źródło sakiewki",
+            $"Usunąć „{src.Name}”?",
+            yesText: "Usuń",
+            cancelText: "Anuluj");
         if (confirm != true)
             return;
 
         try
         {
             await _baronyRepo.DeletePurseSource(src.Id);
-            _snackBar.Add("Purse source removed.", Severity.Success);
+            _snackBar.Add("Usunięto źródło sakiewki.", Severity.Success);
             await ReloadAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not remove purse source: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się usunąć źródła sakiewki: " + ex.Message, Severity.Error);
         }
     }
 
