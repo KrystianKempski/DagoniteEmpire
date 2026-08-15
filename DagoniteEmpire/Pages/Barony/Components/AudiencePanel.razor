@@ -31,13 +31,14 @@
                 </div>
             }
             <div class="project-card__badges">
-                @if (!IsCouncil)
-                {
-                    <span class="project-output-badge">@Audience.PetitionerName</span>
-                }
-                else
+                @if (IsCouncil)
                 {
                     <span class="project-output-badge">Council</span>
+                }
+                @if (!IsCouncil
+                    || !string.Equals(Audience.PetitionerName, BaronCouncilSession.PetitionerLabel, StringComparison.OrdinalIgnoreCase))
+                {
+                    <span class="project-output-badge">@Audience.PetitionerName</span>
                 }
                 <span class="baron-audience__status baron-audience__status--@StatusCss">@Audience.StatusDisplay</span>
                 @if (Audience.ContinuedFromAudienceId is not null)

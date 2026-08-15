@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using DA_Common.Barony;
 using DA_DataAccess.BaronyData;
 using DA_DataAccess.Data;
 using Microsoft.EntityFrameworkCore;
@@ -360,7 +361,115 @@ namespace DA_Business.Repository.BaronyRepos
                 });
             }
 
+            // --- Court audiences (opening petitions awaiting the new baron) ---
+            SeedOpeningAudiences(ctx, baronyId, barony.TurnNumber);
+
+            // --- First Council session: urgent advisor agenda ---
+            SeedOpeningCouncil(ctx, barony);
+
             await ctx.SaveChangesAsync();
+        }
+
+        private static void SeedOpeningCouncil(ApplicationDbContext ctx, Barony barony)
+        {
+            var now = DateTime.UtcNow;
+            var turnNumber = barony.TurnNumber;
+
+            foreach (var (topic, index) in DarkholdOpeningCouncilTopics.All.Select((t, i) => (t, i)))
+            {
+                ctx.BaronAudiences.Add(new BaronAudience
+                {
+                    BaronyId = barony.Id,
+                    Title = topic.TitleEn,
+                    PetitionerName = topic.SpeakerName,
+                    Kind = BaronAudienceKind.Council,
+                    Status = BaronAudienceStatus.Scheduled,
+                    TurnNumber = turnNumber,
+                    CreatedAtUtc = now.AddMilliseconds(index),
+                    UpdatedAtUtc = now.AddMilliseconds(index),
+                    Exchanges =
+                    {
+                        new BaronAudienceExchange
+                        {
+                            Body = DarkholdOpeningCouncilTopics.FormatExchangeBody(topic),
+                            IsFromPetitioner = true,
+                            SpeakerName = topic.SpeakerName,
+                            TurnNumber = turnNumber,
+                            SortOrder = 0,
+                            CreatedAtUtc = now.AddMilliseconds(index),
+                        },
+                    },
+                });
+            }
+        }
+
+        private static void SeedOpeningAudiences(ApplicationDbContext ctx, int baronyId, int turnNumber)
+        {
+            var now = DateTime.UtcNow;
+            (string Title, string Petitioner, string Body)[] petitions =
+            {
+                (
+                    "The neighbour's cow on my field",
+                    "Tuiw Dun, peasant",
+                    "My lord! My neighbour's cow grazes on my field. When I tried to milk her in return, he set upon me and bruised my arms with a rope. Many times I have asked him to keep his cow off my meadow, but he does not watch her at all and lets her wander wherever she pleases. I beg for justice — for me and against my neighbour. He is called Mieon."
+                ),
+                (
+                    "A witch at the forest's edge",
+                    "Bostri Trueore, peasant",
+                    "My lord, I do not know whether you are aware, but a witch dwells at the edge of the forest. People tolerate her, for she is a skilled herbalist and helps with their troubles — sometimes she delivers a difficult birth, or saves a cow from death. But she is a witch! If you fear Thyrus and the Inquisition, you ought to drive her out. She casts spells and curses. If someone looks at her the wrong way, or refuses her what she asks, she may lay a dreadful curse upon them!"
+                ),
+                (
+                    "The innkeeper waters down his ale",
+                    "Horos Phassar, local craftsman",
+                    "My lord. Congratulations on your appointment. I wish to offer my respects and my pledge of loyalty. There is also a rather serious matter. Such things are punished harshly in more civilised places. You see, the local innkeeper waters down his beer. You may say that everyone waters it a little and that this is the norm — but my lord, he goes far beyond all measure! This cannot be allowed. I pray you, reprimand him and put an end to this thievery. I assure you that all of Darkhold will be grateful to you for evermore."
+                ),
+                (
+                    "My child has gone missing",
+                    "Annyte Trapp, the forester's wife",
+                    "Baron! My child has gone missing. Please! Help me! My little Riff. He was playing by the house; I took my eyes off him for but a moment, and he vanished — gone! Perhaps someone has taken him! I beg you, order everyone questioned and send guards to search! Perhaps he is lost in the forest and cannot find his way home!"
+                ),
+                (
+                    "Patronage for the shrine of Orados",
+                    "Brother Squall",
+                    "My lord, I am a humble servant of Orados, God of Tides, of storms, waves and shores. The previous baron permitted me to found a shrine here in Darkhold. I believe Orados holds this land especially dear, as one may see in the strength and wildness of the weather here. Yet the local folk are not kindly disposed toward my god, for the storm they so dread is his blessing. I ask that you take my shrine under your patronage and attend me at mass. The Allfather will surely look upon you more favourably — and who knows, perhaps he will even temper his wrath and let the ships be spared the storms that so often visit the coast of Darkhold."
+                ),
+                (
+                    "A gift of wine and a marriage proposal",
+                    "Baronet Jochim Bullewyn",
+                    "Noble liege! Congratulations on your appointment! I am certain you will manage splendidly in your new office. Please accept, toward our future cooperation, this cask of my very finest wine! May its exquisite taste caress your palate and gladden your stomach and your head. Allow me to present my most beloved daughter! She is very pretty, obedient and clever — and her dowry is most handsome! She would make an excellent wife, but I keep my little flower only for the worthiest of husbands. — the noble winked knowingly — Perhaps you might call on us one of these days? My wife makes a superb turkey. (The daughter looked her stated age. She was not unpleasant to behold — pretty, even — though hardly a great beauty. She seemed amiable and had a lovely smile.)"
+                ),
+                (
+                    "A vassal's homage",
+                    "Baronetess Millena Canterill",
+                    "Greetings, baron. I am Millena Canterill, your vassal. Congratulations on your ennoblement. I pay you homage and assure you of my obedience. — she gave a perfunctory bow — I hope you contrive to rule longer than the previous baron did."
+                ),
+            };
+
+            foreach (var p in petitions)
+            {
+                ctx.BaronAudiences.Add(new BaronAudience
+                {
+                    BaronyId = baronyId,
+                    Title = p.Title,
+                    PetitionerName = p.Petitioner,
+                    Kind = DA_Common.Barony.BaronAudienceKind.Audience,
+                    Status = DA_Common.Barony.BaronAudienceStatus.Scheduled,
+                    TurnNumber = turnNumber,
+                    CreatedAtUtc = now,
+                    UpdatedAtUtc = now,
+                    Exchanges = new List<BaronAudienceExchange>
+                    {
+                        new BaronAudienceExchange
+                        {
+                            Body = p.Body,
+                            IsFromPetitioner = true,
+                            TurnNumber = turnNumber,
+                            SortOrder = 0,
+                            CreatedAtUtc = now,
+                        },
+                    },
+                });
+            }
         }
 
         private static int? Remap(IReadOnlyDictionary<int, int> map, int? oldId) =>

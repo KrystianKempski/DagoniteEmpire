@@ -408,7 +408,7 @@ namespace DagoniteEmpire.Pages.Barony.Components
                         new BaronyHelpSection("What you'll find here", new[]
                         {
                             "A summary of the grants (PPB resources and Prestige/Honor/Fear) flowing from active audiences this turn.",
-                            "The Council session (current and archived), the active and deferred Audiences, and an Archive of resolved ones.",
+                            "Council topics (current and archived), the active and deferred Audiences, and an Archive of resolved ones.",
                         }),
                         new BaronyHelpSection("What you can do", new[]
                         {

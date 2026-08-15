@@ -155,46 +155,46 @@ else if (Barony is not null)
         <BaronySection Title="Council">
             <Summary>
                 <span class="projects-summary">
-                    @if (CurrentCouncil is not null)
-                    {
-                        <span class="projects-summary__item">This turn</span>
-                    }
+                    <span class="projects-summary__item">@CurrentCouncilTopics.Count open</span>
                     <span class="projects-summary__item">Archive: @CouncilArchive.Count</span>
                 </span>
             </Summary>
             <ChildContent>
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
-                    One Council session per turn. At Resolve Turn it moves to archive and a new session opens.
+                    Council topics for this turn. At Resolve Turn, open topics move to archive and a new blank session opens.
                     MG Speak as lists all courtiers from Court.
                 </MudText>
 
-                @if (CurrentCouncil is null)
+                @if (CurrentCouncilTopics.Count == 0)
                 {
                     <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                        No Council session for this turn yet.
+                        No open Council topics this turn.
                     </MudText>
                 }
                 else
                 {
                     <div class="project-card-grid">
-                        <AudiencePanel Audience="CurrentCouncil"
-                                       CanWriteAsGm="CanWriteAsGm"
-                                       CanWriteAsBaron="CanWriteAsBaron"
-                                       BaronCharacterName="BaronCharacterName"
-                                       Busy="_busy"
-                                       CourtSpeakers="_courtSpeakers"
-                                       OnSpeak="req => SendReplyAsync(CurrentCouncil, req)"
-                                       OnAddResources="() => AddResourcesAsync(CurrentCouncil)"
-                                       OnCreateProject="() => CreateProjectAsync(CurrentCouncil)"
-                                       OnMakeChapter="() => MakeChapterAsync(CurrentCouncil)"
-                                       OnResolve="() => ResolveAsync(CurrentCouncil)"
-                                       OnDismiss="() => DismissAsync(CurrentCouncil)" />
+                        @foreach (var topic in CurrentCouncilTopics)
+                        {
+                            <AudiencePanel Audience="topic"
+                                           CanWriteAsGm="CanWriteAsGm"
+                                           CanWriteAsBaron="CanWriteAsBaron"
+                                           BaronCharacterName="BaronCharacterName"
+                                           Busy="_busy"
+                                           CourtSpeakers="_courtSpeakers"
+                                           OnSpeak="req => SendReplyAsync(topic, req)"
+                                           OnAddResources="() => AddResourcesAsync(topic)"
+                                           OnCreateProject="() => CreateProjectAsync(topic)"
+                                           OnMakeChapter="() => MakeChapterAsync(topic)"
+                                           OnResolve="() => ResolveAsync(topic)"
+                                           OnDismiss="() => DismissAsync(topic)" />
+                        }
                     </div>
                 }
 
                 @if (CouncilArchive.Count > 0)
                 {
-                    <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Previous Council sessions</MudText>
+                    <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Previous Council topics</MudText>
                     <div class="project-card-grid">
                         @foreach (var a in CouncilArchive)
                         {
@@ -416,17 +416,17 @@ else if (Barony is not null)
         }
     }
 
-    private BaronAudienceDTO? CurrentCouncil =>
+    private IReadOnlyList<BaronAudienceDTO> CurrentCouncilTopics =>
         CouncilOnly
             .Where(a => a.TurnNumber == (Barony?.TurnNumber ?? 0)
                         && (string.Equals(a.Status, BaronAudienceStatus.Scheduled, StringComparison.OrdinalIgnoreCase)
                             || string.Equals(a.Status, BaronAudienceStatus.InProgress, StringComparison.OrdinalIgnoreCase)))
-            .OrderByDescending(a => a.Id)
-            .FirstOrDefault();
+            .OrderBy(a => a.Id)
+            .ToList();
 
     private IReadOnlyList<BaronAudienceDTO> CouncilArchive =>
         CouncilOnly
-            .Where(a => a.Id != CurrentCouncil?.Id)
+            .Where(a => !CurrentCouncilTopics.Any(c => c.Id == a.Id))
             .OrderByDescending(a => a.TurnNumber)
             .ThenByDescending(a => a.UpdatedAtUtc)
             .ToList();
