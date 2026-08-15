@@ -21,29 +21,29 @@ namespace DA_Common.Barony
     public static class UnitRecruitSelectionCatalog
     {
         public static readonly UnitRecruitSelection Volunteers = new(
-            "volunteers", "Volunteers", AttributeScore: 2, DefenseCost: 20, MaxBaseSkill: 3, Wage: 3);
+            "volunteers", "Ochotnicy", AttributeScore: 2, DefenseCost: 20, MaxBaseSkill: 3, Wage: 3);
 
         public static readonly UnitRecruitSelection SelectedVolunteers = new(
-            "selected-volunteers", "Selected volunteers", AttributeScore: 3, DefenseCost: 50, MaxBaseSkill: 4, Wage: 5);
+            "selected-volunteers", "Wyselekcjonowani ochotnicy", AttributeScore: 3, DefenseCost: 50, MaxBaseSkill: 4, Wage: 5);
 
         public static readonly UnitRecruitSelection BestAvailable = new(
-            "best-available", "Best available", AttributeScore: 4, DefenseCost: 100, MaxBaseSkill: 5, Wage: 8);
+            "best-available", "Najlepsi dostępni", AttributeScore: 4, DefenseCost: 100, MaxBaseSkill: 5, Wage: 8);
 
         public static readonly UnitRecruitSelection Mercenaries = new(
-            "mercenaries", "Mercenaries", AttributeScore: 3, DefenseCost: 0, MaxBaseSkill: 4, Wage: 10,
+            "mercenaries", "Najemnicy", AttributeScore: 3, DefenseCost: 0, MaxBaseSkill: 4, Wage: 10,
             GoldCost: 80,
-            Notes: "Hire with gold instead of Defense.");
+            Notes: "Najmij za złoto zamiast Obrony.");
 
         public static readonly UnitRecruitSelection ForcedHire = new(
-            "forced-hire", "Forced hire", AttributeScore: 3, DefenseCost: 0, MaxBaseSkill: 4, Wage: 5,
+            "forced-hire", "Przymusowy zaciąg", AttributeScore: 3, DefenseCost: 0, MaxBaseSkill: 4, Wage: 5,
             GoldCost: 0,
             EventEffect: new UnitRecruitEventEffect(
-                Name: "Forced hire",
+                Name: "Przymusowy zaciąg",
                 DurationTurns: 3,
                 Loyalty: -7,
                 Stability: -7,
-                Description: "Press-ganged recruits. Loyalty −7 and Stability −7 for 3 turns."),
-            Notes: "No Defense/gold cost. Starts event Forced hire: Loyalty −7, Stability −7 for 3 turns.");
+                Description: "Wcieleni pod przymusem rekruci. Lojalność −7 i Stabilność −7 przez 3 tury."),
+            Notes: "Brak kosztu Obrony/złota. Rozpoczyna wydarzenie „Przymusowy zaciąg”: Lojalność −7, Stabilność −7 przez 3 tury.");
 
         public static readonly IReadOnlyList<UnitRecruitSelection> All = new[]
         {
@@ -78,11 +78,11 @@ namespace DA_Common.Barony
 
         public static readonly UnitTrainingType Standard = new(
             "standard", "Standard", Pd: 36, GoldCost: 40, Turns: 3, MaxBaseSkill: 3,
-            StartingDiscipline: 9, Wage: 5, FreeAttributePoints: 1, Notes: "+1 to any attribute");
+            StartingDiscipline: 9, Wage: 5, FreeAttributePoints: 1, Notes: "+1 do dowolnego atrybutu");
 
         public static readonly UnitTrainingType Elite = new(
             "elite", "Elite", Pd: 80, GoldCost: 75, Turns: 5, MaxBaseSkill: 5,
-            StartingDiscipline: 13, Wage: 8, FreeAttributePoints: 3, Notes: "3 attribute points to distribute");
+            StartingDiscipline: 13, Wage: 8, FreeAttributePoints: 3, Notes: "3 punkty atrybutów do rozdania");
 
         public static readonly IReadOnlyList<UnitTrainingType> All = new[]
         {

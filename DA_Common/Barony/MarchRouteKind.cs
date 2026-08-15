@@ -8,7 +8,7 @@ namespace DA_Common.Barony
         public static readonly string[] All = { Road, River };
 
         public static string Label(string? kind) =>
-            string.Equals(kind, River, StringComparison.OrdinalIgnoreCase) ? "River" : "Road";
+            string.Equals(kind, River, StringComparison.OrdinalIgnoreCase) ? "Rzeka" : "Droga";
 
         public static string Normalize(string? kind) =>
             string.Equals(kind, River, StringComparison.OrdinalIgnoreCase) ? River : Road;

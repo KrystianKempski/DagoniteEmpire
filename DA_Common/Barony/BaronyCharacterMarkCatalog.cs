@@ -16,21 +16,21 @@ namespace DA_Common.Barony
     {
         public static readonly CharacterMarkIconOption[] Icons =
         {
-            new("vip", "Key person"),
-            new("flag", "On my radar"),
-            new("danger", "Threat"),
-            new("ally", "Ally"),
-            new("faction", "Faction"),
-            new("deal", "Deal / contact"),
+            new("vip", "Kluczowa osoba"),
+            new("flag", "Na oku"),
+            new("danger", "Zagrożenie"),
+            new("ally", "Sojusznik"),
+            new("faction", "Frakcja"),
+            new("deal", "Kontakt / układ"),
         };
 
         public static readonly CharacterMarkColorOption[] Colors =
         {
-            new("gold", "Gold", "#c4a35a"),
-            new("red", "Red", "#b54a4a"),
-            new("green", "Green", "#4a7a55"),
-            new("blue", "Blue", "#4a6a8a"),
-            new("purple", "Purple", "#6b5b95"),
+            new("gold", "Złoty", "#c4a35a"),
+            new("red", "Czerwony", "#b54a4a"),
+            new("green", "Zielony", "#4a7a55"),
+            new("blue", "Niebieski", "#4a6a8a"),
+            new("purple", "Fioletowy", "#6b5b95"),
         };
 
         public static bool IsValidIcon(string? key) =>
@@ -62,7 +62,7 @@ namespace DA_Common.Barony
             var icon = Icons.FirstOrDefault(i => string.Equals(i.Key, mark.IconKey, StringComparison.OrdinalIgnoreCase));
             var color = Colors.FirstOrDefault(c => string.Equals(c.Key, mark.ColorKey, StringComparison.OrdinalIgnoreCase));
             if (icon is null || color is null)
-                return "Marked";
+                return "Oznaczony";
             return $"{icon.Label} · {color.Label}";
         }
 
@@ -73,7 +73,7 @@ namespace DA_Common.Barony
         public static string TooltipMany(IReadOnlyList<BaronyCharacterMark> marks)
         {
             if (marks.Count == 0)
-                return "Mark character";
+                return "Oznacz postać";
             if (marks.Count == 1)
                 return Tooltip(marks[0]);
             return string.Join("\n", marks.Select(Tooltip));

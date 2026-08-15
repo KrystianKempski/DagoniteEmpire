@@ -3,7 +3,7 @@ namespace DA_Common.Barony;
 /// <summary>Applies captain commander-tree passives onto unit combat Other / Cmd fields.</summary>
 public static class UnitCommanderSync
 {
-    public const string CombatOtherLabel = "Commander";
+    public const string CombatOtherLabel = "Dowódca";
 
     public static void ApplyCaptainBonuses(
         ref int commanderAttack,

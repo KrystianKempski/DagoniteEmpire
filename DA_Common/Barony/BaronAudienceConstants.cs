@@ -33,12 +33,12 @@ namespace DA_Common.Barony
 
         public static string DisplayName(string? status) => status?.Trim() switch
         {
-            Scheduled => "Scheduled",
-            InProgress => "In progress",
-            Deferred => "Deferred",
-            Resolved => "Resolved",
-            Dismissed => "Dismissed",
-            _ => status ?? "Unknown",
+            Scheduled => "Zaplanowana",
+            InProgress => "W toku",
+            Deferred => "Odroczona",
+            Resolved => "Rozstrzygnięta",
+            Dismissed => "Oddalona",
+            _ => status ?? "Nieznana",
         };
     }
 
@@ -60,7 +60,7 @@ namespace DA_Common.Barony
     /// <summary>How audience PPB splits into Domain Events vs Project Summary.</summary>
     public static class BaronAudiencePpb
     {
-        public const string SummaryRowName = "Audiences";
+        public const string SummaryRowName = "Audiencje";
 
         public static readonly Ppb[] NonCumulativeKeys =
         {

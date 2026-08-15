@@ -4,55 +4,55 @@ namespace DA_Common.Barony
     public static class BaronyUiTooltips
     {
         public const string MetaBaronyName =
-            "Formal name of your barony.";
+            "Formalna nazwa twojej baronii.";
 
         public const string MetaBaronyNameMg =
-            "Click to switch which barony you are managing.";
+            "Kliknij, aby przełączyć zarządzaną baronię.";
 
         public const string MetaYear =
-            "Campaign calendar year.";
+            "Rok kalendarzowy kampanii.";
 
         public const string MetaMonth =
-            "Current month in the barony calendar.";
+            "Bieżący miesiąc w kalendarzu baronii.";
 
         public const string MetaSeason =
-            "One turn equals one season (Spring → Summer → Autumn → Winter). "
-            + "Farms produce no food in Winter — the barony lives off granary stocks.";
+            "Jedna tura to jedna pora roku (Wiosna → Lato → Jesień → Zima). "
+            + "Zimą farmy nie produkują żywności — baronia żyje z zapasów spichlerza.";
 
         public const string MetaTurn =
-            "Number of seasons elapsed since the barony began.";
+            "Liczba pór roku, które upłynęły od powstania baronii.";
 
         public const string MetaSize =
-            "Terrain tiles assigned to this barony on the map.";
+            "Pola terenu przypisane tej baronii na mapie.";
 
         public const string MetaUnrest =
-            "Community unrest level (0–5). Feeds the Community section and penalizes Loyalty, Stability, Law, Economy, and Production. MG can click to edit.";
+            "Poziom niepokoju społeczności (0–5). Zasila sekcję Społeczność i obniża Lojalność, Stabilność, Prawo, Ekonomię oraz Produkcję. MG może kliknąć, aby edytować.";
 
         public static string MetaConjuncture(int dice, int modifier)
         {
             var effective = dice + modifier;
             var modText = modifier == 0
-                ? "no MG modifier"
-                : $"MG modifier {(modifier > 0 ? "+" : "")}{modifier}";
+                ? "brak korekty MG"
+                : $"korekta MG {(modifier > 0 ? "+" : "")}{modifier}";
             return
-                $"Economic conjuncture this turn: {effective} (2d6 = {dice}, {modText}).\n"
-                + "Rolled at turn start. Feeds Community Economy: "
-                + $"(1) net Gold profit (Economy + Conjuncture) × {EconomyConjunctureFormulas.NetProfitGoldFactor:0}; "
-                + "(2) (Conjuncture − 7) in the % formula on Gold, Production, Loyalty, Stability, Magic, Culture, Science, and Defense.";
+                $"Koniunktura gospodarcza w tej turze: {effective} (2d6 = {dice}, {modText}).\n"
+                + "Rzucane na początku tury. Zasila Ekonomię Społeczności: "
+                + $"(1) zysk netto w Złocie (Ekonomia + Koniunktura) × {EconomyConjunctureFormulas.NetProfitGoldFactor:0}; "
+                + "(2) (Koniunktura − 7) we wzorze % dla Złota, Produkcji, Lojalności, Stabilności, Magii, Kultury, Nauki i Obrony.";
         }
 
         public static string MetaPpbTurnTotal(Ppb key, decimal value)
         {
             var name = PpbCatalog.NameEnglish(key);
             var baseTip =
-                $"Domain Panel grand total for {name} this turn: {PpbFormat.Additive(value)}.\n" +
-                "Sum of additive modifiers from all sections (before percent scaling).";
+                $"Suma całkowita Panelu Domeny dla {name} w tej turze: {PpbFormat.Additive(value)}.\n" +
+                "Suma modyfikatorów addytywnych ze wszystkich sekcji (przed skalowaniem procentowym).";
 
             if (key == Ppb.Economy)
             {
                 return baseTip + "\n"
-                    + $"Community net Gold uses Final Economy (after other Community rows): "
-                    + $"(Economy + Conjuncture) × {EconomyConjunctureFormulas.NetProfitGoldFactor:0}.";
+                    + $"Złoto netto Społeczności korzysta z Ekonomii Końcowej (po pozostałych wierszach Społeczności): "
+                    + $"(Ekonomia + Koniunktura) × {EconomyConjunctureFormulas.NetProfitGoldFactor:0}.";
             }
 
             return baseTip;
@@ -64,21 +64,21 @@ namespace DA_Common.Barony
             var deltaText = PpbFormat.Round(delta) == 0m ? "+0" : PpbFormat.Additive(delta);
             var blurb = key switch
             {
-                Ppb.Food => "Stored food supply carried between turns.",
-                Ppb.Production => "Industrial and craft output accumulated as stock.",
-                Ppb.Science => "Scientific progress accumulated between turns.",
-                Ppb.Magic => "Magical resources accumulated between turns.",
-                Ppb.Culture => "Cultural output accumulated between turns.",
-                Ppb.Intelligence => "Intelligence assets accumulated between turns.",
-                Ppb.Defense => "Defensive readiness accumulated between turns.",
-                Ppb.Treasury => "Treasury gold carried between turns.",
-                _ => "Cumulative resource stock.",
+                Ppb.Food => "Zapas żywności przenoszony między turami.",
+                Ppb.Production => "Produkcja przemysłowa i rzemieślnicza gromadzona jako zapas.",
+                Ppb.Science => "Postęp naukowy gromadzony między turami.",
+                Ppb.Magic => "Zasoby magiczne gromadzone między turami.",
+                Ppb.Culture => "Dorobek kulturalny gromadzony między turami.",
+                Ppb.Intelligence => "Zasoby wywiadowcze gromadzone między turami.",
+                Ppb.Defense => "Gotowość obronna gromadzona między turami.",
+                Ppb.Treasury => "Złoto skarbca przenoszone między turami.",
+                _ => "Skumulowany zapas zasobu.",
             };
 
             return
                 $"{blurb}\n" +
-                $"Current stock: {PpbFormat.Number(stock)}.\n" +
-                $"Expected change this turn: {deltaText} (Domain Panel grand total).";
+                $"Bieżący zapas: {PpbFormat.Number(stock)}.\n" +
+                $"Oczekiwana zmiana w tej turze: {deltaText} (suma całkowita Panelu Domeny).";
         }
     }
 }

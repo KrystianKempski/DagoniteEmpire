@@ -22,10 +22,10 @@ namespace DA_Common.Barony
         public static string Label(string? kind) =>
             Normalize(kind) switch
             {
-                MarchCapital => "March capital",
-                LargeCity => "Large city",
-                Village => "Village",
-                _ => "City",
+                MarchCapital => "Stolica marchii",
+                LargeCity => "Duże miasto",
+                Village => "Wioska",
+                _ => "Miasto",
             };
 
         public static string Normalize(string? kind)

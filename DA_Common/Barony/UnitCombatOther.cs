@@ -17,13 +17,13 @@ namespace DA_Common.Barony
 
         public static string Label(string? key) => key?.Trim().ToLowerInvariant() switch
         {
-            Attack => "Attack",
-            Defense => "Defense",
-            Damage => "Damage",
-            Move => "Move",
-            Armor => "Armor",
-            Hp => "Hit points",
-            _ => key ?? "Other",
+            Attack => "Atak",
+            Defense => "Obrona",
+            Damage => "Obrażenia",
+            Move => "Ruch",
+            Armor => "Pancerz",
+            Hp => "Punkty życia",
+            _ => key ?? "Inne",
         };
     }
 
@@ -53,11 +53,11 @@ namespace DA_Common.Barony
             var list = entries?.Where(e => !string.IsNullOrWhiteSpace(e.Label) || e.Value != 0).ToList()
                 ?? new List<UnitCombatModifierEntry>();
             if (list.Count == 0)
-                return "No other modifiers.";
+                return "Brak innych modyfikatorów.";
 
             return string.Join("\n", list.Select(e =>
             {
-                var name = string.IsNullOrWhiteSpace(e.Label) ? "(unnamed)" : e.Label.Trim();
+                var name = string.IsNullOrWhiteSpace(e.Label) ? "(bez nazwy)" : e.Label.Trim();
                 var sign = e.Value > 0 ? "+" : "";
                 return $"{name}: {sign}{e.Value}";
             }));

@@ -64,13 +64,13 @@ namespace DA_Common.Barony
     {
         public static string Label(int score) => score switch
         {
-            <= -60 => "Rebellion",
-            <= -30 => "Discontent",
-            <= -10 => "Hostile",
-            <= 20 => "Indifferent",
-            <= 40 => "Satisfied",
-            <= 70 => "Friendly",
-            < 100 => "Adored",
+            <= -60 => "Rebelia",
+            <= -30 => "Niezadowolenie",
+            <= -10 => "Wrogi",
+            <= 20 => "Obojętny",
+            <= 40 => "Zadowolony",
+            <= 70 => "Przyjazny",
+            < 100 => "Uwielbiany",
             _ => "Error",
         };
     }

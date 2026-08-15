@@ -37,9 +37,9 @@ namespace DA_Common.Barony
 
         public static string Label(string? mode) => Normalize(mode) switch
         {
-            Buy => "Buy",
-            Defense => "Defense",
-            _ => "Craft",
+            Buy => "Kup",
+            Defense => "Obrona",
+            _ => "Wytwórz",
         };
     }
 

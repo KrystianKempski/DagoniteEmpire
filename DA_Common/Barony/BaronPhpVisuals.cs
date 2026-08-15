@@ -16,9 +16,9 @@ namespace DA_Common.Barony
 
         public static string Name(PhpMetric metric) => metric switch
         {
-            PhpMetric.Prestige => "Prestige",
+            PhpMetric.Prestige => "Prestiż",
             PhpMetric.Honor => "Honor",
-            PhpMetric.Fear => "Fear",
+            PhpMetric.Fear => "Postrach",
             _ => metric.ToString(),
         };
 

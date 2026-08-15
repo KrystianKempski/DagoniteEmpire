@@ -19,7 +19,7 @@
             {
                 var inactive = IsColumnInactive(info.Key);
                 <th class="@HeaderClass(inactive)">
-                    <BaronyTooltip Title="@(inactive ? info.NameEn : null)" Text="@HeaderTitle(info, inactive)">
+                    <BaronyTooltip Title="@(inactive ? info.NamePl : null)" Text="@HeaderTitle(info, inactive)">
                         @PpbShort(info.Key)
                     </BaronyTooltip>
                 </th>
@@ -129,22 +129,7 @@
         return $"{row.Source} | {row.Formula}";
     }
 
-    private static string PpbShort(Ppb p) => p switch
-    {
-        Ppb.Food => "Food",
-        Ppb.Economy => "Econ",
-        Ppb.Production => "Prod",
-        Ppb.Loyalty => "Loy",
-        Ppb.Stability => "Stab",
-        Ppb.Law => "Law",
-        Ppb.Corruption => "Corr",
-        Ppb.Science => "Sci",
-        Ppb.Magic => "Mag",
-        Ppb.Culture => "Cult",
-        Ppb.Intelligence => "Intel",
-        Ppb.Defense => "Def",
-        _ => p.ToString(),
-    };
+    private static string PpbShort(Ppb p) => PpbCatalog.Short(p);
 
     private static string Fmt(decimal v) => PpbFormat.Additive(v);
 

@@ -63,8 +63,8 @@ namespace DA_Common.Barony
 
         public static string IssueLabel(SeatRoomLayoutIssue issue) => issue switch
         {
-            SeatRoomLayoutIssue.OutOfBounds => "Outside grid or zero size",
-            SeatRoomLayoutIssue.Overlap => "Overlaps another chamber",
+            SeatRoomLayoutIssue.OutOfBounds => "Poza siatką lub zerowy rozmiar",
+            SeatRoomLayoutIssue.Overlap => "Nakłada się na inną komnatę",
             _ => string.Empty,
         };
     }

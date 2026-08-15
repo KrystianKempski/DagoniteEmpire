@@ -239,20 +239,32 @@ Pokryte pod-partie tematyczne:
   sprzężone z prozą wzorów + `_editField`), klucze przechowywane+porównywane ("Unassigned", "__new__",
   "__discipline__", "other", TerrainPresets, ProjectOutputKind Reinforce/ChangeEquipment)
 
-### Faza 7 — Katalogi domenowe (`DA_Common/Barony`) 🔴 (XL) — ~60 plików `.cs`
-Duże bloki opisowego tekstu (angielskiego) prezentowanego w UI.
-**Podział dwuetapowy** (decyzja): najpierw krótkie etykiety/nazwy, długie opisy później.
+### Faza 7 — Katalogi domenowe (`DA_Common/Barony`) 🔴 (XL) — ~60 plików `.cs` ✅ UKOŃCZONA
+Strategia hybrydowa (7a+7b razem, jeden commit): (1) gdzie istnieje pole `NamePl`/`ShortPl`
+(PPB, umiejętności dworu) — nie ruszać `NameEn`, tylko przełączyć konsumentów UI na wersję PL;
+(2) gdzie brak pola PL — nadpisać angielskie literały polskimi w miejscu; (3) nigdy nie ruszać
+wartości używanych jako klucze dopasowań (switch/Contains/Equals/`Key`/`Type`/enum/nazwy własne lordów/towarów).
 
-**7a — Krótkie etykiety i nazwy (TERAZ):**
-- [ ] Nazwy urzędów, dowódców, towarów, poziomów reputacji, etykiety PPB/PHP
-- [ ] `BaronReputationTiers.cs`, `BaronPhpSourceLabel.cs`, `TradeGoodLordNames.cs`
-- [ ] Krótkie etykiety w `*Catalog.cs`, `*Label*.cs`
+**Zrobione:**
+- [x] Repointing PPB: 19× lokalny `PpbShort()` → `PpbCatalog.Short(p)`; `info.NameEn/ShortEn`
+      → `NamePl/ShortPl` w komponentach PPB + `BaronyRepository.cs`; usunięto `UseEnglishLabels`
+      w `AddBaronyResourcesPostDialog`.
+- [x] Repointing umiejętności dworu: `skill.NameEn` → `skill.NamePl` (`ShortEn` zostaje — brak ShortPl).
+- [x] Tłumaczenie w miejscu katalogów tylko-angielskich: `BaronyUiTooltips`, `OfficeDescriptions`,
+      `BaronInfluenceSource`, `BaronPhpSourceLabel`, `AdvisorInfluenceSource`, `UnitCommanderSync`,
+      `SeatRoomLayout`, `MarchMapTradeRouteDisplay`, `TradeGoodAvailability`, `FiefTributeFormulas`,
+      `BaronPhpVisuals`, `MarchMapNodeKind`, `MarchRouteKind`, `UnitConstants`, `UnitFormulas`,
+      `UnitCombatOther`, `UnitRecruitAndSkills`, `BattleTokenIconCatalog`, `BaronyCharacterMarkCatalog`,
+      `UnitEquipmentCatalog` (Name/CategoryLabel/reason), `LuxuryGoodsAccessCatalog`,
+      `BaronReputationTiers` (Name/ThresholdLabel/BonusSummary), `BaronAudienceConstants.DisplayName`,
+      `BaronyConstants.SocialRelation.Label`.
+- [x] Zostawione świadomie (klucze/dopasowania): `TradeGoodsCatalog`, `KnownLordsCatalog`,
+      `TradeGoodLordNames`, klucze w `BaronyConstants`/`BaronSkillPpbFormulas`, `BaronTimeConstants`,
+      pory roku, nazwy szablonów terenu, `CourtCommanderCatalog` (nazwy z zasobu JSON — do Fazy 9),
+      kody Express/Accelerated/Standard/Elite (twardo w tooltipach razor), kody stat (Atk/Def/…),
+      `UnitAttr.Letter`.
 
-**7b — Długie opisy (OSOBNA, PÓŹNIEJSZA TURA):**
-- [ ] `BaronyUiTooltips.cs`, `OfficeDescriptions.cs`, `BaronyHelpCatalog.cs`
-- [ ] Rozbudowane opisy w `CourtCommanderCatalog.cs`, `KnownLordsCatalog.cs`, `TradeGoodsCatalog.cs`
-- [ ] `LuxuryGoodsAccessCatalog.cs`, `TerrainImprovementCatalogMap.cs`, `UnitEquipmentCatalog.cs`
-- [ ] Reszta długich `*Descriptions.cs` / opisowych bloków tekstu
+**Odłożone do Fazy 8:** narracja walki, seed, enumy prezentacyjne, komunikaty repo/service.
 
 ### Faza 8 — Backend: komunikaty, enumy, dane seedowe 🟡 (M)
 - [ ] Komunikaty w `DA_Business/Services/*` (~89 literałów) i repozytoriach

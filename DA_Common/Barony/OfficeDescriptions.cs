@@ -4,20 +4,20 @@ namespace DA_Common.Barony
     public static class OfficeDescriptions
     {
         public const string Chancellor =
-            "One of the barony's most important offices. The chancellor manages the ruler's dealings with "
-            + "vassals and liege lords, reads the loyalty and mood of subjects toward the government, and "
-            + "works to shape both. The office also oversees cultural development. A chancellor may lead "
-            + "through affection—easing conflicts and appealing to reason—through fear, threats, and harsh "
-            + "penalties for disobedience, or through a balanced mix of both.";
+            "Jeden z najważniejszych urzędów baronii. Kanclerz zarządza kontaktami władcy z "
+            + "wasalami i suzerenami, odczytuje lojalność i nastroje poddanych wobec rządu oraz "
+            + "stara się kształtować jedno i drugie. Urząd nadzoruje także rozwój kultury. Kanclerz "
+            + "może rządzić przez sympatię — łagodząc konflikty i odwołując się do rozsądku — przez "
+            + "strach, groźby i surowe kary za nieposłuszeństwo, albo przez wyważone połączenie obu podejść.";
 
         public const string GuardCaptain =
-            "Essential in the smallest realms: at once lawkeeper, military commander, and guardian of the "
-            + "baron and their lands. Later most of these duties pass to a general, border warden, chief "
-            + "judge, and others—but until the barony grows into a principality, the Guard Captain alone "
-            + "is enough to handle them.";
+            "Niezbędny w najmniejszych włościach: jednocześnie stróż prawa, dowódca wojskowy i obrońca "
+            + "barona oraz jego ziem. Później większość tych obowiązków przechodzi na generała, strażnika "
+            + "granic, głównego sędziego i innych — lecz dopóki baronia nie urośnie w księstwo, sam Kapitan "
+            + "Straży w zupełności im podoła.";
 
         public const string Steward =
-            "The Steward oversees everything tied to income, construction, provisions, and tax collection.";
+            "Ekonom nadzoruje wszystko, co związane z dochodami, budową, zaopatrzeniem i poborem podatków.";
 
         /// <summary>Catalog text for a core office; null for Baron / Custom.</summary>
         public static string? For(string? officeType) => officeType switch

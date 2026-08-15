@@ -45,12 +45,12 @@ namespace DA_Common.Barony
             {
                 var lord = KnownLordsCatalog.FindByKey(treaty.CounterpartyLordKey);
                 name = lord is not null
-                    ? $"Route to {lord.Holdings}"
-                    : "Trade route";
+                    ? $"Trasa do {lord.Holdings}"
+                    : "Szlak handlowy";
             }
 
             if (TradeTreatyApproval.IsPending(treaty))
-                return $"{name} (pending)";
+                return $"{name} (w toku)";
 
             return name;
         }

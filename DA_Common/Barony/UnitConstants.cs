@@ -20,10 +20,10 @@ namespace DA_Common.Barony
 
         public static string Label(string key) => key switch
         {
-            Build => "Build",
-            Agility => "Agility",
-            Will => "Will",
-            Perception => "Perception",
+            Build => "Budowa",
+            Agility => "Zwinność",
+            Will => "Wola",
+            Perception => "Percepcja",
             _ => key,
         };
 

@@ -9,14 +9,14 @@
             continue;
         }
         var accent = PpbVisuals.ColorHex(info.Key);
-        <BaronyTooltip Text="@info.NameEn">
+        <BaronyTooltip Text="@info.NamePl">
             <span class="ppb-chip @PpbCellStyle.ChipClass(info.Key, v)"
                   style="@($"--ppb-accent:{accent}")">
                 @if (PpbVisuals.HasIcon(info.Key))
                 {
                     <BaronyResourceIcon Resource="info.Key" Size="xs" />
                 }
-                <span class="ppb-chip__label">@info.ShortEn</span>
+                <span class="ppb-chip__label">@info.ShortPl</span>
                 <span class="ppb-chip__value">@Fmt(v)</span>
             </span>
         </BaronyTooltip>

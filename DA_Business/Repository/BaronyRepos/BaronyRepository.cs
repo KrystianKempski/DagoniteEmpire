@@ -1283,7 +1283,7 @@ namespace DA_Business.Repository.BaronyRepos
 
                 var parts = ResourceCatalog.All
                     .Where(info => grant[info.Key] != 0m)
-                    .Select(info => $"{info.ShortEn} {PpbFormat.Additive(grant[info.Key])}");
+                    .Select(info => $"{info.ShortPl} {PpbFormat.Additive(grant[info.Key])}");
                 notes.Add(
                     $"One-time resources → stocks & Resource Balance “{name}”: "
                     + string.Join(", ", parts) + ".");
@@ -4239,15 +4239,15 @@ namespace DA_Business.Repository.BaronyRepos
 
                     if (!activeKeys.Contains(info.Key))
                         throw new InvalidOperationException(
-                            $"Cannot allocate {info.NameEn} while paying with {dto.EffectiveCostMode}.");
+                            $"Cannot allocate {info.NamePl} while paying with {dto.EffectiveCostMode}.");
 
                     var remaining = Math.Max(0m, activeCost[info.Key] - dto.Allocated[info.Key]);
                     if (add > remaining)
                         throw new InvalidOperationException(
-                            $"Cannot allocate more {info.NameEn} than remaining ({PpbFormat.Number(remaining)}).");
+                            $"Cannot allocate more {info.NamePl} than remaining ({PpbFormat.Number(remaining)}).");
                     if (add > stocks[info.Key])
                         throw new InvalidOperationException(
-                            $"Not enough {info.NameEn} in stock ({PpbFormat.Number(stocks[info.Key])} available).");
+                            $"Not enough {info.NamePl} in stock ({PpbFormat.Number(stocks[info.Key])} available).");
 
                     dto.Allocated[info.Key] += add;
                     stocks[info.Key] -= add;

@@ -91,23 +91,7 @@
         return $"{row.Source} | {row.Formula}";
     }
 
-    private static string PpbShort(Ppb p) => p switch
-    {
-        Ppb.Food => "Żyw",
-        Ppb.Economy => "Gosp",
-        Ppb.Production => "Prod",
-        Ppb.Loyalty => "Loj",
-        Ppb.Stability => "Stab",
-        Ppb.Law => "Prawo",
-        Ppb.Corruption => "Korup",
-        Ppb.Science => "Nauka",
-        Ppb.Magic => "Magia",
-        Ppb.Culture => "Kult",
-        Ppb.Intelligence => "Wyw",
-        Ppb.Defense => "Obr",
-        Ppb.Treasury => "Złoto",
-        _ => p.ToString(),
-    };
+    private static string PpbShort(Ppb p) => PpbCatalog.Short(p);
 
     private static string Fmt(decimal v) => PpbFormat.Additive(v);
 }

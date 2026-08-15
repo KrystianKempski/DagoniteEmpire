@@ -47,14 +47,14 @@ namespace DA_Common.Barony
         [
             new()
             {
-                Name = "Nobody",
+                Name = "Nikt",
                 MinRequired = int.MinValue,
-                ThresholdLabel = "less than 300",
-                BonusSummary = "No bonuses or penalties.",
+                ThresholdLabel = "mniej niż 300",
+                BonusSummary = "Bez premii ani kar.",
             },
             new()
             {
-                Name = "Known locally",
+                Name = "Znany lokalnie",
                 MinRequired = 300,
                 ThresholdLabel = "300",
                 BaronyBonus = Vec(
@@ -62,11 +62,11 @@ namespace DA_Common.Barony
                     (Ppb.Culture, 5), (Ppb.Science, 5), (Ppb.Magic, 5)),
                 SkillBonuses = SkillsPair(Skills.Diplomacy, Skills.Persuasion, 1),
                 BonusSummary =
-                    "+3 Stability and Loyalty; +5 Culture, Science, and Magic; +1 Diplomacy and Persuasion.",
+                    "+3 Stabilność i Lojalność; +5 Kultura, Nauka i Magia; +1 Dyplomacja i Perswazja.",
             },
             new()
             {
-                Name = "Popular",
+                Name = "Popularny",
                 MinRequired = 1000,
                 ThresholdLabel = "1000",
                 BaronyBonus = Vec(
@@ -74,11 +74,11 @@ namespace DA_Common.Barony
                     (Ppb.Culture, 8), (Ppb.Science, 8), (Ppb.Magic, 8)),
                 SkillBonuses = SkillsPair(Skills.Diplomacy, Skills.Persuasion, 2),
                 BonusSummary =
-                    "+5 Stability and Loyalty; +8 Culture, Science, and Magic; +2 Diplomacy and Persuasion.",
+                    "+5 Stabilność i Lojalność; +8 Kultura, Nauka i Magia; +2 Dyplomacja i Perswazja.",
             },
             new()
             {
-                Name = "Famous",
+                Name = "Sławny",
                 MinRequired = 3000,
                 ThresholdLabel = "3000",
                 BaronyBonus = Vec(
@@ -86,11 +86,11 @@ namespace DA_Common.Barony
                     (Ppb.Culture, 15), (Ppb.Science, 15), (Ppb.Magic, 15)),
                 SkillBonuses = SkillsPair(Skills.Diplomacy, Skills.Persuasion, 3),
                 BonusSummary =
-                    "+8 Stability and Loyalty; +15 Culture, Science, and Magic; +3 Diplomacy and Persuasion.",
+                    "+8 Stabilność i Lojalność; +15 Kultura, Nauka i Magia; +3 Dyplomacja i Perswazja.",
             },
             new()
             {
-                Name = "Known by everyone",
+                Name = "Znany wszystkim",
                 MinRequired = 5000,
                 ThresholdLabel = "5000",
                 BaronyBonus = Vec(
@@ -98,11 +98,11 @@ namespace DA_Common.Barony
                     (Ppb.Culture, 30), (Ppb.Science, 30), (Ppb.Magic, 30)),
                 SkillBonuses = SkillsPair(Skills.Diplomacy, Skills.Persuasion, 4),
                 BonusSummary =
-                    "+12 Stability and Loyalty; +30 Culture, Science, and Magic; +4 Diplomacy and Persuasion.",
+                    "+12 Stabilność i Lojalność; +30 Kultura, Nauka i Magia; +4 Dyplomacja i Perswazja.",
             },
             new()
             {
-                Name = "Living Legend",
+                Name = "Żywa legenda",
                 MinRequired = 10000,
                 ThresholdLabel = "10000",
                 BaronyBonus = Vec(
@@ -110,7 +110,7 @@ namespace DA_Common.Barony
                     (Ppb.Culture, 50), (Ppb.Science, 50), (Ppb.Magic, 50)),
                 SkillBonuses = SkillsPair(Skills.Diplomacy, Skills.Persuasion, 5),
                 BonusSummary =
-                    "+15 Stability and Loyalty; +50 Culture, Science, and Magic; +5 Diplomacy and Persuasion.",
+                    "+15 Stabilność i Lojalność; +50 Kultura, Nauka i Magia; +5 Dyplomacja i Perswazja.",
             },
         ];
 
@@ -118,7 +118,7 @@ namespace DA_Common.Barony
         [
             new()
             {
-                Name = "Lying traitor",
+                Name = "Zdrajca",
                 MinRequired = int.MinValue,
                 ThresholdLabel = "−150",
                 BaronyBonus = Vec(
@@ -126,11 +126,11 @@ namespace DA_Common.Barony
                     (Ppb.Economy, -15), (Ppb.Defense, -15), (Ppb.Intelligence, -15)),
                 SkillBonuses = SkillsPair(Skills.Bluff, Skills.Trade, -3),
                 BonusSummary =
-                    "−15 Loyalty and +5 Corruption; −15 Economy, Defense, and Intelligence; −3 Bluff and Trade.",
+                    "−15 Lojalność i +5 Korupcja; −15 Ekonomia, Obrona i Wywiad; −3 Blef i Handel.",
             },
             new()
             {
-                Name = "Without a shred of honor",
+                Name = "Bez cienia honoru",
                 MinRequired = -100,
                 ThresholdLabel = "−100",
                 BaronyBonus = Vec(
@@ -138,11 +138,11 @@ namespace DA_Common.Barony
                     (Ppb.Economy, -8), (Ppb.Defense, -8), (Ppb.Intelligence, -8)),
                 SkillBonuses = SkillsPair(Skills.Bluff, Skills.Trade, -2),
                 BonusSummary =
-                    "−8 Loyalty and +3 Corruption; −8 Economy, Defense, and Intelligence; −2 Bluff and Trade.",
+                    "−8 Lojalność i +3 Korupcja; −8 Ekonomia, Obrona i Wywiad; −2 Blef i Handel.",
             },
             new()
             {
-                Name = "Of doubtful nature",
+                Name = "Wątpliwej natury",
                 MinRequired = -50,
                 ThresholdLabel = "−50",
                 BaronyBonus = Vec(
@@ -150,18 +150,18 @@ namespace DA_Common.Barony
                     (Ppb.Economy, -3), (Ppb.Defense, -3), (Ppb.Intelligence, -3)),
                 SkillBonuses = SkillsPair(Skills.Bluff, Skills.Trade, -1),
                 BonusSummary =
-                    "−3 Loyalty and +1 Corruption; −3 Economy, Defense, and Intelligence; −1 Bluff and Trade.",
+                    "−3 Lojalność i +1 Korupcja; −3 Ekonomia, Obrona i Wywiad; −1 Blef i Handel.",
             },
             new()
             {
-                Name = "Undefined",
+                Name = "Nieokreślony",
                 MinRequired = 0,
                 ThresholdLabel = "0",
-                BonusSummary = "No bonuses or penalties.",
+                BonusSummary = "Bez premii ani kar.",
             },
             new()
             {
-                Name = "Renowned",
+                Name = "Poważany",
                 MinRequired = 100,
                 ThresholdLabel = "100",
                 BaronyBonus = Vec(
@@ -169,11 +169,11 @@ namespace DA_Common.Barony
                     (Ppb.Economy, 3), (Ppb.Defense, 3), (Ppb.Intelligence, 3)),
                 SkillBonuses = SkillsPair(Skills.Bluff, Skills.Trade, 1),
                 BonusSummary =
-                    "+3 Loyalty and −1 Corruption; +3 Economy, Defense, and Intelligence; +1 Bluff and Trade.",
+                    "+3 Lojalność i −1 Korupcja; +3 Ekonomia, Obrona i Wywiad; +1 Blef i Handel.",
             },
             new()
             {
-                Name = "Honest",
+                Name = "Uczciwy",
                 MinRequired = 300,
                 ThresholdLabel = "300",
                 BaronyBonus = Vec(
@@ -181,11 +181,11 @@ namespace DA_Common.Barony
                     (Ppb.Economy, 8), (Ppb.Defense, 8), (Ppb.Intelligence, 8)),
                 SkillBonuses = SkillsPair(Skills.Bluff, Skills.Trade, 2),
                 BonusSummary =
-                    "+5 Loyalty and −3 Corruption; +8 Economy, Defense, and Intelligence; +2 Bluff and Trade.",
+                    "+5 Lojalność i −3 Korupcja; +8 Ekonomia, Obrona i Wywiad; +2 Blef i Handel.",
             },
             new()
             {
-                Name = "Honorable",
+                Name = "Honorowy",
                 MinRequired = 600,
                 ThresholdLabel = "600",
                 BaronyBonus = Vec(
@@ -193,11 +193,11 @@ namespace DA_Common.Barony
                     (Ppb.Economy, 15), (Ppb.Defense, 15), (Ppb.Intelligence, 15)),
                 SkillBonuses = SkillsPair(Skills.Bluff, Skills.Trade, 3),
                 BonusSummary =
-                    "+8 Loyalty and −5 Corruption; +15 Economy, Defense, and Intelligence; +3 Bluff and Trade.",
+                    "+8 Lojalność i −5 Korupcja; +15 Ekonomia, Obrona i Wywiad; +3 Blef i Handel.",
             },
             new()
             {
-                Name = "Immaculate",
+                Name = "Nieskazitelny",
                 MinRequired = 1000,
                 ThresholdLabel = "1000",
                 BaronyBonus = Vec(
@@ -205,7 +205,7 @@ namespace DA_Common.Barony
                     (Ppb.Economy, 30), (Ppb.Defense, 30), (Ppb.Intelligence, 30)),
                 SkillBonuses = SkillsPair(Skills.Bluff, Skills.Trade, 5),
                 BonusSummary =
-                    "+15 Loyalty and −10 Corruption; +30 Economy, Defense, and Intelligence; +5 Bluff and Trade.",
+                    "+15 Lojalność i −10 Korupcja; +30 Ekonomia, Obrona i Wywiad; +5 Blef i Handel.",
             },
         ];
 
@@ -213,7 +213,7 @@ namespace DA_Common.Barony
         [
             new()
             {
-                Name = "Joke",
+                Name = "Żart",
                 MinRequired = int.MinValue,
                 ThresholdLabel = "−150",
                 BaronyBonus = Vec(
@@ -221,11 +221,11 @@ namespace DA_Common.Barony
                     (Ppb.Production, -15), (Ppb.Food, -15), (Ppb.Defense, -15)),
                 SkillBonuses = SkillsPair(Skills.Intimidate, CommandSkill, -3),
                 BonusSummary =
-                    "−15 Stability and Law; −15 Production, Food, and Defense; −3 Intimidate and Inspire (Command).",
+                    "−15 Stabilność i Prawo; −15 Produkcja, Wyżywienie i Obrona; −3 Zastraszanie i Inspiracja (Dowodzenie).",
             },
             new()
             {
-                Name = "Warm dumpling",
+                Name = "Ciepła klucha",
                 MinRequired = -100,
                 ThresholdLabel = "−100",
                 BaronyBonus = Vec(
@@ -233,11 +233,11 @@ namespace DA_Common.Barony
                     (Ppb.Production, -8), (Ppb.Food, -8), (Ppb.Defense, -8)),
                 SkillBonuses = SkillsPair(Skills.Intimidate, CommandSkill, -2),
                 BonusSummary =
-                    "−8 Stability and Law; −8 Production, Food, and Defense; −2 Intimidate and Inspire (Command).",
+                    "−8 Stabilność i Prawo; −8 Produkcja, Wyżywienie i Obrona; −2 Zastraszanie i Inspiracja (Dowodzenie).",
             },
             new()
             {
-                Name = "Harmless",
+                Name = "Nieszkodliwy",
                 MinRequired = -50,
                 ThresholdLabel = "−50",
                 BaronyBonus = Vec(
@@ -245,18 +245,18 @@ namespace DA_Common.Barony
                     (Ppb.Production, -3), (Ppb.Food, -3), (Ppb.Defense, -3)),
                 SkillBonuses = SkillsPair(Skills.Intimidate, CommandSkill, -1),
                 BonusSummary =
-                    "−3 Stability and Law; −3 Production, Food, and Defense; −1 Intimidate and Inspire (Command).",
+                    "−3 Stabilność i Prawo; −3 Produkcja, Wyżywienie i Obrona; −1 Zastraszanie i Inspiracja (Dowodzenie).",
             },
             new()
             {
-                Name = "Undefined",
+                Name = "Nieokreślony",
                 MinRequired = 0,
                 ThresholdLabel = "0",
-                BonusSummary = "No bonuses or penalties.",
+                BonusSummary = "Bez premii ani kar.",
             },
             new()
             {
-                Name = "Unsettling",
+                Name = "Niepokojący",
                 MinRequired = 100,
                 ThresholdLabel = "100",
                 BaronyBonus = Vec(
@@ -264,11 +264,11 @@ namespace DA_Common.Barony
                     (Ppb.Production, 3), (Ppb.Food, 3), (Ppb.Defense, 3)),
                 SkillBonuses = SkillsPair(Skills.Intimidate, CommandSkill, 1),
                 BonusSummary =
-                    "+3 Stability and Law; +3 Production, Food, and Defense; +1 Intimidate and Inspire (Command).",
+                    "+3 Stabilność i Prawo; +3 Produkcja, Wyżywienie i Obrona; +1 Zastraszanie i Inspiracja (Dowodzenie).",
             },
             new()
             {
-                Name = "Dangerous",
+                Name = "Niebezpieczny",
                 MinRequired = 300,
                 ThresholdLabel = "300",
                 BaronyBonus = Vec(
@@ -276,11 +276,11 @@ namespace DA_Common.Barony
                     (Ppb.Production, 8), (Ppb.Food, 8), (Ppb.Defense, 8)),
                 SkillBonuses = SkillsPair(Skills.Intimidate, CommandSkill, 2),
                 BonusSummary =
-                    "+5 Stability and Law; +8 Production, Food, and Defense; +2 Intimidate and Inspire (Command).",
+                    "+5 Stabilność i Prawo; +8 Produkcja, Wyżywienie i Obrona; +2 Zastraszanie i Inspiracja (Dowodzenie).",
             },
             new()
             {
-                Name = "Terror",
+                Name = "Postrach",
                 MinRequired = 600,
                 ThresholdLabel = "600",
                 BaronyBonus = Vec(
@@ -288,11 +288,11 @@ namespace DA_Common.Barony
                     (Ppb.Production, 15), (Ppb.Food, 15), (Ppb.Defense, 15)),
                 SkillBonuses = SkillsPair(Skills.Intimidate, CommandSkill, 3),
                 BonusSummary =
-                    "+8 Stability and Law; +15 Production, Food, and Defense; +3 Intimidate and Inspire (Command).",
+                    "+8 Stabilność i Prawo; +15 Produkcja, Wyżywienie i Obrona; +3 Zastraszanie i Inspiracja (Dowodzenie).",
             },
             new()
             {
-                Name = "Walking terror",
+                Name = "Chodzący postrach",
                 MinRequired = 1000,
                 ThresholdLabel = "1000",
                 BaronyBonus = Vec(
@@ -300,7 +300,7 @@ namespace DA_Common.Barony
                     (Ppb.Production, 30), (Ppb.Food, 30), (Ppb.Defense, 30)),
                 SkillBonuses = SkillsPair(Skills.Intimidate, CommandSkill, 5),
                 BonusSummary =
-                    "+15 Stability and Law; +30 Production, Food, and Defense; +5 Intimidate and Inspire (Command).",
+                    "+15 Stabilność i Prawo; +30 Produkcja, Wyżywienie i Obrona; +5 Zastraszanie i Inspiracja (Dowodzenie).",
             },
         ];
 

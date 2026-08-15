@@ -26,11 +26,11 @@ namespace DA_Common.Barony
         {
             var parts = new List<string>(3);
             if (IsProduced(key))
-                parts.Add("produced");
+                parts.Add("wyprodukowano");
             if (IsTreatyReceived(key))
-                parts.Add("trade");
+                parts.Add("handel");
             if (IsOverride(key))
-                parts.Add("MG override");
+                parts.Add("korekta MG");
             return parts.Count == 0 ? "—" : string.Join(" · ", parts);
         }
     }
@@ -139,7 +139,7 @@ namespace DA_Common.Barony
             return result;
         }
 
-        public const string DomainPanelRowLabel = "Trade Goods and treaties";
+        public const string DomainPanelRowLabel = "Towary handlowe i traktaty";
 
         /// <summary>
         /// Single Domain Panel (Decrees and Technologies) row: sum of available goods, luxury,
@@ -164,21 +164,21 @@ namespace DA_Common.Barony
                 TradeGoodsBonusAggregator.Sum(availableGoods, out var goodsAdd, out var goodsPct);
                 additive.AddInPlace(goodsAdd);
                 percent.AddInPlace(goodsPct);
-                noteParts.Add($"{availableGoods.Count} available good{(availableGoods.Count == 1 ? "" : "s")}");
+                noteParts.Add($"dostępne towary: {availableGoods.Count}");
             }
 
             var luxury = LuxuryGoodsAccessCatalog.Find(luxuryAccessKey);
             if (PpbCatalog.All.Any(info => luxury.BonusAdditive[info.Key] != 0m))
             {
                 additive.AddInPlace(luxury.BonusAdditive);
-                noteParts.Add($"luxury — {luxury.NameEn}");
+                noteParts.Add($"luksus — {luxury.NameEn}");
             }
 
             var routeEconomy = TradeTreatyCalculator.TotalRouteEconomyBonus(treatyList);
             if (routeEconomy != 0m)
             {
                 additive[Ppb.Economy] += routeEconomy;
-                noteParts.Add($"route economy {PpbFormat.Additive(routeEconomy)}");
+                noteParts.Add($"ekonomia trasy {PpbFormat.Additive(routeEconomy)}");
             }
 
             // Positive outflow = gold leaving the barony → negative Treasury on Domain Panel.
@@ -186,7 +186,7 @@ namespace DA_Common.Barony
             if (goldOutflow != 0m)
             {
                 additive[Ppb.Treasury] -= goldOutflow;
-                noteParts.Add($"customs & sweeteners {PpbFormat.Additive(-goldOutflow)} Gold");
+                noteParts.Add($"cła i zachęty {PpbFormat.Additive(-goldOutflow)} Złota");
             }
 
             if (!PpbCatalog.All.Any(info => additive[info.Key] != 0m || percent[info.Key] != 0m))

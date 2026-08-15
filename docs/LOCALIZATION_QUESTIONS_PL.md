@@ -11,6 +11,16 @@ Pytanie...
 ODP:
 -->
 
+### [Faza 7] Strategia nazw w katalogach (DA_Common/Barony) — NamePl/NameEn
+Część katalogów jest już dwujęzyczna (Ppb.cs, CourtCharacterSkills.cs mają `NamePl`),
+reszta ma tylko `NameEn`/`DisplayName`/`BonusSummary`. Jak spolszczyć spójnie?
+ODP: **Hybryda** — (1) gdzie `NamePl` istnieje: nie ruszać `NameEn`, tylko przełączyć
+konsumentów UI na `NamePl` i usunąć `UseEnglishLabels="true"`; (2) gdzie `NamePl` brak:
+nadpisać angielskie literały polskimi w miejscu (czysta Opcja A, bez nowych pól);
+(3) nigdy nie ruszać wartości używanych jako klucze dopasowań (TradeGoodLordNames,
+KnownLordsCatalog, DisplayName porównywane w kodzie) — weryfikować każdą.
+Podział: **7a i 7b razem** w jednym przebiegu i jednym commicie.
+
 ### [Faza 2] Komunikaty walidacji i błędów z frameworka (Identity / DataAnnotations)
 Domyślne komunikaty ASP.NET Core są po angielsku i NIE są tekstem w naszych plikach:
 - Błędy hasła/rejestracji z `IdentityErrorDescriber` (np. „Passwords must have at least one digit").

@@ -32,22 +32,22 @@ namespace DA_Common.Barony
             => PpbFormat.Round(fullTreasury * ShareFactor(vassalTributePercent));
 
         public static string ExplainLiege(decimal grossIncome, decimal liegeTributePercent, decimal tribute)
-            => $"= Gross income × {ClampPercent(liegeTributePercent):0.#}%\n"
-               + $"Gross income (Domain Panel gold income before expenses) = {PpbFormat.Number(grossIncome)}.\n"
-               + $"Tribute to senior = {PpbFormat.Number(tribute)} gold.";
+            => $"= Dochód brutto × {ClampPercent(liegeTributePercent):0.#}%\n"
+               + $"Dochód brutto (dochód w złocie z Panelu Domeny przed wydatkami) = {PpbFormat.Number(grossIncome)}.\n"
+               + $"Trybut dla suzerena = {PpbFormat.Number(tribute)} złota.";
 
         public static string ExplainVassalShare(decimal fullTreasury, decimal vassalTributePercent, decimal kept)
-            => $"= Village gold × {ClampPercent(vassalTributePercent):0.#}%\n"
-               + $"Full village gold = {PpbFormat.Number(fullTreasury)}; baron keeps {PpbFormat.Number(kept)} "
-               + "(vassal fief).";
+            => $"= Złoto wioski × {ClampPercent(vassalTributePercent):0.#}%\n"
+               + $"Pełne złoto wioski = {PpbFormat.Number(fullTreasury)}; baron zachowuje {PpbFormat.Number(kept)} "
+               + "(lenno wasala).";
 
         public static string LiegeCatalogDescription =>
-            "Barons pay their senior a share of gross gold income before expenses. "
-            + $"Default {DefaultPercent:0}%; MG can change the rate on Budget.";
+            "Baronowie płacą swojemu suzerenowi udział w dochodzie brutto w złocie przed wydatkami. "
+            + $"Domyślnie {DefaultPercent:0}%; MG może zmienić stawkę w Budżecie.";
 
         public static string VassalCatalogDescription =>
-            "Villages on vassal fiefs (not baron demesne) contribute only this share of their gold to the baron. "
-            + $"Default {DefaultPercent:0}%; MG can change the rate on Budget.";
+            "Wioski na lennach wasali (nie na domenie barona) oddają baronowi tylko ten udział swojego złota. "
+            + $"Domyślnie {DefaultPercent:0}%; MG może zmienić stawkę w Budżecie.";
 
         // Back-compat aliases used by Budget tooltips.
         public static string Explain(decimal grossIncome, decimal liegeTributePercent, decimal tribute)
