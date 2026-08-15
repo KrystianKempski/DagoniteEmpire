@@ -9,12 +9,12 @@
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<LoginWith2fa> Logger
 
-<PageTitle>Two-factor authentication</PageTitle>
+<PageTitle>Uwierzytelnianie dwuskładnikowe</PageTitle>
 <div class="container">
-<h1>Two-factor authentication</h1>
+<h1>Uwierzytelnianie dwuskładnikowe</h1>
 <hr />
 <StatusMessage Message="@message" />
-<p>Your login is protected with an authenticator app. Enter your authenticator code below.</p>
+<p>Twoje logowanie jest chronione aplikacją uwierzytelniającą. Wprowadź poniżej kod z aplikacji uwierzytelniającej.</p>
 <div class="row">
     <div class="col-md-4">
         <EditForm Model="Input" FormName="login-with-2fa" OnValidSubmit="OnValidSubmitAsync" method="post">
@@ -24,24 +24,24 @@
             <ValidationSummary class="text-danger" role="alert" />
             <div class="form-floating mb-3">
                 <InputText @bind-Value="Input.TwoFactorCode" class="form-control" autocomplete="off" />
-                <label for="two-factor-code" class="form-label">Authenticator code</label>
+                <label for="two-factor-code" class="form-label">Kod uwierzytelniający</label>
                 <ValidationMessage For="() => Input.TwoFactorCode" class="text-danger" />
             </div>
             <div class="checkbox mb-3">
                 <label for="remember-machine" class="form-label">
                     <InputCheckbox @bind-Value="Input.RememberMachine" />
-                    Remember this machine
+                    Zapamiętaj to urządzenie
                 </label>
             </div>
             <div>
-                <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
+                <button type="submit" class="w-100 btn btn-lg btn-primary">Zaloguj się</button>
             </div>
         </EditForm>
     </div>
 </div>
 <p>
-    Don't have access to your authenticator device? You can
-    <a href="Account/LoginWithRecoveryCode?ReturnUrl=@ReturnUrl">log in with a recovery code</a>.
+    Nie masz dostępu do swojego urządzenia uwierzytelniającego? Możesz
+    <a href="Account/LoginWithRecoveryCode?ReturnUrl=@ReturnUrl">zalogować się przy użyciu kodu odzyskiwania</a>.
 </p>
 </div>
 @code {
@@ -83,19 +83,19 @@
         else
         {
             Logger.LogWarning("Invalid authenticator code entered for user with ID '{UserId}'.", userId);
-            message = "Error: Invalid authenticator code.";
+            message = "Błąd: Nieprawidłowy kod uwierzytelniający.";
         }
     }
 
     private sealed class InputModel
     {
         [Required]
-        [StringLength(7, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [StringLength(7, ErrorMessage = "Pole {0} musi mieć co najmniej {2} i maksymalnie {1} znaków.", MinimumLength = 6)]
         [DataType(DataType.Text)]
-        [Display(Name = "Authenticator code")]
+        [Display(Name = "Kod uwierzytelniający")]
         public string? TwoFactorCode { get; set; }
 
-        [Display(Name = "Remember this machine")]
+        [Display(Name = "Zapamiętaj to urządzenie")]
         public bool RememberMachine { get; set; }
     }
 }

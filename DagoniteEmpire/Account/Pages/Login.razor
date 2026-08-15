@@ -13,44 +13,44 @@
 @inject IConfiguration Configuration
 @inject IWebHostEnvironment Environment
 @inherits LayoutComponentBase
-<PageTitle>Log in</PageTitle>
+<PageTitle>Zaloguj się</PageTitle>
 
 <div class="container pt-2">
-<h1 class="border-0">Log in</h1>
+<h1 class="border-0">Zaloguj się</h1>
 <div class="row">
     @* Public demo access is intentionally available in every environment, including release. *@
     <div class="col-md-6 col-md-offset-2 order-md-2">
         <section class="mb-4">
-            <h3>Try the game — no account needed</h3>
+            <h3>Wypróbuj grę — bez zakładania konta</h3>
             <hr />
             <p>
-                Step into a baron's shoes and explore the Barony layer on a ready-made demo
-                (the barony of Darkhold), or run it as the Game Master. The Barony game is
-                designed to be played on a desktop computer.
+                Wciel się w barona i poznaj warstwę Baronii w gotowym demie
+                (baronia Darkhold) albo poprowadź ją jako Mistrz Gry. Gra Baronia jest
+                przeznaczona do gry na komputerze stacjonarnym.
             </p>
             <div class="d-flex flex-column gap-2" style="max-width: 22rem;">
-                <a href="Account/DemoBaron" class="btn btn-lg btn-primary w-100">Try the Baron demo</a>
-                <a href="Account/DemoGameMaster" class="btn btn-lg btn-primary w-100">Try the Game Master demo</a>
+                <a href="Account/DemoBaron" class="btn btn-lg btn-primary w-100">Wypróbuj demo barona</a>
+                <a href="Account/DemoGameMaster" class="btn btn-lg btn-primary w-100">Wypróbuj demo Mistrza Gry</a>
             </div>
         </section>
         @if (Environment.IsDevelopment() && Configuration.GetConnectionString("TestAccountsEnable") == "true")
         {
         <section>
-            <h3>Try some test accounts.</h3>
+            <h3>Wypróbuj konta testowe.</h3>
             <hr />
 
             <div>
                 <p>
-                    You can use default test users or create your own account.
+                    Możesz użyć domyślnych kont testowych albo utworzyć własne konto.
                 </p>
                 <b>
-                    Default player account:
+                    Domyślne konto gracza:
                 </b>
                 <p>- Login: player@example.com</p>
-                <p>- Password: Guest123*</p>
-                <b>Default Game Master account:</b>
+                <p>- Hasło: Guest123*</p>
+                <b>Domyślne konto Mistrza Gry:</b>
                 <p>- Login: gm@example.com</p>
-                <p>- Password: Guest123*</p>
+                <p>- Hasło: Guest123*</p>
             </div>
 
         </section>
@@ -61,7 +61,7 @@
             <StatusMessage Message="@errorMessage" />
             <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
                 <DataAnnotationsValidator />
-                <h2>Use a local account to log in.</h2>
+                <h2>Zaloguj się przy użyciu konta lokalnego.</h2>
                 <hr />
                 <ValidationSummary class="text-danger" role="alert" />
                 <div class="form-floating mb-3">
@@ -70,28 +70,28 @@
                     <ValidationMessage For="() => Input.Email" class="text-danger" />
                 </div>
                 <div class="form-floating mb-3">
-                    <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
-                    <label for="password" class="form-label">Password</label>
+                    <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="hasło" />
+                    <label for="password" class="form-label">Hasło</label>
                     <ValidationMessage For="() => Input.Password" class="text-danger" />
                 </div>
                 <div class="checkbox mb-3">
                     <label class="form-label">
                         <InputCheckbox @bind-Value="Input.RememberMe" class="darker-border-checkbox form-check-input" />
-                        Remember me
+                        Zapamiętaj mnie
                     </label>
                 </div>
                 <div>
-                    <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
+                    <button type="submit" class="w-100 btn btn-lg btn-primary">Zaloguj się</button>
                 </div>
                 <div>
                     <p>
-                        <a href="Account/ForgotPassword">Forgot your password?</a>
+                        <a href="Account/ForgotPassword">Nie pamiętasz hasła?</a>
                     </p>
                     <p>
-                        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Register as a new user</a>
+                        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Zarejestruj się jako nowy użytkownik</a>
                     </p>
                     <p>
-                        <a href="Account/ResendEmailConfirmation">Resend email confirmation</a>
+                        <a href="Account/ResendEmailConfirmation">Wyślij ponownie potwierdzenie e-mail</a>
                     </p>
                 </div>
             </EditForm>
@@ -129,7 +129,7 @@
         var user = await UserManager.FindByEmailAsync(Input.Email);
         if (user == null)
         {
-            errorMessage = "Error: Invalid login attempt.";
+            errorMessage = "Błąd: Nieprawidłowa próba logowania.";
             return;
         }
         else
@@ -158,7 +158,7 @@
         }
         else
         {
-            errorMessage = "Error: Invalid login attempt.";
+            errorMessage = "Błąd: Nieprawidłowa próba logowania.";
         }
     }
 
@@ -172,7 +172,7 @@
         [DataType(DataType.Password)]
         public string Password { get; set; } = "";
 
-        [Display(Name = "Remember me?")]
+        [Display(Name = "Zapamiętaj mnie?")]
         public bool RememberMe { get; set; }
     }
 }

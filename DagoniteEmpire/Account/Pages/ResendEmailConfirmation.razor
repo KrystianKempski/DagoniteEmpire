@@ -13,10 +13,10 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Resend email confirmation</PageTitle>
+<PageTitle>Wyślij ponownie potwierdzenie e-mail</PageTitle>
 <div class="container pt-2">
-<h1>Resend email confirmation</h1>
-<h2>Enter your email.</h2>
+<h1>Wyślij ponownie potwierdzenie e-mail</h1>
+<h2>Wprowadź swój adres e-mail.</h2>
 <hr />
 <StatusMessage Message="@message" />
 <div class="row">
@@ -29,7 +29,7 @@
                 <label for="email" class="form-label">Email</label>
                 <ValidationMessage For="() => Input.Email" class="text-danger" />
             </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Resend</button>
+            <button type="submit" class="w-100 btn btn-lg btn-primary">Wyślij ponownie</button>
         </EditForm>
     </div>
 </div>
@@ -45,7 +45,7 @@
         var user = await UserManager.FindByEmailAsync(Input.Email!);
         if (user is null)
         {
-            message = "Verification email sent. Please check your email.";
+            message = "Wiadomość weryfikacyjna została wysłana. Sprawdź swoją skrzynkę e-mail.";
             return;
         }
 
@@ -58,10 +58,10 @@
         //await EmailSender.SendConfirmationLinkAsync(user, Input.Email, HtmlEncoder.Default.Encode(callbackUrl));
         await EmailSender.SendEmailAsync(
                Input.Email,
-               "Confirm your email",
-               $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+               "Potwierdź swój adres e-mail",
+               $"Potwierdź swoje konto, <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>klikając tutaj</a>.");
 
-        message = "Verification email sent. Please check your email.";
+        message = "Wiadomość weryfikacyjna została wysłana. Sprawdź swoją skrzynkę e-mail.";
     }
 
     private sealed class InputModel

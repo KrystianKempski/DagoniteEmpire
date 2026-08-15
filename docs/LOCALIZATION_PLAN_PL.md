@@ -187,12 +187,12 @@ Najczęściej widziane elementy; szybki, widoczny efekt.
 - [x] `_DeleteConfirmation.razor`, `_LeavePage.razor` (`ScribeDrawer.razor` — pominięty, moduł Scribe)
 - [x] `Pages/Index.razor`, `App.razor`, `Routes.razor` (tytuły, meta, `lang="pl"`)
 
-### Faza 2 — Konto / Tożsamość (Identity) 🟢 (M) — 19 + 13 + 7 plików
+### Faza 2 — Konto / Tożsamość (Identity) 🟢 (M) — 19 + 13 + 7 plików ✅ UKOŃCZONA
 Strony scaffoldowane ASP.NET (angielskie): logowanie, rejestracja, 2FA, zarządzanie kontem.
-- [ ] `Account/Pages/*.razor` (Login, Register, ForgotPassword, ResetPassword, 2FA, Lockout, …)
-- [ ] `Account/Pages/Manage/*.razor` (profil, hasło, e-mail, klucze, dane osobowe)
-- [ ] `Account/Shared/*.razor`
-- [ ] Komunikaty walidacji / `DataAnnotations` (atrybuty `[Display]`, `[Required]` itp.)
+- [x] `Account/Pages/*.razor` (Login, Register, ForgotPassword, ResetPassword, 2FA, Lockout, …)
+- [x] `Account/Pages/Manage/*.razor` (profil, hasło, e-mail, klucze, dane osobowe)
+- [x] `Account/Shared/*.razor` (`StatusMessage` — przełącznik koloru na prefiks „Błąd")
+- [ ] Komunikaty walidacji / `DataAnnotations` z frameworka — **odłożone (Faza 2b/10)**, patrz QUESTIONS
 
 ### Faza 3 — System postaci 🟡 (L) — ~18 + 5 + część Dialogs
 Rdzeń rozgrywki gracza-bohatera.

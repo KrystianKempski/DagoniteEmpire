@@ -8,25 +8,25 @@
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<Disable2fa> Logger
 
-<PageTitle>Disable two-factor authentication (2FA)</PageTitle>
+<PageTitle>Wyłącz uwierzytelnianie dwuskładnikowe (2FA)</PageTitle>
 
 <StatusMessage />
-<h3>Disable two-factor authentication (2FA)</h3>
+<h3>Wyłącz uwierzytelnianie dwuskładnikowe (2FA)</h3>
 
 <div class="alert alert-warning" role="alert">
     <p>
-        <strong>This action only disables 2FA.</strong>
+        <strong>Ta czynność wyłącza wyłącznie 2FA.</strong>
     </p>
     <p>
-        Disabling 2FA does not change the keys used in authenticator apps. If you wish to change the key
-        used in an authenticator app you should <a href="Account/Manage/ResetAuthenticator">reset your authenticator keys.</a>
+        Wyłączenie 2FA nie zmienia kluczy używanych w aplikacjach uwierzytelniających. Jeśli chcesz zmienić klucz
+        używany w aplikacji uwierzytelniającej, powinieneś <a href="Account/Manage/ResetAuthenticator">zresetować klucze uwierzytelniające.</a>
     </p>
 </div>
 
 <div>
     <form @formname="disable-2fa" @onsubmit="OnSubmitAsync" method="post">
         <AntiforgeryToken />
-        <button class="btn btn-danger" type="submit">Disable 2FA</button>
+        <button class="btn btn-danger" type="submit">Wyłącz 2FA</button>
     </form>
 </div>
 
@@ -58,7 +58,7 @@
         Logger.LogInformation("User with ID '{UserId}' has disabled 2fa.", userId);
         RedirectManager.RedirectToWithStatus(
             "Account/Manage/TwoFactorAuthentication",
-            "2fa has been disabled. You can reenable 2fa when you setup an authenticator app",
+            "2FA zostało wyłączone. Możesz ponownie włączyć 2FA po skonfigurowaniu aplikacji uwierzytelniającej",
             HttpContext);
     }
 }
