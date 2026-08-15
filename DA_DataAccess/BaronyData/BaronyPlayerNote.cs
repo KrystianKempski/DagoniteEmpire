@@ -3,9 +3,10 @@ using System.ComponentModel.DataAnnotations;
 namespace DA_DataAccess.BaronyData
 {
     /// <summary>
-    /// Private planning note owned by the baron player (never shown to the MG).
-    /// A single table backs the "Notes" tab: journal entries, sticky notes and
-    /// turn-based reminders are distinguished by <see cref="NoteType"/>.
+    /// Private planning note for the barony. A single table backs the "Notes" tab:
+    /// journal entries, sticky notes and turn-based reminders are distinguished by
+    /// <see cref="NoteType"/>. <see cref="OwnerScope"/> keeps the baron player's notes
+    /// separate from the Game Master's; neither side can see the other's.
     /// </summary>
     public class BaronyPlayerNote
     {
@@ -13,6 +14,9 @@ namespace DA_DataAccess.BaronyData
         public int Id { get; set; }
 
         public int BaronyId { get; set; }
+
+        /// <summary>"player" (baron) or "gm" (Game Master) — private to that side.</summary>
+        public string OwnerScope { get; set; } = "player";
 
         /// <summary>"journal" (long rich text), "sticky" (board card) or "reminder" (turn timer).</summary>
         public string NoteType { get; set; } = "journal";

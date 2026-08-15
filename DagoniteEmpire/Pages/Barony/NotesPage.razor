@@ -4,7 +4,7 @@
 @implements IAsyncDisposable
 @using DA_Business.Repository.BaronyRepos
 @using DA_Models.BaronyModels
-@attribute [Authorize(Roles = SD.Role_DukePlayer)]
+@attribute [Authorize(Roles = SD.Role_DukePlayer + "," + SD.Role_GameMaster + "," + SD.Role_Admin)]
 @inject IBaronyPlayerNoteRepository _notesRepo
 @inject IDialogService _dialogService
 @inject IJSRuntime _js
@@ -14,10 +14,6 @@
 @if (IsLoading)
 {
     <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading...</span>
-}
-else if (CanManageAsMg)
-{
-    <MudAlert Severity="Severity.Info" Class="my-2">The Notes tab is the baron player's private space and is not available to the Game Master.</MudAlert>
 }
 else if (LoadError is not null)
 {
@@ -29,7 +25,9 @@ else if (Barony is not null)
         <BaronyPageHeader Title="Notes" HelpKey="notes" ShowSectionToggle="false" />
 
         <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
-            Private planning space — only you can see this. The Game Master has no access.
+            @(IsGmScope
+                ? "Private Game Master space — only you (the MG) can see this. The baron player has no access."
+                : "Private planning space — only you can see this. The Game Master has no access.")
         </MudText>
 
         <MudTabs Elevation="0"
@@ -272,6 +270,10 @@ else if (Barony is not null)
 
     private int _activeTab;
 
+    /// <summary>MG notes live in a separate scope so baron and Game Master never see each other's notes.</summary>
+    private bool IsGmScope => CanManageAsMg;
+    private string NoteScope => IsGmScope ? BaronyPlayerNoteOwnerScope.Gm : BaronyPlayerNoteOwnerScope.Player;
+
     private bool _shouldLoadEditor;
     private int _loadAttempts;
     private int _editorEpoch;
@@ -325,17 +327,17 @@ else if (Barony is not null)
     protected override async Task OnInitializedAsync()
     {
         await LoadBaronyAsync();
-        if (Barony is null || CanManageAsMg)
+        if (Barony is null)
             return;
 
-        _threads = await _notesRepo.GetNotes(BaronyId, BaronyPlayerNoteType.Journal);
+        _threads = await _notesRepo.GetNotes(BaronyId, BaronyPlayerNoteType.Journal, NoteScope);
         if (_threads.Count == 0)
             _threads.Add(await CreateThreadAsync("Note 1"));
 
         SetActiveThread(_threads[0]);
 
-        _stickies = await _notesRepo.GetNotes(BaronyId, BaronyPlayerNoteType.Sticky);
-        _reminders = await _notesRepo.GetNotes(BaronyId, BaronyPlayerNoteType.Reminder);
+        _stickies = await _notesRepo.GetNotes(BaronyId, BaronyPlayerNoteType.Sticky, NoteScope);
+        _reminders = await _notesRepo.GetNotes(BaronyId, BaronyPlayerNoteType.Reminder, NoteScope);
 
         _activeTab = ReadTabFromQuery();
     }
@@ -415,6 +417,7 @@ else if (Barony is not null)
         var dto = new BaronyPlayerNoteDTO
         {
             BaronyId = BaronyId,
+            OwnerScope = NoteScope,
             NoteType = BaronyPlayerNoteType.Journal,
             Title = title,
             BodyHtml = "<p></p>",
@@ -518,6 +521,7 @@ else if (Barony is not null)
         var dto = new BaronyPlayerNoteDTO
         {
             BaronyId = BaronyId,
+            OwnerScope = NoteScope,
             NoteType = BaronyPlayerNoteType.Sticky,
             BodyHtml = "",
             Color = DefaultStickyColor,
@@ -639,6 +643,7 @@ else if (Barony is not null)
         var dto = new BaronyPlayerNoteDTO
         {
             BaronyId = BaronyId,
+            OwnerScope = NoteScope,
             NoteType = BaronyPlayerNoteType.Reminder,
             Title = text,
             CreatedTurn = CurrentTurn,

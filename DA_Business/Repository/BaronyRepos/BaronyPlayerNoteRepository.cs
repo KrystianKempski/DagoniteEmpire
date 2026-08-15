@@ -19,12 +19,13 @@ namespace DA_Business.Repository.BaronyRepos
             _db = db;
         }
 
-        public async Task<List<BaronyPlayerNoteDTO>> GetNotes(int baronyId, string? noteType = null)
+        public async Task<List<BaronyPlayerNoteDTO>> GetNotes(int baronyId, string? noteType = null, string ownerScope = "player")
         {
             try
             {
                 using var ctx = await _db.CreateDbContextAsync();
-                var query = ctx.BaronyPlayerNotes.AsNoTracking().Where(n => n.BaronyId == baronyId);
+                var query = ctx.BaronyPlayerNotes.AsNoTracking()
+                    .Where(n => n.BaronyId == baronyId && n.OwnerScope == ownerScope);
                 if (!string.IsNullOrWhiteSpace(noteType))
                     query = query.Where(n => n.NoteType == noteType);
 
@@ -37,13 +38,14 @@ namespace DA_Business.Repository.BaronyRepos
             catch (System.Exception ex) { throw Err(ex, nameof(GetNotes)); }
         }
 
-        public async Task<BaronyPlayerNoteDTO> GetOrCreateJournal(int baronyId, int currentTurn)
+        public async Task<BaronyPlayerNoteDTO> GetOrCreateJournal(int baronyId, int currentTurn, string ownerScope = "player")
         {
             try
             {
                 using var ctx = await _db.CreateDbContextAsync();
                 var journal = await ctx.BaronyPlayerNotes
                     .FirstOrDefaultAsync(n => n.BaronyId == baronyId
+                                              && n.OwnerScope == ownerScope
                                               && n.NoteType == BaronyPlayerNoteType.Journal);
                 if (journal is not null)
                     return ToDTO(journal);
@@ -51,6 +53,7 @@ namespace DA_Business.Repository.BaronyRepos
                 journal = new BaronyPlayerNote
                 {
                     BaronyId = baronyId,
+                    OwnerScope = ownerScope,
                     NoteType = BaronyPlayerNoteType.Journal,
                     BodyHtml = "<p></p>",
                     CreatedTurn = currentTurn,
@@ -78,6 +81,9 @@ namespace DA_Business.Repository.BaronyRepos
                     entity = new BaronyPlayerNote
                     {
                         BaronyId = dto.BaronyId,
+                        OwnerScope = string.IsNullOrWhiteSpace(dto.OwnerScope)
+                            ? BaronyPlayerNoteOwnerScope.Player
+                            : dto.OwnerScope,
                         CreatedTurn = dto.CreatedTurn,
                         CreatedAtUtc = DateTime.UtcNow,
                     };
@@ -115,7 +121,7 @@ namespace DA_Business.Repository.BaronyRepos
             catch (System.Exception ex) { throw Err(ex, nameof(DeleteNote)); }
         }
 
-        public async Task<int> GetDueReminderCount(int baronyId)
+        public async Task<int> GetDueReminderCount(int baronyId, string ownerScope = "player")
         {
             try
             {
@@ -127,6 +133,7 @@ namespace DA_Business.Repository.BaronyRepos
 
                 return await ctx.BaronyPlayerNotes.AsNoTracking()
                     .CountAsync(n => n.BaronyId == baronyId
+                                     && n.OwnerScope == ownerScope
                                      && n.NoteType == BaronyPlayerNoteType.Reminder
                                      && !n.IsDone
                                      && n.DueTurn != null
@@ -139,6 +146,7 @@ namespace DA_Business.Repository.BaronyRepos
         {
             Id = e.Id,
             BaronyId = e.BaronyId,
+            OwnerScope = e.OwnerScope,
             NoteType = e.NoteType,
             Title = e.Title,
             BodyHtml = e.BodyHtml,

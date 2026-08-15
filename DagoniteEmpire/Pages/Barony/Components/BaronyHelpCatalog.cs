@@ -584,20 +584,20 @@ namespace DagoniteEmpire.Pages.Barony.Components
                 ["notes"] = new BaronyHelpEntry(
                     Key: "notes",
                     Title: "Notes",
-                    Short: "Your private planning space — plans, ideas and reminders that only you can see. The Game Master has no access.",
+                    Short: "Your private planning space — plans, ideas and reminders that only you can see. The baron player and the Game Master each keep their own separate notes.",
                     PlayerSections: new[]
                     {
                         new BaronyHelpSection("What you'll find here", new[]
                         {
-                            "A Journal for longer free-form text, plus upcoming Sticky notes and turn Reminders.",
+                            "A Journal for longer free-form text, plus Sticky notes and turn Reminders.",
                         }),
                         new BaronyHelpSection("What you can do", new[]
                         {
                             "Write rich-text notes in the Journal; it auto-saves and keeps a local backup so nothing is lost if you leave the page suddenly.",
                         }),
-                        new BaronyHelpSection("Working with the Game Master", new[]
+                        new BaronyHelpSection("Who can see this", new[]
                         {
-                            "Nothing here is shared — the Notes tab is invisible to the Game Master.",
+                            "Nothing here is shared — the baron player and the Game Master each have their own private notes and cannot see the other's.",
                         }),
                     }),
             };

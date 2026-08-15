@@ -31,14 +31,21 @@ namespace DA_Business.Services
             int characterId;
             await using (var ctx = await _db.CreateDbContextAsync())
             {
-                var source = await ctx.Characters
+                var sourceQuery = ctx.Characters
                     .AsNoTracking()
                     .Include(c => c.Attributes)
                     .Include(c => c.BaseSkills)
                     .Include(c => c.SpecialSkills)
                     .Include(c => c.EquipmentSlots)
-                    .Include(c => c.Languages)
-                    .FirstOrDefaultAsync(c => c.NPCName == SD.DemoBaronSourceCharacterName)
+                    .Include(c => c.Languages);
+
+                // Prefer the seeded demo template (rebuilt from the snapshot on every startup);
+                // fall back to any character with the source name (the authoring DB holds the
+                // hand-made Aldric under a real owner).
+                var source = await sourceQuery
+                        .FirstOrDefaultAsync(c => c.UserName == SD.DemoBaronTemplateUserName)
+                    ?? await sourceQuery
+                        .FirstOrDefaultAsync(c => c.NPCName == SD.DemoBaronSourceCharacterName)
                     ?? throw new InvalidOperationException(
                         $"Demo baron source character '{SD.DemoBaronSourceCharacterName}' not found.");
 

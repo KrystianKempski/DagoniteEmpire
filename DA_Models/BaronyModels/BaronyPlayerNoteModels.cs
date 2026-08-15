@@ -5,6 +5,7 @@ namespace DA_Models.BaronyModels
     {
         public int Id { get; set; }
         public int BaronyId { get; set; }
+        public string OwnerScope { get; set; } = "player";
         public string NoteType { get; set; } = "journal";
         public string? Title { get; set; }
         public string? BodyHtml { get; set; }
@@ -23,5 +24,12 @@ namespace DA_Models.BaronyModels
         public const string Journal = "journal";
         public const string Sticky = "sticky";
         public const string Reminder = "reminder";
+    }
+
+    /// <summary>Well-known <see cref="BaronyPlayerNoteDTO.OwnerScope"/> values.</summary>
+    public static class BaronyPlayerNoteOwnerScope
+    {
+        public const string Player = "player";
+        public const string Gm = "gm";
     }
 }

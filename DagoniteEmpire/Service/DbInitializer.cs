@@ -2902,31 +2902,39 @@ namespace DagoniteEmpire.Service
         private static async Task EnsureGenericDemoBaronAsync(ApplicationDbContext contex)
         {
             var snapshot = DA_Models.DemoBaronSeed.Load();
-            var demoName = snapshot.NpcName;
 
-            var existing = await contex.Characters
+            // The demo template (UserName == DemoBaronTemplateUserName) is a throwaway system
+            // record. Always drop and rebuild it from the snapshot so every environment — and
+            // every deploy — reflects the current source of truth. Otherwise a stale template on
+            // a shared/production DB survives the completeness guard forever (an old template
+            // with the full skill count but poor data would never be replaced).
+            var staleTemplates = await contex.Characters
+                .Include(c => c.Attributes)
+                .Include(c => c.BaseSkills)
                 .Include(c => c.SpecialSkills)
-                .FirstOrDefaultAsync(c => c.NPCName == demoName);
-
-            // Already seeded with the full sheet — nothing to do.
-            if (existing is not null
-                && existing.ProfessionId > 0
-                && (existing.SpecialSkills?.Count ?? 0) >= snapshot.SpecialSkills.Length)
-                return;
-
-            // A previously seeded but incomplete demo baron: drop it and rebuild from the snapshot.
-            if (existing is not null)
+                .Include(c => c.EquipmentSlots)
+                .Include(c => c.Languages)
+                .Where(c => c.UserName == SD.DemoBaronTemplateUserName)
+                .ToListAsync();
+            if (staleTemplates.Count > 0)
             {
-                var stale = await contex.Characters
-                    .Include(c => c.Attributes)
-                    .Include(c => c.BaseSkills)
-                    .Include(c => c.SpecialSkills)
-                    .Include(c => c.EquipmentSlots)
-                    .Include(c => c.Languages)
-                    .FirstAsync(c => c.Id == existing.Id);
-                contex.Characters.Remove(stale);
+                contex.Characters.RemoveRange(staleTemplates);
                 await contex.SaveChangesAsync();
             }
+
+            // If a hand-authored source character already exists (the authoring DB holds the
+            // real "Aldric Emberfall" under a real owner), the demo clones it directly — don't
+            // add a duplicate template. Demo/system-owned copies never count as hand-authored.
+            var handAuthored = await contex.Characters
+                .Include(c => c.SpecialSkills)
+                .FirstOrDefaultAsync(c => c.NPCName == snapshot.NpcName
+                                          && c.UserName != SD.DemoBaronTemplateUserName
+                                          && c.UserName != SD.DemoBaronUserName
+                                          && c.UserName != SD.DemoGmUserName);
+            if (handAuthored is not null
+                && handAuthored.ProfessionId > 0
+                && (handAuthored.SpecialSkills?.Count ?? 0) >= snapshot.SpecialSkills.Length)
+                return;
 
             var created = await BuildDemoBaronFromSnapshotAsync(contex, snapshot);
             contex.Characters.Add(created);

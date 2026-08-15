@@ -54,22 +54,22 @@
     private static readonly TabItem[] DefaultTabs =
     {
         new("domain", "Domain Panel", "/barony", Icons.Material.Filled.Dashboard),
-        new("resources", "Resources", "/barony/resources", SvgIcon: "/" + MyIcon.WoodenCrate),
-        new("budget", "Budget", "/barony/budget", SvgIcon: "/" + MyIcon.TwoCoins),
-        new("projects", "Projects", "/barony/projects", SvgIcon: "/" + MyIcon.GearHammer),
-        new("army", "Army", "/barony/army", Icons.Material.Filled.Shield),
-        new("battle-map", "Battle", "/barony/battle-map", SvgIcon: "/" + MyIcon.AxeSword),
-        new("buildings", "Buildings", "/barony/buildings", SvgIcon: "/" + MyIcon.WoodCabinBlack),
+        new("audiences", "Audiences", "/barony/audiences", SvgIcon: "/" + MyIcon.TiedScroll),
         new("offices", "Court", "/barony/offices", SvgIcon: "/" + MyIcon.People),
         new("terrain", "Terrain", "/barony/terrain", SvgIcon: "/" + MyIcon.WindmillBlack),
-        new("character-card", "Baron", "/barony/character-card", SvgIcon: "/" + MyIcon.JewelCrown),
-        new("letters", "Letters", "/barony/letters", SvgIcon: "/" + MyIcon.WaxSeal),
-        new("audiences", "Audiences", "/barony/audiences", SvgIcon: "/" + MyIcon.TiedScroll),
         new("lords-seat", "Lord's Seat", "/barony/lords-seat", Icons.Material.Filled.Castle),
+        new("march-map", "March map", "/barony/march-map", SvgIcon: "/" + MyIcon.Compass),
+        new("projects", "Projects", "/barony/projects", SvgIcon: "/" + MyIcon.GearHammer),
+        new("letters", "Letters", "/barony/letters", SvgIcon: "/" + MyIcon.WaxSeal),
+        new("trade-goods", "Trade", "/barony/trade-goods", SvgIcon: "/" + MyIcon.Trade),
+        new("character-card", "Baron", "/barony/character-card", SvgIcon: "/" + MyIcon.JewelCrown),
+        new("army", "Army", "/barony/army", Icons.Material.Filled.Shield),
+        new("battle-map", "Battle", "/barony/battle-map", SvgIcon: "/" + MyIcon.AxeSword),
+        new("resources", "Resources", "/barony/resources", SvgIcon: "/" + MyIcon.WoodenCrate),
+        new("budget", "Budget", "/barony/budget", SvgIcon: "/" + MyIcon.TwoCoins),
         new("relations", "Relations", "/barony/relations", SvgIcon: "/" + MyIcon.ShakingHands),
         new("known-lords", "Lords", "/barony/known-lords", SvgIcon: "/" + MyIcon.VerticalBanner),
-        new("march-map", "March map", "/barony/march-map", SvgIcon: "/" + MyIcon.Compass),
-        new("trade-goods", "Trade", "/barony/trade-goods", SvgIcon: "/" + MyIcon.Trade),
+        new("buildings", "Buildings", "/barony/buildings", SvgIcon: "/" + MyIcon.WoodCabinBlack),
         new("notes", "Notes", "/barony/notes", SvgIcon: "/" + MyIcon.Quill),
     };
 
@@ -131,9 +131,9 @@
             var user = await _userService.GetUserInfo();
             if (user?.IsAdminOrMG == true)
             {
-                // Notes are the baron player's private space; the MG never sees the tab.
+                // MG gets its own private Notes scope (separate from the baron's).
                 _showBattleMapTab = true;
-                _showNotesTab = false;
+                _showNotesTab = true;
                 return;
             }
 

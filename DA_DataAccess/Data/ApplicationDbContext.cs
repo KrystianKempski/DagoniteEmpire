@@ -125,7 +125,7 @@ namespace DA_DataAccess.Data
             modelBuilder.Entity<BaronyPlayerNote>(entity =>
             {
                 entity.HasIndex(e => e.BaronyId);
-                entity.HasIndex(e => new { e.BaronyId, e.NoteType });
+                entity.HasIndex(e => new { e.BaronyId, e.OwnerScope, e.NoteType });
             });
 
             modelBuilder.Entity<BaronPhpSource>(entity =>
