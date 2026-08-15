@@ -1,4 +1,12 @@
 ﻿@page "/"
+@using DA_Common
+@using DA_Business.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage
+@inject AuthenticationStateProvider AuthState
+@inject ProtectedSessionStorage SessionStorage
+@inject IDemoBaronyService DemoService
+@inject NavigationManager Nav
 
 @if (IsLoading)
 {
@@ -21,10 +29,32 @@ else
     public bool IsLoading { get; set; } = true;
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (!firstRender)
+            return;
+
+        // A demo Identity cookie can survive a browser restart even though the demo token
+        // (per-tab session storage) is gone. Real accounts stay signed in; stale demo
+        // sessions must not, so sign them out when they return to the landing page.
+        if (await IsStaleDemoSessionAsync())
         {
-            IsLoading = false;
-            StateHasChanged();
+            Nav.NavigateTo("/Account/DemoExit", forceLoad: true);
+            return;
         }
+
+        IsLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task<bool> IsStaleDemoSessionAsync()
+    {
+        var state = await AuthState.GetAuthenticationStateAsync();
+        if (!SD.IsDemoUserName(state.User.Identity?.Name))
+            return false;
+
+        var stored = await SessionStorage.GetAsync<string>(ProtectedStorageKeys.DemoToken);
+        if (!stored.Success || string.IsNullOrWhiteSpace(stored.Value) || !Guid.TryParse(stored.Value, out var token))
+            return true;
+
+        return !await DemoService.IsSessionActiveAsync(token);
     }
 }
