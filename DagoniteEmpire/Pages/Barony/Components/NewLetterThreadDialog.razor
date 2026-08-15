@@ -5,7 +5,7 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudTextField @bind-Value="_title"
-                          Label="Thread title"
+                          Label="Tytuł wątku"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field"
@@ -14,13 +14,13 @@
             <MudSelect T="string"
                        Value="_recipientKey"
                        ValueChanged="OnRecipientChanged"
-                       Label="@(IsInbound ? "Sender" : "Recipient")"
-                       HelperText="Pick from Relations or Lords, or choose Other to type a name and title"
+                       Label="@(IsInbound ? "Nadawca" : "Odbiorca")"
+                       HelperText="Wybierz z Relacji lub Lordów albo wybierz Inny, aby wpisać imię i tytuł"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Dense="true"
                        Class="baron-influence-field">
-                <MudSelectItem Value="@OtherRecipientKey">Other</MudSelectItem>
+                <MudSelectItem Value="@OtherRecipientKey">Inny</MudSelectItem>
                 @foreach (var option in _recipientOptions)
                 {
                     <MudSelectItem Value="@option.Key">@option.Label</MudSelectItem>
@@ -28,7 +28,7 @@
             </MudSelect>
 
             <MudTextField @bind-Value="_correspondentName"
-                          Label="@(IsInbound ? "Sender name" : "Recipient name")"
+                          Label="@(IsInbound ? "Imię nadawcy" : "Imię odbiorcy")"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field"
@@ -36,7 +36,7 @@
                           Required="true" />
 
             <MudTextField @bind-Value="_correspondentTitle"
-                          Label="Title"
+                          Label="Tytuł"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field"
@@ -44,7 +44,7 @@
 
             <MudSelect T="string"
                        @bind-Value="_replyRegion"
-                       Label="Correspondent region"
+                       Label="Region korespondenta"
                        HelperText="@RegionHelperText"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
@@ -58,9 +58,9 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
         <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="CreateAsync" Disabled="@_busy">
-            Create thread
+            Utwórz wątek
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -98,7 +98,7 @@
     private bool IsCustomRecipient => string.Equals(_recipientKey, OtherRecipientKey, StringComparison.Ordinal);
 
     private string RegionHelperText =>
-        $"Max {BaronLetterRules.MaxInboundFromCorrespondent(_replyRegion)} inbound letter(s)/turn from this person (to the baron)";
+        $"Maks. {BaronLetterRules.MaxInboundFromCorrespondent(_replyRegion)} przychodzących listów/turę od tej osoby (do barona)";
 
     protected override void OnParametersSet() => BuildRecipientOptions();
 
@@ -178,13 +178,13 @@
     {
         if (string.IsNullOrWhiteSpace(_title))
         {
-            _snackBar.Add("Thread title is required.", Severity.Warning);
+            _snackBar.Add("Tytuł wątku jest wymagany.", Severity.Warning);
             return;
         }
 
         if (string.IsNullOrWhiteSpace(_correspondentName))
         {
-            _snackBar.Add(IsInbound ? "Sender name is required." : "Recipient name is required.", Severity.Warning);
+            _snackBar.Add(IsInbound ? "Imię nadawcy jest wymagane." : "Imię odbiorcy jest wymagane.", Severity.Warning);
             return;
         }
 
@@ -223,7 +223,7 @@
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not create thread: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się utworzyć wątku: " + ex.Message, Severity.Error);
         }
         finally
         {

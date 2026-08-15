@@ -7,21 +7,21 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog project-edit-dialog">
             <MudTextField @bind-Value="_name"
-                          Label="Name"
+                          Label="Nazwa"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Required="true"
                           Class="baron-influence-field" />
             <MudTextField @bind-Value="_description"
-                          Label="Description"
-                          HelperText="Shown under the project name."
+                          Label="Opis"
+                          HelperText="Wyświetlany pod nazwą projektu."
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="3"
                           Class="baron-influence-field" />
             <MudSelect @bind-Value="_outputKind"
-                       Label="Output type"
-                       HelperText="What this project becomes when completed."
+                       Label="Typ wyniku"
+                       HelperText="Czym staje się ten projekt po ukończeniu."
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Class="baron-influence-field">
@@ -31,8 +31,8 @@
                 }
             </MudSelect>
             <MudTextField @bind-Value="_resultDescription"
-                          Label="Output summary"
-                          HelperText="Short description of the expected result (decree, event, building, etc.)."
+                          Label="Podsumowanie wyniku"
+                          HelperText="Krótki opis oczekiwanego rezultatu (dekret, wydarzenie, budynek itp.)."
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="2"
@@ -41,12 +41,12 @@
             @if (CanManage)
             {
                 <MudCheckBox @bind-Value="_hideResultFromBaron"
-                             Label="Hide result for baron"
+                             Label="Ukryj wynik przed baronem"
                              Color="Color.Primary"
                              Dense="true"
                              Class="baron-influence-field" />
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted); margin-top:-0.5rem; margin-bottom:0.75rem;">
-                    Baron still sees the project description, but result resources and output summary stay hidden until the project is completed.
+                    Baron nadal widzi opis projektu, ale zasoby wynikowe i podsumowanie wyniku pozostają ukryte do ukończenia projektu.
                 </MudText>
                 <MudSelect @bind-Value="_status"
                            Label="Status"
@@ -59,20 +59,20 @@
                     }
                 </MudSelect>
                 <MudNumericField @bind-Value="_turnsRemaining"
-                                 Label="Turns remaining"
+                                 Label="Pozostałe tury"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Min="0"
                                  Class="baron-influence-field" />
                 <MudTextField @bind-Value="_notes"
-                              Label="Notes"
+                              Label="Notatki"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Lines="2"
                               Class="baron-influence-field" />
                 <MudSelect @bind-Value="_allowedCostModes"
-                           Label="Payment options"
-                           HelperText="Which ways players can cover this project's cost."
+                           Label="Opcje płatności"
+                           HelperText="W jaki sposób gracze mogą pokryć koszt tego projektu."
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Class="baron-influence-field">
@@ -82,27 +82,27 @@
                     }
                 </MudSelect>
                 <PpbVectorEditor @bind-Value="_costGoldProduction"
-                                 Title="Cost — Gold & Production"
+                                 Title="Koszt — Złoto i Produkcja"
                                  Compact="true"
                                  Columns="@ProjectCostCatalog.GoldProduction" />
                 <PpbVectorEditor @bind-Value="_costMaterials"
-                                 Title="Cost — Materials"
+                                 Title="Koszt — Materiały"
                                  Compact="true"
                                  Columns="@ProjectCostCatalog.Materials" />
                 @if (_outputKind == ProjectOutputKind.OneTimeResources)
                 {
                     <PpbVectorEditor @bind-Value="_resultAdditive"
-                                     Title="Resources granted on completion (added to stocks)"
+                                     Title="Zasoby przyznane po ukończeniu (dodane do zapasów)"
                                      Compact="true"
                                      Columns="@ResourceCatalog.All" />
                 }
                 else
                 {
                     <PpbVectorEditor @bind-Value="_resultAdditive"
-                                     Title="Expected output — additive (+)"
+                                     Title="Oczekiwany wynik — dodatkowy (+)"
                                      Compact="true" />
                     <PpbVectorEditor @bind-Value="_resultPercent"
-                                     Title="Expected output — percent (%)"
+                                     Title="Oczekiwany wynik — procentowy (%)"
                                      Compact="true"
                                      Percent="true" />
                 }
@@ -110,14 +110,14 @@
             else
             {
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                    New projects are saved as Draft. The game master sets costs, PPB output, and status.
+                    Nowe projekty są zapisywane jako Szkic. Mistrz gry ustala koszty, wynik PPB i status.
                 </MudText>
             }
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -169,7 +169,7 @@
     {
         if (string.IsNullOrWhiteSpace(_name))
         {
-            _snackBar.Add("Name is required.", Severity.Warning);
+            _snackBar.Add("Nazwa jest wymagana.", Severity.Warning);
             return;
         }
 
@@ -194,7 +194,7 @@
                 if (Project.ResultAdditive.IsEmpty)
                 {
                     _snackBar.Add(
-                        "One-time resources need at least one cumulative resource (Food, Gold, Production, …).",
+                        "Zasoby jednorazowe wymagają co najmniej jednego zasobu kumulacyjnego (Żywność, Złoto, Produkcja, …).",
                         Severity.Warning);
                     return;
                 }
@@ -226,20 +226,20 @@
 
     private static string AllowedCostModesLabel(string option) => option switch
     {
-        ProjectAllowedCostModes.GoldProductionOnly => "Gold & Production only",
-        ProjectAllowedCostModes.MaterialsOnly => "Materials only",
-        ProjectAllowedCostModes.PlayerChoice => "Player choice (both tracks)",
-        ProjectAllowedCostModes.Combined => "Combined (Gold, Production & Materials together)",
+        ProjectAllowedCostModes.GoldProductionOnly => "Tylko Złoto i Produkcja",
+        ProjectAllowedCostModes.MaterialsOnly => "Tylko Materiały",
+        ProjectAllowedCostModes.PlayerChoice => "Wybór gracza (obie ścieżki)",
+        ProjectAllowedCostModes.Combined => "Łącznie (Złoto, Produkcja i Materiały razem)",
         _ => option,
     };
 
     private static string StatusLabel(string status) => status switch
     {
-        ProjectStatus.Draft => "Draft",
-        ProjectStatus.ResourceAllocation => "Resource allocation",
-        ProjectStatus.InProgress => "In progress",
-        ProjectStatus.Completed => "Completed",
-        ProjectStatus.Cancelled => "Cancelled",
+        ProjectStatus.Draft => "Szkic",
+        ProjectStatus.ResourceAllocation => "Przydział zasobów",
+        ProjectStatus.InProgress => "W toku",
+        ProjectStatus.Completed => "Ukończono",
+        ProjectStatus.Cancelled => "Anulowano",
         _ => status,
     };
 }

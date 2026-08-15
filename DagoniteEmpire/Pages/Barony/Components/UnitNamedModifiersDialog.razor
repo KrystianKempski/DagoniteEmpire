@@ -7,7 +7,7 @@
         <div class="barony-dialog-theme baron-influence-edit-dialog relation-modifiers-dialog">
             <div class="relation-modifiers__header mb-2">
                 <span class="relation-modifiers__title">@Title</span>
-                <span class="relation-modifiers__sum">Sum: @FormatSum(Sum)</span>
+                <span class="relation-modifiers__sum">Suma: @FormatSum(Sum)</span>
             </div>
             @if (!string.IsNullOrWhiteSpace(Hint))
             {
@@ -16,7 +16,7 @@
 
             @if (_rows.Count == 0)
             {
-                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">No sources yet.</MudText>
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">Brak źródeł.</MudText>
             }
             else
             {
@@ -25,17 +25,17 @@
                     var index = i;
                     <div class="relation-modifiers__row">
                         <MudTextField @bind-Value="_rows[index].Label"
-                                      Label="Source"
+                                      Label="Źródło"
                                       Variant="Variant.Outlined"
                                       Margin="Margin.Dense"
                                       Class="baron-influence-field relation-modifiers__desc" />
                         <MudNumericField T="int"
                                          @bind-Value="_rows[index].Value"
-                                         Label="Value"
+                                         Label="Wartość"
                                          Variant="Variant.Outlined"
                                          Margin="Margin.Dense"
                                          Class="baron-influence-field relation-modifiers__value" />
-                        <BaronyTooltip Text="Remove">
+                        <BaronyTooltip Text="Usuń">
                             <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                            Size="Size.Small"
                                            Color="Color.Error"
@@ -50,22 +50,22 @@
                        StartIcon="@Icons.Material.Filled.Add"
                        Class="mt-1"
                        OnClick="AddRow">
-                Add source
+                Dodaj źródło
             </MudButton>
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
 
-    [Parameter] public string Title { get; set; } = "Other modifiers";
+    [Parameter] public string Title { get; set; } = "Inne modyfikatory";
     [Parameter] public string? Hint { get; set; } =
-        "Each row is a named source. The sum fills the Other column.";
+        "Każdy wiersz to nazwane źródło. Suma wypełnia kolumnę Inne.";
     [Parameter] public List<UnitCombatModifierEntry> Modifiers { get; set; } = new();
 
     private List<ModifierRow> _rows = new();

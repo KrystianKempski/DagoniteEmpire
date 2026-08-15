@@ -7,7 +7,7 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudTextField @bind-Value="_name"
-                          Label="Action"
+                          Label="Akcja"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field"
@@ -16,7 +16,7 @@
 
             <MudSelect T="string"
                        @bind-Value="_kind"
-                       Label="Type"
+                       Label="Typ"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Class="baron-influence-field"
@@ -29,7 +29,7 @@
             </MudSelect>
 
             <MudNumericField @bind-Value="_costJc"
-                             Label="Cost (BT)"
+                             Label="Koszt (BT)"
                              HelperText="@CostHint"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
@@ -37,7 +37,7 @@
                              Min="0" />
 
             <MudTextField @bind-Value="_description"
-                          Label="Description"
+                          Label="Opis"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="2"
@@ -45,8 +45,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -67,14 +67,14 @@
 
     private string CostHint =>
         _kind == BaronTimeActionKind.Adventure
-            ? $"Weekly adventure ≈ {BaronTimeRules.WeeklyExpeditionJc} BT "
-              + $"(safe max {BaronTimeRules.MaxSafeExpeditionWeeks} weeks / {BaronTimeRules.MaxSafeExpeditionJc} BT)."
+            ? $"Cotygodniowa wyprawa ≈ {BaronTimeRules.WeeklyExpeditionJc} BT "
+              + $"(bezpieczne maks. {BaronTimeRules.MaxSafeExpeditionWeeks} tygodni / {BaronTimeRules.MaxSafeExpeditionJc} BT)."
             : _kind == BaronTimeActionKind.Hunt
-                ? $"Great Hunt: at least {BaronTimeSuggestedCosts.GreatHuntJc} BT + "
-                  + $"{BaronTimeSuggestedCosts.GreatHuntProduction} Production + {BaronTimeSuggestedCosts.GreatHuntGold} gold."
+                ? $"Wielkie Polowanie: co najmniej {BaronTimeSuggestedCosts.GreatHuntJc} BT + "
+                  + $"{BaronTimeSuggestedCosts.GreatHuntProduction} Produkcji + {BaronTimeSuggestedCosts.GreatHuntGold} złota."
             : _kind == BaronTimeActionKind.Management
-                ? $"Required each turn: {BaronTimeRules.RequiredManagementJc} BT."
-                : "BT spent on this action this turn.";
+                ? $"Wymagane w każdej turze: {BaronTimeRules.RequiredManagementJc} BT."
+                : "BT wydane na tę akcję w tej turze.";
 
     protected override void OnInitialized()
     {
@@ -90,7 +90,7 @@
     {
         if (string.IsNullOrWhiteSpace(_name))
         {
-            _snackBar.Add("Action name is required.", Severity.Warning);
+            _snackBar.Add("Nazwa akcji jest wymagana.", Severity.Warning);
             return;
         }
 

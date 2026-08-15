@@ -1,7 +1,7 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @inject IDialogService _dialogService
 
-<BaronySection Title="Prestige, Honor &amp; Fear">
+<BaronySection Title="Prestiż, Honor i Postrach">
     <Summary>
         <div class="baron-php-summary">
             <PhpMetricChip Metric="PhpMetric.Prestige" Value="@_total.Prestige" />
@@ -14,7 +14,7 @@
             <table class="ppb-table ppb-table--source ppb-table--lined baron-php-table">
                 <thead>
                     <tr>
-                        <th class="ppb-row-label source-col">Source</th>
+                        <th class="ppb-row-label source-col">Źródło</th>
                         <th class="php-col php-col--prestige"><PhpMetricHeading Metric="PhpMetric.Prestige" /></th>
                         <th class="php-col php-col--honor"><PhpMetricHeading Metric="PhpMetric.Honor" /></th>
                         <th class="php-col php-col--fear"><PhpMetricHeading Metric="PhpMetric.Fear" /></th>
@@ -28,7 +28,7 @@
                                 <div class="source-cell">
                                     @if (!string.IsNullOrWhiteSpace(row.Description))
                                     {
-                                        <BaronyTooltip Title="Description" Text="@row.Description">
+                                        <BaronyTooltip Title="Opis" Text="@row.Description">
                                             <span class="source-cell__name">@row.Source</span>
                                         </BaronyTooltip>
                                     }
@@ -51,7 +51,7 @@
                         </tr>
                     }
                     <tr class="ppb-summary-row">
-                        <td class="ppb-row-label">Σ total</td>
+                        <td class="ppb-row-label">Σ razem</td>
                         <td class="@ScoreClass(PhpMetric.Prestige, _total.Prestige)"><b>@FormatScore(_total.Prestige)</b></td>
                         <td class="@ScoreClass(PhpMetric.Honor, _total.Honor)"><b>@FormatScore(_total.Honor)</b></td>
                         <td class="@ScoreClass(PhpMetric.Fear, _total.Fear)"><b>@FormatScore(_total.Fear)</b></td>
@@ -63,7 +63,7 @@
         @if (CanEdit)
         {
             <MudButton Variant="Variant.Outlined" Class="mt-3" StartIcon="@Icons.Material.Filled.Add" OnClick="AddRowAsync">
-                Add Source
+                Dodaj źródło
             </MudButton>
         }
     </ChildContent>
@@ -129,7 +129,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<BaronPhpEditDialog>(
-            isNew ? "Add Source" : "Edit Source",
+            isNew ? "Dodaj źródło" : "Edytuj źródło",
             parameters,
             new DialogOptions
             {
@@ -144,12 +144,12 @@
 
         if (string.IsNullOrWhiteSpace(saved.Source))
         {
-            _snackBar.Add("Source name is required.", Severity.Warning);
+            _snackBar.Add("Nazwa źródła jest wymagana.", Severity.Warning);
             return;
         }
 
         await _baronyRepo.SaveBaronPhpSource(saved);
-        _snackBar.Add("Source saved.", Severity.Success);
+        _snackBar.Add("Zapisano źródło.", Severity.Success);
         await OnChanged.InvokeAsync();
     }
 
@@ -159,7 +159,7 @@
             return;
 
         await _baronyRepo.DeleteBaronPhpSource(row.SourceId.Value);
-        _snackBar.Add("Source removed.", Severity.Success);
+        _snackBar.Add("Usunięto źródło.", Severity.Success);
         await OnChanged.InvokeAsync();
     }
 

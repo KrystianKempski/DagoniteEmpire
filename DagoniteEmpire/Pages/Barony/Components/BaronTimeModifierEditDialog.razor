@@ -7,20 +7,20 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudTextField @bind-Value="_source"
-                          Label="Source"
-                          HelperText="e.g. Illness, Blessing, Decree…"
+                          Label="Źródło"
+                          HelperText="np. Choroba, Błogosławieństwo, Dekret…"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field"
                           Required="true" />
             <MudNumericField @bind-Value="_percent"
-                             Label="Percent"
-                             HelperText="Applied to base BT. Positive increases the pool, negative reduces it."
+                             Label="Procent"
+                             HelperText="Stosowane do bazowego BT. Wartość dodatnia zwiększa pulę, ujemna ją zmniejsza."
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Class="baron-influence-field" />
             <MudTextField @bind-Value="_description"
-                          Label="Description"
+                          Label="Opis"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="2"
@@ -28,8 +28,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -55,7 +55,7 @@
     {
         if (string.IsNullOrWhiteSpace(_source))
         {
-            _snackBar.Add("Source is required.", Severity.Warning);
+            _snackBar.Add("Źródło jest wymagane.", Severity.Warning);
             return;
         }
 

@@ -10,7 +10,7 @@
                 <MudIconButton Icon="@Icons.Material.Filled.HelpOutline"
                                Size="Size.Small"
                                Class="barony-page-header__help-btn"
-                               aria-label="@($"Help: {Title}")"
+                               aria-label="@($"Pomoc: {Title}")"
                                OnClick="@(() => OpenHelpAsync(_helpEntry))" />
             }
         </div>
@@ -22,13 +22,13 @@
         }
         @if (ShowSectionToggle && ViewOptions is not null)
         {
-            <BaronyTooltip Text="Default section state: expanded / collapsed (you can still toggle each section manually).">
+            <BaronyTooltip Text="Domyślny stan sekcji: rozwinięte / zwinięte (każdą sekcję nadal możesz przełączać ręcznie).">
                 <MudSwitch T="bool"
                            Class="barony-page-header__sections-switch"
                            Value="ViewOptions.DefaultExpanded"
                            ValueChanged="OnDefaultExpandedChanged"
                            Color="Color.Default"
-                           Label="Sections expanded by default" />
+                           Label="Sekcje domyślnie rozwinięte" />
             </BaronyTooltip>
         }
     </div>

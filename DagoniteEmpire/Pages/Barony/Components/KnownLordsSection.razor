@@ -5,12 +5,12 @@
 
 <BaronySection Title="@Region">
     <Summary>
-        <span class="projects-summary__item">@Filtered.Count lord@(Filtered.Count == 1 ? "" : "s")</span>
+        <span class="projects-summary__item">@Filtered.Count lord@(Filtered.Count == 1 ? "" : "ów")</span>
     </Summary>
     <ChildContent>
         <div class="known-lords-filters">
             <MudTextField @bind-Value="_filter"
-                          Placeholder="Filter by name, house, title, holdings…"
+                          Placeholder="Filtruj wg nazwy, rodu, tytułu, włości…"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Immediate="true"
@@ -19,7 +19,7 @@
                           AdornmentIcon="@Icons.Material.Filled.Search"
                           Class="known-lords-filters__search" />
             <div class="known-lords-mark-filters">
-                <span class="known-lords-mark-filters__label">Mark</span>
+                <span class="known-lords-mark-filters__label">Znak</span>
                 <div class="known-lords-mark-filters__icons">
                     @foreach (var icon in BaronyCharacterMarkCatalog.Icons)
                     {
@@ -32,7 +32,7 @@
                         </BaronyTooltip>
                     }
                 </div>
-                <span class="known-lords-mark-filters__label">Color</span>
+                <span class="known-lords-mark-filters__label">Kolor</span>
                 <div class="known-lords-mark-filters__colors">
                     @foreach (var color in BaronyCharacterMarkCatalog.Colors)
                     {
@@ -50,7 +50,7 @@
                                Variant="Variant.Text"
                                Class="known-lords-mark-filters__clear"
                                OnClick="ClearMarkFilters">
-                        Clear marks
+                        Wyczyść znaki
                     </MudButton>
                 }
             </div>
@@ -59,7 +59,7 @@
         @if (Filtered.Count == 0)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                No lords match the current filter.
+                Żaden lord nie pasuje do bieżącego filtra.
             </MudText>
         }
         else
@@ -77,13 +77,13 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th class="known-lords-col-name">Name</th>
-                            <th class="known-lords-col-house">House</th>
-                            <th class="known-lords-col-title">Title</th>
-                            <th class="known-lords-col-holdings">Holdings</th>
-                            <th class="known-lords-col-wealth">Wealth</th>
-                            <th class="known-lords-col-desc">Description</th>
-                            <th class="known-lords-col-goods">Available goods</th>
+                            <th class="known-lords-col-name">Nazwa</th>
+                            <th class="known-lords-col-house">Ród</th>
+                            <th class="known-lords-col-title">Tytuł</th>
+                            <th class="known-lords-col-holdings">Włości</th>
+                            <th class="known-lords-col-wealth">Bogactwo</th>
+                            <th class="known-lords-col-desc">Opis</th>
+                            <th class="known-lords-col-goods">Dostępne towary</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -114,7 +114,7 @@
                                         else if (!string.IsNullOrWhiteSpace(notes))
                                         {
                                             <span class="city-building-name-actions">
-                                                <BaronyTooltip Title="Notes" Text="@notes">
+                                                <BaronyTooltip Title="Notatki" Text="@notes">
                                                     <MudIcon Icon="@Icons.Material.Filled.EditNote"
                                                              Size="Size.Small"
                                                              Class="known-lords-notes-icon known-lords-notes-icon--filled" />
@@ -130,7 +130,7 @@
                                 <td class="known-lords-col-desc">
                                     @if (!string.IsNullOrWhiteSpace(lord.Description))
                                     {
-                                        <BaronyTooltip Title="Description" Text="@lord.Description">
+                                        <BaronyTooltip Title="Opis" Text="@lord.Description">
                                             <span class="known-lords-desc-text">@lord.Description</span>
                                         </BaronyTooltip>
                                     }
@@ -275,17 +275,17 @@
         {
             var normalized = BaronyCharacterMarkDTO.NormalizeList(marks);
             await _baronyRepo.SaveKnownLordMarks(BaronyId, lordKey, normalized);
-            _snackBar.Add(normalized.Count > 0 ? "Marks updated." : "Marks cleared.", Severity.Success);
+            _snackBar.Add(normalized.Count > 0 ? "Zaktualizowano znaki." : "Wyczyszczono znaki.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save marks: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać znaków: " + ex.Message, Severity.Error);
         }
     }
 
     private static string NotesTooltip(string? notes) =>
-        string.IsNullOrWhiteSpace(notes) ? "Edit notes" : notes;
+        string.IsNullOrWhiteSpace(notes) ? "Edytuj notatki" : notes;
 
     private static string NotesButtonClass(string? notes) =>
         string.IsNullOrWhiteSpace(notes)
@@ -302,7 +302,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<RelationNotesDialog>(
-            "Edit Notes",
+            "Edytuj notatki",
             parameters,
             new DialogOptions
             {
@@ -321,12 +321,12 @@
                 BaronyId,
                 lordKey,
                 string.IsNullOrWhiteSpace(saved) ? null : saved);
-            _snackBar.Add("Notes updated.", Severity.Success);
+            _snackBar.Add("Zaktualizowano notatki.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save notes: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać notatek: " + ex.Message, Severity.Error);
         }
     }
 

@@ -7,22 +7,22 @@
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudText Typo="Typo.body2" Class="mb-2">@_subtitle</MudText>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Adds PPB and Prestige / Honor / Fear to this audience and posts a “Resource change” note.
-                Non-cumulative PPB → Events · Cumulative PPB → Resources (Expected Income) · PHP → Baron Card (From Adventures).
+                Dodaje PPB oraz Prestiż / Honor / Strach do tej audiencji i dodaje notatkę „Zmiana zasobów”.
+                Niekumulatywne PPB → Wydarzenia · Kumulatywne PPB → Zasoby (Oczekiwany dochód) · PHP → Karta Barona (Z przygód).
             </MudText>
             <MudTextField @bind-Value="_note"
-                          Label="Description of changes"
+                          Label="Opis zmian"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="4"
                           Immediate="true"
-                          HelperText="Shown under the Resource change entry"
+                          HelperText="Wyświetlane pod wpisem zmiany zasobów"
                           Class="baron-influence-field mb-2" />
-            <PpbVectorEditor @bind-Value="_delta" Title="PPB change (+)" Compact="true" />
-            <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Prestige / Honor / Fear</MudText>
+            <PpbVectorEditor @bind-Value="_delta" Title="Zmiana PPB (+)" Compact="true" />
+            <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Prestiż / Honor / Strach</MudText>
             <div class="baron-php-edit-fields">
                 <MudNumericField @bind-Value="_prestige"
-                                 Label="Prestige"
+                                 Label="Prestiż"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Immediate="true"
@@ -34,7 +34,7 @@
                                  Immediate="true"
                                  Class="baron-influence-field php-field php-field--honor" />
                 <MudNumericField @bind-Value="_fear"
-                                 Label="Fear"
+                                 Label="Strach"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Immediate="true"
@@ -43,9 +43,9 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
         <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save" Disabled="!CanSave">
-            Add resources
+            Dodaj zasoby
         </MudButton>
     </DialogActions>
 </MudDialog>

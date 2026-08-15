@@ -7,22 +7,22 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudTextField @bind-Value="_source"
-                          Label="Source"
-                          HelperText="e.g. Traits, Adventure: …"
+                          Label="Źródło"
+                          HelperText="np. Cechy, Przygoda: …"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field"
                           Required="true" />
             <MudTextField @bind-Value="_description"
-                          Label="Description"
-                          HelperText="Optional. Shown on hover over the source in the table."
+                          Label="Opis"
+                          HelperText="Opcjonalnie. Wyświetlany po najechaniu na źródło w tabeli."
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="2"
                           Class="baron-influence-field" />
             <div class="baron-php-edit-fields">
                 <MudNumericField @bind-Value="_prestige"
-                                 Label="Prestige"
+                                 Label="Prestiż"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Class="baron-influence-field php-field php-field--prestige" />
@@ -32,7 +32,7 @@
                                  Margin="Margin.Dense"
                                  Class="baron-influence-field php-field php-field--honor" />
                 <MudNumericField @bind-Value="_fear"
-                                 Label="Fear"
+                                 Label="Postrach"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Class="baron-influence-field php-field php-field--fear" />
@@ -40,8 +40,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -71,7 +71,7 @@
     {
         if (string.IsNullOrWhiteSpace(_source))
         {
-            _snackBar.Add("Source name is required.", Severity.Warning);
+            _snackBar.Add("Nazwa źródła jest wymagana.", Severity.Warning);
             return;
         }
 

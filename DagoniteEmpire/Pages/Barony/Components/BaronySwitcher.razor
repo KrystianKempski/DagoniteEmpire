@@ -7,11 +7,11 @@
 
 @if (_visible)
 {
-    <BaronyTooltip Text="Switch barony">
+    <BaronyTooltip Text="Przełącz baronię">
         <button type="button"
                 class="barony-meta-bar__name barony-meta-bar__name--switch"
                 @onclick="OpenSwitchDialogAsync">
-        @(_selected?.Name ?? "Select barony")
+        @(_selected?.Name ?? "Wybierz baronię")
         </button>
     </BaronyTooltip>
 }
@@ -54,7 +54,7 @@
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Failed to load baronies: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się załadować baronii: " + ex.Message, Severity.Error);
         }
     }
 
@@ -67,7 +67,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<BaronySwitchDialog>(
-            "Switch barony",
+            "Przełącz baronię",
             parameters,
             new DialogOptions
             {
@@ -97,7 +97,7 @@
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Failed to switch barony: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się przełączyć baronii: " + ex.Message, Severity.Error);
         }
     }
 }

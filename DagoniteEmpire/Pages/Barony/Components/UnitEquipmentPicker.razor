@@ -7,49 +7,49 @@
 @* Excel-style weapon / armor catalog: weapons left, armor+shields right. *@
 <div class="unit-equip-catalog">
     <div class="unit-equip-catalog__intro">
-        <h3 class="unit-workshop__heading">Arms &amp; armor catalog</h3>
+        <h3 class="unit-workshop__heading">Katalog broni i pancerza</h3>
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-            Pick <b>W1</b> / <b>W2</b> on a weapon row (left), armor or shield on the right.
-            Greyed rows need more Build, Agility, Armor skill, or Riding, or lack trade access to military arms / powder / armor tiers / horses.
-            Hover column headers for notes. Costs:
-            <BaronyResourceIcon Resource="Ppb.Production" Size="xs" /> production ·
-            <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" /> gold ·
-            <b>Mkt</b> market (×2 =
-            <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" /> price).
+            Wybierz <b>W1</b> / <b>W2</b> w wierszu broni (po lewej), pancerz lub tarczę po prawej.
+            Wyszarzone wiersze wymagają więcej Budowy, Zwinności, umiejętności Pancerza lub Jazdy konnej, albo brakuje dostępu handlowego do broni wojskowej / prochu / poziomów pancerza / koni.
+            Naprowadź na nagłówki kolumn, aby zobaczyć notatki. Koszty:
+            <BaronyResourceIcon Resource="Ppb.Production" Size="xs" /> produkcja ·
+            <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" /> złoto ·
+            <b>Mkt</b> rynek (×2 =
+            <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" /> cena).
         </MudText>
     </div>
 
     <div class="unit-equip-catalog__split">
         <section class="unit-equip-tile">
-            <div class="unit-equip-tile__title">Weapons</div>
+            <div class="unit-equip-tile__title">Broń</div>
             <div class="unit-equip-tile__scroll">
                 <table class="ppb-table ppb-table--source ppb-table--lined unit-equip-table">
                     <thead>
                         <tr>
                             <th class="unit-equip-table__pick">
-                                <BaronyTooltip Title="Weapon 1" Text="Select as primary weapon." Placement="Placement.Top">
+                                <BaronyTooltip Title="Broń 1" Text="Wybierz jako broń podstawową." Placement="Placement.Top">
                                     <span>W1</span>
                                 </BaronyTooltip>
                             </th>
                             <th class="unit-equip-table__pick">
-                                <BaronyTooltip Title="Weapon 2" Text="Select as secondary weapon (click again to clear)." Placement="Placement.Top">
+                                <BaronyTooltip Title="Broń 2" Text="Wybierz jako broń drugorzędną (kliknij ponownie, aby wyczyścić)." Placement="Placement.Top">
                                     <span>W2</span>
                                 </BaronyTooltip>
                             </th>
-                            <th class="ppb-row-label">Name</th>
-                            <th>Type</th>
-                            @ColHeader("Atk", "Attack", "Weapon attack bonus added to the Attack total.")
-                            @ColHeader("Dmg", "Damage", "Weapon damage bonus.")
-                            @ColHeader("Def", "Defense", "Weapon defense bonus added when this weapon contributes to Defense.")
-                            @ColHeader("Prc", "Pierce", "Armor pierce.")
-                            @ColHeader("Rng", "Range", "Ranged range with no penalty; −4 at double range, −8 at triple.")
-                            @ColHeader("Mov", "Move", "Move penalty from this weapon.")
-                            @ColHeader("1H", "One-handed", "Weapon is one-handed.")
-                            @ColHeader("Bld", "Build requirement", "Minimum required Build.")
-                            @ColHeader("Agi", "Agility requirement", "Minimum required Agility.")
-                            @ResColHeader(Ppb.Production, "Production", "Production cost to build this weapon for one unit (50 troops) when strategic goods are available.")
-                            @ResColHeader(Ppb.Treasury, "Gold", "Gold cost for one unit (50 troops).")
-                            @ColHeader("Mkt", "Market gold", "Market gold. On the Gear row choose Buy to pay Mkt in gold (no Production), or Defense to pay 2×Mkt as Defense.")
+                            <th class="ppb-row-label">Nazwa</th>
+                            <th>Typ</th>
+                            @ColHeader("Atk", "Atak", "Premia do ataku broni dodawana do sumy Ataku.")
+                            @ColHeader("Dmg", "Obrażenia", "Premia do obrażeń broni.")
+                            @ColHeader("Def", "Obrona", "Premia do obrony broni dodawana, gdy ta broń wpływa na Obronę.")
+                            @ColHeader("Prc", "Przebicie", "Przebicie pancerza.")
+                            @ColHeader("Rng", "Zasięg", "Zasięg strzału bez kary; −4 przy podwójnym zasięgu, −8 przy potrójnym.")
+                            @ColHeader("Mov", "Ruch", "Kara do ruchu od tej broni.")
+                            @ColHeader("1H", "Jednoręczna", "Broń jest jednoręczna.")
+                            @ColHeader("Bld", "Wymagana Budowa", "Minimalna wymagana Budowa.")
+                            @ColHeader("Agi", "Wymagana Zwinność", "Minimalna wymagana Zwinność.")
+                            @ResColHeader(Ppb.Production, "Produkcja", "Koszt produkcji tej broni dla jednego oddziału (50 ludzi), gdy dostępne są towary strategiczne.")
+                            @ResColHeader(Ppb.Treasury, "Złoto", "Koszt w złocie dla jednego oddziału (50 ludzi).")
+                            @ColHeader("Mkt", "Złoto rynkowe", "Złoto rynkowe. W wierszu Sprzęt wybierz Kup, aby zapłacić Mkt w złocie (bez Produkcji), lub Obronę, aby zapłacić 2×Mkt jako Obronę.")
                         </tr>
                     </thead>
                     <tbody>
@@ -65,7 +65,7 @@
                                 var ok = MeetsWeapon(w, out var why);
                                 <tr class="@RowClass(isW1 || isW2, ok)">
                                     <td class="unit-equip-table__pick">
-                                        <BaronyTooltip Text="@(ok ? "Select as Weapon 1" : why)">
+                                        <BaronyTooltip Text="@(ok ? "Wybierz jako broń 1" : why)">
                                             <button type="button"
                                                     class="unit-equip-pick @(isW1 ? "unit-equip-pick--on" : null)"
                                                     disabled="@(!CanEdit)"
@@ -73,7 +73,7 @@
                                         </BaronyTooltip>
                                     </td>
                                     <td class="unit-equip-table__pick">
-                                        <BaronyTooltip Text="@(ok ? "Select as Weapon 2 (click again to clear)" : why)">
+                                        <BaronyTooltip Text="@(ok ? "Wybierz jako broń 2 (kliknij ponownie, aby wyczyścić)" : why)">
                                             <button type="button"
                                                     class="unit-equip-pick @(isW2 ? "unit-equip-pick--on" : null)"
                                                     disabled="@(!CanEdit)"
@@ -88,7 +88,7 @@
                                     <td>@w.Pierce</td>
                                     <td>@(w.Range == 0 ? "—" : w.Range.ToString())</td>
                                     <td>@(w.MovePenalty == 0 ? "—" : w.MovePenalty.ToString())</td>
-                                    <td>@(w.OneHanded ? "yes" : "no")</td>
+                                    <td>@(w.OneHanded ? "tak" : "nie")</td>
                                     <td class="@(Build < w.RequiredBuild ? "unit-equip-table__req--fail" : null)">@w.RequiredBuild</td>
                                     <td class="@(Agility < w.RequiredAgility ? "unit-equip-table__req--fail" : null)">@w.RequiredAgility</td>
                                     <td>@w.ProductionCost</td>
@@ -103,27 +103,27 @@
         </section>
 
         <section class="unit-equip-tile">
-            <div class="unit-equip-tile__title">Armor &amp; shields</div>
+            <div class="unit-equip-tile__title">Pancerz i tarcze</div>
             <div class="unit-equip-tile__scroll">
                 <table class="ppb-table ppb-table--source ppb-table--lined unit-equip-table">
                     <thead>
                         <tr>
                             <th class="unit-equip-table__pick">
-                                <BaronyTooltip Title="Pick" Text="Select armor or shield (click again to clear)." Placement="Placement.Top">
-                                    <span>Pick</span>
+                                <BaronyTooltip Title="Wybierz" Text="Wybierz pancerz lub tarczę (kliknij ponownie, aby wyczyścić)." Placement="Placement.Top">
+                                    <span>Wybór</span>
                                 </BaronyTooltip>
                             </th>
-                            <th class="ppb-row-label">Name</th>
-                            <th>Type</th>
-                            @ColHeader("Def", "Defense", "Defense bonus from this armor or shield.")
-                            @ColHeader("Arm", "Armor", "Armor value from body armor only — shields do not add Armor. Reduces incoming damage.")
-                            @ColHeader("Pen", "Agility penalty", "Penalty applied to the Agility attribute.")
-                            @ColHeader("Mov", "Move", "Move penalty.")
-                            @ColHeader("Bld", "Build requirement", "Minimum required Build.")
-                            @ColHeader("Ask", "Armor skill requirement", "Minimum required Armor skill.")
-                            @ResColHeader(Ppb.Production, "Production", "Production cost for one unit (50 troops) when strategic goods are available.")
-                            @ResColHeader(Ppb.Treasury, "Gold", "Gold cost for one unit (50 troops).")
-                            @ColHeader("Mkt", "Market gold", "Market gold. On the Gear row choose Buy to pay Mkt in gold (no Production), or Defense to pay 2×Mkt as Defense.")
+                            <th class="ppb-row-label">Nazwa</th>
+                            <th>Typ</th>
+                            @ColHeader("Def", "Obrona", "Premia do obrony od tego pancerza lub tarczy.")
+                            @ColHeader("Arm", "Pancerz", "Wartość pancerza tylko z pancerza właściwego — tarcze nie dodają Pancerza. Zmniejsza otrzymywane obrażenia.")
+                            @ColHeader("Pen", "Kara do Zwinności", "Kara nakładana na atrybut Zwinności.")
+                            @ColHeader("Mov", "Ruch", "Kara do ruchu.")
+                            @ColHeader("Bld", "Wymagana Budowa", "Minimalna wymagana Budowa.")
+                            @ColHeader("Ask", "Wymagana umiej. pancerza", "Minimalna wymagana umiejętność Pancerza.")
+                            @ResColHeader(Ppb.Production, "Produkcja", "Koszt produkcji dla jednego oddziału (50 ludzi), gdy dostępne są towary strategiczne.")
+                            @ResColHeader(Ppb.Treasury, "Złoto", "Koszt w złocie dla jednego oddziału (50 ludzi).")
+                            @ColHeader("Mkt", "Złoto rynkowe", "Złoto rynkowe. W wierszu Sprzęt wybierz Kup, aby zapłacić Mkt w złocie (bez Produkcji), lub Obronę, aby zapłacić 2×Mkt jako Obronę.")
                         </tr>
                     </thead>
                     <tbody>
@@ -137,7 +137,7 @@
                             </tr>
                             @if (shields.Count > 0)
                             {
-                                <tr class="unit-equip-table__subgroup"><td colspan="12">Shields</td></tr>
+                                <tr class="unit-equip-table__subgroup"><td colspan="12">Tarcze</td></tr>
                                 @foreach (var a in shields)
                                 {
                                     @ArmorRow(a)
@@ -145,7 +145,7 @@
                             }
                             @if (bodies.Count > 0)
                             {
-                                <tr class="unit-equip-table__subgroup"><td colspan="12">Body armor</td></tr>
+                                <tr class="unit-equip-table__subgroup"><td colspan="12">Zbroja</td></tr>
                                 @foreach (var a in bodies)
                                 {
                                     @ArmorRow(a)
@@ -159,25 +159,25 @@
     </div>
 
     <section class="unit-equip-tile unit-equip-tile--mounts">
-        <div class="unit-equip-tile__title">Mounts</div>
+        <div class="unit-equip-tile__title">Wierzchowce</div>
         <div class="unit-equip-tile__scroll">
             <table class="ppb-table ppb-table--source ppb-table--lined unit-equip-table">
                 <thead>
                     <tr>
                         <th class="unit-equip-table__pick">
-                            <BaronyTooltip Title="Pick" Text="Select a mount (click again to clear)." Placement="Placement.Top">
-                                <span>Pick</span>
+                            <BaronyTooltip Title="Wybierz" Text="Wybierz wierzchowca (kliknij ponownie, aby wyczyścić)." Placement="Placement.Top">
+                                <span>Wybór</span>
                             </BaronyTooltip>
                         </th>
-                        <th class="ppb-row-label">Name</th>
-                        @ColHeader("Atk", "Attack", "Attack bonus from this mount.")
-                        @ColHeader("Def", "Defense", "Defense bonus from this mount.")
-                        @ColHeader("Dmg", "Damage", "Damage bonus from this mount.")
-                        @ColHeader("Mov", "Move", "Movement bonus from this mount.")
-                        @ColHeader("Rid", "Riding requirement", "Minimum required Riding skill total.")
-                        @ResColHeader(Ppb.Production, "Production", "Production cost for one unit (50 troops) when horses are available.")
-                        @ResColHeader(Ppb.Treasury, "Gold", "Gold cost for one unit (50 troops).")
-                        @ColHeader("Mkt", "Market gold", "Market gold. Buy = Mkt gold; Defense = 2×Mkt Defense.")
+                        <th class="ppb-row-label">Nazwa</th>
+                        @ColHeader("Atk", "Atak", "Premia do ataku od tego wierzchowca.")
+                        @ColHeader("Def", "Obrona", "Premia do obrony od tego wierzchowca.")
+                        @ColHeader("Dmg", "Obrażenia", "Premia do obrażeń od tego wierzchowca.")
+                        @ColHeader("Mov", "Ruch", "Premia do ruchu od tego wierzchowca.")
+                        @ColHeader("Rid", "Wymagana Jazda konna", "Minimalna wymagana suma umiejętności Jazdy konnej.")
+                        @ResColHeader(Ppb.Production, "Produkcja", "Koszt produkcji dla jednego oddziału (50 ludzi), gdy dostępne są konie.")
+                        @ResColHeader(Ppb.Treasury, "Złoto", "Koszt w złocie dla jednego oddziału (50 ludzi).")
+                        @ColHeader("Mkt", "Złoto rynkowe", "Złoto rynkowe. Kup = Mkt złota; Obrona = 2×Mkt Obrony.")
                     </tr>
                 </thead>
                 <tbody>
@@ -187,7 +187,7 @@
                         var selected = MountKey == m.Key;
                         <tr class="@RowClass(selected, ok)">
                             <td class="unit-equip-table__pick">
-                                <BaronyTooltip Text="@(ok ? "Select mount (click again to clear)" : why)">
+                                <BaronyTooltip Text="@(ok ? "Wybierz wierzchowca (kliknij ponownie, aby wyczyścić)" : why)">
                                     <button type="button"
                                             class="unit-equip-pick @(selected ? "unit-equip-pick--on" : null)"
                                             disabled="@(!CanEdit)"
@@ -363,7 +363,7 @@
         var ok = MeetsArmor(a, out var why);
         <tr class="@RowClass(selected, ok)">
             <td class="unit-equip-table__pick">
-                <BaronyTooltip Text="@(ok ? (a.IsShield ? "Select shield (click again to clear)" : "Select armor (click again to clear)") : why)">
+                <BaronyTooltip Text="@(ok ? (a.IsShield ? "Wybierz tarczę (kliknij ponownie, aby wyczyścić)" : "Wybierz pancerz (kliknij ponownie, aby wyczyścić)") : why)">
                     <button type="button"
                             class="unit-equip-pick @(selected ? "unit-equip-pick--on" : null)"
                             disabled="@(!CanEdit)"
@@ -371,7 +371,7 @@
                 </BaronyTooltip>
             </td>
             <td class="ppb-row-label">@a.Name</td>
-            <td>@(a.IsShield ? "Shields" : a.ArmorClass)</td>
+            <td>@(a.IsShield ? "Tarcze" : a.ArmorClass)</td>
             <td>@a.Defense</td>
             <td>@(a.IsShield ? "—" : a.ArmorValue.ToString())</td>
             <td>@(a.AgilityPenalty == 0 ? "—" : a.AgilityPenalty.ToString())</td>

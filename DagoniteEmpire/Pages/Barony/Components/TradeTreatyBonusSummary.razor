@@ -1,14 +1,14 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
-<BaronySection Title="Treaty trade bonuses" DefaultOpen="true">
+<BaronySection Title="Premie handlowe z traktatów" DefaultOpen="true">
     <Summary>
-        <span class="projects-summary__item">@_receivedCount good@(_receivedCount == 1 ? "" : "s") from treaties</span>
+        <span class="projects-summary__item">@_receivedCount dóbr z traktatów</span>
     </Summary>
     <ChildContent>
         @if (_receivedCount == 0 && !_hasTreatyPpb)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                No treaty goods, route economy, or gold flows yet.
+                Brak dóbr z traktatów, ekonomii tras ani przepływów złota.
             </MudText>
         }
         else
@@ -18,8 +18,8 @@
                     <thead>
                         <tr>
                             <th>PPB</th>
-                            <th>Additive</th>
-                            <th>Percent</th>
+                            <th>Dodatnie</th>
+                            <th>Procent</th>
                         </tr>
                     </thead>
                     <tbody>

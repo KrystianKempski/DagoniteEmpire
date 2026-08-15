@@ -7,7 +7,7 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudTextField @bind-Value="_name"
-                          Label="Name"
+                          Label="Nazwa"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field"
@@ -15,7 +15,7 @@
 
             <MudSelect T="string"
                        @bind-Value="_kind"
-                       Label="Type"
+                       Label="Typ"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Class="baron-influence-field"
@@ -28,8 +28,8 @@
 
             <MudSelect T="string"
                        @bind-Value="_origin"
-                       Label="Source"
-                       HelperText="How the item was obtained"
+                       Label="Źródło"
+                       HelperText="Jak przedmiot został pozyskany"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Class="baron-influence-field"
@@ -42,7 +42,7 @@
 
             <div class="baron-php-edit-fields">
                 <MudNumericField @bind-Value="_prestige"
-                                 Label="Prestige"
+                                 Label="Prestiż"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Class="baron-influence-field php-field php-field--prestige" />
@@ -52,7 +52,7 @@
                                  Margin="Margin.Dense"
                                  Class="baron-influence-field php-field php-field--honor" />
                 <MudNumericField @bind-Value="_fear"
-                                 Label="Fear"
+                                 Label="Strach"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Class="baron-influence-field php-field php-field--fear" />
@@ -61,7 +61,7 @@
             <MudSelect T="int?"
                        Value="_seatRoomId"
                        ValueChanged="OnRoomChanged"
-                       Label="Location"
+                       Label="Lokalizacja"
                        HelperText="@_roomHelper"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
@@ -77,15 +77,15 @@
             @if (_selectedRoom is not null)
             {
                 <MudText Typo="Typo.caption" Class="mt-1" Style="color:var(--barony-muted);">
-                    Chamber bonus: ×@_selectedRoom.PrestigeMultiplier.ToString("0.##")
-                    · Capacity: @_capacityUsed / @BaronArtifactCapacity.LimitLabel(_selectedRoom.SizeCategory)
+                    Premia komnaty: ×@_selectedRoom.PrestigeMultiplier.ToString("0.##")
+                    · Pojemność: @_capacityUsed / @BaronArtifactCapacity.LimitLabel(_selectedRoom.SizeCategory)
                     (@_selectedRoom.SizeCategory)
                 </MudText>
             }
 
             <MudTextField @bind-Value="_description"
-                          Label="Description"
-                          HelperText="Optional. Shown on hover over the name in the table."
+                          Label="Opis"
+                          HelperText="Opcjonalne. Widoczne po najechaniu na nazwę w tabeli."
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="3"
@@ -93,8 +93,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -114,7 +114,7 @@
     private int? _seatRoomId;
     private string? _description;
     private List<SeatRoomDTO> _rooms = new();
-    private string _roomHelper = "Chamber where the item is displayed (applies prestige multiplier).";
+    private string _roomHelper = "Komnata, w której przedmiot jest wystawiony (stosuje mnożnik prestiżu).";
 
     private SeatRoomDTO? _selectedRoom =>
         _seatRoomId is int id ? _rooms.FirstOrDefault(r => r.Id == id) : null;
@@ -158,7 +158,7 @@
             room.Id,
             Artifact.Id > 0 ? Artifact.Id : null);
         var limit = BaronArtifactCapacity.LimitLabel(room.SizeCategory);
-        var name = string.IsNullOrWhiteSpace(room.Name) ? $"Room #{room.Id}" : room.Name;
+        var name = string.IsNullOrWhiteSpace(room.Name) ? $"Komnata #{room.Id}" : room.Name;
         return $"{name} (×{room.PrestigeMultiplier:0.##}, {used}/{limit})";
     }
 
@@ -168,7 +168,7 @@
     {
         if (string.IsNullOrWhiteSpace(_name))
         {
-            _snackBar.Add("Name is required.", Severity.Warning);
+            _snackBar.Add("Nazwa jest wymagana.", Severity.Warning);
             return;
         }
 

@@ -1,10 +1,10 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @inject IDialogService _dialogService
 
-<BaronySection Title="Trophies, Treasures &amp; Artifacts">
+<BaronySection Title="Trofea, skarby i artefakty">
     <Summary>
         <div class="baron-php-summary">
-            <span class="baron-php-chip baron-php-chip--neutral">Items @_artifacts.Count</span>
+            <span class="baron-php-chip baron-php-chip--neutral">Przedmioty @_artifacts.Count</span>
             <PhpMetricChip Metric="PhpMetric.Prestige" Value="@_contrib.Prestige" />
             <PhpMetricChip Metric="PhpMetric.Honor" Value="@_contrib.Honor" />
             <PhpMetricChip Metric="PhpMetric.Fear" Value="@_contrib.Fear" />
@@ -14,7 +14,7 @@
         @if (_artifacts.Count == 0)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                No trophies, treasures or artifacts yet. Place items in Lord's Seat chambers to apply the room prestige multiplier (capacity: Small 3, Medium 6, Large 12, Huge unlimited).
+                Brak jeszcze trofeów, skarbów ani artefaktów. Umieszczaj przedmioty w komnatach Siedziby Władcy, aby zastosować mnożnik prestiżu pomieszczenia (pojemność: Małe 3, Średnie 6, Duże 12, Ogromne bez limitu).
             </MudText>
         }
         else
@@ -33,9 +33,9 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th class="ppb-row-label artifact-col-name">Name</th>
-                            <th class="artifact-col-type">Type</th>
-                            <th class="artifact-col-origin">Source</th>
+                            <th class="ppb-row-label artifact-col-name">Nazwa</th>
+                            <th class="artifact-col-type">Typ</th>
+                            <th class="artifact-col-origin">Źródło</th>
                             <th class="php-col php-col--prestige artifact-col-php">
                                 <PhpMetricIcon Metric="PhpMetric.Prestige" />
                             </th>
@@ -46,9 +46,9 @@
                                 <PhpMetricIcon Metric="PhpMetric.Fear" />
                             </th>
                             <th class="artifact-col-location">
-                                <BaronyTooltip Text="Lord's Seat chamber and its prestige multiplier">Location</BaronyTooltip>
+                                <BaronyTooltip Text="Komnata Siedziby Władcy i jej mnożnik prestiżu">Lokalizacja</BaronyTooltip>
                             </th>
-                            <th class="artifact-col-desc">Description</th>
+                            <th class="artifact-col-desc">Opis</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -86,7 +86,7 @@
                                     </BaronyTooltip>
                                 </td>
                                 <td class="artifact-col-location">
-                                    <BaronyTooltip Title="Location" Text="@BaronyCalc.ArtifactLocationTooltip(item, Seat)">
+                                    <BaronyTooltip Title="Lokalizacja" Text="@BaronyCalc.ArtifactLocationTooltip(item, Seat)">
                                         <span>@BaronyCalc.ArtifactLocationLabel(item, Seat)</span>
                                     </BaronyTooltip>
                                 </td>
@@ -101,7 +101,7 @@
         @if (CanEdit)
         {
             <MudButton Variant="Variant.Outlined" Class="mt-3" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync">
-                Add Item
+                Dodaj przedmiot
             </MudButton>
         }
     </ChildContent>
@@ -163,7 +163,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<BaronArtifactEditDialog>(
-            isNew ? "Add Item" : "Edit Item",
+            isNew ? "Dodaj przedmiot" : "Edytuj przedmiot",
             parameters,
             new DialogOptions
             {
@@ -178,7 +178,7 @@
 
         if (string.IsNullOrWhiteSpace(saved.Name))
         {
-            _snackBar.Add("Name is required.", Severity.Warning);
+            _snackBar.Add("Nazwa jest wymagana.", Severity.Warning);
             return;
         }
 
@@ -194,7 +194,7 @@
         }
 
         await _baronyRepo.SaveBaronArtifact(saved);
-        _snackBar.Add("Item saved.", Severity.Success);
+        _snackBar.Add("Zapisano przedmiot.", Severity.Success);
         await OnChanged.InvokeAsync();
     }
 
@@ -204,7 +204,7 @@
             return;
 
         await _baronyRepo.DeleteBaronArtifact(item.Id);
-        _snackBar.Add("Item removed.", Severity.Success);
+        _snackBar.Add("Usunięto przedmiot.", Severity.Success);
         await OnChanged.InvokeAsync();
     }
 

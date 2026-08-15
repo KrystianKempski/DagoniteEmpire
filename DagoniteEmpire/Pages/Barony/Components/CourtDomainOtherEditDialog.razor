@@ -7,8 +7,8 @@
     <DialogContent>
         <div class="barony-dialog-theme">
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Extra Domain Skill sources. Values are summed into the Other row;
-                source names show on hover and here.
+                Dodatkowe źródła umiejętności domeny. Wartości są sumowane do wiersza Inne;
+                nazwy źródeł widoczne po najechaniu i tutaj.
             </MudText>
 
             <div class="court-other-list">
@@ -19,18 +19,18 @@
                     <div class="court-domain-other-block">
                         <div class="court-other-row">
                             <MudTextField @bind-Value="entry.Name"
-                                          Label="Source"
+                                          Label="Źródło"
                                           Variant="Variant.Outlined"
                                           Margin="Margin.Dense"
                                           Class="court-other-row__name" />
-                            <BaronyTooltip Text="Remove">
+                            <BaronyTooltip Text="Usuń">
                                 <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                Size="Size.Small"
                                                Color="Color.Error"
                                                OnClick="@(() => Remove(index))" />
                             </BaronyTooltip>
                         </div>
-                        <PpbVectorEditor @bind-Value="entry.Additive" Title="PPB bonuses" Compact="true" ExcludeTreasury="true" />
+                        <PpbVectorEditor @bind-Value="entry.Additive" Title="Premie PPB" Compact="true" ExcludeTreasury="true" />
                     </div>
                 }
             </div>
@@ -40,13 +40,13 @@
                        StartIcon="@Icons.Material.Filled.Add"
                        Class="mt-2"
                        OnClick="Add">
-                Add source
+                Dodaj źródło
             </MudButton>
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -96,7 +96,7 @@
         {
             if (string.IsNullOrWhiteSpace(entry.Name))
             {
-                _snackBar.Add("Each source needs a name.", Severity.Warning);
+                _snackBar.Add("Każde źródło wymaga nazwy.", Severity.Warning);
                 return;
             }
         }

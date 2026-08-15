@@ -12,10 +12,10 @@
          aria-expanded="@(Collapsible ? _isOpen : null)">
         <div class="unit-draft-card__title-main">
             <span>@ResolvedTitleEyebrow</span>
-            <b>@(string.IsNullOrWhiteSpace(Unit.Name) || Unit.Name == "Forming unit" ? "(name)" : Unit.Name)</b>
+            <b>@(string.IsNullOrWhiteSpace(Unit.Name) || Unit.Name == "Forming unit" ? "(nazwa)" : Unit.Name)</b>
             @if (!string.IsNullOrWhiteSpace(Unit.CaptainName))
             {
-                <BaronyTooltip Title="Captain"
+                <BaronyTooltip Title="Kapitan"
                                Text="@(string.IsNullOrWhiteSpace(CaptainTooltip) ? Unit.CaptainName : CaptainTooltip)"
                                Placement="Placement.Bottom"
                                Class="unit-draft-card__captain-tip">
@@ -36,16 +36,16 @@
     {
     <div class="unit-draft-card__body">
     <div class="unit-draft-card__meta">
-        <BaronyTooltip Title="Wage / turn" Text="@_upkeepExplain" Placement="Placement.Bottom">
+        <BaronyTooltip Title="Żołd / tura" Text="@_upkeepExplain" Placement="Placement.Bottom">
             <span class="unit-draft-card__meta-item">
-                <em>Wage</em>
+                <em>Żołd</em>
                 <b class="unit-draft-card__meta-val unit-draft-card__meta-val--gold">
                     @_upkeep.Gold
                     <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
                 </b>
             </span>
         </BaronyTooltip>
-        <BaronyTooltip Title="Food upkeep" Text="@_upkeepExplain" Placement="Placement.Bottom">
+        <BaronyTooltip Title="Utrzymanie (Food)" Text="@_upkeepExplain" Placement="Placement.Bottom">
             <span class="unit-draft-card__meta-item">
                 <em>Food</em>
                 <b class="unit-draft-card__meta-val unit-draft-card__meta-val--food">
@@ -54,7 +54,7 @@
                 </b>
             </span>
         </BaronyTooltip>
-        <BaronyTooltip Title="Defense upkeep" Text="@_upkeepExplain" Placement="Placement.Bottom">
+        <BaronyTooltip Title="Utrzymanie (Def)" Text="@_upkeepExplain" Placement="Placement.Bottom">
             <span class="unit-draft-card__meta-item">
                 <em>Def/t</em>
                 <b class="unit-draft-card__meta-val unit-draft-card__meta-val--defense">
@@ -63,14 +63,14 @@
                 </b>
             </span>
         </BaronyTooltip>
-        <BaronyTooltip Title="Experience points"
-                       Text="Experience points (XP) left to spend after training. Attribute = target × 10; base skill = level × 3; specialization = level × 1 (≤ parent); discipline = current level."
+        <BaronyTooltip Title="Punkty doświadczenia"
+                       Text="Punkty doświadczenia (XP) pozostałe do wydania po szkoleniu. Atrybut = cel × 10; umiejętność bazowa = poziom × 3; specjalizacja = poziom × 1 (≤ rodzic); dyscyplina = bieżący poziom."
                        Placement="Placement.Bottom">
             <span class="unit-draft-card__meta-item"><em>XP</em> <b>@Unit.RemainingPd</b></span>
         </BaronyTooltip>
-        <BaronyTooltip Title="Troops" Text="@TroopTip" Placement="Placement.Bottom">
+        <BaronyTooltip Title="Liczebność" Text="@TroopTip" Placement="Placement.Bottom">
             <span class="unit-draft-card__meta-item">
-                <em>Troops</em>
+                <em>Liczebność</em>
                 @if (CanManageAsMg)
                 {
                     <button type="button"
@@ -87,12 +87,12 @@
                 }
             </span>
         </BaronyTooltip>
-        <BaronyTooltip Title="Race" Text="@_race.Description" Placement="Placement.Bottom">
-            <span class="unit-draft-card__meta-item"><em>Race</em> <b>@_race.Name</b></span>
+        <BaronyTooltip Title="Rasa" Text="@_race.Description" Placement="Placement.Bottom">
+            <span class="unit-draft-card__meta-item"><em>Rasa</em> <b>@_race.Name</b></span>
         </BaronyTooltip>
         @if (ShowCurrentHp)
         {
-            <BaronyTooltip Title="Hit points" Text="@HpTip" Placement="Placement.Bottom">
+            <BaronyTooltip Title="Punkty życia" Text="@HpTip" Placement="Placement.Bottom">
                 <span class="unit-draft-card__meta-item">
                     <em>HP</em>
                     @if (CanManageAsMg)
@@ -124,32 +124,32 @@
 
     <div class="unit-draft-card__section">
         <div class="unit-draft-card__section-title">
-            <BaronyTooltip Title="Attributes"
-                           Text="Build = strength/endurance/size · Agility = dexterity/mobility · Will = courage/mental grit · Perception = senses/intuition. Raise cost = target level × 10 XP."
+            <BaronyTooltip Title="Atrybuty"
+                           Text="Budowa = siła/wytrzymałość/postura · Zwinność = zręczność/mobilność · Wola = odwaga/hart ducha · Percepcja = zmysły/intuicja. Koszt podniesienia = poziom docelowy × 10 XP."
                            Placement="Placement.Right">
-                <span>Attributes</span>
+                <span>Atrybuty</span>
             </BaronyTooltip>
             @if (CanSpendPd && Unit.FreeAttributePoints > 0)
             {
-                <span class="unit-draft-card__section-hint">@Unit.FreeAttributePoints free attr point(s)</span>
+                <span class="unit-draft-card__section-hint">@Unit.FreeAttributePoints wolnych pkt atrybutu</span>
             }
             else if (CanManageAsMg)
             {
-                <span class="unit-draft-card__section-hint">click value for Other (MG)</span>
+                <span class="unit-draft-card__section-hint">kliknij wartość, aby ustawić Other (MG)</span>
             }
         </div>
         <div class="unit-card__attrs unit-card__attrs--compact">
-            @AttrChip(UnitAttr.Build, "Build",
-                "Strength, endurance and size of the people in the unit.",
+            @AttrChip(UnitAttr.Build, "Budowa",
+                "Siła, wytrzymałość i postura ludzi w oddziale.",
                 Unit.Build, Unit.EffectiveBuild)
-            @AttrChip(UnitAttr.Agility, "Agility",
-                "Dexterity, quickness and mobility. Gear may apply an agility penalty.",
+            @AttrChip(UnitAttr.Agility, "Zwinność",
+                "Zręczność, szybkość i mobilność. Sprzęt może nakładać karę do zwinności.",
                 Unit.Agility, Unit.EffectiveAgility)
-            @AttrChip(UnitAttr.Will, "Will",
-                "Willpower, courage and mental grit under pressure.",
+            @AttrChip(UnitAttr.Will, "Wola",
+                "Siła woli, odwaga i hart ducha pod presją.",
                 Unit.Will, Unit.EffectiveWill)
-            @AttrChip(UnitAttr.Perception, "Perception",
-                "Awareness, senses and intuition.",
+            @AttrChip(UnitAttr.Perception, "Percepcja",
+                "Czujność, zmysły i intuicja.",
                 Unit.Perception, Unit.EffectivePerception)
             @DisciplineChip()
         </div>
@@ -157,10 +157,10 @@
 
     <div class="unit-draft-card__section">
         <div class="unit-draft-card__section-title">
-            <BaronyTooltip Title="Skills"
-                           Text="Base skills: Total = Base + Other (no attribute). Specializations: Total = parent + linked attr + Base + Other. Base skill XP = level × 3; specialization = level × 1 (cannot exceed parent)."
+            <BaronyTooltip Title="Umiejętności"
+                           Text="Umiejętności bazowe: Suma = Baza + Other (bez atrybutu). Specjalizacje: Suma = rodzic + powiązany atr. + Baza + Other. XP umiejętności bazowej = poziom × 3; specjalizacja = poziom × 1 (nie może przekroczyć rodzica)."
                            Placement="Placement.Right">
-                <span>Skills</span>
+                <span>Umiejętności</span>
             </BaronyTooltip>
             <span class="unit-draft-card__section-hint">
                 base Total = Base+Other · special Total = parent+From+Base+Other
@@ -176,33 +176,33 @@
     </div>
 
     <div class="unit-draft-card__section">
-        <div class="unit-draft-card__section-title">Equipment</div>
+        <div class="unit-draft-card__section-title">Wyposażenie</div>
         <table class="unit-draft-equip unit-draft-equip--cols">
             <thead>
                 <tr>
                     <th>
-                        <BaronyTooltip Title="Weapon 1" Text="Primary weapon. Quality adjusts Atk and Dmg (Good +1 / Poor −1)." Placement="Placement.Top">
-                            <span>Weapon 1</span>
+                        <BaronyTooltip Title="Broń 1" Text="Broń główna. Jakość zmienia Atk i Dmg (Good +1 / Poor −1)." Placement="Placement.Top">
+                            <span>Broń 1</span>
                         </BaronyTooltip>
                     </th>
                     <th>
-                        <BaronyTooltip Title="Weapon 2" Text="Secondary weapon (optional)." Placement="Placement.Top">
-                            <span>Weapon 2</span>
+                        <BaronyTooltip Title="Broń 2" Text="Broń dodatkowa (opcjonalna)." Placement="Placement.Top">
+                            <span>Broń 2</span>
                         </BaronyTooltip>
                     </th>
                     <th>
-                        <BaronyTooltip Title="Armor" Text="Body armor: Def defense, Arm armor value, Pen agility penalty, Mov move penalty." Placement="Placement.Top">
-                            <span>Armor</span>
+                        <BaronyTooltip Title="Pancerz" Text="Pancerz: Def obrona, Arm wartość pancerza, Pen kara do zwinności, Mov kara do ruchu." Placement="Placement.Top">
+                            <span>Pancerz</span>
                         </BaronyTooltip>
                     </th>
                     <th>
-                        <BaronyTooltip Title="Shield" Text="Shield: Def defense, Mov move penalty. Shields do not add Armor." Placement="Placement.Top">
-                            <span>Shield</span>
+                        <BaronyTooltip Title="Tarcza" Text="Tarcza: Def obrona, Mov kara do ruchu. Tarcze nie dodają pancerza." Placement="Placement.Top">
+                            <span>Tarcza</span>
                         </BaronyTooltip>
                     </th>
                     <th>
-                        <BaronyTooltip Title="Mount" Text="Optional horses / war horses: Atk, Def, Dmg, Mov bonuses. Requires Riding and trade access." Placement="Placement.Top">
-                            <span>Mount</span>
+                        <BaronyTooltip Title="Wierzchowiec" Text="Opcjonalne konie / rumaki bojowe: premie Atk, Def, Dmg, Mov. Wymaga Riding i dostępu handlowego." Placement="Placement.Top">
+                            <span>Wierzchowiec</span>
                         </BaronyTooltip>
                     </th>
                 </tr>
@@ -265,25 +265,25 @@
     </div>
 
     <div class="unit-draft-card__section unit-draft-card__section--tight unit-draft-card__footer">
-        <BaronyTooltip Title="Defense skill"
-                       Text="Uses the highest eligible skill: Dodges always; Shields only with a shield equipped; Armor only with armor equipped."
+        <BaronyTooltip Title="Umiejętność obrony"
+                       Text="Używa najwyższej dostępnej umiejętności: Uniki zawsze; Tarcze tylko z założoną tarczą; Pancerz tylko z założonym pancerzem."
                        Placement="Placement.Top">
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                Def skill <b>@(UnitSkillTree.Find(_combat.DefenseSkillKeyUsed)?.Name ?? _combat.DefenseSkillKeyUsed ?? "—")</b>
+                Um. obrony <b>@(UnitSkillTree.Find(_combat.DefenseSkillKeyUsed)?.Name ?? _combat.DefenseSkillKeyUsed ?? "—")</b>
             </MudText>
         </BaronyTooltip>
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
             @if (Unit.IsTraining && Unit.MaxBaseSkillAtGraduation > 0)
             {
-                <text>Max skill <b>@Unit.MaxBaseSkillAtGraduation</b> (until graduation)</text>
+                <text>Maks. umiejętność <b>@Unit.MaxBaseSkillAtGraduation</b> (do ukończenia szkolenia)</text>
             }
             else if (Unit.IsActive)
             {
-                <text>Base skill cap lifted</text>
+                <text>Limit umiejętności bazowej zniesiony</text>
             }
             @if (Unit.FreeAttributePoints > 0)
             {
-                <text> · Free attrs <b>@Unit.FreeAttributePoints</b></text>
+                <text> · Wolne atr. <b>@Unit.FreeAttributePoints</b></text>
             }
         </MudText>
     </div>
@@ -324,8 +324,8 @@
     private string ResolvedTitleEyebrow =>
         !string.IsNullOrWhiteSpace(TitleEyebrow)
             ? TitleEyebrow!
-            : Unit.IsActive ? "Active unit"
-            : Unit.IsTraining ? "In training"
+            : Unit.IsActive ? "Aktywny oddział"
+            : Unit.IsTraining ? "W szkoleniu"
             : Unit.Status;
 
     private void Toggle()
@@ -367,8 +367,8 @@
         var canFree = Unit.FreeAttributePoints > 0;
         var canRaise = CanSpendPd && (canFree || Unit.RemainingPd >= cost);
         var raiseTip = canFree
-            ? $"Raise {fullLabel} to {baseVal + 1} (uses 1 free attribute point)."
-            : $"Raise {fullLabel} to {baseVal + 1} — costs {cost} XP.";
+            ? $"Podnieś {fullLabel} do {baseVal + 1} (używa 1 wolnego punktu atrybutu)."
+            : $"Podnieś {fullLabel} do {baseVal + 1} — kosztuje {cost} XP.";
         var breakdown = AttrBreakdownTip(attrKey, fullLabel, baseVal, effective);
         var otherSum = AttrOtherSum(attrKey);
         var hasExtra = otherSum != 0 || AttrGearPenalty(attrKey) != 0;
@@ -380,7 +380,7 @@
                 </BaronyTooltip>
                 @if (canRaise)
                 {
-                    <BaronyTooltip Title="Spend XP" Text="@raiseTip" Placement="Placement.Top">
+                    <BaronyTooltip Title="Wydaj XP" Text="@raiseTip" Placement="Placement.Top">
                         <button type="button"
                                 class="unit-xp-plus"
                                 @onclick="@(() => RaiseAttrAsync(attrKey))">+</button>
@@ -410,18 +410,18 @@
         var canRaise = CanSpendPd
             && Unit.Discipline < UnitRules.DisciplineMax
             && Unit.RemainingPd >= cost;
-        var raiseTip = $"Raise Discipline to {Unit.Discipline + 1} — costs {cost} XP.";
+        var raiseTip = $"Podnieś Dyscyplinę do {Unit.Discipline + 1} — kosztuje {cost} XP.";
 
         <div class="unit-card__attr">
             <span class="unit-card__attr-name">
-                <BaronyTooltip Title="Discipline"
-                               Text="Unit discipline (1–18). Starting value comes from training. Raising costs XP equal to the current level."
+                <BaronyTooltip Title="Dyscyplina"
+                               Text="Dyscyplina oddziału (1–18). Wartość początkowa pochodzi ze szkolenia. Podniesienie kosztuje XP równe bieżącemu poziomowi."
                                Placement="Placement.Top">
-                    <span>Discipline</span>
+                    <span>Dyscyplina</span>
                 </BaronyTooltip>
                 @if (canRaise)
                 {
-                    <BaronyTooltip Title="Spend XP" Text="@raiseTip" Placement="Placement.Top">
+                    <BaronyTooltip Title="Wydaj XP" Text="@raiseTip" Placement="Placement.Top">
                         <button type="button"
                                 class="unit-xp-plus"
                                 @onclick="RaiseDisciplineAsync">+</button>
@@ -452,7 +452,7 @@
     {
         var lines = new List<string>
         {
-            $"Base: {baseVal}",
+            $"Baza: {baseVal}",
         };
 
         foreach (var gear in AttrGearLines(attrKey))
@@ -464,14 +464,14 @@
         else
             lines.AddRange(sources.Select(e =>
             {
-                var name = string.IsNullOrWhiteSpace(e.Label) ? "(unnamed)" : e.Label.Trim();
+                var name = string.IsNullOrWhiteSpace(e.Label) ? "(bez nazwy)" : e.Label.Trim();
                 var sign = e.Value > 0 ? "+" : "";
                 return $"{name}: {sign}{e.Value}";
             }));
 
-        lines.Add($"Total: {effective}");
+        lines.Add($"Suma: {effective}");
         if (CanManageAsMg)
-            lines.Add("\nClick the value to edit named Other sources.");
+            lines.Add("\nKliknij wartość, aby edytować nazwane źródła Other.");
         return string.Join("\n", lines);
     }
 
@@ -480,17 +480,17 @@
         if (attrKey == UnitAttr.Agility)
         {
             if (_armor is not null && _armor.AgilityPenalty != 0)
-                yield return $"Gear ({_armor.Name}): {FormatSigned(_armor.AgilityPenalty)}";
+                yield return $"Sprzęt ({_armor.Name}): {FormatSigned(_armor.AgilityPenalty)}";
             if (_shield is not null && _shield.AgilityPenalty != 0)
-                yield return $"Gear ({_shield.Name}): {FormatSigned(_shield.AgilityPenalty)}";
+                yield return $"Sprzęt ({_shield.Name}): {FormatSigned(_shield.AgilityPenalty)}";
             if ((_armor is null || _armor.AgilityPenalty == 0)
                 && (_shield is null || _shield.AgilityPenalty == 0)
                 && Unit.AttrPenaltyAgility != 0)
-                yield return $"Gear: {FormatSigned(Unit.AttrPenaltyAgility)}";
+                yield return $"Sprzęt: {FormatSigned(Unit.AttrPenaltyAgility)}";
         }
         else if (attrKey == UnitAttr.Build && Unit.AttrPenaltyBuild != 0)
         {
-            yield return $"Gear: {FormatSigned(Unit.AttrPenaltyBuild)}";
+            yield return $"Sprzęt: {FormatSigned(Unit.AttrPenaltyBuild)}";
         }
     }
 
@@ -509,14 +509,14 @@
 
         var parameters = new DialogParameters
         {
-            [nameof(UnitNamedModifiersDialog.Title)] = $"{fullLabel} — other",
+            [nameof(UnitNamedModifiersDialog.Title)] = $"{fullLabel} — inne",
             [nameof(UnitNamedModifiersDialog.Hint)] =
-                "Each row is a named source (e.g. blessing, curse, magic). The sum fills Other and appears in the tooltip with gear penalties.",
+                "Każdy wiersz to nazwane źródło (np. błogosławieństwo, klątwa, magia). Suma wypełnia Other i pojawia się w podpowiedzi wraz z karami od sprzętu.",
             [nameof(UnitNamedModifiersDialog.Modifiers)] = existing,
         };
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await _dialogService.ShowAsync<UnitNamedModifiersDialog>(
-            $"{fullLabel} — other",
+            $"{fullLabel} — inne",
             parameters,
             options);
         var result = await dialog.Result;
@@ -555,7 +555,7 @@
 
         if (!UnitPdFormulas.CanRaiseAttribute(AttrBase(attr), Unit.RemainingPd, out var cost))
         {
-            _snackBar.Add($"Need {cost} XP.", Severity.Warning);
+            _snackBar.Add($"Potrzeba {cost} XP.", Severity.Warning);
             return;
         }
 
@@ -570,7 +570,7 @@
         if (!CanSpendPd) return;
         if (!UnitPdFormulas.CanRaiseDiscipline(Unit.Discipline, Unit.RemainingPd, out var cost))
         {
-            _snackBar.Add(Unit.Discipline >= UnitRules.DisciplineMax ? "Discipline maxed." : $"Need {cost} XP.", Severity.Warning);
+            _snackBar.Add(Unit.Discipline >= UnitRules.DisciplineMax ? "Dyscyplina na maksimum." : $"Potrzeba {cost} XP.", Severity.Warning);
             return;
         }
         Unit.RemainingPd -= cost;
@@ -605,14 +605,14 @@
         {
             var explain = UnitCasualtyFormulas.Explain(Unit.TroopCount);
             return CanManageAsMg
-                ? $"{explain}\n\nClick to set troop count (MG)."
+                ? $"{explain}\n\nKliknij, aby ustawić liczebność (MG)."
                 : explain;
         }
     }
 
     private string HpTip => CanManageAsMg
-        ? "Current / maximum hit points.\n\nClick to set current HP (MG)."
-        : "Current / maximum hit points.";
+        ? "Bieżące / maksymalne punkty życia.\n\nKliknij, aby ustawić bieżące HP (MG)."
+        : "Bieżące / maksymalne punkty życia.";
 
     private void RefreshCombat()
     {
@@ -632,7 +632,7 @@
             [nameof(UnitTroopCountEditDialog.FullStrength)] = UnitRules.DefaultTroopCount,
         };
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
-        var dialog = await _dialogService.ShowAsync<UnitTroopCountEditDialog>("Troop count", parameters, options);
+        var dialog = await _dialogService.ShowAsync<UnitTroopCountEditDialog>("Liczebność", parameters, options);
         var result = await dialog.Result;
         if (result is null || result.Canceled || result.Data is not int troops)
             return;
@@ -656,7 +656,7 @@
             [nameof(UnitHpEditDialog.MaxHp)] = _combat.MaxHp,
         };
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
-        var dialog = await _dialogService.ShowAsync<UnitHpEditDialog>("Hit points", parameters, options);
+        var dialog = await _dialogService.ShowAsync<UnitHpEditDialog>("Punkty życia", parameters, options);
         var result = await dialog.Result;
         if (result is null || result.Canceled || result.Data is not int hp)
             return;

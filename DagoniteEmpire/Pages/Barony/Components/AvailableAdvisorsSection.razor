@@ -1,16 +1,16 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @inject IDialogService _dialogService
 
-<BaronySection Title="Court">
+<BaronySection Title="Dwór">
     <Summary>
         <span class="projects-summary">
-            <span class="projects-summary__item">@AdvisorList.Count person@(AdvisorList.Count == 1 ? "" : "s")</span>
+            <span class="projects-summary__item">@AdvisorList.Count @(AdvisorList.Count == 1 ? "osoba" : "osoby")</span>
         </span>
     </Summary>
     <ChildContent>
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
-            Advisors, servants, and other people of the court. Main skills plus a few secondary skills
-            compute their Domain Skills. Click a person card to expand the sheet.
+            Doradcy, słudzy i inne osoby dworu. Umiejętności główne plus kilka umiejętności pobocznych
+            wyliczają ich Umiejętności domeny. Kliknij kartę osoby, aby rozwinąć arkusz.
         </MudText>
 
         @if (CanManage)
@@ -19,7 +19,7 @@
                 <MudButton Variant="Variant.Outlined"
                            StartIcon="@Icons.Material.Filled.Add"
                            OnClick="OnAdd">
-                    Add court person
+                    Dodaj osobę dworu
                 </MudButton>
             </div>
         }
@@ -27,10 +27,10 @@
         @if (AdvisorList.Count == 0)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                No court people yet.
+                Brak osób dworu.
                 @if (CanManage)
                 {
-                    <text> Add one above.</text>
+                    <text> Dodaj powyżej.</text>
                 }
             </MudText>
         }
@@ -55,12 +55,12 @@
                                     @if (CanManage)
                                     {
                                         <div class="project-card__actions court-person-card__title-actions" @onclick:stopPropagation="true">
-                                            <BaronyTooltip Text="Edit person">
+                                            <BaronyTooltip Text="Edytuj osobę">
                                                 <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                                Size="Size.Small"
                                                                OnClick="@(() => OnEdit.InvokeAsync(person))" />
                                             </BaronyTooltip>
-                                            <BaronyTooltip Text="Remove person">
+                                            <BaronyTooltip Text="Usuń osobę">
                                                 <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                                Size="Size.Small"
                                                                Color="Color.Error"
@@ -88,12 +88,12 @@
                             var combat = CourtCombatFormulas.Compute(sheet);
                             <div class="project-card__panels court-person-card__panels" @onclick:stopPropagation="true">
                                 <section class="project-card__panel court-person-card__panel court-person-card__panel--skills">
-                                    <h4 class="project-card__panel-title">Main skills</h4>
+                                    <h4 class="project-card__panel-title">Umiejętności główne</h4>
                                     <div class="court-skill-table-wrap">
                                         <table class="ppb-table ppb-table--source ppb-table--lined court-skill-table court-skill-table--main-row court-skill-table--with-source">
                                             <thead>
                                                 <tr>
-                                                    <th class="ppb-row-label source-col">Source</th>
+                                                    <th class="ppb-row-label source-col">Źródło</th>
                                                     @foreach (var skill in CourtSkillCatalog.Main)
                                                     {
                                                         <th>
@@ -119,7 +119,7 @@
                                                             @if (CanManage)
                                                             {
                                                                 <span class="source-cell__actions" @onclick:stopPropagation="true">
-                                                                    <BaronyTooltip Text="Edit other sources">
+                                                                    <BaronyTooltip Text="Edytuj inne źródła">
                                                                         <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                                                        Size="Size.Small"
                                                                                        OnClick="@(() => EditMainOtherAsync(person))" />
@@ -148,10 +148,10 @@
                                         </table>
                                     </div>
 
-                                    <h4 class="project-card__panel-title court-person-card__subpanel-title">Secondary skills</h4>
+                                    <h4 class="project-card__panel-title court-person-card__subpanel-title">Umiejętności poboczne</h4>
                                     @if (sheet.Secondary.Count == 0)
                                     {
-                                        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">None.</MudText>
+                                        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">Brak.</MudText>
                                     }
                                     else
                                     {
@@ -169,7 +169,7 @@
                                 </section>
 
                                 <section class="project-card__panel court-person-card__panel court-person-card__panel--ppb">
-                                    <h4 class="project-card__panel-title">Domain Skills</h4>
+                                    <h4 class="project-card__panel-title">Umiejętności domeny</h4>
                                     <div class="court-person-card__ppb-table-wrap">
                                         <OfficeSourcePpbTable Rows="@DomainSkillRows(person)"
                                                                 ShowCost="false"
@@ -179,12 +179,12 @@
                                                                 CellTooltip="@((row, key) => DomainCellTooltip(person, row, key))" />
                                     </div>
 
-                                    <h4 class="project-card__panel-title court-person-card__subpanel-title">Combat skills</h4>
+                                    <h4 class="project-card__panel-title court-person-card__subpanel-title">Umiejętności bojowe</h4>
                                     <div class="court-skill-table-wrap">
                                         <table class="ppb-table ppb-table--source ppb-table--lined court-skill-table court-skill-table--main-row court-skill-table--with-source court-combat-table">
                                             <thead>
                                                 <tr>
-                                                    <th class="ppb-row-label source-col">Source</th>
+                                                    <th class="ppb-row-label source-col">Źródło</th>
                                                     @foreach (var skill in CourtCombatCatalog.All)
                                                     {
                                                         <th>
@@ -232,7 +232,7 @@
                                                             @if (CanManage)
                                                             {
                                                                 <span class="source-cell__actions" @onclick:stopPropagation="true">
-                                                                    <BaronyTooltip Text="Edit other sources">
+                                                                    <BaronyTooltip Text="Edytuj inne źródła">
                                                                         <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                                                        Size="Size.Small"
                                                                                        OnClick="@(() => EditCombatOtherAsync(person))" />
@@ -264,12 +264,12 @@
                             </div>
 
                             <section class="project-card__panel court-person-card__panel court-person-card__panel--commander" @onclick:stopPropagation="true">
-                                <h4 class="project-card__panel-title">Commander</h4>
+                                <h4 class="project-card__panel-title">Dowódca</h4>
                                 <div class="court-commander-panel__cx">
-                                    <span class="court-commander-panel__cx-label">CX pool</span>
+                                    <span class="court-commander-panel__cx-label">Pula CX</span>
                                     @if (CanManage)
                                     {
-                                        <BaronyTooltip Text="Click to edit CX pool">
+                                        <BaronyTooltip Text="Kliknij, aby edytować pulę CX">
                                             <button type="button"
                                                     class="court-commander-panel__cx-value court-commander-panel__cx-value--editable"
                                                     @onclick="@(() => OpenCxEditAsync(person))">
@@ -281,18 +281,18 @@
                                     {
                                         <span class="court-commander-panel__cx-value">@sheet.CommanderXp</span>
                                     }
-                                    <span class="court-commander-panel__cx-meta">avail. @CourtCommanderFormulas.AvailableCx(sheet) · spent @CourtCommanderFormulas.SpentCx(sheet)</span>
+                                    <span class="court-commander-panel__cx-meta">dost. @CourtCommanderFormulas.AvailableCx(sheet) · wyd. @CourtCommanderFormulas.SpentCx(sheet)</span>
                                 </div>
                                 <div class="court-commander-panel__abilities">
                                     <MudButton Variant="Variant.Outlined"
                                                Size="Size.Small"
                                                StartIcon="@Icons.Material.Filled.AccountTree"
                                                OnClick="@(() => OpenCommanderTreeAsync(person))">
-                                        Skill tree
+                                        Drzewko umiejętności
                                     </MudButton>
                                     @if (sheet.UnlockedCommanderAbilities.Count == 0)
                                     {
-                                        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">No abilities unlocked.</MudText>
+                                        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">Brak odblokowanych zdolności.</MudText>
                                     }
                                     else
                                     {
@@ -394,7 +394,7 @@
             .ToList();
 
         var dialog = await _dialogService.ShowAsync<CourtMainOtherEditDialog>(
-            "Other main skill sources",
+            "Inne źródła umiejętności głównych",
             new DialogParameters<CourtMainOtherEditDialog> { { x => x.Sources, draft } },
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseOnEscapeKey = true });
 
@@ -424,7 +424,7 @@
             .ToList();
 
         var dialog = await _dialogService.ShowAsync<CourtDomainOtherEditDialog>(
-            "Other Domain Skill sources",
+            "Inne źródła Umiejętności domeny",
             new DialogParameters<CourtDomainOtherEditDialog> { { x => x.Sources, draft } },
             new DialogOptions { MaxWidth = MaxWidth.Large, FullWidth = true, CloseOnEscapeKey = true });
 
@@ -450,7 +450,7 @@
             .ToList();
 
         var dialog = await _dialogService.ShowAsync<CourtCombatOtherEditDialog>(
-            "Other combat skill sources",
+            "Inne źródła umiejętności bojowych",
             new DialogParameters<CourtCombatOtherEditDialog> { { x => x.Sources, draft } },
             new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseOnEscapeKey = true });
 
@@ -469,7 +469,7 @@
     {
         var sheet = person.Sheet ?? CourtCharacterSheet.CreateDefault();
         var dialog = await _dialogService.ShowAsync<CourtCommanderTreeDialog>(
-            $"{person.Name} — commander tree",
+            $"{person.Name} — drzewko dowódcy",
             new DialogParameters<CourtCommanderTreeDialog>
             {
                 { x => x.Sheet, sheet },
@@ -505,7 +505,7 @@
         var sheet = person.Sheet ?? CourtCharacterSheet.CreateDefault();
         var spent = CourtCommanderFormulas.SpentCx(sheet);
         var dialog = await _dialogService.ShowAsync<CourtCommanderXpEditDialog>(
-            "Commander XP pool",
+            "Pula doświadczenia dowódcy",
             new DialogParameters<CourtCommanderXpEditDialog>
             {
                 { x => x.AdvisorName, person.Name },

@@ -3,7 +3,7 @@
 @inject ISnackbar _snackBar
 @inject IDialogService _dialogService
 
-<BaronySection Title="Events">
+<BaronySection Title="Wydarzenia">
     <Summary>
         <PpbSummaryChips Vector="@Glance" />
     </Summary>
@@ -11,10 +11,10 @@
         @if (OrderedEvents.Count == 0 && !HasAudienceRow && !HasAdventureRow)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                No events yet.
+                Brak wydarzeń.
                 @if (CanManage)
                 {
-                    <text> Add one below.</text>
+                    <text> Dodaj poniżej.</text>
                 }
             </MudText>
         }
@@ -33,9 +33,9 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th rowspan="2" class="ppb-row-label city-building-col-name">Name</th>
+                            <th rowspan="2" class="ppb-row-label city-building-col-name">Nazwa</th>
                             <th rowspan="2" class="event-col-turns">
-                                <BaronyTooltip Title="Turns" Text="Active from turn – to turn (∞ = ongoing)">Turns</BaronyTooltip>
+                                <BaronyTooltip Title="Tury" Text="Aktywne od tury – do tury (∞ = trwa)">Tury</BaronyTooltip>
                             </th>
                             @foreach (var info in PpbCatalog.All)
                             {
@@ -57,18 +57,18 @@
                             <tr class="@(inactive ? "event-row--inactive" : null)">
                                 <td class="city-building-col-name">
                                     <div class="city-building-name-cell">
-                                        <BaronyTooltip Title="Description" Text="@NameTooltip(item)">
+                                        <BaronyTooltip Title="Opis" Text="@NameTooltip(item)">
                                             <span class="city-building-name-text">@item.Name</span>
                                         </BaronyTooltip>
                                         @if (CanManage)
                                         {
                                             <span class="city-building-name-actions">
-                                                <BaronyTooltip Text="Edit event">
+                                                <BaronyTooltip Text="Edytuj wydarzenie">
                                                     <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                                    Size="Size.Small"
                                                                    OnClick="@(() => EditAsync(item))" />
                                                 </BaronyTooltip>
-                                                <BaronyTooltip Text="Remove event">
+                                                <BaronyTooltip Text="Usuń wydarzenie">
                                                     <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                                    Size="Size.Small"
                                                                    Color="Color.Error"
@@ -79,7 +79,7 @@
                                     </div>
                                 </td>
                                 <td class="event-col-turns">
-                                    <BaronyTooltip Title="Turn range" Text="@TurnTooltip(item)">
+                                    <BaronyTooltip Title="Zakres tur" Text="@TurnTooltip(item)">
                                         <span>@item.TurnRangeLabel</span>
                                     </BaronyTooltip>
                                 </td>
@@ -98,8 +98,8 @@
                                     <span class="city-building-name-text">@BaronAudiencePpb.SummaryRowName</span>
                                 </td>
                                 <td class="event-col-turns">
-                                    <BaronyTooltip Title="Turn range"
-                                                   Text="@($"Turns {CurrentTurn}–{CurrentTurn}. Audience grants apply only on the turn they were granted.")">
+                                    <BaronyTooltip Title="Zakres tur"
+                                                   Text="@($"Tury {CurrentTurn}–{CurrentTurn}. Nadania z audiencji obowiązują tylko w turze, w której zostały przyznane.")">
                                         <span>@(CurrentTurn)–@(CurrentTurn)</span>
                                     </BaronyTooltip>
                                 </td>
@@ -118,8 +118,8 @@
                                     <span class="city-building-name-text">@BaronAdventurePpb.SummaryRowName</span>
                                 </td>
                                 <td class="event-col-turns">
-                                    <BaronyTooltip Title="Turn range"
-                                                   Text="@($"Turns {CurrentTurn}–{CurrentTurn}. Adventure grants apply only on the turn they were granted.")">
+                                    <BaronyTooltip Title="Zakres tur"
+                                                   Text="@($"Tury {CurrentTurn}–{CurrentTurn}. Nadania z przygody obowiązują tylko w turze, w której zostały przyznane.")">
                                         <span>@(CurrentTurn)–@(CurrentTurn)</span>
                                     </BaronyTooltip>
                                 </td>
@@ -132,7 +132,7 @@
                         }
 
                         <tr class="ppb-summary-row">
-                            <td class="ppb-row-label city-building-col-name">Σ section</td>
+                            <td class="ppb-row-label city-building-col-name">Σ sekcja</td>
                             <td class="event-col-turns"></td>
                             @foreach (var info in PpbCatalog.All)
                             {
@@ -151,7 +151,7 @@
                 <MudButton Variant="Variant.Outlined"
                            StartIcon="@Icons.Material.Filled.Add"
                            OnClick="AddAsync">
-                    Add Event
+                    Dodaj wydarzenie
                 </MudButton>
             </div>
         }
@@ -229,11 +229,11 @@
     private string TurnTooltip(BaronyEventDTO item)
     {
         var range = item.EndTurn is int end
-            ? $"Turns {item.StartTurn}–{end}"
-            : $"From turn {item.StartTurn} (ongoing)";
+            ? $"Tury {item.StartTurn}–{end}"
+            : $"Od tury {item.StartTurn} (trwa)";
         var status = item.IsActiveOnTurn(CurrentTurn)
-            ? $"Active now (turn {CurrentTurn})."
-            : $"Not active on turn {CurrentTurn}.";
+            ? $"Aktywne teraz (tura {CurrentTurn})."
+            : $"Nieaktywne w turze {CurrentTurn}.";
         return $"{range}. {status}";
     }
 
@@ -259,7 +259,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<EventEditDialog>(
-            isNew ? "Add Event" : "Edit Event",
+            isNew ? "Dodaj wydarzenie" : "Edytuj wydarzenie",
             parameters,
             new DialogOptions
             {
@@ -275,34 +275,34 @@
         try
         {
             await _baronyRepo.SaveEvent(saved);
-            _snackBar.Add(isNew ? "Event added." : "Event updated.", Severity.Success);
+            _snackBar.Add(isNew ? "Wydarzenie dodane." : "Wydarzenie zaktualizowane.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save event: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać wydarzenia: " + ex.Message, Severity.Error);
         }
     }
 
     private async Task DeleteAsync(BaronyEventDTO item)
     {
         var confirm = await _dialogService.ShowMessageBoxAsync(
-            "Remove event",
-            $"Remove “{item.Name}”?",
-            yesText: "Remove",
-            cancelText: "Cancel");
+            "Usuń wydarzenie",
+            $"Usunąć “{item.Name}”?",
+            yesText: "Usuń",
+            cancelText: "Anuluj");
         if (confirm != true)
             return;
 
         try
         {
             await _baronyRepo.DeleteEvent(item.Id);
-            _snackBar.Add("Event removed.", Severity.Success);
+            _snackBar.Add("Wydarzenie usunięte.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not remove event: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się usunąć wydarzenia: " + ex.Message, Severity.Error);
         }
     }
 

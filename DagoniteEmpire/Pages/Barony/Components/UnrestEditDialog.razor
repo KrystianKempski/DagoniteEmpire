@@ -6,12 +6,12 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudText Typo="Typo.body2" Class="mb-2" Style="color:var(--barony-muted);">
-                Community unrest (0–@UnrestPpbFormulas.Max). Feeds Community penalties on Loyalty,
-                Stability, Law, Economy, and Production. Raised by failed loyalty tests when Stability ≤ 0.
+                Niepokój społeczny (0–@UnrestPpbFormulas.Max). Zasila kary społeczności dla Lojalności,
+                Stabilności, Prawa, Ekonomii i Produkcji. Rośnie przy nieudanych testach lojalności, gdy Stabilność ≤ 0.
             </MudText>
             <MudNumericField @bind-Value="_unrest"
-                             Label="Unrest"
-                             HelperText="@($"0 to {UnrestPpbFormulas.Max}")"
+                             Label="Niepokój"
+                             HelperText="@($"0 do {UnrestPpbFormulas.Max}")"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="0"
@@ -21,8 +21,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 

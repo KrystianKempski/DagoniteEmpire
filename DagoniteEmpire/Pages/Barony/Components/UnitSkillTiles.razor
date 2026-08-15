@@ -28,10 +28,10 @@
         <div class="unit-draft-skill-tile unit-draft-skill-tile--solo">
             <div class="unit-draft-skill-tile__cols unit-draft-skill-tile__cols--head">
                 <span class="unit-draft-skill-tile__name-row">
-                    <BaronyTooltip Title="Discipline"
-                                   Text="Unit discipline (1–18). Starting value from training. Raising costs XP equal to the current level."
+                    <BaronyTooltip Title="Dyscyplina"
+                                   Text="Dyscyplina oddziału (1–18). Wartość początkowa ze szkolenia. Podniesienie kosztuje XP równe bieżącemu poziomowi."
                                    Placement="Placement.Right">
-                        <span class="unit-draft-skill-tile__name">Discipline</span>
+                        <span class="unit-draft-skill-tile__name">Dyscyplina</span>
                     </BaronyTooltip>
                     @XpPlusDiscipline()
                 </span>
@@ -39,7 +39,7 @@
                 <span class="unit-draft-skill-tile__col unit-draft-skill-tile__col--muted">—</span>
                 @EditableCell(
                     value: Unit.Discipline,
-                    title: CanManageAsMg ? "Edit discipline (MG)" : "Discipline",
+                    title: CanManageAsMg ? "Edytuj dyscyplinę (MG)" : "Dyscyplina",
                     canClick: CanManageAsMg,
                     onClick: OnDisciplineClickAsync)
                 <span class="unit-draft-skill-tile__col unit-draft-skill-tile__col--muted">—</span>
@@ -52,7 +52,7 @@
 @if (!string.IsNullOrEmpty(_editKey))
 {
     <div class="unit-skill-edit">
-        <span class="unit-skill-edit__label">Edit @_editName — @_editField</span>
+        <span class="unit-skill-edit__label">Edytuj @_editName — @_editField</span>
         <MudNumericField T="int"
                          @bind-Value="_editValue"
                          Variant="Variant.Outlined"
@@ -60,8 +60,8 @@
                          Min="0"
                          Class="baron-influence-field unit-skill-edit__field" />
         <MudButton Size="Size.Small" Variant="Variant.Filled" Class="barony-turn-btn barony-turn-btn--solid"
-                   OnClick="ApplyEditAsync">Save</MudButton>
-        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="CancelEdit">Cancel</MudButton>
+                   OnClick="ApplyEditAsync">Zapisz</MudButton>
+        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="CancelEdit">Anuluj</MudButton>
     </div>
 }
 
@@ -139,24 +139,24 @@
     {
         <div class="unit-draft-skills__legend unit-draft-skill-tile__cols unit-draft-skill-tile__cols--legend">
             <span>Skill</span>
-            <BaronyTooltip Title="Attribute" Text="Linked attribute for specializations only: B Build, A Agility, W Will, P Perception." Placement="Placement.Top">
+            <BaronyTooltip Title="Atrybut" Text="Powiązany atrybut tylko dla specjalizacji: B Budowa, A Zwinność, W Wola, P Percepcja." Placement="Placement.Top">
                 <span>Attr</span>
             </BaronyTooltip>
-            <BaronyTooltip Title="From attribute" Text="Value contributed by the linked attribute (specializations and Riding)." Placement="Placement.Top">
+            <BaronyTooltip Title="Od atrybutu" Text="Wartość wnoszona przez powiązany atrybut (specjalizacje i Riding)." Placement="Placement.Top">
                 <span>From</span>
             </BaronyTooltip>
             <BaronyTooltip Title="Base"
-                           Text="Base rank. Baron spends XP after graduation (base skills and Riding = level × 3; specialization = level × 1). MG can set freely."
+                           Text="Ranga bazowa. Baron wydaje XP po awansie (umiejętności bazowe i Riding = poziom × 3; specjalizacja = poziom × 1). MG może ustawić dowolnie."
                            Placement="Placement.Top">
                 <span>Base</span>
             </BaronyTooltip>
             <BaronyTooltip Title="Other"
-                           Text="Named Other sources (MG). Click a cell to add name + value; the sum fills this column. Hover for the source list."
+                           Text="Nazwane źródła Other (MG). Kliknij komórkę, aby dodać nazwę + wartość; suma wypełnia tę kolumnę. Najedź, aby zobaczyć listę źródeł."
                            Placement="Placement.Top">
                 <span>Other</span>
             </BaronyTooltip>
             <BaronyTooltip Title="Total"
-                           Text="Base skills: Base + Other. Specializations: parent Total + From + Base + Other."
+                           Text="Umiejętności bazowe: Base + Other. Specjalizacje: Total rodzica + From + Base + Other."
                            Placement="Placement.Top">
                 <span>Total</span>
             </BaronyTooltip>
@@ -206,12 +206,12 @@
         var rowHot = IsHighlighted(def.Key);
 
         var canEditBase = CanManageAsMg;
-        var baseTitle = CanManageAsMg ? "Edit base (MG)" : "Base";
+        var baseTitle = CanManageAsMg ? "Edytuj bazę (MG)" : "Base";
 
         <div class="unit-draft-skill-tile__cols @(isHeader ? "unit-draft-skill-tile__cols--head" : null) @(rowHot ? "unit-draft-skill-tile__row--hot" : null)">
             <span class="unit-draft-skill-tile__name-row">
                 <BaronyTooltip Title="@def.Name"
-                               Text="@(usesAttr ? AttrTitle(def.LinkedAttr) : (isHeader ? "Base skill — Total = Base + Other (no attribute)." : "Specialization — Total = parent + From + Base + Other."))"
+                               Text="@(usesAttr ? AttrTitle(def.LinkedAttr) : (isHeader ? "Umiejętność bazowa — Total = Base + Other (bez atrybutu)." : "Specjalizacja — Total = rodzic + From + Base + Other."))"
                                Placement="Placement.Right">
                     <span class="@(isHeader ? "unit-draft-skill-tile__name" : "unit-draft-skill-tile__child")">
                         @def.Name
@@ -221,10 +221,10 @@
             </span>
             @if (usesAttr)
             {
-                <BaronyTooltip Title="Attribute" Text="@AttrTitle(def.LinkedAttr)" Placement="Placement.Top">
+                <BaronyTooltip Title="Atrybut" Text="@AttrTitle(def.LinkedAttr)" Placement="Placement.Top">
                     <span class="unit-draft-skill-tile__col unit-draft-skill-tile__col--muted">@AttrLetter(def.LinkedAttr)</span>
                 </BaronyTooltip>
-                <BaronyTooltip Title="From attribute" Text="@($"From {UnitAttr.Label(def.LinkedAttr)}")" Placement="Placement.Top">
+                <BaronyTooltip Title="Od atrybutu" Text="@($"From {UnitAttr.Label(def.LinkedAttr)}")" Placement="Placement.Top">
                     <span class="unit-draft-skill-tile__col unit-draft-skill-tile__col--muted">@fromAttr</span>
                 </BaronyTooltip>
             }
@@ -252,8 +252,8 @@
             if (!UnitPdFormulas.CanRaiseBaseSkill(currentBase, maxBase, Unit.RemainingPd, out cost))
                 return;
             canRaise = true;
-            tip = $"Raise {def.Name} base to {currentBase + 1} — costs {cost} XP"
-                + (maxBase < int.MaxValue ? $" (cap {maxBase})." : ".");
+            tip = $"Podnieś bazę {def.Name} do {currentBase + 1} — kosztuje {cost} XP"
+                + (maxBase < int.MaxValue ? $" (limit {maxBase})." : ".");
         }
         else
         {
@@ -262,13 +262,13 @@
             cost = UnitRules.SpecialSkillRaiseCost(currentBase + 1);
             canRaise = currentBase + 1 <= parentBase && Unit.RemainingPd >= cost;
             tip = currentBase + 1 > parentBase
-                ? $"{def.Name} cannot exceed parent base ({parentBase})."
-                : $"Raise {def.Name} base to {currentBase + 1} — costs {cost} XP.";
+                ? $"{def.Name} nie może przekroczyć bazy rodzica ({parentBase})."
+                : $"Podnieś bazę {def.Name} do {currentBase + 1} — kosztuje {cost} XP.";
         }
 
         if (!canRaise) return;
 
-        <BaronyTooltip Title="Spend XP" Text="@tip" Placement="Placement.Top">
+        <BaronyTooltip Title="Wydaj XP" Text="@tip" Placement="Placement.Top">
             <button type="button"
                     class="unit-xp-plus"
                     @onclick="@(() => RaiseBaseAsync(def))">+</button>
@@ -283,8 +283,8 @@
         var canRaise = Unit.Discipline < UnitRules.DisciplineMax && Unit.RemainingPd >= cost;
         if (!canRaise) return;
 
-        var tip = $"Raise Discipline to {Unit.Discipline + 1} — costs {cost} XP.";
-        <BaronyTooltip Title="Spend XP" Text="@tip" Placement="Placement.Top">
+        var tip = $"Podnieś Dyscyplinę do {Unit.Discipline + 1} — kosztuje {cost} XP.";
+        <BaronyTooltip Title="Wydaj XP" Text="@tip" Placement="Placement.Top">
             <button type="button"
                     class="unit-xp-plus"
                     @onclick="RaiseDisciplineAsync">+</button>
@@ -331,7 +331,7 @@
         var lines = UnitCombatOtherFormulas.TooltipLines(
             UnitCombatOtherFormulas.Get(Unit.SkillOtherSources, skillKey));
         return CanManageAsMg
-            ? $"{lines}\n\nClick to edit named sources."
+            ? $"{lines}\n\nKliknij, aby edytować nazwane źródła."
             : lines;
     }
 
@@ -359,14 +359,14 @@
 
         var parameters = new DialogParameters
         {
-            [nameof(UnitNamedModifiersDialog.Title)] = $"{def.Name} — other",
+            [nameof(UnitNamedModifiersDialog.Title)] = $"{def.Name} — inne",
             [nameof(UnitNamedModifiersDialog.Hint)] =
-                "Each row is a named source (e.g. blessing, magic, training). The sum fills the Other column and appears in the tooltip.",
+                "Każdy wiersz to nazwane źródło (np. błogosławieństwo, magia, szkolenie). Suma wypełnia kolumnę Other i pojawia się w podpowiedzi.",
             [nameof(UnitNamedModifiersDialog.Modifiers)] = existing,
         };
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await _dialogService.ShowAsync<UnitNamedModifiersDialog>(
-            $"{def.Name} — other",
+            $"{def.Name} — inne",
             parameters,
             options);
         var result = await dialog.Result;
@@ -392,7 +392,7 @@
     {
         if (!CanManageAsMg) return;
         _editKey = "__discipline__";
-        _editName = "Discipline";
+        _editName = "Dyscyplina";
         _editField = "Base";
         _editValue = Unit.Discipline;
         await Task.CompletedTask;
@@ -442,8 +442,8 @@
             {
                 _snackBar.Add(
                     BaseSkillRaiseCap < int.MaxValue && current + 1 > BaseSkillRaiseCap
-                        ? $"Max base skill is {BaseSkillRaiseCap} until graduation."
-                        : $"Need {cost} XP.",
+                        ? $"Maksymalna baza umiejętności to {BaseSkillRaiseCap} do awansu."
+                        : $"Potrzeba {cost} XP.",
                     Severity.Warning);
                 return;
             }
@@ -455,8 +455,8 @@
             if (!UnitPdFormulas.CanRaiseSpecialSkill(current, parentBase, Unit.RemainingPd, out cost))
             {
                 _snackBar.Add(current + 1 > parentBase
-                    ? "Special cannot exceed parent base skill."
-                    : $"Need {cost} XP.", Severity.Warning);
+                    ? "Specjalizacja nie może przekroczyć bazowej umiejętności rodzica."
+                    : $"Potrzeba {cost} XP.", Severity.Warning);
                 return;
             }
         }
@@ -472,7 +472,7 @@
         if (!CanSpendPd) return;
         if (!UnitPdFormulas.CanRaiseDiscipline(Unit.Discipline, Unit.RemainingPd, out var cost))
         {
-            _snackBar.Add(Unit.Discipline >= UnitRules.DisciplineMax ? "Discipline maxed." : $"Need {cost} XP.", Severity.Warning);
+            _snackBar.Add(Unit.Discipline >= UnitRules.DisciplineMax ? "Dyscyplina na maksimum." : $"Potrzeba {cost} XP.", Severity.Warning);
             return;
         }
         Unit.RemainingPd -= cost;

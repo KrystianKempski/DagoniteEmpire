@@ -219,8 +219,9 @@ Rdzeń rozgrywki gracza-bohatera.
   („{token.Label} uses Full Defense…", wzory ataku k6), `AddUnitLogEntry`/`SaveAsync(systemMessage:…)`,
   komunikat sprzężony kluczem `"…juz dodana"` (Contains), skróty statów Atk/Def/Dmg/Arm/Prc/Disc/Mv
 
-### Faza 6 — Baronia: komponenty 🔴 (XL) — 136 plików
-Największa i najbardziej pracochłonna faza. Podzielić na pod-partie tematyczne:
+### Faza 6 — Baronia: komponenty � (XL) — 136 plików ✅ UKOŃCZONA
+Wszystkie 136 komponentów w `Pages/Barony/Components/` spolszczone (12 partii × podagent, build 0 błędów).
+Pokryte pod-partie tematyczne:
 - [ ] **Dwór / Doradcy / Urzędy**: Advisor*, Office*, Court*, Decree*, Audience*
 - [ ] **Reputacja / Relacje / Wpływy**: BaronInfluence*, BaronReputation*, Relation*, SocialGroupRelation*, CommunityPenalties
 - [ ] **Wojsko / Bitwa**: Unit*, Army*, Battle*, EnemyCommanderAbility, CourtCommander*
@@ -228,6 +229,15 @@ Największa i najbardziej pracochłonna faza. Podzielić na pod-partie tematyczn
 - [ ] **Teren / Mapa / Budynki**: Terrain*, MarchMap*, City/Village/Town*, Building*, SeatRoom/SeatGrid/SeatPurpose
 - [ ] **Listy / Czas / Artefakty**: BaronLetter*, BaronTime*, BaronArtifact*, Baron reminder/PHP
 - [ ] **Pomoc / Tooltipy / UI helpers**: BaronyHelpDialog, BaronyTooltip, BaronyHudTip, BaronyPageHeader, BaronyCardTabs, CharacterMark*
+
+**Wynik Fazy 6 — wszystkie ✅ przetłumaczone.** Odłożone (spójnie z wcześniejszymi fazami):
+- Do Fazy 7 (katalogi DA_Common): wszystkie `*.NameEn`/`*.DescriptionEn`/`*.DisplayName`/`*.ShortEn`,
+  skróty PPB `PpbShort()` (Food/Econ/Prod/Loy/Stab/Law/Corr/Sci/Mag/Cult/Intel/Def/Gold),
+  etykiety katalogów (Seat*/CourtSkill*/UnitEquipment*/TradeGoods* itd.)
+- Do Fazy 8 (walka/logi): narracja Full Defense/engagement w BaronyBattleMapGrid + UnitCombatBreakdown,
+  skróty statów Atk/Def/Dmg/Arm/Prc/Disc/Mv, kody kolumn siatki umiejętności (Skill/Attr/From/Base/Other/Total —
+  sprzężone z prozą wzorów + `_editField`), klucze przechowywane+porównywane ("Unassigned", "__new__",
+  "__discipline__", "other", TerrainPresets, ProjectOutputKind Reinforce/ChangeEquipment)
 
 ### Faza 7 — Katalogi domenowe (`DA_Common/Barony`) 🔴 (XL) — ~60 plików `.cs`
 Duże bloki opisowego tekstu (angielskiego) prezentowanego w UI.

@@ -9,21 +9,21 @@
             @if (IsCoreBuilding)
             {
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                    Fixed city building. Changes apply only to this barony. Use Reset to restore the default.
+                    Stały budynek miejski. Zmiany dotyczą tylko tej baronii. Użyj przycisku Przywróć domyślne, aby przywrócić wartość domyślną.
                 </MudText>
             }
             else
             {
                 <MudTabs @bind-ActivePanelIndex="_tabIndex" Class="mb-3">
-                    <MudTabPanel Text="From catalog">
+                    <MudTabPanel Text="Z katalogu">
                         <MudSelect T="int?"
-                                   Label="Building template"
+                                   Label="Szablon budynku"
                                    Value="@_selectedTemplateId"
                                    ValueChanged="OnTemplateSelected"
                                    Variant="Variant.Outlined"
                                    Margin="Margin.Dense"
                                    Clearable="true"
-                                   Placeholder="Choose a building…"
+                                   Placeholder="Wybierz budynek…"
                                    Class="baron-influence-field">
                             @foreach (var template in Catalog)
                             {
@@ -31,12 +31,12 @@
                             }
                         </MudSelect>
                         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                            Pick a catalog entry below. To change values, switch to the Custom tab.
+                            Wybierz pozycję z katalogu poniżej. Aby zmienić wartości, przejdź do zakładki Własny.
                         </MudText>
                     </MudTabPanel>
-                    <MudTabPanel Text="Custom">
+                    <MudTabPanel Text="Własny">
                         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                            Edit name, description, and PPB freely. The name must not match any catalog template.
+                            Edytuj nazwę, opis i PPB dowolnie. Nazwa nie może pokrywać się z żadnym szablonem katalogu.
                         </MudText>
                     </MudTabPanel>
                 </MudTabs>
@@ -44,32 +44,32 @@
 
             <div class="@(!IsCoreBuilding && IsCatalogTab ? "city-building-fields--readonly" : "")">
                 <MudTextField @bind-Value="_name"
-                              Label="Name"
+                              Label="Nazwa"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Required="true"
                               Disabled="@(!IsCoreBuilding && IsCatalogTab)"
                               Class="baron-influence-field" />
                 <MudTextField @bind-Value="_description"
-                              Label="Description"
-                              HelperText="Shown as a tooltip in the building list."
+                              Label="Opis"
+                              HelperText="Wyświetlane jako podpowiedź na liście budynków."
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Lines="3"
                               Disabled="@(!IsCoreBuilding && IsCatalogTab)"
                               Class="baron-influence-field" />
-                <PpbVectorEditor @bind-Value="_additive" Title="PPB additive (+)" Compact="true" ReadOnly="@(!IsCoreBuilding && IsCatalogTab)" />
-                <PpbVectorEditor @bind-Value="_percent" Title="PPB percent (%)" Compact="true" Percent="true" ReadOnly="@(!IsCoreBuilding && IsCatalogTab)" />
+                <PpbVectorEditor @bind-Value="_additive" Title="PPB dodawane (+)" Compact="true" ReadOnly="@(!IsCoreBuilding && IsCatalogTab)" />
+                <PpbVectorEditor @bind-Value="_percent" Title="PPB procentowe (%)" Compact="true" Percent="true" ReadOnly="@(!IsCoreBuilding && IsCatalogTab)" />
             </div>
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
         @if (IsCoreBuilding && Building.Id > 0 && OnReset.HasDelegate)
         {
-            <MudButton Variant="Variant.Outlined" Color="Color.Warning" OnClick="ResetAsync">Reset to default</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Warning" OnClick="ResetAsync">Przywróć domyślne</MudButton>
         }
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -134,7 +134,7 @@
         {
             if (string.IsNullOrWhiteSpace(_name))
             {
-                _snackBar.Add("Building name is required.", Severity.Warning);
+                _snackBar.Add("Nazwa budynku jest wymagana.", Severity.Warning);
                 return;
             }
 
@@ -144,14 +144,14 @@
         {
             if (_selectedTemplateId is null or <= 0)
             {
-                _snackBar.Add("Please select a building from the catalog.", Severity.Warning);
+                _snackBar.Add("Wybierz budynek z katalogu.", Severity.Warning);
                 return;
             }
 
             var template = Catalog.FirstOrDefault(t => t.Id == _selectedTemplateId);
             if (template is null)
             {
-                _snackBar.Add("Selected catalog entry was not found.", Severity.Warning);
+                _snackBar.Add("Nie znaleziono wybranej pozycji katalogu.", Severity.Warning);
                 return;
             }
 
@@ -163,13 +163,13 @@
         {
             if (string.IsNullOrWhiteSpace(_name))
             {
-                _snackBar.Add("Building name is required.", Severity.Warning);
+                _snackBar.Add("Nazwa budynku jest wymagana.", Severity.Warning);
                 return;
             }
 
             if (NameMatchesCatalogTemplate(_name))
             {
-                _snackBar.Add("Custom building name cannot match a catalog template. Use the catalog tab or choose a different name.", Severity.Warning);
+                _snackBar.Add("Nazwa własnego budynku nie może pokrywać się z szablonem katalogu. Użyj zakładki katalogu lub wybierz inną nazwę.", Severity.Warning);
                 return;
             }
 

@@ -8,33 +8,33 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudText Typo="Typo.body2" Class="mb-2" Style="color:var(--barony-muted);">
-                Conjuncture = 2d6 + MG modifier. Rolled at turn start.
-                Net Gold profit = (Economy + Conjuncture) × 2; also shifts Community Economy %.
+                Koniunktura = 2k6 + modyfikator MG. Rzucane na początku tury.
+                Zysk netto w złocie = (Gospodarka + Koniunktura) × 2; przesuwa też % Gospodarki społeczności.
             </MudText>
             <MudNumericField @bind-Value="_dice"
-                             Label="2d6 roll"
-                             HelperText="Raw dice total (2–12). Use Re-roll to draw a new turn value."
+                             Label="Rzut 2k6"
+                             HelperText="Surowa suma kości (2–12). Użyj Przerzuć, aby wylosować nową wartość tury."
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="2"
                              Max="12"
                              Class="baron-influence-field" />
             <MudNumericField @bind-Value="_modifier"
-                             Label="MG modifier"
-                             HelperText="Only MG. War −3, good harvest +2, etc."
+                             Label="Modyfikator MG"
+                             HelperText="Tylko MG. Wojna −3, dobre żniwa +2 itp."
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Class="baron-influence-field" />
             <MudText Typo="Typo.subtitle2" Class="mt-2">
-                Effective: @_dice + @_modifier = <b>@(_dice + _modifier)</b>
-                (Gold uses Economy + Conjuncture; % uses Conjuncture − 7 = @(_dice + _modifier - 7))
+                Efektywnie: @_dice + @_modifier = <b>@(_dice + _modifier)</b>
+                (Złoto używa Gospodarka + Koniunktura; % używa Koniunktura − 7 = @(_dice + _modifier - 7))
             </MudText>
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Reroll">Re-roll 2d6</MudButton>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Reroll">Przerzuć 2k6</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -57,7 +57,7 @@
     {
         var roll = RollService.Roll2d6();
         _dice = roll.Sum;
-        _snackBar.Add($"Rolled {roll.Text}", Severity.Info);
+        _snackBar.Add($"Wyrzucono {roll.Text}", Severity.Info);
     }
 
     private void Cancel() => MudDialog.Cancel();

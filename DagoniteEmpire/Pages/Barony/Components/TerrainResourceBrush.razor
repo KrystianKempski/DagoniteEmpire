@@ -2,17 +2,17 @@
 
 <div class="terrain-brush">
     <MudText Typo="Typo.caption" Class="terrain-brush__hint">
-        Paint a deposit onto tiles (bottom-right). Select None to erase. Clear layer removes all resources.
+        Nanieś złoże na pola (prawy dolny róg). Wybierz Brak, aby wymazać. Wyczyszczenie warstwy usuwa wszystkie zasoby.
     </MudText>
     <div class="terrain-brush__body">
         <div class="terrain-brush__options">
-            <BaronyTooltip Text="Clear resource">
+            <BaronyTooltip Text="Wyczyść zasób">
                 <button type="button"
                         class="terrain-type-option terrain-resource-option @(string.IsNullOrEmpty(Value) ? "terrain-type-option--selected" : "")"
-                        aria-label="Clear resource"
+                        aria-label="Wyczyść zasób"
                         @onclick="() => SelectAsync(null)">
                     <MudIcon Icon="@Icons.Material.Filled.Block" Size="Size.Small" />
-                    <span class="terrain-resource-option__label">None</span>
+                    <span class="terrain-resource-option__label">Brak</span>
                 </button>
             </BaronyTooltip>
             @foreach (var resource in TerrainResource.All)

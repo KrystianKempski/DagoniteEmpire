@@ -10,7 +10,7 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog">
             <MudTextField @bind-Value="_name"
-                          Label="Name"
+                          Label="Nazwa"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Required="true"
@@ -20,36 +20,36 @@
             <div class="building-template-dialog__row">
                 <MudNumericField T="int"
                                  @bind-Value="_lordship"
-                                 Label="Lordship"
-                                 HelperText="Minimum lordship level required."
+                                 Label="Godność"
+                                 HelperText="Minimalny wymagany poziom godności."
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Min="0"
                                  Max="10"
                                  Class="baron-influence-field building-template-dialog__lordship" />
                 <MudSelect T="string"
-                           Label="Type"
+                           Label="Typ"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Dense="true"
                            Class="baron-influence-field building-template-dialog__kind"
                            @bind-Value="_kind">
-                    <MudSelectItem Value="@BuildingKind.Building">Building</MudSelectItem>
-                    <MudSelectItem Value="@BuildingKind.Improvement">Improvement</MudSelectItem>
+                    <MudSelectItem Value="@BuildingKind.Building">Budynek</MudSelectItem>
+                    <MudSelectItem Value="@BuildingKind.Improvement">Ulepszenie</MudSelectItem>
                 </MudSelect>
             </div>
 
             <div class="building-template-dialog__row">
                 <MudNumericField T="decimal"
                                  @bind-Value="_productionCost"
-                                 Label="Production cost"
+                                 Label="Koszt produkcji"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Min="0"
                                  Class="baron-influence-field building-template-dialog__cost" />
                 <MudNumericField T="decimal"
                                  @bind-Value="_goldCost"
-                                 Label="Gold cost"
+                                 Label="Koszt w złocie"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Min="0"
@@ -57,8 +57,8 @@
             </div>
 
             <MudTextField @bind-Value="_description"
-                          Label="Description"
-                          HelperText="Shown in the catalog (tooltips). Use separate lines for Produces / Requires trade access."
+                          Label="Opis"
+                          HelperText="Widoczne w katalogu (dymki). Użyj osobnych wierszy dla: Produkuje / Wymaga dostępu handlowego."
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="4"
@@ -67,8 +67,8 @@
             @if (IsImprovement)
             {
                 <MudSelect T="string"
-                           Label="Terrain requirement"
-                           HelperText="Where this can be built on the map (catalog hint)."
+                           Label="Wymagany teren"
+                           HelperText="Gdzie można to zbudować na mapie (wskazówka katalogowa)."
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Dense="true"
@@ -76,11 +76,11 @@
                            @bind-Value="_terrainPreset">
                     @foreach (var preset in TerrainPresets)
                     {
-                        <MudSelectItem Value="@preset">@(string.IsNullOrEmpty(preset) ? "— (none)" : preset)</MudSelectItem>
+                        <MudSelectItem Value="@preset">@(string.IsNullOrEmpty(preset) ? "— (brak)" : preset)</MudSelectItem>
                     }
                 </MudSelect>
 
-                <MudText Typo="Typo.caption" Class="mb-1" Style="color:var(--barony-muted);">Map icon</MudText>
+                <MudText Typo="Typo.caption" Class="mb-1" Style="color:var(--barony-muted);">Ikona na mapie</MudText>
                 <div class="custom-improvement-icon-picker">
                     @foreach (var icon in MapImprovement.IconChoices)
                     {
@@ -98,12 +98,12 @@
                 </div>
             }
 
-            <PpbVectorEditor @bind-Value="_additive" Title="PPB additive (+)" Compact="true" />
-            <PpbVectorEditor @bind-Value="_percent" Title="PPB percent (%)" Compact="true" Percent="true" />
+            <PpbVectorEditor @bind-Value="_additive" Title="PPB addytywne (+)" Compact="true" />
+            <PpbVectorEditor @bind-Value="_percent" Title="PPB procentowe (%)" Compact="true" Percent="true" />
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
         <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@SaveButtonLabel</MudButton>
     </DialogActions>
 </MudDialog>
@@ -143,8 +143,8 @@
     private bool IsImprovement =>
         string.Equals(_kind, BuildingKind.Improvement, StringComparison.OrdinalIgnoreCase);
     private bool IsEditMode => _templateId > 0;
-    private string DialogTitle => IsEditMode ? "Edit catalog entry" : "New catalog entry";
-    private string SaveButtonLabel => IsEditMode ? "Save" : "Create";
+    private string DialogTitle => IsEditMode ? "Edytuj wpis katalogu" : "Nowy wpis katalogu";
+    private string SaveButtonLabel => IsEditMode ? "Zapisz" : "Utwórz";
 
     protected override void OnInitialized()
     {
@@ -210,20 +210,20 @@
         var trimmedName = _name.Trim();
         if (string.IsNullOrWhiteSpace(trimmedName))
         {
-            _snackBar.Add("Name is required.", Severity.Warning);
+            _snackBar.Add("Nazwa jest wymagana.", Severity.Warning);
             return;
         }
 
         if (ExistingNames.Contains(trimmedName)
             && !string.Equals(trimmedName, InitialTemplate?.Name, StringComparison.OrdinalIgnoreCase))
         {
-            _snackBar.Add("A catalog entry with this name already exists.", Severity.Warning);
+            _snackBar.Add("Wpis katalogu o tej nazwie już istnieje.", Severity.Warning);
             return;
         }
 
         if (IsImprovement && string.IsNullOrWhiteSpace(_mapPinKind))
         {
-            _snackBar.Add("Select an icon for improvements.", Severity.Warning);
+            _snackBar.Add("Wybierz ikonę dla ulepszenia.", Severity.Warning);
             return;
         }
 

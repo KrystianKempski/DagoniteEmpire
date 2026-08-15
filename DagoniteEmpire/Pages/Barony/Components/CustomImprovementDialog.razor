@@ -5,19 +5,19 @@
            ContentClass="baron-influence-dialog-content"
            ActionsClass="baron-influence-dialog-actions">
     <TitleContent>
-        <MudText Typo="Typo.h6">Custom improvement</MudText>
+        <MudText Typo="Typo.h6">Własne ulepszenie</MudText>
     </TitleContent>
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog">
             <MudTextField @bind-Value="_name"
-                          Label="Name"
+                          Label="Nazwa"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Required="true"
                           Immediate="true"
                           Class="baron-influence-field" />
 
-            <MudText Typo="Typo.caption" Class="mb-1" Style="color:var(--barony-muted);">Icon</MudText>
+            <MudText Typo="Typo.caption" Class="mb-1" Style="color:var(--barony-muted);">Ikona</MudText>
             <div class="custom-improvement-icon-picker">
                 @foreach (var icon in MapImprovement.IconChoices)
                 {
@@ -34,13 +34,13 @@
                 }
             </div>
 
-            <PpbVectorEditor @bind-Value="_additive" Title="PPB additive (+)" Compact="true" />
-            <PpbVectorEditor @bind-Value="_percent" Title="PPB percent (%)" Compact="true" Percent="true" />
+            <PpbVectorEditor @bind-Value="_additive" Title="PPB addytywne (+)" Compact="true" />
+            <PpbVectorEditor @bind-Value="_percent" Title="PPB procentowe (%)" Compact="true" Percent="true" />
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Confirm</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Potwierdź</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -77,7 +77,7 @@
         var trimmed = _name.Trim();
         if (string.IsNullOrWhiteSpace(trimmed))
         {
-            _snackBar.Add("Enter a name.", Severity.Warning);
+            _snackBar.Add("Podaj nazwę.", Severity.Warning);
             return;
         }
 

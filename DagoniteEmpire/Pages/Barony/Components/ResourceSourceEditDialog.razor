@@ -7,27 +7,27 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog">
             <MudTextField @bind-Value="_name"
-                          Label="Name"
+                          Label="Nazwa"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Required="true"
                           Class="baron-influence-field" />
             <MudTextField @bind-Value="_description"
-                          Label="Description"
-                          HelperText="Optional description shown on name hover."
+                          Label="Opis"
+                          HelperText="Opcjonalny opis widoczny po najechaniu na nazwę."
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="3"
                           Class="baron-influence-field" />
             <PpbVectorEditor @bind-Value="_additive"
-                             Title="Resource values (positive adds to stocks, negative removes)"
+                             Title="Wartości zasobów (dodatnie dodają do zapasów, ujemne odejmują)"
                              Compact="true"
                              Columns="@ResourceCatalog.All" />
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -53,7 +53,7 @@
     {
         if (string.IsNullOrWhiteSpace(_name))
         {
-            _snackBar.Add("Name is required.", Severity.Warning);
+            _snackBar.Add("Nazwa jest wymagana.", Severity.Warning);
             return;
         }
 

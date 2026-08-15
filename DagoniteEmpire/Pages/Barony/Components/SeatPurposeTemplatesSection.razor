@@ -3,9 +3,9 @@
 @inject ISnackbar _snackBar
 @inject IDialogService _dialogService
 
-<BaronySection Title="Purpose templates">
+<BaronySection Title="Szablony przeznaczenia">
     <Summary>
-        <span class="projects-summary__item">@Templates.Count template@(Templates.Count == 1 ? "" : "s")</span>
+        <span class="projects-summary__item">@Templates.Count szablon@(Templates.Count == 1 ? "" : "y")</span>
     </Summary>
     <ChildContent>
         <div class="lords-seat-templates-wrap">
@@ -23,11 +23,11 @@
                 </colgroup>
                 <thead>
                     <tr>
-                        <th rowspan="2" class="ppb-row-label lords-seat-templates-col-name">Name</th>
-                        <th rowspan="2" class="lords-seat-templates-col-size">Min size</th>
-                        <th rowspan="2" class="lords-seat-templates-col-desc">Description</th>
+                        <th rowspan="2" class="ppb-row-label lords-seat-templates-col-name">Nazwa</th>
+                        <th rowspan="2" class="lords-seat-templates-col-size">Min. rozmiar</th>
+                        <th rowspan="2" class="lords-seat-templates-col-desc">Opis</th>
                         <th rowspan="2" class="lords-seat-templates-col-prestige seat-php-header">
-                            <BaronyTooltip Title="Prestige" Text="Prestige / Honor / Fear (additive)">Prestige</BaronyTooltip>
+                            <BaronyTooltip Title="Prestiż" Text="Prestiż / Honor / Postrach (dodawane)">Prestiż</BaronyTooltip>
                         </th>
                         @foreach (var info in PpbCatalog.All)
                         {
@@ -52,12 +52,12 @@
                                         <span class="city-building-name-text">@t.Name</span>
                                     </BaronyTooltip>
                                     <span class="city-building-name-actions">
-                                        <BaronyTooltip Text="Edit template">
+                                        <BaronyTooltip Text="Edytuj szablon">
                                             <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                            Size="Size.Small"
                                                            OnClick="@(() => EditAsync(t))" />
                                         </BaronyTooltip>
-                                        <BaronyTooltip Text="Delete template">
+                                        <BaronyTooltip Text="Usuń szablon">
                                             <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                            Size="Size.Small"
                                                            Color="Color.Error"
@@ -74,13 +74,13 @@
                                 }
                                 else
                                 {
-                                    <BaronyTooltip Title="Description" Text="@t.Description">
+                                    <BaronyTooltip Title="Opis" Text="@t.Description">
                                         <span class="lords-seat-ellipsis">@t.Description</span>
                                     </BaronyTooltip>
                                 }
                             </td>
                             <td class="lords-seat-templates-col-prestige seat-php-cell">
-                                <BaronyTooltip Title="Prestige / Honor / Fear" Text="@TemplatePhpTooltip(t)">
+                                <BaronyTooltip Title="Prestiż / Honor / Postrach" Text="@TemplatePhpTooltip(t)">
                                     <span class="seat-php-values seat-php-values--stacked seat-php-values--stacked-singlecol">
                                         <span class="seat-php-value @BaronPhpVisuals.CssClass(PhpMetric.Prestige)">
                                             <PhpMetricIcon Metric="PhpMetric.Prestige" Title="" />
@@ -112,7 +112,7 @@
                    StartIcon="@Icons.Material.Filled.Add"
                    Class="mt-2"
                    OnClick="AddAsync">
-            Add purpose template
+            Dodaj szablon przeznaczenia
         </MudButton>
     </ChildContent>
 </BaronySection>
@@ -130,12 +130,12 @@
         var parts = new List<string>();
         if (!string.IsNullOrWhiteSpace(t.Description))
             parts.Add(t.Description.Trim());
-        parts.Add($"Min chamber size: {t.MinSizeCategory}");
+        parts.Add($"Min. rozmiar komnaty: {t.MinSizeCategory}");
         if (!string.IsNullOrWhiteSpace(t.WhoOccupies))
-            parts.Add($"Occupied by: {t.WhoOccupies}");
+            parts.Add($"Zajmowane przez: {t.WhoOccupies}");
         if (t.SleepCapacity > 0)
-            parts.Add($"Sleep capacity: {t.SleepCapacity}");
-        parts.Add(t.IsUniversal ? "Scope: all baronies" : "Scope: this barony");
+            parts.Add($"Miejsca do spania: {t.SleepCapacity}");
+        parts.Add(t.IsUniversal ? "Zakres: wszystkie baronie" : "Zakres: ta baronia");
         return string.Join("\n\n", parts);
     }
 
@@ -166,8 +166,8 @@
         : (v > 0m ? $"+{v.ToString("0.##")}" : v.ToString("0.##"));
 
     private static string TemplatePhpTooltip(SeatPurposeTemplateDTO t) =>
-        $"Prestige {FmtPhp(t.AdditivePrestige)} · Honor {FmtPhp(t.AdditiveHonor)} · Fear {FmtPhp(t.AdditiveFear)}"
-        + " (per chamber, before multiplier)";
+        $"Prestiż {FmtPhp(t.AdditivePrestige)} · Honor {FmtPhp(t.AdditiveHonor)} · Postrach {FmtPhp(t.AdditiveFear)}"
+        + " (na komnatę, przed mnożnikiem)";
 
     private Task AddAsync() => OpenDialog(new SeatPurposeTemplateDTO { IsUniversal = true, BaronyId = BaronyId }, isNew: true);
 
@@ -182,7 +182,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<SeatPurposeTemplateEditDialog>(
-            isNew ? "Add purpose template" : "Edit purpose template",
+            isNew ? "Dodaj szablon przeznaczenia" : "Edytuj szablon przeznaczenia",
             parameters,
             new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true });
 
@@ -192,7 +192,7 @@
 
         if (string.IsNullOrWhiteSpace(saved.Name))
         {
-            _snackBar.Add("Template name is required.", Severity.Warning);
+            _snackBar.Add("Nazwa szablonu jest wymagana.", Severity.Warning);
             return;
         }
 
@@ -202,12 +202,12 @@
         try
         {
             await _baronyRepo.SaveSeatPurposeTemplate(saved);
-            _snackBar.Add(isNew ? "Template added." : "Template updated.", Severity.Success);
+            _snackBar.Add(isNew ? "Dodano szablon." : "Zaktualizowano szablon.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save template: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać szablonu: " + ex.Message, Severity.Error);
         }
     }
 
@@ -216,12 +216,12 @@
         try
         {
             await _baronyRepo.DeleteSeatPurposeTemplate(t.Id);
-            _snackBar.Add("Template removed.", Severity.Success);
+            _snackBar.Add("Usunięto szablon.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not delete template: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się usunąć szablonu: " + ex.Message, Severity.Error);
         }
     }
 

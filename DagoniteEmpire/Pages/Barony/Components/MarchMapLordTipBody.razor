@@ -4,26 +4,26 @@
     @if (IsPlayerSeat && Player is not null)
     {
         <div class="barony-tip__title">
-            @(string.IsNullOrWhiteSpace(Player.BaronName) ? "You" : Player.BaronName)
-            <span class="march-map-lord-tip__you">(you)</span>
+            @(string.IsNullOrWhiteSpace(Player.BaronName) ? "Ty" : Player.BaronName)
+            <span class="march-map-lord-tip__you">(ty)</span>
         </div>
         <div class="march-map-lord-tip__meta">
             Baron · @Player.SeatMapLabel · @Player.BaronyName
         </div>
         <div class="march-map-lord-tip__section">
-            <div class="barony-tip__body">Your seat on the Eastern March. Other lords know you as the ruler of @Player.BaronyName.</div>
+            <div class="barony-tip__body">Twoja siedziba na Wschodniej Marchii. Inni lordowie znają Cię jako władcę @Player.BaronyName.</div>
         </div>
     }
     else if (Lord is not null)
     {
         <div class="barony-tip__title">@Lord.Name @Lord.House</div>
         <div class="march-map-lord-tip__meta">
-            @Lord.Title · @Lord.Holdings · Wealth @Lord.Wealth
+            @Lord.Title · @Lord.Holdings · Bogactwo @Lord.Wealth
         </div>
         @if (!string.IsNullOrWhiteSpace(Lord.ProducedGoods))
         {
             <div class="march-map-lord-tip__section">
-                <div class="march-map-lord-tip__label">Available goods</div>
+                <div class="march-map-lord-tip__label">Dostępne towary</div>
                 <div class="trade-good-chip-row trade-good-chip-row--tip">
                     @foreach (var key in TradeGoodLordNames.ParseLordGoodsList(Lord.ProducedGoods))
                     {
@@ -41,7 +41,7 @@
         @if (!string.IsNullOrWhiteSpace(Lord.Description))
         {
             <div class="march-map-lord-tip__section">
-                <div class="march-map-lord-tip__label">Description</div>
+                <div class="march-map-lord-tip__label">Opis</div>
                 <div class="barony-tip__body">@Lord.Description</div>
             </div>
         }
@@ -50,7 +50,7 @@
     {
         <div class="barony-tip__title">@PlaceLabel</div>
         <div class="barony-tip__body" style="color:var(--barony-muted);">
-            No linked lord in the Known lords catalog.
+            Brak powiązanego lorda w katalogu Znanych lordów.
         </div>
     }
 </div>

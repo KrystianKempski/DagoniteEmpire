@@ -3,20 +3,20 @@
 
 <div class="terrain-brush">
     <MudText Typo="Typo.caption" Class="terrain-brush__hint">
-        Grow or shrink the map from each edge. New tiles are empty plains.
-        Shrinking permanently deletes edge tiles and any improvements on them.
+        Powiększ lub zmniejsz mapę od każdej krawędzi. Nowe pola to puste równiny.
+        Zmniejszanie trwale usuwa pola krawędziowe oraz wszelkie ulepszenia na nich.
     </MudText>
     <div class="terrain-brush__body terrain-map-size">
         <div class="terrain-map-size__current">
-            Current size: <strong>@Width</strong> × <strong>@Height</strong>
+            Aktualny rozmiar: <strong>@Width</strong> × <strong>@Height</strong>
             <span class="terrain-map-size__limits">
-                (min @MapGrid.MinSize … max @MapGrid.MaxSize)
+                (min @MapGrid.MinSize … maks @MapGrid.MaxSize)
             </span>
         </div>
 
         <div class="terrain-map-size__amount">
             <MudNumericField T="int"
-                             Label="Tiles per click"
+                             Label="Pól na kliknięcie"
                              @bind-Value="_amount"
                              Min="1"
                              Max="10"
@@ -28,14 +28,14 @@
 
         <div class="terrain-map-size__pad">
             <div class="terrain-map-size__edge terrain-map-size__edge--top">
-                <span class="terrain-map-size__edge-label">Top</span>
-                <BaronyTooltip Text="Remove rows from the top">
+                <span class="terrain-map-size__edge-label">Góra</span>
+                <BaronyTooltip Text="Usuń wiersze z góry">
                     <MudIconButton Icon="@Icons.Material.Filled.Remove"
                                    Size="Size.Small"
                                    Disabled="@(_busy || !CanShrinkTop)"
                                    OnClick="@(() => ApplyAsync(0, 0, -Amount, 0))" />
                 </BaronyTooltip>
-                <BaronyTooltip Text="Add rows at the top">
+                <BaronyTooltip Text="Dodaj wiersze na górze">
                     <MudIconButton Icon="@Icons.Material.Filled.Add"
                                    Size="Size.Small"
                                    Disabled="@(_busy || !CanGrowTop)"
@@ -45,14 +45,14 @@
 
             <div class="terrain-map-size__middle">
                 <div class="terrain-map-size__edge terrain-map-size__edge--left">
-                    <span class="terrain-map-size__edge-label">Left</span>
-                    <BaronyTooltip Text="Remove columns from the left">
+                    <span class="terrain-map-size__edge-label">Lewa</span>
+                    <BaronyTooltip Text="Usuń kolumny z lewej">
                         <MudIconButton Icon="@Icons.Material.Filled.Remove"
                                        Size="Size.Small"
                                        Disabled="@(_busy || !CanShrinkLeft)"
                                        OnClick="@(() => ApplyAsync(-Amount, 0, 0, 0))" />
                     </BaronyTooltip>
-                    <BaronyTooltip Text="Add columns on the left">
+                    <BaronyTooltip Text="Dodaj kolumny z lewej">
                         <MudIconButton Icon="@Icons.Material.Filled.Add"
                                        Size="Size.Small"
                                        Disabled="@(_busy || !CanGrowLeft)"
@@ -65,14 +65,14 @@
                 </div>
 
                 <div class="terrain-map-size__edge terrain-map-size__edge--right">
-                    <span class="terrain-map-size__edge-label">Right</span>
-                    <BaronyTooltip Text="Add columns on the right">
+                    <span class="terrain-map-size__edge-label">Prawa</span>
+                    <BaronyTooltip Text="Dodaj kolumny z prawej">
                         <MudIconButton Icon="@Icons.Material.Filled.Add"
                                        Size="Size.Small"
                                        Disabled="@(_busy || !CanGrowRight)"
                                        OnClick="@(() => ApplyAsync(0, Amount, 0, 0))" />
                     </BaronyTooltip>
-                    <BaronyTooltip Text="Remove columns from the right">
+                    <BaronyTooltip Text="Usuń kolumny z prawej">
                         <MudIconButton Icon="@Icons.Material.Filled.Remove"
                                        Size="Size.Small"
                                        Disabled="@(_busy || !CanShrinkRight)"
@@ -82,14 +82,14 @@
             </div>
 
             <div class="terrain-map-size__edge terrain-map-size__edge--bottom">
-                <span class="terrain-map-size__edge-label">Bottom</span>
-                <BaronyTooltip Text="Add rows at the bottom">
+                <span class="terrain-map-size__edge-label">Dół</span>
+                <BaronyTooltip Text="Dodaj wiersze na dole">
                     <MudIconButton Icon="@Icons.Material.Filled.Add"
                                    Size="Size.Small"
                                    Disabled="@(_busy || !CanGrowBottom)"
                                    OnClick="@(() => ApplyAsync(0, 0, 0, Amount))" />
                 </BaronyTooltip>
-                <BaronyTooltip Text="Remove rows from the bottom">
+                <BaronyTooltip Text="Usuń wiersze z dołu">
                     <MudIconButton Icon="@Icons.Material.Filled.Remove"
                                    Size="Size.Small"
                                    Disabled="@(_busy || !CanShrinkBottom)"

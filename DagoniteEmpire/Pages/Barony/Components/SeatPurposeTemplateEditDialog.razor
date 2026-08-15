@@ -7,70 +7,70 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudTextField @bind-Value="_template.Name"
-                          Label="Name"
+                          Label="Nazwa"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Required="true"
                           Class="baron-influence-field" />
             <MudTextField @bind-Value="_template.Description"
-                          Label="Description"
+                          Label="Opis"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="3"
                           Class="baron-influence-field" />
-            <MudSelect T="string" @bind-Value="_template.MinSizeCategory" Label="Minimum chamber size" Variant="Variant.Outlined" Margin="Margin.Dense" Class="baron-influence-field">
+            <MudSelect T="string" @bind-Value="_template.MinSizeCategory" Label="Minimalny rozmiar komnaty" Variant="Variant.Outlined" Margin="Margin.Dense" Class="baron-influence-field">
                 @foreach (var s in SeatRoomSizeCategory.All)
                 {
                     <MudSelectItem Value="@s">@s</MudSelectItem>
                 }
             </MudSelect>
             <MudTextField @bind-Value="_template.WhoOccupies"
-                          Label="Who occupies"
+                          Label="Kto zajmuje"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field" />
             <MudNumericField T="int"
                              @bind-Value="_template.SleepCapacity"
-                             Label="Sleep capacity"
+                             Label="Pojemność noclegowa"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="0"
                              Class="baron-influence-field" />
             <MudNumericField T="decimal"
                              @bind-Value="_template.AdditivePrestige"
-                             Label="Additive prestige"
+                             Label="Dodatkowy prestiż"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Step="0.1m"
                              Class="baron-influence-field" />
             <MudNumericField T="decimal"
                              @bind-Value="_template.AdditiveHonor"
-                             Label="Additive honor"
+                             Label="Dodatkowy honor"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Step="0.1m"
                              Class="baron-influence-field" />
             <MudNumericField T="decimal"
                              @bind-Value="_template.AdditiveFear"
-                             Label="Additive fear"
+                             Label="Dodatkowy postrach"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Step="0.1m"
                              Class="baron-influence-field" />
             <MudNumericField T="int"
                              @bind-Value="_template.SortOrder"
-                             Label="Sort order"
+                             Label="Kolejność sortowania"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Class="baron-influence-field" />
-            <MudSwitch @bind-Value="_template.IsUniversal" Label="Available to all baronies" Color="Color.Primary" />
-            <PpbVectorEditor @bind-Value="_template.Additive" Title="Purpose PPB (additive)" Compact="true" />
-            <PpbVectorEditor @bind-Value="_template.Percent" Title="Purpose PPB (%)" Percent="true" Compact="true" />
+            <MudSwitch @bind-Value="_template.IsUniversal" Label="Dostępne dla wszystkich baronii" Color="Color.Primary" />
+            <PpbVectorEditor @bind-Value="_template.Additive" Title="PPB przeznaczenia (dodatkowe)" Compact="true" />
+            <PpbVectorEditor @bind-Value="_template.Percent" Title="PPB przeznaczenia (%)" Percent="true" Compact="true" />
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="baron-influence-save-btn" OnClick="Save">Save</MudButton>
+        <MudButton OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="baron-influence-save-btn" OnClick="Save">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 

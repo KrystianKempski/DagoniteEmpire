@@ -5,12 +5,12 @@
     <DialogContent>
         <div class="barony-dialog-theme">
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-            Available CX: @_available. Trunk + branch gates apply (model B).
+            Dostępne CX: @_available. Obowiązują bramki pnia i gałęzi (model B).
         </MudText>
         <MudSelect T="string"
                    Value="_selectedKey"
                    ValueChanged="OnSelectedChanged"
-                   Label="Ability"
+                   Label="Zdolność"
                    Variant="Variant.Outlined"
                    Margin="Margin.Dense"
                    Dense="true">
@@ -32,12 +32,12 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
         <MudButton Variant="Variant.Filled"
                    Class="baron-influence-save-btn"
                    Disabled="@(Selected is null || !string.IsNullOrEmpty(_gateHint))"
                    OnClick="Save">
-            Unlock
+            Odblokuj
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -96,7 +96,7 @@
             return;
         if (!CourtCommanderFormulas.TryUnlock(Sheet, Selected.Key, out var error))
         {
-            _snackBar.Add(error ?? "Cannot unlock.", Severity.Warning);
+            _snackBar.Add(error ?? "Nie można odblokować.", Severity.Warning);
             RefreshHint();
             return;
         }

@@ -7,14 +7,14 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog">
             <MudTextField @bind-Value="_name"
-                          Label="Name"
+                          Label="Nazwa"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Required="true"
                           Class="baron-influence-field" />
             <MudTextField @bind-Value="_description"
-                          Label="Description"
-                          HelperText="Optional description shown on name hover."
+                          Label="Opis"
+                          HelperText="Opcjonalny opis widoczny po najechaniu na nazwę."
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="3"
@@ -23,14 +23,14 @@
             <div class="event-turn-fields">
                 <MudNumericField T="int"
                                  @bind-Value="_startTurn"
-                                 Label="From turn"
+                                 Label="Od tury"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Min="1"
                                  Class="baron-influence-field" />
                 <MudCheckBox T="bool"
                              @bind-Value="_noEnd"
-                             Label="Ongoing (no end turn)"
+                             Label="Trwające (bez tury końcowej)"
                              Color="Color.Primary"
                              Dense="true"
                              Class="baron-influence-field" />
@@ -38,7 +38,7 @@
                 {
                     <MudNumericField T="int"
                                      @bind-Value="_endTurn"
-                                     Label="To turn"
+                                     Label="Do tury"
                                      Variant="Variant.Outlined"
                                      Margin="Margin.Dense"
                                      Min="1"
@@ -46,13 +46,13 @@
                 }
             </div>
 
-            <PpbVectorEditor @bind-Value="_additive" Title="PPB additive (+)" Compact="true" />
-            <PpbVectorEditor @bind-Value="_percent" Title="PPB percent (%)" Compact="true" Percent="true" />
+            <PpbVectorEditor @bind-Value="_additive" Title="PPB addytywne (+)" Compact="true" />
+            <PpbVectorEditor @bind-Value="_percent" Title="PPB procentowe (%)" Compact="true" Percent="true" />
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -97,19 +97,19 @@
     {
         if (string.IsNullOrWhiteSpace(_name))
         {
-            _snackBar.Add("Name is required.", Severity.Warning);
+            _snackBar.Add("Nazwa jest wymagana.", Severity.Warning);
             return;
         }
 
         if (_startTurn < 1)
         {
-            _snackBar.Add("Start turn must be at least 1.", Severity.Warning);
+            _snackBar.Add("Tura początkowa musi wynosić co najmniej 1.", Severity.Warning);
             return;
         }
 
         if (!_noEnd && _endTurn < _startTurn)
         {
-            _snackBar.Add("End turn cannot be before start turn.", Severity.Warning);
+            _snackBar.Add("Tura końcowa nie może być wcześniejsza niż początkowa.", Severity.Warning);
             return;
         }
 

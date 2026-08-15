@@ -7,12 +7,12 @@
         <div class="barony-dialog-theme court-commander-tree">
             <div class="court-commander-tree__header">
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                    CX @_available available · @_spent spent · pool @_sheet.CommanderXp
+                    CX @_available dostępne · @_spent wydane · pula @_sheet.CommanderXp
                 </MudText>
                 <div class="court-commander-tree__legend">
-                    <span class="court-commander-node court-commander-node--unlocked court-commander-node--legend">Unlocked</span>
-                    <span class="court-commander-node court-commander-node--ready court-commander-node--legend">Available</span>
-                    <span class="court-commander-node court-commander-node--locked court-commander-node--legend">Locked</span>
+                    <span class="court-commander-node court-commander-node--unlocked court-commander-node--legend">Odblokowane</span>
+                    <span class="court-commander-node court-commander-node--ready court-commander-node--legend">Dostępne</span>
+                    <span class="court-commander-node court-commander-node--locked court-commander-node--legend">Zablokowane</span>
                 </div>
             </div>
 
@@ -20,7 +20,7 @@
             <section class="court-commander-tree__trunk">
                 <h4 class="court-commander-tree__branch-title">
                     <MudIcon Icon="@BranchIcon(CourtCommanderBranch.Trunk)" Size="Size.Small" Class="court-commander-tree__branch-icon" />
-                    Trunk
+                    Pień
                 </h4>
                 <div class="court-commander-tree__tiers">
                     @foreach (var tier in new[] { 1, 2, 3 })
@@ -30,7 +30,7 @@
                             continue;
                         var tierReq = CourtCommanderCatalog.FindTierRequirement(CourtCommanderBranch.Trunk, tier);
                         <div class="court-commander-tree__tier">
-                            <span class="court-commander-tree__tier-label">Tier @(tier) · @(tierReq?.CxCost ?? tier) CX</span>
+                            <span class="court-commander-tree__tier-label">Poziom @(tier) · @(tierReq?.CxCost ?? tier) CX</span>
                             <div class="court-commander-tree__nodes">
                                 @foreach (var ability in tierAbilities)
                                 {
@@ -58,7 +58,7 @@
                                     continue;
                                 var tierReq = CourtCommanderCatalog.FindTierRequirement(branch, tier);
                                 <div class="court-commander-tree__tier">
-                                    <span class="court-commander-tree__tier-label">Tier @(tier) · @(tierReq?.CxCost ?? tier) CX</span>
+                                    <span class="court-commander-tree__tier-label">Poziom @(tier) · @(tierReq?.CxCost ?? tier) CX</span>
                                     <div class="court-commander-tree__nodes">
                                         @foreach (var ability in tierAbilities)
                                         {
@@ -80,7 +80,7 @@
                     <div class="court-commander-tree__detail-head">
                         <strong>@_selected.NameEn</strong>
                         <span class="court-commander-tree__detail-meta">
-                            @BranchTitle(_selected.Branch) · Tier @(_selected.Tier) · @_selected.CxCost CX
+                            @BranchTitle(_selected.Branch) · Poziom @(_selected.Tier) · @_selected.CxCost CX
                         </span>
                         @if (CanSpendCx && IsReady(_selected))
                         {
@@ -90,7 +90,7 @@
                                        StartIcon="@Icons.Material.Filled.LockOpen"
                                        ButtonType="ButtonType.Button"
                                        OnClick="UnlockSelectedAsync">
-                                Unlock (@_selected.CxCost CX)
+                                Odblokuj (@_selected.CxCost CX)
                             </MudButton>
                         }
                     </div>
@@ -98,21 +98,21 @@
                     <p>@_selected.DescriptionEn</p>
                     @if (!string.IsNullOrWhiteSpace(_selected.Effects))
                     {
-                        <p class="court-commander-tree__effects">Effect: @_selected.Effects</p>
+                        <p class="court-commander-tree__effects">Efekt: @_selected.Effects</p>
                     }
                     @if (!string.IsNullOrWhiteSpace(RequirementText(_selected)))
                     {
-                        <p class="court-commander-tree__req">Requires: @RequirementText(_selected)</p>
+                        <p class="court-commander-tree__req">Wymaga: @RequirementText(_selected)</p>
                     }
                     @if (!IsUnlocked(_selected) && !string.IsNullOrWhiteSpace(_selectedHint))
                     {
                         <MudAlert Severity="Severity.Info" Dense="true" Class="mt-1">@_selectedHint</MudAlert>
                     }
                     <div class="court-commander-tree__detail-actions">
-                        <MudButton Variant="Variant.Outlined" Size="Size.Small" ButtonType="ButtonType.Button" OnClick="Close">Close</MudButton>
+                        <MudButton Variant="Variant.Outlined" Size="Size.Small" ButtonType="ButtonType.Button" OnClick="Close">Zamknij</MudButton>
                         @if (_changed)
                         {
-                            <MudButton Variant="Variant.Filled" Size="Size.Small" Class="baron-influence-save-btn" ButtonType="ButtonType.Button" OnClick="SaveAndClose">Done</MudButton>
+                            <MudButton Variant="Variant.Filled" Size="Size.Small" Class="baron-influence-save-btn" ButtonType="ButtonType.Button" OnClick="SaveAndClose">Gotowe</MudButton>
                         }
                     </div>
                 </aside>
@@ -122,10 +122,10 @@
     <DialogActions>
         @if (_selected is null)
         {
-            <MudButton Variant="Variant.Outlined" OnClick="Close">Close</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="Close">Zamknij</MudButton>
             @if (_changed)
             {
-                <MudButton Variant="Variant.Filled" Class="baron-influence-save-btn" OnClick="SaveAndClose">Done</MudButton>
+                <MudButton Variant="Variant.Filled" Class="baron-influence-save-btn" OnClick="SaveAndClose">Gotowe</MudButton>
             }
         }
     </DialogActions>
@@ -198,11 +198,11 @@
 
     private static string BranchTitle(string branch) => branch switch
     {
-        CourtCommanderBranch.Trunk => "Trunk",
-        CourtCommanderBranch.Shock => "Shock",
-        CourtCommanderBranch.Line => "Line",
-        CourtCommanderBranch.Skirmish => "Skirmish",
-        CourtCommanderBranch.Cunning => "Cunning",
+        CourtCommanderBranch.Trunk => "Pień",
+        CourtCommanderBranch.Shock => "Uderzenie",
+        CourtCommanderBranch.Line => "Linia",
+        CourtCommanderBranch.Skirmish => "Harce",
+        CourtCommanderBranch.Cunning => "Podstęp",
         _ => branch,
     };
 
@@ -241,9 +241,9 @@
 
     private static string StatusLabel(string status) => status switch
     {
-        CourtCommanderAbilityStatus.InCode => "In game",
-        CourtCommanderAbilityStatus.Proposal => "Proposal",
-        CourtCommanderAbilityStatus.Draft => "Draft",
+        CourtCommanderAbilityStatus.InCode => "W grze",
+        CourtCommanderAbilityStatus.Proposal => "Propozycja",
+        CourtCommanderAbilityStatus.Draft => "Szkic",
         _ => status,
     };
 
@@ -260,12 +260,12 @@
             return;
         if (!CourtCommanderFormulas.TryUnlock(_sheet, _selected.Key, out var error))
         {
-            _snackBar.Add(error ?? "Cannot unlock.", Severity.Warning);
+            _snackBar.Add(error ?? "Nie można odblokować.", Severity.Warning);
             RefreshPools();
             return;
         }
         _changed = true;
-        _snackBar.Add($"{_selected.NameEn} unlocked.", Severity.Success);
+        _snackBar.Add($"{_selected.NameEn} odblokowano.", Severity.Success);
         RefreshPools();
     }
 

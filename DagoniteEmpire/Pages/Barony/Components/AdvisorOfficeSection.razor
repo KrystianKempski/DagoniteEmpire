@@ -17,11 +17,11 @@
         <div class="advisor-office-header">
             <div class="advisor-office-header__row">
                 <MudText Typo="Typo.subtitle1" Class="advisor-office-name">
-                    @(string.IsNullOrWhiteSpace(Advisor.PersonName) ? "Unassigned" : Advisor.PersonName)
+                    @(string.IsNullOrWhiteSpace(Advisor.PersonName) ? "Nieobsadzony" : Advisor.PersonName)
                 </MudText>
                 @if (CanEdit)
                 {
-                    <BaronyTooltip Text="Edit advisor profile">
+                    <BaronyTooltip Text="Edytuj profil doradcy">
                         <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                        Size="Size.Small"
                                        OnClick="EditProfileAsync" />
@@ -40,7 +40,7 @@
                 <OfficeSourcePpbTable Rows="@_rows"
                                         Summary="@_total"
                                         SummaryCost="@_totalCost"
-                                        SummaryLabel="Σ total influence"
+                                        SummaryLabel="Σ łączny wpływ"
                                         SignificantSkills="@_significantSkills"
                                         CanEdit="@CanManage"
                                         OnEdit="EditRowAsync"
@@ -50,7 +50,7 @@
             else if (!BaronyCalc.IsOfficeAssigned(Advisor))
             {
                 <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                    No advisor assigned — no skill influence.
+                    Brak przypisanego doradcy — brak wpływu umiejętności.
                 </MudText>
             }
         </div>
@@ -59,7 +59,7 @@
         {
             <div class="d-flex flex-wrap gap-2 mt-3">
                 <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="AddRowAsync">
-                    Add Bonus Source
+                    Dodaj źródło premii
                 </MudButton>
                 @if (!BaronyCalc.IsCoreOffice(Advisor))
                 {
@@ -67,7 +67,7 @@
                                Color="Color.Error"
                                StartIcon="@Icons.Material.Filled.Delete"
                                OnClick="DeleteOfficeAsync">
-                        Remove Office
+                        Usuń urząd
                     </MudButton>
                 }
             </div>
@@ -127,7 +127,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<AdvisorProfileEditDialog>(
-            "Edit Advisor Profile",
+            "Edytuj profil doradcy",
             parameters,
             DialogOptions());
 
@@ -176,7 +176,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<AdvisorInfluenceEditDialog>(
-            isNew ? "Add Bonus Source" : "Edit Bonus Source",
+            isNew ? "Dodaj źródło premii" : "Edytuj źródło premii",
             parameters,
             DialogOptions());
 
@@ -186,7 +186,7 @@
 
         if (string.IsNullOrWhiteSpace(saved.Source))
         {
-            _snackBar.Add("Source name is required.", Severity.Warning);
+            _snackBar.Add("Nazwa źródła jest wymagana.", Severity.Warning);
             return;
         }
 
@@ -206,7 +206,7 @@
 
         BaronyCalc.SyncAdvisorAdditive(Advisor, mods);
         await _baronyRepo.SaveAdvisor(Advisor);
-        _snackBar.Add("Bonus source saved.", Severity.Success);
+        _snackBar.Add("Zapisano źródło premii.", Severity.Success);
         await OnChanged.InvokeAsync();
     }
 
@@ -219,7 +219,7 @@
         var mods = CustomModifiers.Where(m => m.Id != row.ModifierId).ToList();
         BaronyCalc.SyncAdvisorAdditive(Advisor, mods);
         await _baronyRepo.SaveAdvisor(Advisor);
-        _snackBar.Add("Bonus source removed.", Severity.Success);
+        _snackBar.Add("Usunięto źródło premii.", Severity.Success);
         await OnChanged.InvokeAsync();
     }
 
@@ -232,7 +232,7 @@
             await _baronyRepo.DeleteAdvisorInfluenceModifier(modifier.Id);
 
         await _baronyRepo.DeleteAdvisor(Advisor.Id);
-        _snackBar.Add("Office removed.", Severity.Success);
+        _snackBar.Add("Usunięto urząd.", Severity.Success);
         await OnChanged.InvokeAsync();
     }
 
@@ -240,7 +240,7 @@
     {
         BaronyCalc.SyncAdvisorAdditive(Advisor, CustomModifiers);
         await _baronyRepo.SaveAdvisor(Advisor);
-        _snackBar.Add("Office updated.", Severity.Success);
+        _snackBar.Add("Zaktualizowano urząd.", Severity.Success);
         await OnChanged.InvokeAsync();
     }
 

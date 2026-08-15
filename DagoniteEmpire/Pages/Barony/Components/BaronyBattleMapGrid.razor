@@ -54,15 +54,15 @@
                                 }
                                 @if (cell?.Terrain == BaronyBattleTerrain.Difficult)
                                 {
-                                    <div class="bbm-terrain bbm-terrain--difficult" title="Difficult">∿</div>
+                                    <div class="bbm-terrain bbm-terrain--difficult" title="Trudny teren">∿</div>
                                 }
                                 else if (cell?.Terrain == BaronyBattleTerrain.Impassable)
                                 {
-                                    <div class="bbm-terrain bbm-terrain--impassable" title="Impassable">✕</div>
+                                    <div class="bbm-terrain bbm-terrain--impassable" title="Nieprzejezdny">✕</div>
                                 }
                                 else if (cell?.Terrain == BaronyBattleTerrain.Deploy && ShowDeployZone)
                                 {
-                                    <div class="bbm-terrain bbm-terrain--deploy" title="Deployment zone"></div>
+                                    <div class="bbm-terrain bbm-terrain--deploy" title="Strefa rozmieszczenia"></div>
                                 }
                                 @if (!string.IsNullOrWhiteSpace(cell?.Text))
                                 {
@@ -80,13 +80,13 @@
                                         <div class="bbm-token-label @(token.IsEnemy ? "bbm-name--enemy" : "bbm-name--ally")">@token.Label</div>
                                         @if (ShowMoveBadge(token))
                                         {
-                                            <span class="bbm-move-badge" title="Move points">@(OriginMoveBadge(token))</span>
+                                            <span class="bbm-move-badge" title="Punkty ruchu">@(OriginMoveBadge(token))</span>
                                         }
                                         @if (ShowOriginFacingButton(token))
                                         {
                                             <button type="button"
                                                     class="bbm-facing-btn"
-                                                    title="@(AllowSetupFacing ? "Change facing" : "Change facing (1 move)")"
+                                                    title="@(AllowSetupFacing ? "Zmień zwrot" : "Zmień zwrot (1 ruch)")"
                                                     @onclick:stopPropagation="true"
                                                     @onclick="@(() => OnFacingButton.InvokeAsync(token.Id))">
                                                 <img class="bbm-facing-btn__icon" src="/icons/clockwise-rotation.svg" alt="" aria-hidden="true" />
@@ -96,7 +96,7 @@
                                         {
                                             <button type="button"
                                                     class="bbm-charge-btn"
-                                                    title="Charge (min 3 move; 3 straight / 2 diagonal tiles)"
+                                                    title="Szarża (min. 3 ruchu; 3 pola prosto / 2 na skos)"
                                                     @onclick:stopPropagation="true"
                                                     @onclick="@(() => OnChargeButton.InvokeAsync(token.Id))">
                                                 <img class="bbm-charge-btn__icon" src="/icons/shield-bash.svg" alt="" aria-hidden="true" />
@@ -161,7 +161,7 @@
                                     }
                                     @if (ShowFogFacingOnlyBadge(token))
                                     {
-                                        <span class="bbm-facing-only-badge" title="This unit is only changing facing (no move).">
+                                        <span class="bbm-facing-only-badge" title="Ten oddział tylko zmienia zwrot (bez ruchu).">
                                             <img class="bbm-facing-only-badge__icon" src="/icons/clockwise-rotation.svg" alt="" aria-hidden="true" />
                                         </span>
                                     }
@@ -181,7 +181,7 @@
                                              aria-hidden="true">
                                             <div class="bbm-token-rect bbm-token-rect--ghost @(token.IsEnemy ? "enemy" : "ally") locked"
                                                  style="--bbm-facing:@(plannedFacingDeg.ToString(System.Globalization.CultureInfo.InvariantCulture))deg"
-                                                 title="@($"{token.Label} (planned facing)")">
+                                                 title="@($"{token.Label} (planowany zwrot)")">
                                                 @TokenIcon(token.IconKey, token.Label)
                                             </div>
                                         </div>
@@ -198,20 +198,20 @@
                                          style="@TokenFootprintStyle(owner)">
                                         <div class="bbm-token-rect bbm-token-rect--ghost @(owner.IsEnemy ? "enemy" : "ally") @(wp.Locked ? "locked" : null)"
                                              style="--bbm-facing:@(tipFacingDeg.ToString(System.Globalization.CultureInfo.InvariantCulture))deg"
-                                             title="@(wp.Locked ? $"{owner.Label} (locked)" : $"{owner.Label} (destination)")">
+                                             title="@(wp.Locked ? $"{owner.Label} (zablokowano)" : $"{owner.Label} (cel)")">
                                             @TokenIcon(owner.IconKey, owner.Label)
                                         </div>
                                         <div class="bbm-token-label @(owner.IsEnemy ? "bbm-name--enemy" : "bbm-name--ally")">@owner.Label</div>
-                                        <span class="bbm-move-badge" title="Move left">@wp.RemainingMoveAfter</span>
+                                        <span class="bbm-move-badge" title="Pozostały ruch">@wp.RemainingMoveAfter</span>
                                         @if (wp.Locked)
                                         {
-                                            <span class="bbm-lock-badge" title="Locked" aria-hidden="true"></span>
+                                            <span class="bbm-lock-badge" title="Zablokowano" aria-hidden="true"></span>
                                         }
                                         @if (showFacingBtn)
                                         {
                                             <button type="button"
                                                     class="bbm-facing-btn"
-                                                    title="Change facing (1 move)"
+                                                    title="Zmień zwrot (1 ruch)"
                                                     @onclick:stopPropagation="true"
                                                     @onclick="@(() => OnFacingButton.InvokeAsync(owner.Id))">
                                                 <img class="bbm-facing-btn__icon" src="/icons/clockwise-rotation.svg" alt="" aria-hidden="true" />
@@ -221,7 +221,7 @@
                                         {
                                             <button type="button"
                                                     class="bbm-charge-btn"
-                                                    title="Charge (min 3 move; 3 straight / 2 diagonal tiles)"
+                                                    title="Szarża (min. 3 ruchu; 3 pola prosto / 2 na skos)"
                                                     @onclick:stopPropagation="true"
                                                     @onclick="@(() => OnChargeButton.InvokeAsync(owner.Id))">
                                                 <img class="bbm-charge-btn__icon" src="/icons/shield-bash.svg" alt="" aria-hidden="true" />
@@ -493,12 +493,12 @@
         </div>
     </div>
     <div class="bbm-legend">
-        <span class="bbm-legend__item"><i class="bbm-legend__swatch bbm-legend__swatch--range"></i> Movement</span>
-        <span class="bbm-legend__item"><i class="bbm-legend__swatch bbm-legend__swatch--ghost"></i> Destination</span>
-        <span class="bbm-legend__item"><i class="bbm-legend__swatch bbm-legend__swatch--locked"></i> Locked</span>
-        <span class="bbm-legend__item"><i class="bbm-legend__swatch bbm-legend__swatch--deploy"></i> Deploy</span>
-        <span class="bbm-legend__item"><i class="bbm-legend__swatch bbm-legend__swatch--difficult"></i> Difficult ×2</span>
-        <span class="bbm-legend__item"><i class="bbm-legend__swatch bbm-legend__swatch--impassable"></i> Impassable</span>
+        <span class="bbm-legend__item"><i class="bbm-legend__swatch bbm-legend__swatch--range"></i> Ruch</span>
+        <span class="bbm-legend__item"><i class="bbm-legend__swatch bbm-legend__swatch--ghost"></i> Cel</span>
+        <span class="bbm-legend__item"><i class="bbm-legend__swatch bbm-legend__swatch--locked"></i> Zablokowano</span>
+        <span class="bbm-legend__item"><i class="bbm-legend__swatch bbm-legend__swatch--deploy"></i> Rozmieszczenie</span>
+        <span class="bbm-legend__item"><i class="bbm-legend__swatch bbm-legend__swatch--difficult"></i> Trudny ×2</span>
+        <span class="bbm-legend__item"><i class="bbm-legend__swatch bbm-legend__swatch--impassable"></i> Nieprzejezdny</span>
     </div>
 </div>
 

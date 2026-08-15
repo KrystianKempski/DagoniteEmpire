@@ -7,16 +7,16 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudText Typo="Typo.body2" Class="mb-2">
-                Chamber: <strong>@Room.Name</strong> — @Room.SizeCategory (@Room.TileCount tiles)
+                Komnata: <strong>@Room.Name</strong> — @Room.SizeCategory (@Room.TileCount pól)
             </MudText>
             <MudSelect T="int?"
                        @bind-Value="_purposeId"
-                       Label="Purpose"
+                       Label="Przeznaczenie"
                        Clearable="true"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Class="baron-influence-field">
-                <MudSelectItem Value="@((int?)null)">(none)</MudSelectItem>
+                <MudSelectItem Value="@((int?)null)">(brak)</MudSelectItem>
                 @foreach (var t in EligibleTemplates)
                 {
                     <MudSelectItem Value="@((int?)t.Id)">@t.Name</MudSelectItem>
@@ -25,26 +25,26 @@
             @if (_purposeId is not null)
             {
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-3 mb-1">
-                    Occupant (optional)
+                    Mieszkaniec (opcjonalnie)
                 </MudText>
                 <MudSelect T="int?"
                            Value="_occupantAdvisorId"
                            ValueChanged="OnAdvisorChanged"
-                           Label="From baron / advisors"
+                           Label="Od barona / doradców"
                            Clearable="true"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Class="baron-influence-field"
                            Disabled="@(!AssignableOccupants.Any() || HasCustomOccupant)">
-                    <MudSelectItem Value="@((int?)null)">(none)</MudSelectItem>
+                    <MudSelectItem Value="@((int?)null)">(brak)</MudSelectItem>
                     @foreach (var advisor in AssignableOccupants)
                     {
                         <MudSelectItem Value="@((int?)advisor.Id)">@OccupantOptionLabel(advisor)</MudSelectItem>
                     }
                 </MudSelect>
                 <MudTextField @bind-Value="OccupantCustom"
-                              Label="Custom occupant"
-                              Placeholder="e.g. Captain of the Guard"
+                              Label="Własny mieszkaniec"
+                              Placeholder="np. Kapitan Straży"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Class="baron-influence-field mt-2"
@@ -53,7 +53,7 @@
                 @if (!AssignableOccupants.Any())
                 {
                     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-1">
-                        No baron or advisors with assigned names — use custom occupant instead.
+                        Brak barona lub doradców z przypisanymi imionami — użyj własnego mieszkańca.
                     </MudText>
                 }
             }
@@ -66,14 +66,14 @@
                         <MudText Typo="Typo.body2" Class="mt-1">@_selected.Description</MudText>
                     }
                     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-1">
-                        Min size: @_selected.MinSizeCategory
+                        Min. rozmiar: @_selected.MinSizeCategory
                         @if (!string.IsNullOrWhiteSpace(_selected.WhoOccupies))
                         {
-                            <text> · Typical occupant: @_selected.WhoOccupies</text>
+                            <text> · Typowy mieszkaniec: @_selected.WhoOccupies</text>
                         }
                         @if (_selected.SleepCapacity > 0)
                         {
-                            <text> · Sleep: @_selected.SleepCapacity</text>
+                            <text> · Nocleg: @_selected.SleepCapacity</text>
                         }
                     </MudText>
                 </MudPaper>
@@ -81,14 +81,14 @@
             @if (IneligibleTemplates.Any())
             {
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-2">
-                    @IneligibleTemplates.Count() purpose(s) require a larger chamber.
+                    @IneligibleTemplates.Count() przeznaczeń wymaga większej komnaty.
                 </MudText>
             }
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="baron-influence-save-btn" OnClick="Save">Assign</MudButton>
+        <MudButton OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="baron-influence-save-btn" OnClick="Save">Przypisz</MudButton>
     </DialogActions>
 </MudDialog>
 

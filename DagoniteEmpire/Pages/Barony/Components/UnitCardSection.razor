@@ -10,11 +10,11 @@
     {
         <div class="unit-xp-bar">
             <span class="unit-xp-bar__text">
-                Pending XP: <b>@XpSpentPending</b>
-                · left <b>@Unit.RemainingPd</b>
+                Oczekujące XP: <b>@XpSpentPending</b>
+                · pozostało <b>@Unit.RemainingPd</b>
                 @if (FreeAttrsSpentPending > 0)
                 {
-                    <text> · free attrs <b>@FreeAttrsSpentPending</b></text>
+                    <text> · wolne atrybuty <b>@FreeAttrsSpentPending</b></text>
                 }
             </span>
             <div class="unit-xp-bar__actions">
@@ -23,14 +23,14 @@
                            Class="barony-turn-btn barony-turn-btn--solid"
                            Disabled="@_busy"
                            OnClick="SaveXpDraftAsync">
-                    Save
+                    Zapisz
                 </MudButton>
                 <MudButton Size="Size.Small"
                            Variant="Variant.Outlined"
                            Class="barony-turn-btn barony-turn-btn--ghost"
                            Disabled="@_busy"
                            OnClick="UndoXpDraft">
-                    Undo
+                    Cofnij
                 </MudButton>
             </div>
         </div>
@@ -50,11 +50,11 @@
                 <span class="unit-draft-card__title-status">
                     @if (ProjectStatus.IsResourceAllocation(Unit.OpenProjectStatus))
                     {
-                        <text>awaiting resources</text>
+                        <text>oczekuje na zasoby</text>
                     }
                     else
                     {
-                        <text>@TurnsLeftLabel left</text>
+                        <text>pozostało @TurnsLeftLabel</text>
                     }
                     @if (Unit.TrainingProjectId is int trainPid)
                     {
@@ -68,21 +68,21 @@
                                Class="barony-turn-btn barony-turn-btn--solid"
                                Disabled="@_busy"
                                OnClick="ActivateUnitAsync">
-                        Make active
+                        Aktywuj
                     </MudButton>
                 }
             }
             else if (HasOpenChangeEquipmentProject)
             {
                 <span class="unit-draft-card__title-status">
-                    @(IsChangeEquipmentAwaitingResources ? "re-equip · awaiting resources" : $"re-equip · {TurnsLeftLabel} left")
+                    @(IsChangeEquipmentAwaitingResources ? "przezbrojenie · oczekuje na zasoby" : $"przezbrojenie · pozostało {TurnsLeftLabel}")
                     · <a href="/barony/projects">#@Unit.TrainingProjectId</a>
                 </span>
             }
             else if (HasOpenReinforceProject)
             {
                 <span class="unit-draft-card__title-status">
-                    @(IsReinforceAwaitingResources ? "reinforce · awaiting resources" : $"reinforce · {TurnsLeftLabel} left")
+                    @(IsReinforceAwaitingResources ? "uzupełnienie · oczekuje na zasoby" : $"uzupełnienie · pozostało {TurnsLeftLabel}")
                     · <a href="/barony/projects">#@Unit.TrainingProjectId</a>
                 </span>
             }
@@ -95,17 +95,17 @@
                                Class="barony-turn-btn barony-turn-btn--solid"
                                Disabled="@_busy"
                                OnClick="OpenReinforceAsync">
-                        Reinforce
+                        Uzupełnij
                     </MudButton>
                 }
                 @if (CanChangeEquipment)
                 {
-                    <BaronyTooltip Title="Change unit equipment"
-                                   Text="Start a Resource allocation project to re-equip this unit (Craft / Buy / Defense), same as the unit generator Gear row.">
+                    <BaronyTooltip Title="Zmień wyposażenie oddziału"
+                                   Text="Rozpocznij projekt przydziału zasobów, aby przezbroić ten oddział (Wytwórz / Kup / Obrona), tak jak w wierszu Wyposażenie generatora oddziałów.">
                         <button type="button"
                                 class="unit-draft-card__icon-btn"
                                 disabled="@_busy"
-                                aria-label="Change unit equipment"
+                                aria-label="Zmień wyposażenie oddziału"
                                 @onclick="OpenChangeEquipmentAsync">
                             <img src="/icons/armor-vest.svg"
                                  alt=""
@@ -118,12 +118,12 @@
             }
             @if (CanEdit)
             {
-                <BaronyTooltip Title="@(string.IsNullOrWhiteSpace(Unit.CaptainName) ? "Assign captain" : $"Captain: {Unit.CaptainName}")"
-                               Text="Choose a free courtier as this unit’s captain (1 courtier ↔ 1 unit).">
+                <BaronyTooltip Title="@(string.IsNullOrWhiteSpace(Unit.CaptainName) ? "Przydziel kapitana" : $"Kapitan: {Unit.CaptainName}")"
+                               Text="Wybierz wolnego dworzanina na kapitana tego oddziału (1 dworzanin ↔ 1 oddział).">
                     <button type="button"
                             class="unit-draft-card__icon-btn @(Unit.CaptainAvailableAdvisorId is > 0 ? "unit-draft-card__icon-btn--captain" : null)"
                             disabled="@_busy"
-                            aria-label="Assign captain"
+                            aria-label="Przydziel kapitana"
                             @onclick="OpenCaptainPickerAsync">
                         <img src="/icons/black-knight-helm.svg"
                              alt=""
@@ -133,7 +133,7 @@
                     </button>
                 </BaronyTooltip>
             }
-            <BaronyTooltip Text="Show unit history">
+            <BaronyTooltip Text="Pokaż historię oddziału">
                 <MudIconButton Icon="@Icons.Material.Filled.History"
                                Size="Size.Small"
                                Disabled="@_busy"
@@ -141,7 +141,7 @@
             </BaronyTooltip>
             @if (CanManageAsMg)
             {
-                <BaronyTooltip Text="Remove unit">
+                <BaronyTooltip Text="Usuń oddział">
                     <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                    Size="Size.Small"
                                    Color="Color.Error"
@@ -174,12 +174,12 @@
             if (string.IsNullOrWhiteSpace(name))
                 return string.Empty;
 
-            var lines = new List<string> { name, "Courtier captain of this unit (1 courtier ↔ 1 unit)." };
+            var lines = new List<string> { name, "Dworzanin — kapitan tego oddziału (1 dworzanin ↔ 1 oddział)." };
             var unlocked = CurrentCaptain?.Sheet?.UnlockedCommanderAbilities;
             if (unlocked is { Count: > 0 })
             {
                 lines.Add("");
-                lines.Add("Unlocked abilities:");
+                lines.Add("Odblokowane zdolności:");
                 foreach (var key in unlocked)
                 {
                     var ability = CourtCommanderCatalog.Find(key);
@@ -212,7 +212,7 @@
             MaxWidth = MaxWidth.Small,
             FullWidth = true,
         };
-        var dialog = await _dialogService.ShowAsync<UnitCaptainPickDialog>("Assign captain", parameters, options);
+        var dialog = await _dialogService.ShowAsync<UnitCaptainPickDialog>("Przydziel kapitana", parameters, options);
         var result = await dialog.Result;
         if (result is null || result.Canceled)
             return;
@@ -254,8 +254,8 @@
         get
         {
             var n = Unit.TrainingTurnsRemaining;
-            if (n is null) return "? turns";
-            return n == 1 ? "1 turn" : $"{n} turns";
+            if (n is null) return "? tur";
+            return n == 1 ? "1 tura" : $"{n} tury";
         }
     }
 
@@ -279,7 +279,7 @@
             Unit.CaptainAvailableAdvisorId = captainId is > 0 ? captainId : null;
             await _baronyRepo.SaveUnit(Unit);
             _snackBar.Add(
-                Unit.CaptainAvailableAdvisorId is null ? "Captain cleared." : "Captain assigned.",
+                Unit.CaptainAvailableAdvisorId is null ? "Kapitan usunięty." : "Kapitan przydzielony.",
                 Severity.Success);
             await OnChanged.InvokeAsync();
         }
@@ -332,7 +332,7 @@
             await PersistAsync();
             _baseline = XpBaseline.Capture(Unit);
             _xpDirty = false;
-            _snackBar.Add("XP spend saved.", Severity.Success);
+            _snackBar.Add("Wydatek XP zapisany.", Severity.Success);
         }
         finally
         {
@@ -346,7 +346,7 @@
         _baseline.Restore(Unit);
         _baseline = null;
         _xpDirty = false;
-        _snackBar.Add("XP spend undone.", Severity.Info);
+        _snackBar.Add("Cofnięto wydatek XP.", Severity.Info);
     }
 
     private async Task OpenReinforceAsync()
@@ -358,7 +358,7 @@
             [nameof(UnitReinforceDialog.Unit)] = Unit,
         };
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
-        var dialog = await _dialogService.ShowAsync<UnitReinforceDialog>("Reinforce", parameters, options);
+        var dialog = await _dialogService.ShowAsync<UnitReinforceDialog>("Uzupełnij", parameters, options);
         var result = await dialog.Result;
         if (result is null || result.Canceled || result.Data is not StartUnitReinforceRequest request)
             return;
@@ -371,7 +371,7 @@
             Unit.TrainingTurnsRemaining = created.Project.TurnsRemaining;
             Unit.OpenProjectOutputKind = created.Project.OutputKind;
             Unit.OpenProjectStatus = created.Project.Status;
-            _snackBar.Add($"Reinforce project “{created.Project.Name}” created — fund it on Projects.", Severity.Success);
+            _snackBar.Add($"Utworzono projekt uzupełnienia “{created.Project.Name}” — sfinansuj go w Projektach.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
@@ -411,7 +411,7 @@
             FullWidth = true,
         };
         var dialog = await _dialogService.ShowAsync<UnitChangeEquipmentDialog>(
-            "Change unit equipment", parameters, options);
+            "Zmień wyposażenie oddziału", parameters, options);
         var result = await dialog.Result;
         if (result is null || result.Canceled || result.Data is not StartUnitChangeEquipmentRequest request)
             return;
@@ -425,7 +425,7 @@
             Unit.OpenProjectOutputKind = created.Project.OutputKind;
             Unit.OpenProjectStatus = created.Project.Status;
             _snackBar.Add(
-                $"Change equipment project “{created.Project.Name}” created — fund it on Projects.",
+                $"Utworzono projekt zmiany wyposażenia “{created.Project.Name}” — sfinansuj go w Projektach.",
                 Severity.Success);
             await OnChanged.InvokeAsync();
         }
@@ -455,7 +455,7 @@
             FullWidth = true,
         };
         var dialog = await _dialogService.ShowAsync<UnitLogDialog>(
-            "Unit history", parameters, options);
+            "Historia oddziału", parameters, options);
         _ = await dialog.Result;
     }
 
@@ -478,7 +478,7 @@
             Unit.OpenProjectStatus = null;
             _baseline = null;
             _xpDirty = false;
-            _snackBar.Add($"Unit “{Unit.Name}” is now Active.", Severity.Success);
+            _snackBar.Add($"Oddział “{Unit.Name}” jest teraz aktywny.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
@@ -497,10 +497,10 @@
             return;
 
         var confirm = await _dialogService.ShowMessageBoxAsync(
-            "Delete unit?",
-            $"Permanently delete “{Unit.Name}” from the Army roster? This cannot be undone.",
-            yesText: "Delete",
-            cancelText: "Cancel");
+            "Usunąć oddział?",
+            $"Trwale usunąć “{Unit.Name}” z listy Armii? Tej operacji nie można cofnąć.",
+            yesText: "Usuń",
+            cancelText: "Anuluj");
         if (confirm != true)
             return;
 
@@ -508,7 +508,7 @@
         try
         {
             await _baronyRepo.DeleteUnit(Unit.Id);
-            _snackBar.Add($"Unit “{Unit.Name}” deleted.", Severity.Success);
+            _snackBar.Add($"Oddział “{Unit.Name}” usunięty.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)

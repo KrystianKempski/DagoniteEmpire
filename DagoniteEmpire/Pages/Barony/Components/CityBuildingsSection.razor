@@ -3,7 +3,7 @@
 @inject ISnackbar _snackBar
 @inject IDialogService _dialogService
 
-<BaronySection Title="City and Buildings">
+<BaronySection Title="Miasto i budynki">
     <Summary>
         <PpbSummaryChips Vector="@Glance" />
     </Summary>
@@ -21,9 +21,9 @@
                 </colgroup>
                 <thead>
                     <tr>
-                        <th rowspan="2" class="ppb-row-label city-building-col-name">Name</th>
+                        <th rowspan="2" class="ppb-row-label city-building-col-name">Nazwa</th>
                         <th class="city-building-col-pop">
-                            <BaronyTooltip Text="Population (additive)">Pop</BaronyTooltip>
+                            <BaronyTooltip Text="Populacja (dodatnia)">Lud.</BaronyTooltip>
                         </th>
                         @foreach (var info in PpbCatalog.All)
                         {
@@ -45,13 +45,13 @@
                         <tr class="city-building-row--core">
                             <td class="city-building-col-name">
                                 <div class="city-building-name-cell">
-                                    <BaronyTooltip Title="Description" Text="@core.Description">
+                                    <BaronyTooltip Title="Opis" Text="@core.Description">
                                         <span class="city-building-name-text">@(string.IsNullOrWhiteSpace(core.Name) ? "—" : core.Name)</span>
                                     </BaronyTooltip>
                                     @if (CanManage)
                                     {
                                         <span class="city-building-name-actions">
-                                            <BaronyTooltip Text="Edit core building">
+                                            <BaronyTooltip Text="Edytuj budynek podstawowy">
                                                 <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                                Size="Size.Small"
                                                                OnClick="@(() => EditCoreBuildingAsync(core))" />
@@ -74,7 +74,7 @@
                         <tr class="city-building-row--lords-seat">
                             <td class="city-building-col-name">
                                 <div class="city-building-name-cell">
-                                    <BaronyTooltip Title="Lord's Seat" Text="@(seatRow.Note ?? seatRow.Formula)">
+                                    <BaronyTooltip Title="Siedziba Lorda" Text="@(seatRow.Note ?? seatRow.Formula)">
                                         <a class="city-building-name-text city-building-name-text--link" href="/barony/lords-seat">@seatRow.Label</a>
                                     </BaronyTooltip>
                                 </div>
@@ -94,13 +94,13 @@
                         <tr class="@(inactive ? "city-building-row--inactive" : null)">
                             <td class="city-building-col-name">
                                 <div class="city-building-name-cell">
-                                    <BaronyTooltip Title="Description" Text="@TownNameTooltip(town)">
+                                    <BaronyTooltip Title="Opis" Text="@TownNameTooltip(town)">
                                         <span class="city-building-name-text">@BaronyCalc.TownPopulationLabel(town)</span>
                                     </BaronyTooltip>
                                     @if (CanManage)
                                     {
                                         <span class="city-building-name-actions">
-                                            <BaronyTooltip Text="Edit town">
+                                            <BaronyTooltip Text="Edytuj miasto">
                                                 <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                                Size="Size.Small"
                                                                OnClick="@(() => EditTownAsync(town))" />
@@ -111,7 +111,7 @@
                             </td>
                             <td class="@PopulationCellClass(town.Population, CanManage && !inactive)"
                                 @onclick="@(() => EditTownPopulationAsync(town))">
-                                <BaronyTooltip Text="Population — settlement size used in town PPB formulas.">
+                                <BaronyTooltip Text="Populacja — wielkość osady używana w formułach PPB miasta.">
                                     <span>@FmtAdd(town.Population)</span>
                                 </BaronyTooltip>
                             </td>
@@ -142,18 +142,18 @@
                         <tr>
                             <td class="city-building-col-name">
                                 <div class="city-building-name-cell">
-                                    <BaronyTooltip Title="Description" Text="@building.Description">
+                                    <BaronyTooltip Title="Opis" Text="@building.Description">
                                         <span class="city-building-name-text">@(string.IsNullOrWhiteSpace(building.Name) ? "—" : building.Name)</span>
                                     </BaronyTooltip>
                                     @if (CanManage)
                                     {
                                         <span class="city-building-name-actions">
-                                            <BaronyTooltip Text="Edit building">
+                                            <BaronyTooltip Text="Edytuj budynek">
                                                 <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                                Size="Size.Small"
                                                                OnClick="@(() => EditBuildingAsync(building))" />
                                             </BaronyTooltip>
-                                            <BaronyTooltip Text="Remove building">
+                                            <BaronyTooltip Text="Usuń budynek">
                                                 <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                                Size="Size.Small"
                                                                Color="Color.Error"
@@ -173,7 +173,7 @@
                     }
 
                     <tr class="ppb-summary-row">
-                        <td class="ppb-row-label city-building-col-name">Σ section</td>
+                        <td class="ppb-row-label city-building-col-name">Σ sekcja</td>
                         <td class="@PopulationCellClass(PopulationSum)"><b>@FmtAdd(PopulationSum)</b></td>
                         @foreach (var info in PpbCatalog.All)
                         {
@@ -191,7 +191,7 @@
                 <MudButton Variant="Variant.Outlined"
                            StartIcon="@Icons.Material.Filled.Add"
                            OnClick="AddBuildingAsync">
-                    Add Building
+                    Dodaj budynek
                 </MudButton>
             </div>
         }
@@ -235,7 +235,7 @@
         if (!town.IsActive)
         {
             parts.Add(string.IsNullOrWhiteSpace(town.InactiveReason)
-                ? "Inactive — excluded from totals."
+                ? "Nieaktywne — wykluczone z sum."
                 : town.InactiveReason.Trim());
         }
 
@@ -254,7 +254,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<PopulationEditDialog>(
-            "Population",
+            "Populacja",
             parameters,
             new DialogOptions
             {
@@ -273,12 +273,12 @@
         try
         {
             await _baronyRepo.SaveImprovement(draft);
-            _snackBar.Add("Town population updated.", Severity.Success);
+            _snackBar.Add("Zaktualizowano populację miasta.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save town: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać miasta: " + ex.Message, Severity.Error);
         }
     }
 
@@ -294,7 +294,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<TownEditDialog>(
-            "Edit town",
+            "Edytuj miasto",
             parameters,
             new DialogOptions
             {
@@ -310,12 +310,12 @@
         try
         {
             await _baronyRepo.SaveImprovement(saved);
-            _snackBar.Add("Town updated.", Severity.Success);
+            _snackBar.Add("Zaktualizowano miasto.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save town: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać miasta: " + ex.Message, Severity.Error);
         }
     }
 
@@ -364,7 +364,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<CityBuildingEditDialog>(
-            isCore ? "Edit core building" : (isNew ? "Add Building" : "Edit Building"),
+            isCore ? "Edytuj budynek podstawowy" : (isNew ? "Dodaj budynek" : "Edytuj budynek"),
             parameters,
             DialogOptions());
 
@@ -374,7 +374,7 @@
 
         if (string.IsNullOrWhiteSpace(saved.Name))
         {
-            _snackBar.Add("Building name is required.", Severity.Warning);
+            _snackBar.Add("Nazwa budynku jest wymagana.", Severity.Warning);
             return;
         }
 
@@ -396,12 +396,12 @@
         try
         {
             await _baronyRepo.SaveBuilding(saved);
-            _snackBar.Add(isCore ? "Core building updated." : (isNew ? "Building added." : "Building updated."), Severity.Success);
+            _snackBar.Add(isCore ? "Zaktualizowano budynek podstawowy." : (isNew ? "Dodano budynek." : "Zaktualizowano budynek."), Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save building: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać budynku: " + ex.Message, Severity.Error);
         }
     }
 
@@ -415,7 +415,7 @@
             string.Equals(t.Name, catalogName, StringComparison.OrdinalIgnoreCase));
         if (template is null)
         {
-            _snackBar.Add($"Catalog entry “{catalogName}” not found.", Severity.Warning);
+            _snackBar.Add($"Nie znaleziono wpisu katalogu „{catalogName}”.", Severity.Warning);
             return;
         }
 
@@ -426,12 +426,12 @@
 
             var restored = BaronyCalc.FromStarterCatalogTemplate(BaronyId, building.CoreKey, template);
             await _baronyRepo.SaveBuilding(restored);
-            _snackBar.Add("Core building restored from catalog.", Severity.Success);
+            _snackBar.Add("Przywrócono budynek podstawowy z katalogu.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not reset building: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zresetować budynku: " + ex.Message, Severity.Error);
         }
     }
 
@@ -443,12 +443,12 @@
         try
         {
             await _baronyRepo.DeleteBuilding(building.Id);
-            _snackBar.Add("Building removed.", Severity.Success);
+            _snackBar.Add("Usunięto budynek.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not remove building: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się usunąć budynku: " + ex.Message, Severity.Error);
         }
     }
 

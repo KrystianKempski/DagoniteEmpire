@@ -6,15 +6,15 @@
            ContentClass="baron-influence-dialog-content"
            ActionsClass="baron-influence-dialog-actions">
     <TitleContent>
-        <MudText Typo="Typo.h6">Change equipment — @Unit.Name</MudText>
+        <MudText Typo="Typo.h6">Zmień wyposażenie — @Unit.Name</MudText>
     </TitleContent>
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog unit-change-equip-dialog">
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Pick a new loadout and how to pay for each piece (Craft / Buy / Defense), same as the unit generator.
-                Creates a <b>Unit Change Equipment</b> project in Resource allocation — fund it on Projects.
-                Cost is scaled by current troops (@Unit.TroopCount/@UnitRules.DefaultTroopCount).
-                Gear quality stays as set by the GM (@CurrentQuality).
+                Wybierz nowy zestaw ekwipunku i sposób opłacenia każdego elementu (Wytwórz / Kup / Obrona), tak jak w generatorze oddziałów.
+                Tworzy projekt <b>Zmiana wyposażenia oddziału</b> w Alokacji zasobów — sfinansuj go w Projektach.
+                Koszt jest skalowany bieżącą liczebnością (@Unit.TroopCount/@UnitRules.DefaultTroopCount).
+                Jakość sprzętu pozostaje ustawiona przez MG (@CurrentQuality).
             </MudText>
 
             <UnitEquipmentPicker Unit="@Unit"
@@ -31,34 +31,34 @@
                                  ShieldChanged="OnShieldChanged"
                                  MountChanged="OnMountChanged" />
 
-            <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Gear acquire</MudText>
+            <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Pozyskanie sprzętu</MudText>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Craft · Buy (Mkt) · Defense (2×Mkt). Costs below already include troop scale.
+                Wytwórz · Kup (Ryn) · Obrona (2×Ryn). Koszty poniżej uwzględniają już skalę liczebności.
             </MudText>
             <div class="unit-gear-pay mb-3">
                 @PayRow("W1", _w1?.Name, _w1?.ProductionCost, _w1?.GoldCost, _w1?.MarketGold, _payW1, v => { _payW1 = v; Recalc(); }, required: true)
                 @PayRow("W2", _w2?.Name, _w2?.ProductionCost, _w2?.GoldCost, _w2?.MarketGold, _payW2, v => { _payW2 = v; Recalc(); }, required: false)
-                @PayRow("Armor", _armorDef?.Name, _armorDef?.ProductionCost, _armorDef?.GoldCost, _armorDef?.MarketGold, _payArmor, v => { _payArmor = v; Recalc(); }, required: false)
-                @PayRow("Shield", _shieldDef?.Name, _shieldDef?.ProductionCost, _shieldDef?.GoldCost, _shieldDef?.MarketGold, _payShield, v => { _payShield = v; Recalc(); }, required: false)
-                @PayRow("Mount", _mountDef?.Name, _mountDef?.ProductionCost, _mountDef?.GoldCost, _mountDef?.MarketGold, _payMount, v => { _payMount = v; Recalc(); }, required: false)
+                @PayRow("Pancerz", _armorDef?.Name, _armorDef?.ProductionCost, _armorDef?.GoldCost, _armorDef?.MarketGold, _payArmor, v => { _payArmor = v; Recalc(); }, required: false)
+                @PayRow("Tarcza", _shieldDef?.Name, _shieldDef?.ProductionCost, _shieldDef?.GoldCost, _shieldDef?.MarketGold, _payShield, v => { _payShield = v; Recalc(); }, required: false)
+                @PayRow("Wierzchowiec", _mountDef?.Name, _mountDef?.ProductionCost, _mountDef?.GoldCost, _mountDef?.MarketGold, _payMount, v => { _payMount = v; Recalc(); }, required: false)
             </div>
 
-            <MudText Typo="Typo.subtitle2" Class="mb-1">Project cost</MudText>
+            <MudText Typo="Typo.subtitle2" Class="mb-1">Koszt projektu</MudText>
             <div class="d-flex flex-wrap gap-3 mb-1">
-                <span>Gold <b>@_costs.Gold</b></span>
+                <span>Złoto <b>@_costs.Gold</b></span>
                 <span>Prod <b>@_costs.Production</b></span>
-                <span>Defense <b>@_costs.Defense</b></span>
-                <span>Turns <b>@_costs.Turns</b></span>
+                <span>Obrona <b>@_costs.Defense</b></span>
+                <span>Tury <b>@_costs.Turns</b></span>
             </div>
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
         <MudButton Class="baron-influence-save-btn"
                    Variant="Variant.Filled"
                    Disabled="@(!CanConfirm)"
                    OnClick="Confirm">
-            Create project
+            Utwórz projekt
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -189,24 +189,24 @@
         var m = UnitEquipmentAcquireMode.Normalize(mode);
         <div class="unit-gear-pay__row @(hasItem ? null : "unit-gear-pay__row--empty")">
             <span class="unit-gear-pay__slot">@slot</span>
-            <span class="unit-gear-pay__name">@(hasItem ? name : (required ? "—" : "none"))</span>
+            <span class="unit-gear-pay__name">@(hasItem ? name : (required ? "—" : "brak"))</span>
             @if (hasItem)
             {
                 <MudRadioGroup T="string"
                                Value="@m"
                                ValueChanged="EventCallback.Factory.Create<string>(this, onChanged)"
                                Class="unit-gear-pay__modes">
-                    <BaronyTooltip Text="@($"Craft: Prod {prod} + Gold {gold}")">
+                    <BaronyTooltip Text="@($"Wytwórz: Prod {prod} + Złoto {gold}")">
                         <MudRadio T="string" Value="@UnitEquipmentAcquireMode.Craft" Dense="true" Class="unit-gear-pay__mode">
                             <BaronyResourceIcon Resource="Ppb.Production" Size="xs" />
                         </MudRadio>
                     </BaronyTooltip>
-                    <BaronyTooltip Text="@($"Buy: Mkt {market}")">
+                    <BaronyTooltip Text="@($"Kup: Ryn {market}")">
                         <MudRadio T="string" Value="@UnitEquipmentAcquireMode.Buy" Dense="true" Class="unit-gear-pay__mode">
                             <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
                         </MudRadio>
                     </BaronyTooltip>
-                    <BaronyTooltip Text="@($"Defense: 2×Mkt = {(market ?? 0) * 2}")">
+                    <BaronyTooltip Text="@($"Obrona: 2×Ryn = {(market ?? 0) * 2}")">
                         <MudRadio T="string" Value="@UnitEquipmentAcquireMode.Defense" Dense="true" Class="unit-gear-pay__mode">
                             <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" />
                         </MudRadio>

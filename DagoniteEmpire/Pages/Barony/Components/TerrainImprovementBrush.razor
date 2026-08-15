@@ -2,17 +2,17 @@
 
 <div class="terrain-brush">
     <MudText Typo="Typo.caption" Class="terrain-brush__hint">
-        Paint an improvement onto the center of a tile. Select None to erase. Clear layer removes all improvements.
+        Namaluj ulepszenie na środku pola. Wybierz Brak, aby wymazać. Wyczyść warstwę usuwa wszystkie ulepszenia.
     </MudText>
     <div class="terrain-brush__body">
         <div class="terrain-brush__options">
-            <BaronyTooltip Text="Clear improvement">
+            <BaronyTooltip Text="Wyczyść ulepszenie">
                 <button type="button"
                         class="terrain-type-option @(string.IsNullOrEmpty(Value) ? "terrain-type-option--selected" : "")"
-                        aria-label="Clear improvement"
+                        aria-label="Wyczyść ulepszenie"
                         @onclick="() => SelectAsync(null)">
                     <MudIcon Icon="@Icons.Material.Filled.Block" Size="Size.Small" />
-                    <span>None</span>
+                    <span>Brak</span>
                 </button>
             </BaronyTooltip>
             @foreach (var improvement in MapImprovement.All)

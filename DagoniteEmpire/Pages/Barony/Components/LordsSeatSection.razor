@@ -3,7 +3,7 @@
 @inject ISnackbar _snackBar
 @inject IDialogService _dialogService
 
-<BaronySection Title="Chambers">
+<BaronySection Title="Komnaty">
     <Summary>
         <PpbSummaryChips Vector="@Glance" />
     </Summary>
@@ -15,17 +15,17 @@
                            Size="Size.Small"
                            StartIcon="@Icons.Material.Filled.GridOn"
                            OnClick="EditGridAsync">
-                    Grid (@Seat.GridWidth×@Seat.GridHeight)
+                    Siatka (@Seat.GridWidth×@Seat.GridHeight)
                 </MudButton>
                 <MudButton Variant="Variant.Outlined"
                            Size="Size.Small"
                            StartIcon="@Icons.Material.Filled.Add"
                            OnClick="AddRoomAsync">
-                    Add chamber
+                    Dodaj komnatę
                 </MudButton>
             </div>
             <div class="lords-seat-levelbar">
-                <span class="lords-seat-levelbar__label">Floor</span>
+                <span class="lords-seat-levelbar__label">Piętro</span>
                 @foreach (var level in ActiveLevels)
                 {
                     <button type="button"
@@ -36,11 +36,11 @@
                 }
                 @if (AvailableLevelsToAdd.Any())
                 {
-                    <span class="lords-seat-levelbar__label lords-seat-levelbar__label--add">Add</span>
+                    <span class="lords-seat-levelbar__label lords-seat-levelbar__label--add">Dodaj</span>
                     @foreach (var level in AvailableLevelsToAdd)
                     {
                         var levelToAdd = level;
-                        <BaronyTooltip Text="@($"Add {SeatFloorLevel.Label(levelToAdd)}")">
+                        <BaronyTooltip Text="@($"Dodaj {SeatFloorLevel.Label(levelToAdd)}")">
                             <button type="button"
                                     class="lords-seat-levelchip lords-seat-levelchip--add"
                                     @onclick="() => AddLevelAsync(levelToAdd)">
@@ -49,7 +49,7 @@
                         </BaronyTooltip>
                     }
                 }
-                <BaronyTooltip Text="Remove current floor">
+                <BaronyTooltip Text="Usuń bieżące piętro">
                     <MudIconButton Icon="@Icons.Material.Filled.Remove"
                                    Size="Size.Small"
                                    Disabled="@(_currentLevel == SeatFloorLevel.Ground || ActiveLevels.Count <= 1)"
@@ -57,37 +57,37 @@
                 </BaronyTooltip>
             </div>
             <div class="lords-seat-paintbar">
-                <span class="lords-seat-levelbar__label">Paint</span>
+                <span class="lords-seat-levelbar__label">Maluj</span>
                 <BaronyTooltip Text="@SeatTileKind.Label(SeatTileKind.Wall)">
                     <button type="button"
                             class="@PaintChipClassWall()"
-                            @onclick="PaintWall">Wall</button>
+                            @onclick="PaintWall">Ściana</button>
                 </BaronyTooltip>
                 <BaronyTooltip Text="@SeatTileKind.Label(SeatTileKind.Ground)">
                     <button type="button"
                             class="@PaintChipClassGround()"
-                            @onclick="PaintGround">Ground</button>
+                            @onclick="PaintGround">Podłoże</button>
                 </BaronyTooltip>
                 <BaronyTooltip Text="@SeatTileKind.Label(SeatTileKind.Water)">
                     <button type="button"
                             class="@PaintChipClassWater()"
-                            @onclick="PaintWater">Water</button>
+                            @onclick="PaintWater">Woda</button>
                 </BaronyTooltip>
-                <BaronyTooltip Text="Erase painted tile">
+                <BaronyTooltip Text="Wymaż namalowane pole">
                     <button type="button"
                             class="@PaintChipClassErase()"
-                            @onclick="PaintErase">Erase</button>
+                            @onclick="PaintErase">Wymaż</button>
                 </BaronyTooltip>
                 @if (_paintKind is not null)
                 {
-                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="ClearPaintMode">Done</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="ClearPaintMode">Gotowe</MudButton>
                 }
             </div>
         }
         else if (ActiveLevels.Count > 1)
         {
             <div class="lords-seat-levelbar">
-                <span class="lords-seat-levelbar__label">Floor</span>
+                <span class="lords-seat-levelbar__label">Piętro</span>
                 @foreach (var level in ActiveLevels)
                 {
                     <button type="button"
@@ -105,20 +105,20 @@
                 @if (CanManage && _placementMode)
                 {
                     <MudText Typo="Typo.caption" Class="lords-seat-placement-hint">
-                        Click a grid cell on @SeatFloorLevel.Label(_currentLevel) to place a new chamber (2×2).
-                        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="CancelPlacementMode">Cancel</MudButton>
+                        Kliknij komórkę siatki na @SeatFloorLevel.Label(_currentLevel), aby umieścić nową komnatę (2×2).
+                        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="CancelPlacementMode">Anuluj</MudButton>
                     </MudText>
                 }
                 else if (CanManage && _paintKind is not null)
                 {
                     <MudText Typo="Typo.caption" Class="lords-seat-placement-hint">
-                        Painting @PaintModeLabel() on @SeatFloorLevel.Label(_currentLevel). Click or drag across cells.
+                        Malowanie @PaintModeLabel() na @SeatFloorLevel.Label(_currentLevel). Kliknij lub przeciągnij po komórkach.
                     </MudText>
                 }
                 else if (CanManage)
                 {
                     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="lords-seat-placement-hint">
-                        @SeatFloorLevel.Label(_currentLevel). Click a chamber to assign purpose. Drag to reposition. Use paint for walls, ground, and water.
+                        @SeatFloorLevel.Label(_currentLevel). Kliknij komnatę, aby przypisać przeznaczenie. Przeciągnij, aby zmienić położenie. Użyj malowania dla ścian, podłoża i wody.
                     </MudText>
                 }
                 <div class="@PlanClass()"
@@ -201,10 +201,10 @@
         @if (Seat.Rooms.Count == 0)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                No chambers yet.
+                Brak komnat.
                 @if (CanManage)
                 {
-                    <text> Use “Add chamber” to create the lord's seat layout.</text>
+                    <text> Użyj „Dodaj komnatę”, aby utworzyć układ siedziby lorda.</text>
                 }
             </MudText>
         }
@@ -227,22 +227,22 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th rowspan="2" class="ppb-row-label lords-seat-col-name">Chamber</th>
-                            <th rowspan="2" class="ppb-row-label lords-seat-col-purpose">Purpose</th>
+                            <th rowspan="2" class="ppb-row-label lords-seat-col-name">Komnata</th>
+                            <th rowspan="2" class="ppb-row-label lords-seat-col-purpose">Przeznaczenie</th>
                             <th rowspan="2" class="lords-seat-col-level">
-                                <BaronyTooltip Text="Floor level">
-                                    <span>Floor</span>
+                                <BaronyTooltip Text="Poziom piętra">
+                                    <span>Piętro</span>
                                 </BaronyTooltip>
                             </th>
                             <th rowspan="2" class="lords-seat-col-size">
-                                <BaronyTooltip Text="Size category (tiles)">
-                                    <span>Size</span>
+                                <BaronyTooltip Text="Kategoria rozmiaru (pola)">
+                                    <span>Rozmiar</span>
                                 </BaronyTooltip>
                             </th>
-                            <th rowspan="2" class="lords-seat-col-occupant">Occupant</th>
+                            <th rowspan="2" class="lords-seat-col-occupant">Mieszkaniec</th>
                             <th rowspan="2" class="lords-seat-col-prestige seat-php-header">
-                                <BaronyTooltip Text="Prestige / Honor / Fear (per-chamber, × multiplier)">
-                                    <span>Prestige</span>
+                                <BaronyTooltip Text="Prestiż / Honor / Postrach (na komnatę, × mnożnik)">
+                                    <span>Prestiż</span>
                                 </BaronyTooltip>
                             </th>
                             @foreach (var info in PpbCatalog.All)
@@ -269,18 +269,18 @@
                             <tr class="@RowClass(room)">
                                 <td class="lords-seat-col-name">
                                     <div class="city-building-name-cell">
-                                        <BaronyTooltip Title="Chamber" Text="@RoomTooltip(room, GetLayoutIssue(room))">
+                                        <BaronyTooltip Title="Komnata" Text="@RoomTooltip(room, GetLayoutIssue(room))">
                                             <span class="city-building-name-text">@room.Name</span>
                                         </BaronyTooltip>
                                         @if (CanManage)
                                         {
                                             <span class="city-building-name-actions">
-                                                <BaronyTooltip Text="Edit chamber">
+                                                <BaronyTooltip Text="Edytuj komnatę">
                                                     <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                                    Size="Size.Small"
                                                                    OnClick="@(() => EditRoomAsync(room))" />
                                                 </BaronyTooltip>
-                                                <BaronyTooltip Text="Remove chamber">
+                                                <BaronyTooltip Text="Usuń komnatę">
                                                     <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                                    Size="Size.Small"
                                                                    Color="Color.Error"
@@ -292,13 +292,13 @@
                                 </td>
                                 <td class="lords-seat-col-purpose">
                                     <div class="city-building-name-cell">
-                                        <BaronyTooltip Title="Purpose" Text="@PurposeTooltip(room)">
+                                        <BaronyTooltip Title="Przeznaczenie" Text="@PurposeTooltip(room)">
                                             <span class="city-building-name-text">@PurposeLabel(room)</span>
                                         </BaronyTooltip>
                                         @if (CanEdit && !room.IsRuin)
                                         {
                                             <span class="city-building-name-actions">
-                                                <BaronyTooltip Text="Assign purpose">
+                                                <BaronyTooltip Text="Przypisz przeznaczenie">
                                                     <MudIconButton Icon="@Icons.Material.Filled.SwapHoriz"
                                                                    Size="Size.Small"
                                                                    OnClick="@(() => AssignPurposeAsync(room))" />
@@ -313,7 +313,7 @@
                                     </BaronyTooltip>
                                 </td>
                                 <td class="lords-seat-col-size">
-                                    <BaronyTooltip Text="@($"{room.SizeCategory} · {room.TileCount} tiles")">
+                                    <BaronyTooltip Text="@($"{room.SizeCategory} · {room.TileCount} pól")">
                                         <span>@(SeatRoomSizeCategory.Letter(room.SizeCategory))(@room.TileCount)</span>
                                     </BaronyTooltip>
                                 </td>
@@ -328,7 +328,7 @@
                                     }
                                     else
                                     {
-                                        <BaronyTooltip Title="Occupant" Text="@(occupantTip ?? occupantName)">
+                                        <BaronyTooltip Title="Mieszkaniec" Text="@(occupantTip ?? occupantName)">
                                             <span class="lords-seat-occupant-name">@occupantName</span>
                                         </BaronyTooltip>
                                     }
@@ -338,7 +338,7 @@
                                         var php = RoomPhpTotals(room);
                                         var mult = room.PrestigeMultiplier;
                                     }
-                                    <BaronyTooltip Title="Prestige / Honor / Fear"
+                                    <BaronyTooltip Title="Prestiż / Honor / Postrach"
                                                    Text="@PhpTooltip(room, php, mult)">
                                         @if (php is null)
                                         {
@@ -388,10 +388,10 @@
                         @if (OrderedRooms.Any())
                         {
                             <tr class="ppb-summary-row">
-                                <td class="ppb-row-label" colspan="5">Σ Lord's Seat</td>
+                                <td class="ppb-row-label" colspan="5">Σ Siedziba lorda</td>
                                 <td class="lords-seat-col-prestige seat-php-cell">
-                                    <BaronyTooltip Title="Prestige / Honor / Fear"
-                                                   Text="@($"Lord's Seat total: Prestige {FmtPhp(SeatPhpSum.Prestige)} · Honor {FmtPhp(SeatPhpSum.Honor)} · Fear {FmtPhp(SeatPhpSum.Fear)}")">
+                                    <BaronyTooltip Title="Prestiż / Honor / Postrach"
+                                                   Text="@($"Siedziba lorda razem: Prestiż {FmtPhp(SeatPhpSum.Prestige)} · Honor {FmtPhp(SeatPhpSum.Honor)} · Postrach {FmtPhp(SeatPhpSum.Fear)}")">
                                         <span class="seat-php-values">
                                             <span class="seat-php-value @BaronPhpVisuals.CssClass(PhpMetric.Prestige)">
                                                 <PhpMetricIcon Metric="PhpMetric.Prestige" Title="" />
@@ -558,7 +558,7 @@
     private void PaintErase() => TogglePaint(string.Empty);
 
     private string PaintModeLabel() =>
-        string.IsNullOrEmpty(_paintKind) ? "erase" : SeatTileKind.Label(_paintKind!);
+        string.IsNullOrEmpty(_paintKind) ? "wymazywanie" : SeatTileKind.Label(_paintKind!);
 
     private string DraggableAttr() => CanManage && !IsPainting ? "true" : "false";
 
@@ -707,16 +707,16 @@
     private string PurposeTooltip(SeatRoomDTO room)
     {
         if (room.PurposeTemplateId is not int pid || !PurposeLookup.TryGetValue(pid, out var p))
-            return "No purpose assigned.";
+            return "Brak przypisanego przeznaczenia.";
 
         var lines = new List<string> { p.Name };
         var occupant = OccupantSubtitle(room);
         if (!string.IsNullOrWhiteSpace(occupant))
-            lines.Add($"Assigned: {occupant}");
+            lines.Add($"Przypisano: {occupant}");
         else if (!string.IsNullOrWhiteSpace(p.WhoOccupies))
-            lines.Add($"Typical occupant: {p.WhoOccupies}");
+            lines.Add($"Typowy mieszkaniec: {p.WhoOccupies}");
         if (p.SleepCapacity > 0)
-            lines.Add($"Sleep capacity: {p.SleepCapacity}");
+            lines.Add($"Miejsca do spania: {p.SleepCapacity}");
         if (!string.IsNullOrWhiteSpace(p.Description))
             lines.Add(p.Description);
         return string.Join("\n", lines);
@@ -752,13 +752,13 @@
     private string PhpTooltip(SeatRoomDTO room, (decimal Prestige, decimal Honor, decimal Fear)? totals, decimal mult)
     {
         if (room.PurposeTemplateId is not int pid || !PurposeLookup.TryGetValue(pid, out var purpose))
-            return $"Chamber multiplier: ×{mult:0.##}. Assign a purpose with prestige / honor / fear to see totals.";
+            return $"Mnożnik komnaty: ×{mult:0.##}. Przypisz przeznaczenie z prestiżem / honorem / postrachem, aby zobaczyć sumy.";
 
         var t = totals ?? (0m, 0m, 0m);
         return
-            $"Prestige {FmtPhp(t.Prestige)}  (purpose {FmtPhp(purpose.AdditivePrestige)} × ×{mult:0.##})\n"
-            + $"Honor {FmtPhp(t.Honor)}  (purpose {FmtPhp(purpose.AdditiveHonor)} × ×{mult:0.##})\n"
-            + $"Fear {FmtPhp(t.Fear)}  (purpose {FmtPhp(purpose.AdditiveFear)} × ×{mult:0.##})";
+            $"Prestiż {FmtPhp(t.Prestige)}  (przeznaczenie {FmtPhp(purpose.AdditivePrestige)} × ×{mult:0.##})\n"
+            + $"Honor {FmtPhp(t.Honor)}  (przeznaczenie {FmtPhp(purpose.AdditiveHonor)} × ×{mult:0.##})\n"
+            + $"Postrach {FmtPhp(t.Fear)}  (przeznaczenie {FmtPhp(purpose.AdditiveFear)} × ×{mult:0.##})";
     }
 
     private static string FmtPhp(decimal v) => v == 0m
@@ -771,29 +771,29 @@
 
         var purpose = PurposeNameOnly(room);
         if (!string.IsNullOrWhiteSpace(purpose))
-            lines.Add($"Purpose: {purpose}");
+            lines.Add($"Przeznaczenie: {purpose}");
         else
-            lines.Add("Purpose: —");
+            lines.Add("Przeznaczenie: —");
 
         var occupant = OccupantSubtitle(room);
         if (!string.IsNullOrWhiteSpace(occupant))
-            lines.Add($"Occupant: {occupant}");
+            lines.Add($"Mieszkaniec: {occupant}");
 
         lines.Add(SeatFloorLevel.Label(room.Level));
-        lines.Add($"Size: {SeatRoomSizeCategory.OptionLabel(room.SizeCategory)} ({room.TileCount} tiles)");
-        lines.Add($"Material: {SeatRoomMaterial.OptionLabel(room.Material)}");
-        lines.Add($"Prestige multiplier: ×{room.PrestigeMultiplier:0.##} ({SeatRoomPrestige.FormulaHint(room.Material, room.TileCount)})");
+        lines.Add($"Rozmiar: {SeatRoomSizeCategory.OptionLabel(room.SizeCategory)} ({room.TileCount} pól)");
+        lines.Add($"Materiał: {SeatRoomMaterial.OptionLabel(room.Material)}");
+        lines.Add($"Mnożnik prestiżu: ×{room.PrestigeMultiplier:0.##} ({SeatRoomPrestige.FormulaHint(room.Material, room.TileCount)})");
 
         if (RoomPhpTotals(room) is { } php)
-            lines.Add($"P/H/F: {FmtPhp(php.Prestige)} / {FmtPhp(php.Honor)} / {FmtPhp(php.Fear)}");
+            lines.Add($"P/H/P: {FmtPhp(php.Prestige)} / {FmtPhp(php.Honor)} / {FmtPhp(php.Fear)}");
 
-        lines.Add(room.IsRuin ? "Status: Ruin (excluded from totals)" : "Status: Active");
+        lines.Add(room.IsRuin ? "Status: Ruina (wyłączona z sum)" : "Status: Aktywna");
 
         if (room.GridW > 0 && room.GridH > 0)
-            lines.Add($"Grid: ({room.GridX},{room.GridY}) {room.GridW}×{room.GridH}");
+            lines.Add($"Siatka: ({room.GridX},{room.GridY}) {room.GridW}×{room.GridH}");
 
         if (layoutIssue != SeatRoomLayoutIssue.None)
-            lines.Add($"Layout: {SeatRoomLayout.IssueLabel(layoutIssue)}");
+            lines.Add($"Układ: {SeatRoomLayout.IssueLabel(layoutIssue)}");
 
         foreach (var trait in room.Traits.OrderBy(t => t.SortOrder))
         {
@@ -808,16 +808,16 @@
     {
         var lines = new List<string>
         {
-            $"Tiles: {room.TileCount} ({room.SizeCategory})",
+            $"Pola: {room.TileCount} ({room.SizeCategory})",
             SeatFloorLevel.Label(room.Level),
-            $"Material: {SeatRoomMaterial.DisplayName(room.Material)}",
-            room.IsRuin ? "Inactive (ruin) — excluded from totals." : "Active",
-            $"Prestige multiplier: ×{room.PrestigeMultiplier:0.##}",
+            $"Materiał: {SeatRoomMaterial.DisplayName(room.Material)}",
+            room.IsRuin ? "Nieaktywna (ruina) — wyłączona z sum." : "Aktywna",
+            $"Mnożnik prestiżu: ×{room.PrestigeMultiplier:0.##}",
         };
         if (room.GridW > 0 && room.GridH > 0)
-            lines.Add($"Grid: ({room.GridX},{room.GridY}) {room.GridW}×{room.GridH}");
+            lines.Add($"Siatka: ({room.GridX},{room.GridY}) {room.GridW}×{room.GridH}");
         if (layoutIssue != SeatRoomLayoutIssue.None)
-            lines.Add($"Layout: {SeatRoomLayout.IssueLabel(layoutIssue)}");
+            lines.Add($"Układ: {SeatRoomLayout.IssueLabel(layoutIssue)}");
         return string.Join("\n", lines);
     }
 
@@ -995,15 +995,15 @@
             await _baronyRepo.SaveSeatRoom(draft);
             _suppressRoomClick = true;
             if (issue == SeatRoomLayoutIssue.None)
-                _snackBar.Add("Chamber moved.", Severity.Success);
+                _snackBar.Add("Przeniesiono komnatę.", Severity.Success);
             else
-                _snackBar.Add($"Chamber moved — {SeatRoomLayout.IssueLabel(issue)}.", Severity.Warning);
+                _snackBar.Add($"Przeniesiono komnatę — {SeatRoomLayout.IssueLabel(issue)}.", Severity.Warning);
 
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not move chamber: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się przenieść komnaty: " + ex.Message, Severity.Error);
         }
     }
 
@@ -1076,7 +1076,7 @@
         {
             ApplyLocalTile(x, y, previous);
             await InvokeAsync(StateHasChanged);
-            _snackBar.Add("Could not paint tile: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się pomalować pola: " + ex.Message, Severity.Error);
             _paintStrokeActive = false;
         }
     }
@@ -1108,12 +1108,12 @@
             await _baronyRepo.SaveSeatActiveLevels(Seat.Id, next);
             Seat.ActiveLevels = next;
             _currentLevel = level;
-            _snackBar.Add($"Added {SeatFloorLevel.Label(level)}.", Severity.Success);
+            _snackBar.Add($"Dodano {SeatFloorLevel.Label(level)}.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not add floor: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się dodać piętra: " + ex.Message, Severity.Error);
         }
     }
 
@@ -1130,12 +1130,12 @@
             Seat.ActiveLevels = next;
             Seat.Tiles.RemoveAll(t => t.Level == removed);
             _currentLevel = next.Contains(SeatFloorLevel.Ground) ? SeatFloorLevel.Ground : next[0];
-            _snackBar.Add("Floor removed.", Severity.Success);
+            _snackBar.Add("Usunięto piętro.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not remove floor: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się usunąć piętra: " + ex.Message, Severity.Error);
         }
     }
 
@@ -1208,7 +1208,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<SeatGridEditDialog>(
-            "Seat grid",
+            "Siatka siedziby",
             parameters,
             DialogOptions());
 
@@ -1219,12 +1219,12 @@
         try
         {
             await _baronyRepo.SaveSeat(saved);
-            _snackBar.Add("Grid updated.", Severity.Success);
+            _snackBar.Add("Zaktualizowano siatkę.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save grid: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać siatki: " + ex.Message, Severity.Error);
         }
     }
 
@@ -1248,7 +1248,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<SeatRoomEditDialog>(
-            isNew ? "Add chamber" : "Edit chamber",
+            isNew ? "Dodaj komnatę" : "Edytuj komnatę",
             parameters,
             DialogOptions());
 
@@ -1258,7 +1258,7 @@
 
         if (string.IsNullOrWhiteSpace(saved.Name))
         {
-            _snackBar.Add("Chamber name is required.", Severity.Warning);
+            _snackBar.Add("Nazwa komnaty jest wymagana.", Severity.Warning);
             return;
         }
 
@@ -1268,12 +1268,12 @@
         try
         {
             await _baronyRepo.SaveSeatRoom(saved);
-            _snackBar.Add(isNew ? "Chamber added." : "Chamber updated.", Severity.Success);
+            _snackBar.Add(isNew ? "Dodano komnatę." : "Zaktualizowano komnatę.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save chamber: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać komnaty: " + ex.Message, Severity.Error);
         }
     }
 
@@ -1287,7 +1287,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<SeatPurposeAssignDialog>(
-            "Assign purpose",
+            "Przypisz przeznaczenie",
             parameters,
             DialogOptions());
 
@@ -1302,12 +1302,12 @@
                 assignment.PurposeTemplateId,
                 assignment.OccupantAdvisorId,
                 assignment.OccupantCustom);
-            _snackBar.Add("Purpose updated.", Severity.Success);
+            _snackBar.Add("Zaktualizowano przeznaczenie.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not assign purpose: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się przypisać przeznaczenia: " + ex.Message, Severity.Error);
         }
     }
 
@@ -1316,12 +1316,12 @@
         try
         {
             await _baronyRepo.DeleteSeatRoom(room.Id);
-            _snackBar.Add("Chamber removed.", Severity.Success);
+            _snackBar.Add("Usunięto komnatę.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not delete chamber: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się usunąć komnaty: " + ex.Message, Severity.Error);
         }
     }
 

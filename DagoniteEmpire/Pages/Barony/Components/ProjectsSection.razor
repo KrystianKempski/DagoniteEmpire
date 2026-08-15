@@ -3,26 +3,26 @@
 @inject ISnackbar _snackBar
 @inject IDialogService _dialogService
 
-<BaronySection Title="Projects">
+<BaronySection Title="Projekty">
     <Summary>
         <span class="projects-summary">
-            <span class="projects-summary__item">@ActiveProjects.Count project@(ActiveProjects.Count == 1 ? "" : "s")</span>
+            <span class="projects-summary__item">@ActiveProjects.Count projekt@(ActiveProjects.Count == 1 ? "" : "y")</span>
             @if (_allocatingCount > 0)
             {
-                <span class="projects-summary__item">@_allocatingCount awaiting resources</span>
+                <span class="projects-summary__item">@_allocatingCount oczekuje na zasoby</span>
             }
             @if (_inProgressCount > 0)
             {
-                <span class="projects-summary__item projects-summary__item--active">@_inProgressCount in progress</span>
+                <span class="projects-summary__item projects-summary__item--active">@_inProgressCount w toku</span>
             }
         </span>
     </Summary>
     <ChildContent>
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
-            Fund projects by allocating Gold, Production, and other cumulative stocks from your barony.
-            Auto-created projects start in <strong>Resource allocation</strong> — turns do not tick until they are fully funded.
-            Spent allocations appear on the Resources balance.
-            Click a project title row to expand or collapse details.
+            Finansuj projekty, przydzielając Złoto, Produkcję i inne kumulowane zapasy z baronii.
+            Projekty tworzone automatycznie rozpoczynają się w fazie <strong>Przydział zasobów</strong> — tury nie płyną, dopóki nie zostaną w pełni sfinansowane.
+            Wydane przydziały pojawiają się w bilansie Zasobów.
+            Kliknij wiersz tytułu projektu, aby rozwinąć lub zwinąć szczegóły.
         </MudText>
 
         @if (CanEdit)
@@ -31,7 +31,7 @@
                 <MudButton Variant="Variant.Outlined"
                            StartIcon="@Icons.Material.Filled.Add"
                            OnClick="AddAsync">
-                    Add Project
+                    Dodaj projekt
                 </MudButton>
             </div>
         }
@@ -39,10 +39,10 @@
         @if (ActiveProjects.Count == 0)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                No open projects.
+                Brak otwartych projektów.
                 @if (CanEdit)
                 {
-                    <text> Add one above.</text>
+                    <text> Dodaj jeden powyżej.</text>
                 }
             </MudText>
         }
@@ -65,17 +65,17 @@
     </ChildContent>
 </BaronySection>
 
-<BaronySection Title="Completed Projects" DefaultOpen="false">
+<BaronySection Title="Ukończone projekty" DefaultOpen="false">
     <Summary>
         <span class="projects-summary">
-            <span class="projects-summary__item">@CompletedProjects.Count completed</span>
+            <span class="projects-summary__item">@CompletedProjects.Count ukończonych</span>
         </span>
     </Summary>
     <ChildContent>
         @if (CompletedProjects.Count == 0)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                No completed projects yet.
+                Brak ukończonych projektów.
             </MudText>
         }
         else
@@ -136,7 +136,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<ProjectAllocateDialog>(
-            "Allocate resources",
+            "Przydziel zasoby",
             parameters,
             new DialogOptions
             {
@@ -152,7 +152,7 @@
         try
         {
             await _baronyRepo.AllocateProjectResources(item.Id, amounts);
-            _snackBar.Add("Resources allocated to project.", Severity.Success);
+            _snackBar.Add("Przydzielono zasoby do projektu.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
@@ -167,17 +167,17 @@
             return;
 
         var confirm = await _dialogService.ShowMessageBoxAsync(
-            "Clear allocation",
-            $"Return all allocated resources from “{item.Name}” to your stocks?",
-            yesText: "Clear",
-            cancelText: "Cancel");
+            "Wyczyść przydział",
+            $"Zwrócić wszystkie przydzielone zasoby z „{item.Name}” do zapasów?",
+            yesText: "Wyczyść",
+            cancelText: "Anuluj");
         if (confirm != true)
             return;
 
         try
         {
             await _baronyRepo.ClearProjectAllocations(item.Id);
-            _snackBar.Add("Project allocation cleared.", Severity.Success);
+            _snackBar.Add("Wyczyszczono przydział projektu.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
@@ -194,7 +194,7 @@
         try
         {
             await _baronyRepo.SetProjectCostMode(item.Id, mode);
-            _snackBar.Add($"Payment method set to {mode}.", Severity.Success);
+            _snackBar.Add($"Ustawiono metodę płatności: {mode}.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
@@ -233,7 +233,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<ProjectEditDialog>(
-            isNew ? "Add Project" : "Edit Project",
+            isNew ? "Dodaj projekt" : "Edytuj projekt",
             parameters,
             new DialogOptions
             {
@@ -250,7 +250,7 @@
         {
             if (!isNew)
             {
-                _snackBar.Add("Only the game master can edit existing projects.", Severity.Warning);
+                _snackBar.Add("Tylko mistrz gry może edytować istniejące projekty.", Severity.Warning);
                 return;
             }
 
@@ -271,12 +271,12 @@
         {
             saved.BaronyId = BaronyId;
             await _baronyRepo.SaveProject(saved);
-            _snackBar.Add(isNew ? "Project added." : "Project updated.", Severity.Success);
+            _snackBar.Add(isNew ? "Dodano projekt." : "Zaktualizowano projekt.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save project: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać projektu: " + ex.Message, Severity.Error);
         }
     }
 
@@ -286,22 +286,22 @@
             return;
 
         var confirm = await _dialogService.ShowMessageBoxAsync(
-            "Remove project",
-            $"Remove “{item.Name}”?",
-            yesText: "Remove",
-            cancelText: "Cancel");
+            "Usuń projekt",
+            $"Usunąć „{item.Name}”?",
+            yesText: "Usuń",
+            cancelText: "Anuluj");
         if (confirm != true)
             return;
 
         try
         {
             await _baronyRepo.DeleteProject(item.Id);
-            _snackBar.Add("Project removed.", Severity.Success);
+            _snackBar.Add("Usunięto projekt.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not remove project: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się usunąć projektu: " + ex.Message, Severity.Error);
         }
     }
 

@@ -1,8 +1,8 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
-<BaronySection Title="Trade good bonus summary" DefaultOpen="true">
+<BaronySection Title="Podsumowanie premii z towarów handlowych" DefaultOpen="true">
     <Summary>
-        <span class="projects-summary__item">@SelectedCount good@(SelectedCount == 1 ? "" : "s")</span>
+        <span class="projects-summary__item">@SelectedCount @(SelectedCount == 1 ? "towar" : "towary")</span>
         <span class="projects-summary__item">@LuxuryTier.NameEn</span>
         <PpbSummaryChips Vector="@GlanceAdditive" />
     </Summary>
@@ -10,7 +10,7 @@
         @if (SelectedCount == 0 && !HasLuxuryBonus && TreatyRouteEconomyBonus == 0m && TreatyGoldOutflowPerTurn == 0m)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                Available goods (from production, trade, or MG override), luxury access, route economy, and treaty gold contribute to Domain Panel PPB.
+                Dostępne towary (z produkcji, handlu lub nadpisania MG), dostęp do dóbr luksusowych, ekonomia szlaków i złoto z traktatów wpływają na PPB Panelu Domeny.
             </MudText>
         }
         else
@@ -20,8 +20,8 @@
                     <thead>
                         <tr>
                             <th>PPB</th>
-                            <th>Additive</th>
-                            <th>Percent</th>
+                            <th>Dodatkowe</th>
+                            <th>Procent</th>
                         </tr>
                     </thead>
                     <tbody>

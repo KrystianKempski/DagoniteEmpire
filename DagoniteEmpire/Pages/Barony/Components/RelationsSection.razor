@@ -5,16 +5,16 @@
 
 <BaronySection Title="@Category">
     <Summary>
-        <span class="projects-summary__item">@Ordered.Count contact@(Ordered.Count == 1 ? "" : "s")</span>
+        <span class="projects-summary__item">@Ordered.Count kontakt@(Ordered.Count == 1 ? "" : "ów")</span>
     </Summary>
     <ChildContent>
         @if (Ordered.Count == 0)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                No contacts in this section.
+                Brak kontaktów w tej sekcji.
                 @if (CanManage)
                 {
-                    <text> Add one below.</text>
+                    <text> Dodaj poniżej.</text>
                 }
             </MudText>
         }
@@ -34,14 +34,14 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th class="relations-col-group">Group</th>
-                            <th class="relations-col-name">Name</th>
-                            <th class="relations-col-title">Title</th>
-                            <th class="relations-col-age">Age</th>
-                            <th class="relations-col-desc">Description</th>
-                            <th class="relations-col-troops">Troops</th>
-                            <th class="relations-col-attitude">Attitude</th>
-                            <th class="relations-col-mods">Modifiers</th>
+                            <th class="relations-col-group">Grupa</th>
+                            <th class="relations-col-name">Nazwa</th>
+                            <th class="relations-col-title">Tytuł</th>
+                            <th class="relations-col-age">Wiek</th>
+                            <th class="relations-col-desc">Opis</th>
+                            <th class="relations-col-troops">Liczebność</th>
+                            <th class="relations-col-attitude">Nastawienie</th>
+                            <th class="relations-col-mods">Modyfikatory</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -77,7 +77,7 @@
                                                 }
                                                 else if (!string.IsNullOrWhiteSpace(item.Notes))
                                                 {
-                                                    <BaronyTooltip Title="Notes" Text="@item.Notes">
+                                                    <BaronyTooltip Title="Notatki" Text="@item.Notes">
                                                         <MudIcon Icon="@Icons.Material.Filled.EditNote"
                                                                  Size="Size.Small"
                                                                  Class="known-lords-notes-icon known-lords-notes-icon--filled" />
@@ -85,12 +85,12 @@
                                                 }
                                                 @if (CanManage)
                                                 {
-                                                    <BaronyTooltip Text="Edit relation">
+                                                    <BaronyTooltip Text="Edytuj relację">
                                                         <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                                        Size="Size.Small"
                                                                        OnClick="@(() => EditAsync(item))" />
                                                     </BaronyTooltip>
-                                                    <BaronyTooltip Text="Remove relation">
+                                                    <BaronyTooltip Text="Usuń relację">
                                                         <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                                        Size="Size.Small"
                                                                        Color="Color.Error"
@@ -105,7 +105,7 @@
                                     <td class="relations-col-desc">
                                         @if (!string.IsNullOrWhiteSpace(item.Description))
                                         {
-                                            <BaronyTooltip Title="Description" Text="@item.Description">
+                                            <BaronyTooltip Title="Opis" Text="@item.Description">
                                                 <span class="known-lords-desc-text">@item.Description</span>
                                             </BaronyTooltip>
                                         }
@@ -116,7 +116,7 @@
                                     </td>
                                     <td class="relations-col-troops">@item.TroopCount</td>
                                     <td class="relations-col-attitude">
-                                        <BaronyTooltip Title="Attitude" Text="@ModifiersTooltip(item)">
+                                        <BaronyTooltip Title="Nastawienie" Text="@ModifiersTooltip(item)">
                                             <span class="@AttitudeClass(item.Attitude)">
                                                 <span class="relations-attitude-score">@FormatAttitude(item.Attitude)</span>
                                                 <span class="relations-attitude-label">@item.AttitudeLabel</span>
@@ -125,12 +125,12 @@
                                     </td>
                                     <td class="relations-col-mods">
                                         <div class="relations-mods-cell">
-                                            <BaronyTooltip Title="Modifiers" Text="@ModifiersTooltip(item)">
+                                            <BaronyTooltip Title="Modyfikatory" Text="@ModifiersTooltip(item)">
                                                 <span class="relations-mods-count">@item.Modifiers.Count</span>
                                             </BaronyTooltip>
                                             @if (CanManage)
                                             {
-                                                <BaronyTooltip Text="Edit modifiers">
+                                                <BaronyTooltip Text="Edytuj modyfikatory">
                                                     <MudIconButton Icon="@Icons.Material.Filled.Tune"
                                                                    Size="Size.Small"
                                                                    OnClick="@(() => EditModifiersAsync(item))" />
@@ -152,7 +152,7 @@
                 <MudButton Variant="Variant.Outlined"
                            StartIcon="@Icons.Material.Filled.Add"
                            OnClick="AddAsync">
-                    Add…
+                    Dodaj…
                 </MudButton>
             </div>
         }
@@ -202,7 +202,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<RelationEditDialog>(
-            isNew ? "Add Relation" : "Edit Relation",
+            isNew ? "Dodaj relację" : "Edytuj relację",
             parameters,
             new DialogOptions
             {
@@ -218,12 +218,12 @@
         try
         {
             await _baronyRepo.SaveRelation(saved);
-            _snackBar.Add(isNew ? "Relation added." : "Relation updated.", Severity.Success);
+            _snackBar.Add(isNew ? "Dodano relację." : "Zaktualizowano relację.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save relation: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać relacji: " + ex.Message, Severity.Error);
         }
     }
 
@@ -233,12 +233,12 @@
         {
             var normalized = BaronyCharacterMarkDTO.NormalizeList(marks);
             await _baronyRepo.SaveRelationMarks(item.Id, normalized);
-            _snackBar.Add(normalized.Count > 0 ? "Marks updated." : "Marks cleared.", Severity.Success);
+            _snackBar.Add(normalized.Count > 0 ? "Zaktualizowano znaki." : "Wyczyszczono znaki.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save marks: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać znaków: " + ex.Message, Severity.Error);
         }
     }
 
@@ -252,7 +252,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<RelationNotesDialog>(
-            "Edit Notes",
+            "Edytuj notatki",
             parameters,
             new DialogOptions
             {
@@ -268,12 +268,12 @@
         try
         {
             await _baronyRepo.SaveRelationNotes(item.Id, string.IsNullOrWhiteSpace(notes) ? null : notes);
-            _snackBar.Add("Notes updated.", Severity.Success);
+            _snackBar.Add("Zaktualizowano notatki.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save notes: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać notatek: " + ex.Message, Severity.Error);
         }
     }
 
@@ -287,7 +287,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<RelationModifiersDialog>(
-            "Edit Modifiers",
+            "Edytuj modyfikatory",
             parameters,
             new DialogOptions
             {
@@ -305,48 +305,48 @@
         try
         {
             await _baronyRepo.SaveRelation(draft);
-            _snackBar.Add("Modifiers updated.", Severity.Success);
+            _snackBar.Add("Zaktualizowano modyfikatory.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save modifiers: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać modyfikatorów: " + ex.Message, Severity.Error);
         }
     }
 
     private async Task DeleteAsync(BaronyRelationDTO item)
     {
         var confirm = await _dialogService.ShowMessageBoxAsync(
-            "Remove relation",
-            $"Remove “{item.Name}”?",
-            yesText: "Remove",
-            cancelText: "Cancel");
+            "Usuń relację",
+            $"Usunąć „{item.Name}”?",
+            yesText: "Usuń",
+            cancelText: "Anuluj");
         if (confirm != true)
             return;
 
         try
         {
             await _baronyRepo.DeleteRelation(item.Id);
-            _snackBar.Add("Relation removed.", Severity.Success);
+            _snackBar.Add("Usunięto relację.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not remove relation: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się usunąć relacji: " + ex.Message, Severity.Error);
         }
     }
 
     private static string ModifiersTooltip(BaronyRelationDTO item)
     {
         if (item.Modifiers is null || item.Modifiers.Count == 0)
-            return "No modifiers.";
+            return "Brak modyfikatorów.";
 
         return string.Join("\n", item.Modifiers
             .OrderBy(m => m.SortOrder)
             .Select(m =>
             {
                 var sign = m.Value > 0 ? "+" : "";
-                var desc = string.IsNullOrWhiteSpace(m.Description) ? "(unnamed)" : m.Description.Trim();
+                var desc = string.IsNullOrWhiteSpace(m.Description) ? "(bez nazwy)" : m.Description.Trim();
                 return $"{desc}: {sign}{m.Value}";
             }));
     }
@@ -360,7 +360,7 @@
         attitude > 0 ? $"+{attitude}" : attitude.ToString();
 
     private static string NotesTooltip(string? notes) =>
-        string.IsNullOrWhiteSpace(notes) ? "Edit notes" : notes;
+        string.IsNullOrWhiteSpace(notes) ? "Edytuj notatki" : notes;
 
     private static string NotesButtonClass(string? notes) =>
         string.IsNullOrWhiteSpace(notes)

@@ -5,35 +5,35 @@
            ContentClass="baron-influence-dialog-content"
            ActionsClass="baron-influence-dialog-actions">
     <TitleContent>
-        <MudText Typo="Typo.h6">Edit village</MudText>
+        <MudText Typo="Typo.h6">Edytuj wioskę</MudText>
     </TitleContent>
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudTextField @bind-Value="_name"
-                          Label="Name"
+                          Label="Nazwa"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Required="true"
                           Class="baron-influence-field" />
             <MudNumericField T="int"
                              @bind-Value="_population"
-                             Label="Population (Pop)"
-                             HelperText="Village PPB is computed from Population, tile fertility, and palisade."
+                             Label="Populacja (Pop)"
+                             HelperText="PPB wioski jest obliczane z Populacji, żyzności pola i palisady."
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="0"
                              Class="baron-influence-field" />
             <MudCheckBox T="bool"
                          @bind-Value="_hasPalisade"
-                         Label="Palisade (+5 Defense, +3 Stability, +1 Law)"
+                         Label="Palisada (+5 Obrona, +3 Stabilność, +1 Prawo)"
                          Color="Color.Primary"
                          Dense="true"
                          Class="baron-influence-field" />
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -59,7 +59,7 @@
     {
         if (string.IsNullOrWhiteSpace(_name))
         {
-            _snackBar.Add("Name is required.", Severity.Warning);
+            _snackBar.Add("Nazwa jest wymagana.", Severity.Warning);
             return;
         }
 

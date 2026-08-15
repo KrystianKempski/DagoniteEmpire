@@ -1,6 +1,6 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
-<BaronySection Title="Reputation Effects on the Barony">
+<BaronySection Title="Wpływ reputacji na baronię">
     <Summary>
         <div class="baron-php-summary">
             <PhpMetricChip Metric="PhpMetric.Prestige" Value="@PrestigeScore" />
@@ -36,7 +36,7 @@
                     </div>
                     <div class="baron-reputation-track__tier">@current.Name</div>
                 </div>
-                <BaronyTooltip Text="Current score">
+                <BaronyTooltip Text="Bieżący wynik">
                     <div class="@($"baron-reputation-track__score {BaronPhpVisuals.CssClass(metric)}")">@FormatScore(score)</div>
                 </BaronyTooltip>
             </header>
@@ -56,14 +56,14 @@
             </div>
 
             <div class="baron-reputation-bonuses">
-                <div class="baron-reputation-bonuses__label">Barony bonuses</div>
+                <div class="baron-reputation-bonuses__label">Premie baronii</div>
                 <div class="baron-reputation-bonuses__text">@BaronReputationTiers.FormatBaronyBonus(current.BaronyBonus)</div>
                 @if (!string.IsNullOrWhiteSpace(current.SkillBonusText))
                 {
                     <div class="baron-reputation-bonuses__skills">
-                        <div class="baron-reputation-bonuses__label">Character traits</div>
+                        <div class="baron-reputation-bonuses__label">Cechy postaci</div>
                         @current.SkillBonusText
-                        <span class="baron-reputation-bonuses__note">Applied on the Character sheet as “@TraitLabel(current)”</span>
+                        <span class="baron-reputation-bonuses__note">Stosowane na karcie postaci jako „@TraitLabel(current)”</span>
                     </div>
                 }
             </div>
@@ -76,7 +76,7 @@
         + (reached && !isCurrent ? " baron-reputation-step--reached" : "");
 
     private static string TierTooltip(ReputationTier tier) =>
-        $"{tier.Name}\nRequired: {tier.ThresholdLabel}\n{tier.BonusSummary}";
+        $"{tier.Name}\nWymagane: {tier.ThresholdLabel}\n{tier.BonusSummary}";
 
     private static string TraitLabel(ReputationTier tier) => $"{tier.Name}!";
 

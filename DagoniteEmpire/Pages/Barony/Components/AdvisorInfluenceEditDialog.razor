@@ -7,32 +7,32 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudTextField @bind-Value="_source"
-                          Label="Source"
+                          Label="Źródło"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field"
                           Required="true" />
             <MudTextField @bind-Value="_description"
-                          Label="Description"
-                          HelperText="Optional. Shown on hover over the source in the table."
+                          Label="Opis"
+                          HelperText="Opcjonalne. Wyświetlane po najechaniu na źródło w tabeli."
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="2"
                           Class="baron-influence-field" />
             <MudNumericField T="decimal"
                              @bind-Value="_costGold"
-                             Label="Cost"
-                             HelperText="Added to the office upkeep total (gold / turn)."
+                             Label="Koszt"
+                             HelperText="Doliczane do sumy utrzymania urzędu (złota / turę)."
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="0"
                              Class="baron-influence-field" />
-            <PpbVectorEditor @bind-Value="_values" Title="PPB bonuses" Compact="true" ExcludeTreasury="true" />
+            <PpbVectorEditor @bind-Value="_values" Title="Premie PPB" Compact="true" ExcludeTreasury="true" />
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -60,7 +60,7 @@
     {
         if (string.IsNullOrWhiteSpace(_source))
         {
-            _snackBar.Add("Source name is required.", Severity.Warning);
+            _snackBar.Add("Nazwa źródła jest wymagana.", Severity.Warning);
             return;
         }
 

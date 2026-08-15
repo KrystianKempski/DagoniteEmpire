@@ -25,7 +25,7 @@
                     <div class="city-building-name-cell">
                         @if (!string.IsNullOrWhiteSpace(row.Description))
                         {
-                            <BaronyTooltip Title="Description" Text="@row.Description">
+                            <BaronyTooltip Title="Opis" Text="@row.Description">
                                 <span class="city-building-name-text">@row.Label</span>
                             </BaronyTooltip>
                         }
@@ -38,7 +38,7 @@
                             <span class="city-building-name-actions">
                                 @if (row.CanEdit)
                                 {
-                                    <BaronyTooltip Text="Edit">
+                                    <BaronyTooltip Text="Edytuj">
                                         <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                        Size="Size.Small"
                                                        OnClick="@(() => OnEdit.InvokeAsync(row))" />
@@ -46,7 +46,7 @@
                                 }
                                 @if (row.CanDelete)
                                 {
-                                    <BaronyTooltip Text="Remove">
+                                    <BaronyTooltip Text="Usuń">
                                         <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                        Size="Size.Small"
                                                        Color="Color.Error"
@@ -79,8 +79,8 @@
 @code {
     [Parameter] public IEnumerable<ResourceTableRow> Rows { get; set; } = Array.Empty<ResourceTableRow>();
     [Parameter] public PpbVector? Summary { get; set; }
-    [Parameter] public string SummaryLabel { get; set; } = "Σ section";
-    [Parameter] public string NameHeader { get; set; } = "Source";
+    [Parameter] public string SummaryLabel { get; set; } = "Σ sekcja";
+    [Parameter] public string NameHeader { get; set; } = "Źródło";
     [Parameter] public EventCallback<ResourceTableRow> OnEdit { get; set; }
     [Parameter] public EventCallback<ResourceTableRow> OnDelete { get; set; }
 }

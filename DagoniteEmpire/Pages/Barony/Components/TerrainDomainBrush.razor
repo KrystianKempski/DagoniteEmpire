@@ -2,7 +2,7 @@
 
 <div class="terrain-brush">
     <MudText Typo="Typo.caption" Class="terrain-brush__hint">
-        Select a domain, then click or drag on the map. Player barony domain is the most transparent overlay.
+        Wybierz domenę, a następnie kliknij lub przeciągnij po mapie. Domena baronii gracza jest najbardziej przezroczystą nakładką.
     </MudText>
     <div class="terrain-brush__body">
         <div class="terrain-brush__options">
@@ -12,7 +12,7 @@
                 var selected = d.Id == SelectedDomainId;
                 var tiles = TileCount(d.Id);
                 <div class="terrain-domain-chip-row">
-                    <BaronyTooltip Title="@($"{d.Name} : {tiles} tiles")" Text="@d.LordName">
+                    <BaronyTooltip Title="@($"{d.Name} : {tiles} pól")" Text="@d.LordName">
                         <button type="button"
                                 class="terrain-domain-chip @(selected ? "terrain-domain-chip--selected" : "")"
                                 @onclick="() => SelectDomainAsync(d.Id)">
@@ -24,21 +24,21 @@
                             </span>
                         </button>
                     </BaronyTooltip>
-                    <BaronyTooltip Text="Change domain color">
+                    <BaronyTooltip Text="Zmień kolor domeny">
                         <input type="color"
                                class="terrain-domain-chip__color-input"
                                value="@d.ColorHex"
-                               aria-label="@($"Change color for {d.Name}")"
+                               aria-label="@($"Zmień kolor domeny {d.Name}")"
                                @onchange="e => OnDomainColorInputChangedAsync(d.Id, e)" />
                     </BaronyTooltip>
-                    <BaronyTooltip Text="Edit domain">
+                    <BaronyTooltip Text="Edytuj domenę">
                         <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                        Size="Size.Small"
                                        OnClick="@(() => OnEditDomainAsync(d.Id))" />
                     </BaronyTooltip>
                     @if (!d.IsPrimary)
                     {
-                        <BaronyTooltip Text="Delete domain">
+                        <BaronyTooltip Text="Usuń domenę">
                             <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                            Size="Size.Small"
                                            Color="Color.Error"
@@ -51,7 +51,7 @@
                        Size="Size.Small"
                        StartIcon="@Icons.Material.Filled.Add"
                        OnClick="OnAddDomainAsync">
-                Add domain
+                Dodaj domenę
             </MudButton>
         </div>
     </div>

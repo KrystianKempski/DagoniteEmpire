@@ -33,7 +33,7 @@
             <div class="project-card__badges">
                 @if (IsCouncil)
                 {
-                    <span class="project-output-badge">Council</span>
+                    <span class="project-output-badge">Rada</span>
                 }
                 @if (!IsCouncil
                     || !string.Equals(Audience.PetitionerName, BaronCouncilSession.PetitionerLabel, StringComparison.OrdinalIgnoreCase))
@@ -43,8 +43,8 @@
                 <span class="baron-audience__status baron-audience__status--@StatusCss">@Audience.StatusDisplay</span>
                 @if (Audience.ContinuedFromAudienceId is not null)
                 {
-                    <BaronyTooltip Text="Continued from a deferred audience">
-                        <span class="baron-audience__continued">continued</span>
+                    <BaronyTooltip Text="Kontynuacja odroczonej audiencji">
+                        <span class="baron-audience__continued">kontynuacja</span>
                     </BaronyTooltip>
                 }
             </div>
@@ -53,7 +53,7 @@
         @if (_isOpen)
         {
             <span class="project-card__turns">
-                @Audience.ExchangeCount exchange@(Audience.ExchangeCount == 1 ? "" : "s")
+                @Audience.ExchangeCount @(Audience.ExchangeCount == 1 ? "wymiana" : "wymiany")
                 · T@(Audience.TurnNumber)
             </span>
         }
@@ -74,7 +74,7 @@
                             @if (TryGetChapterLink(x, out var chapterId, out var chapterLabel))
                             {
                                 <span>@chapterLabel </span>
-                                <a href="/chapter/@chapterId">Open chapter</a>
+                                <a href="/chapter/@chapterId">Otwórz rozdział</a>
                             }
                             else
                             {
@@ -100,7 +100,7 @@
                                 @if (x.Prestige != 0)
                                 {
                                     <span class="baron-audience__ppb-delta-item php-metric--prestige">
-                                        @FmtPhp(x.Prestige) Prestige
+                                        @FmtPhp(x.Prestige) Prestiż
                                     </span>
                                 }
                                 @if (x.Honor != 0)
@@ -112,7 +112,7 @@
                                 @if (x.Fear != 0)
                                 {
                                     <span class="baron-audience__ppb-delta-item php-metric--fear">
-                                        @FmtPhp(x.Fear) Fear
+                                        @FmtPhp(x.Fear) Postrach
                                     </span>
                                 }
                             </div>
@@ -126,11 +126,11 @@
                 <div class="baron-audience__summary">
                     @if (!string.IsNullOrWhiteSpace(Audience.GmSummary))
                     {
-                        <div><span class="baron-audience__summary-label">Summary</span> @Audience.GmSummary</div>
+                        <div><span class="baron-audience__summary-label">Podsumowanie</span> @Audience.GmSummary</div>
                     }
                     @if (!string.IsNullOrWhiteSpace(Audience.OutcomeNotes))
                     {
-                        <div><span class="baron-audience__summary-label">Outcomes</span> @Audience.OutcomeNotes</div>
+                        <div><span class="baron-audience__summary-label">Rezultaty</span> @Audience.OutcomeNotes</div>
                     }
                 </div>
             }
@@ -143,7 +143,7 @@
                         <div class="baron-audience__speaker-row">
                             <MudSelect T="string"
                                        @bind-Value="_speakerMode"
-                                       Label="Speak as"
+                                       Label="Mów jako"
                                        Variant="Variant.Outlined"
                                        Margin="Margin.Dense"
                                        Dense="true"
@@ -155,19 +155,19 @@
                                         <MudSelectItem Value="@name">@name</MudSelectItem>
                                     }
                                     <MudSelectItem Value="@BaronCouncilSession.GameMasterSpeaker">@BaronCouncilSession.GameMasterSpeaker</MudSelectItem>
-                                    <MudSelectItem Value="@SpeakerModeOther">Other character</MudSelectItem>
+                                    <MudSelectItem Value="@SpeakerModeOther">Inna postać</MudSelectItem>
                                 }
                                 else
                                 {
-                                    <MudSelectItem Value="@SpeakerModePetitioner">@Audience.PetitionerName (petitioner)</MudSelectItem>
+                                    <MudSelectItem Value="@SpeakerModePetitioner">@Audience.PetitionerName (petent)</MudSelectItem>
                                     <MudSelectItem Value="@BaronCouncilSession.GameMasterSpeaker">@BaronCouncilSession.GameMasterSpeaker</MudSelectItem>
-                                    <MudSelectItem Value="@SpeakerModeOther">Other character</MudSelectItem>
+                                    <MudSelectItem Value="@SpeakerModeOther">Inna postać</MudSelectItem>
                                 }
                             </MudSelect>
                             @if (_speakerMode == SpeakerModeOther)
                             {
                                 <MudTextField @bind-Value="_otherSpeaker"
-                                              Label="Character name"
+                                              Label="Imię postaci"
                                               Variant="Variant.Outlined"
                                               Margin="Margin.Dense"
                                               Immediate="true"
@@ -180,7 +180,7 @@
                         <div class="baron-audience__speaker-row">
                             <MudSelect T="string"
                                        @bind-Value="_baronSpeakerMode"
-                                       Label="Speak as"
+                                       Label="Mów jako"
                                        Variant="Variant.Outlined"
                                        Margin="Margin.Dense"
                                        Dense="true"
@@ -203,7 +203,7 @@
                                    Class="barony-turn-btn barony-turn-btn--solid"
                                    Disabled="@(Busy || !CanSpeak)"
                                    OnClick="SpeakAsync">
-                            Speak
+                            Mów
                         </MudButton>
                         @if (CanWriteAsGm)
                         {
@@ -212,40 +212,40 @@
                                        Class="barony-turn-btn barony-turn-btn--ghost"
                                        Disabled="Busy"
                                        OnClick="() => OnAddResources.InvokeAsync()">
-                                Add resources
+                                Dodaj zasoby
                             </MudButton>
                             <MudButton Size="Size.Small"
                                        Variant="Variant.Outlined"
                                        Class="barony-turn-btn barony-turn-btn--ghost"
                                        Disabled="Busy"
                                        OnClick="() => OnCreateProject.InvokeAsync()">
-                                Add project
+                                Dodaj projekt
                             </MudButton>
                             <MudButton Size="Size.Small"
                                        Variant="Variant.Outlined"
                                        Class="barony-turn-btn barony-turn-btn--ghost"
                                        Disabled="Busy"
                                        OnClick="() => OnMakeChapter.InvokeAsync()">
-                                Make chapter
+                                Utwórz rozdział
                             </MudButton>
                             <MudButton Size="Size.Small"
                                        Variant="Variant.Outlined"
                                        Class="barony-turn-btn barony-turn-btn--ghost"
                                        Disabled="Busy"
-                                       OnClick="() => OnResolve.InvokeAsync()">Resolve</MudButton>
+                                       OnClick="() => OnResolve.InvokeAsync()">Rozlicz</MudButton>
                             @if (!IsCouncil)
                             {
                                 <MudButton Size="Size.Small"
                                            Variant="Variant.Outlined"
                                            Class="barony-turn-btn barony-turn-btn--ghost"
                                            Disabled="Busy"
-                                           OnClick="() => OnDefer.InvokeAsync()">Defer to next turn</MudButton>
+                                           OnClick="() => OnDefer.InvokeAsync()">Odłóż do następnej tury</MudButton>
                             }
                             <MudButton Size="Size.Small"
                                        Variant="Variant.Outlined"
                                        Class="barony-turn-btn barony-turn-btn--ghost"
                                        Disabled="Busy"
-                                       OnClick="() => OnDismiss.InvokeAsync()">Dismiss</MudButton>
+                                       OnClick="() => OnDismiss.InvokeAsync()">Odrzuć</MudButton>
                         }
                         else if (CanWriteAsBaron)
                         {
@@ -253,7 +253,7 @@
                                        Variant="Variant.Outlined"
                                        Class="barony-turn-btn barony-turn-btn--ghost"
                                        Disabled="Busy"
-                                       OnClick="() => OnDismiss.InvokeAsync()">Dismiss</MudButton>
+                                       OnClick="() => OnDismiss.InvokeAsync()">Odrzuć</MudButton>
                         }
                     </div>
                 </div>
@@ -268,10 +268,10 @@
                                Class="barony-turn-btn barony-turn-btn--ghost"
                                Disabled="Busy"
                                OnClick="() => OnMakeChapter.InvokeAsync()">
-                        Make chapter
+                        Utwórz rozdział
                     </MudButton>
                 </div>
-                <MudText Typo="Typo.caption">Deferred — will open again next turn with the last exchange.</MudText>
+                <MudText Typo="Typo.caption">Odroczono — otworzy się ponownie w następnej turze z ostatnią wymianą.</MudText>
             }
             else if (CanWriteAsGm && ReadOnly)
             {
@@ -281,7 +281,7 @@
                                Class="barony-turn-btn barony-turn-btn--ghost"
                                Disabled="Busy"
                                OnClick="() => OnMakeChapter.InvokeAsync()">
-                        Make chapter
+                        Utwórz rozdział
                     </MudButton>
                 </div>
             }
@@ -300,7 +300,7 @@
     public const string ChapterLinkPrefix = "#/chapter/";
 
     public static string FormatChapterExchangeBody(string chapterName, int chapterId) =>
-        $"Created chapter \"{chapterName}\".\n{ChapterLinkPrefix}{chapterId}";
+        $"Utworzono rozdział \"{chapterName}\".\n{ChapterLinkPrefix}{chapterId}";
 
     public sealed record SpeakRequest(string Body, bool IsGmSide, string? SpeakerName);
 
@@ -374,15 +374,15 @@
     private string ComposerLabel =>
         CanWriteAsGm
             ? (_speakerMode == SpeakerModeOther
-                ? "Other character speaks…"
+                ? "Inna postać mówi…"
                 : _speakerMode == BaronCouncilSession.GameMasterSpeaker
-                    ? "Game Master speaks…"
+                    ? "Mistrz Gry mówi…"
                     : HasCourtSpeakers
-                        ? $"{_speakerMode} speaks…"
-                        : "Petitioner speaks…")
+                        ? $"{_speakerMode} mówi…"
+                        : "Petent mówi…")
             : (_baronSpeakerMode == BaronCouncilSession.QuestionToGmSpeaker
-                ? "Question to GM…"
-                : "Your reply…");
+                ? "Pytanie do MG…"
+                : "Twoja odpowiedź…");
 
     protected override void OnParametersSet()
     {
@@ -424,7 +424,7 @@
     private string SpeakerLabel(BaronAudienceExchangeDTO x)
     {
         if (x.IsResourceChange)
-            return "Resource change";
+            return "Zmiana zasobów";
         if (!string.IsNullOrWhiteSpace(x.SpeakerName))
             return x.SpeakerName.Trim();
         return x.IsFromPetitioner
@@ -462,7 +462,7 @@
 
         label = body[..idx].TrimEnd();
         if (string.IsNullOrWhiteSpace(label))
-            label = "Chapter created.";
+            label = "Utworzono rozdział.";
         return true;
     }
 

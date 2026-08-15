@@ -7,13 +7,13 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog project-edit-dialog">
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Tile (@Tile.X, @Tile.Y) — map construction project (Improvement), paid with Gold &amp; Production only.
+                Pole (@Tile.X, @Tile.Y) — projekt budowy na mapie (Ulepszenie), opłacany tylko Złotem i Produkcją.
             </MudText>
 
             @if (Templates.Count == 0)
             {
                 <MudAlert Severity="Severity.Info" Dense="true">
-                    No catalog improvements fit this tile (same rules as the improvement brush).
+                    Żadne ulepszenia z katalogu nie pasują do tego pola (te same zasady co pędzel ulepszeń).
                 </MudAlert>
             }
             else
@@ -21,13 +21,13 @@
                 @if (LockedHerdNotes.Count > 0)
                 {
                     <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2">
-                        Locked until you have breeding stock from trade:
+                        Zablokowane, dopóki nie zdobędziesz zwierząt hodowlanych z handlu:
                         @string.Join("; ", LockedHerdNotes)
                     </MudAlert>
                 }
 
                 <MudSelect T="int"
-                           Label="Improvement"
+                           Label="Ulepszenie"
                            Value="_templateId"
                            ValueChanged="OnTemplateChanged"
                            Variant="Variant.Outlined"
@@ -36,41 +36,41 @@
                            Required="true">
                     @foreach (var template in Templates.OrderBy(t => t.Name))
                     {
-                        <MudSelectItem Value="@template.Id">@($"{template.Name} ({Fmt(template.GoldCost)} gold / {Fmt(template.ProductionCost)} prod)")</MudSelectItem>
+                        <MudSelectItem Value="@template.Id">@($"{template.Name} ({Fmt(template.GoldCost)} złota / {Fmt(template.ProductionCost)} prod.)")</MudSelectItem>
                     }
                 </MudSelect>
 
                 <MudTextField @bind-Value="_name"
-                              Label="Project name"
+                              Label="Nazwa projektu"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Required="true"
                               Class="baron-influence-field mt-2" />
                 <MudTextField @bind-Value="_description"
-                              Label="Description"
+                              Label="Opis"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Lines="2"
                               Class="baron-influence-field" />
 
-                <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Cost (forced)</MudText>
+                <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Koszt (wymuszony)</MudText>
                 <div class="terrain-build-project-cost">
-                    <span>Gold: <b>@Fmt(_goldCost)</b></span>
-                    <span>Production: <b>@Fmt(_productionCost)</b></span>
+                    <span>Złoto: <b>@Fmt(_goldCost)</b></span>
+                    <span>Produkcja: <b>@Fmt(_productionCost)</b></span>
                 </div>
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-1">
-                    Output type: @ProjectOutputKind.Improvement · Payment: Gold &amp; Production only
+                    Typ wyniku: @ProjectOutputKind.Improvement · Płatność: tylko Złoto i Produkcja
                 </MudText>
             }
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Close</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Zamknij</MudButton>
         <MudButton Class="baron-influence-save-btn"
                    Variant="Variant.Filled"
                    OnClick="MakeProject"
                    Disabled="@(Templates.Count == 0)">
-            Make project
+            Utwórz projekt
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -110,7 +110,7 @@
     private void ApplyTemplate(BuildingTemplateDTO template)
     {
         _templateId = template.Id;
-        _name = $"Build {template.Name} at [{Tile.X},{Tile.Y}]";
+        _name = $"Budowa {template.Name} w [{Tile.X},{Tile.Y}]";
         _description = template.Description;
         _goldCost = template.GoldCost;
         _productionCost = template.ProductionCost;
@@ -124,19 +124,19 @@
     {
         if (_templateId <= 0)
         {
-            _snackBar.Add("Choose an improvement from the catalog.", Severity.Warning);
+            _snackBar.Add("Wybierz ulepszenie z katalogu.", Severity.Warning);
             return;
         }
 
         if (string.IsNullOrWhiteSpace(_name))
         {
-            _snackBar.Add("Project name is required.", Severity.Warning);
+            _snackBar.Add("Nazwa projektu jest wymagana.", Severity.Warning);
             return;
         }
 
         if (Tile.Id <= 0)
         {
-            _snackBar.Add("This tile is not ready yet.", Severity.Warning);
+            _snackBar.Add("To pole nie jest jeszcze gotowe.", Severity.Warning);
             return;
         }
 
@@ -162,7 +162,7 @@
             CostMaterials = new(),
             ResultAdditive = _resultAdditive.Clone(),
             ResultPercent = _resultPercent.Clone(),
-            ResultDescription = $"Construct {templateName} at [{Tile.X},{Tile.Y}].",
+            ResultDescription = $"Budowa {templateName} w [{Tile.X},{Tile.Y}].",
             Status = ProjectStatus.ResourceAllocation,
             TileId = Tile.Id,
             BuildingTemplateId = _templateId,

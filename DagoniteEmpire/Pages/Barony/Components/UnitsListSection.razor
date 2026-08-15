@@ -1,14 +1,14 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @using DA_Business.Repository.BaronyRepos
 
-<BaronySection Title="Units">
+<BaronySection Title="Oddziały">
     <Summary>
-        <span class="projects-summary__item">Select a unit to open its card</span>
+        <span class="projects-summary__item">Wybierz oddział, aby otworzyć jego kartę</span>
     </Summary>
     <ChildContent>
         @if (Units.Count == 0)
         {
-            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No units yet. Use the generator above.</MudText>
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">Brak oddziałów. Użyj generatora powyżej.</MudText>
         }
         else
         {
@@ -16,14 +16,14 @@
                 <table class="ppb-table ppb-table--source ppb-table--lined">
                     <thead>
                         <tr>
-                            <th class="ppb-row-label source-col">Name</th>
+                            <th class="ppb-row-label source-col">Nazwa</th>
                             <th>Status</th>
                             <th>Atk</th>
                             <th>Def</th>
                             <th>HP</th>
-                            <th>Move</th>
-                            <th>Wage</th>
-                            <th>Training</th>
+                            <th>Ruch</th>
+                            <th>Żołd</th>
+                            <th>Szkolenie</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -47,10 +47,10 @@
                                 <td>
                                     @if (u.IsTraining)
                                     {
-                                        <text>@(u.TrainingTurnsRemaining?.ToString() ?? "?") turns</text>
+                                        <text>@(u.TrainingTurnsRemaining?.ToString() ?? "?") tur</text>
                                         @if (u.TrainingProjectId is int pid)
                                         {
-                                            <text> · <a href="/barony/projects">project #@pid</a></text>
+                                            <text> · <a href="/barony/projects">projekt #@pid</a></text>
                                         }
                                     }
                                     else

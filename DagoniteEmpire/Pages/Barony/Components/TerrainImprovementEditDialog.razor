@@ -7,15 +7,15 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog">
             <MudTextField @bind-Value="_displayName"
-                          Label="Name"
+                          Label="Nazwa"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Required="true"
-                          HelperText="@(IsVillage ? "Village place name shown on Domain Panel." : null)"
+                          HelperText="@(IsVillage ? "Nazwa miejscowości pokazywana w Panelu Domeny." : null)"
                           Class="baron-influence-field" />
             <MudTextField @bind-Value="_notes"
-                          Label="Notes"
-                          HelperText="Optional notes / formula text."
+                          Label="Notatki"
+                          HelperText="Opcjonalne notatki / tekst wzoru."
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="2"
@@ -23,7 +23,7 @@
 
             @if (IsCustom)
             {
-                <MudText Typo="Typo.caption" Class="mb-1" Style="color:var(--barony-muted);">Icon</MudText>
+                <MudText Typo="Typo.caption" Class="mb-1" Style="color:var(--barony-muted);">Ikona</MudText>
                 <div class="custom-improvement-icon-picker">
                     @foreach (var icon in MapImprovement.IconChoices)
                     {
@@ -43,7 +43,7 @@
 
             <MudCheckBox T="bool"
                          @bind-Value="_isInactive"
-                         Label="Inactive"
+                         Label="Nieaktywne"
                          Color="Color.Primary"
                          Dense="true"
                          Class="baron-influence-field" />
@@ -51,21 +51,21 @@
             @if (_isInactive)
             {
                 <MudTextField @bind-Value="_inactiveReason"
-                              Label="Why inactive"
-                              HelperText="Shown when hovering the improvement name on Domain Panel."
+                              Label="Powód nieaktywności"
+                              HelperText="Pokazywane po najechaniu na nazwę ulepszenia w Panelu Domeny."
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Lines="2"
                               Class="baron-influence-field" />
             }
 
-            <PpbVectorEditor @bind-Value="_additive" Title="PPB additive (+)" Compact="true" />
-            <PpbVectorEditor @bind-Value="_percent" Title="PPB percent (%)" Compact="true" Percent="true" />
+            <PpbVectorEditor @bind-Value="_additive" Title="PPB dodawanie (+)" Compact="true" />
+            <PpbVectorEditor @bind-Value="_percent" Title="PPB procent (%)" Compact="true" Percent="true" />
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -110,7 +110,7 @@
     {
         if (string.IsNullOrWhiteSpace(_displayName))
         {
-            _snackBar.Add("Name is required.", Severity.Warning);
+            _snackBar.Add("Nazwa jest wymagana.", Severity.Warning);
             return;
         }
 

@@ -2,7 +2,7 @@
 
 <div class="terrain-brush">
     <MudText Typo="Typo.caption" Class="terrain-brush__hint">
-        Select a fief, then paint only within its senior domain. Fief overlay uses 50% opacity.
+        Wybierz lenno, a następnie maluj wyłącznie w obrębie jego nadrzędnej domeny. Nakładka lenna używa 50% krycia.
     </MudText>
     <div class="terrain-brush__body">
         <div class="terrain-brush__options">
@@ -15,7 +15,7 @@
                 var subtitle = TerrainMapVisuals.FiefChipSubtitle(f, seniorDomain);
                 var tiles = TileCount(f.Id);
                 <div class="terrain-domain-chip-row">
-                    <BaronyTooltip Title="@($"{title} : {tiles} tiles")" Text="@subtitle">
+                    <BaronyTooltip Title="@($"{title} : {tiles} pól")" Text="@subtitle">
                         <button type="button"
                                 class="terrain-domain-chip @(selected ? "terrain-domain-chip--selected" : "")"
                                 @onclick="() => SelectFiefAsync(f.Id)">
@@ -27,21 +27,21 @@
                             </span>
                         </button>
                     </BaronyTooltip>
-                    <BaronyTooltip Text="Change fief color">
+                    <BaronyTooltip Text="Zmień kolor lenna">
                         <input type="color"
                                class="terrain-domain-chip__color-input"
                                value="@f.ColorHex"
-                               aria-label="@($"Change color for {title}")"
+                               aria-label="@($"Zmień kolor dla {title}")"
                                @onchange="e => OnFiefColorInputChangedAsync(f.Id, e)" />
                     </BaronyTooltip>
-                    <BaronyTooltip Text="Edit fief">
+                    <BaronyTooltip Text="Edytuj lenno">
                         <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                        Size="Size.Small"
                                        OnClick="@(() => OnEditFiefAsync(f.Id))" />
                     </BaronyTooltip>
                     @if (!TerrainMapVisuals.IsProtectedDefaultFief(f))
                     {
-                        <BaronyTooltip Text="Delete fief">
+                        <BaronyTooltip Text="Usuń lenno">
                             <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                            Size="Size.Small"
                                            Color="Color.Error"
@@ -54,7 +54,7 @@
                        Size="Size.Small"
                        StartIcon="@Icons.Material.Filled.Add"
                        OnClick="OnAddFiefAsync">
-                Add fief
+                Dodaj lenno
             </MudButton>
         </div>
     </div>

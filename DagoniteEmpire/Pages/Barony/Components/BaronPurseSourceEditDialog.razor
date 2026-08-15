@@ -7,22 +7,22 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog">
             <MudTextField @bind-Value="_name"
-                          Label="Name"
+                          Label="Nazwa"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Required="true"
                           Class="baron-influence-field" />
             <MudTextField @bind-Value="_description"
-                          Label="Description"
-                          HelperText="Optional description shown on name hover."
+                          Label="Opis"
+                          HelperText="Opcjonalny opis wyświetlany po najechaniu na nazwę."
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="2"
                           Class="baron-influence-field" />
             <MudNumericField T="decimal"
                              @bind-Value="_amount"
-                             Label="Gold amount"
-                             HelperText="Positive = income, negative = expense."
+                             Label="Kwota złota"
+                             HelperText="Dodatnia = dochód, ujemna = wydatek."
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              HideSpinButtons="true"
@@ -31,8 +31,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -58,7 +58,7 @@
     {
         if (string.IsNullOrWhiteSpace(_name))
         {
-            _snackBar.Add("Name is required.", Severity.Warning);
+            _snackBar.Add("Nazwa jest wymagana.", Severity.Warning);
             return;
         }
 

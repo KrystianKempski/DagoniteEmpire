@@ -1,27 +1,27 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @inject IDialogService _dialogService
 
-<BaronySection Title="Baron's Time">
+<BaronySection Title="Czas barona">
     <Summary>
         <div class="baron-php-summary">
-            <span class="baron-php-chip">Pool @_budget.TotalJc BT</span>
-            <span class="baron-php-chip">Spent @_budget.SpentJc</span>
+            <span class="baron-php-chip">Pula @_budget.TotalJc BT</span>
+            <span class="baron-php-chip">Wydano @_budget.SpentJc</span>
             <span class="baron-php-chip @(_budget.RemainingJc < 0 ? "baron-time-chip--warn" : "")">
-                Left @_budget.RemainingJc
+                Pozostało @_budget.RemainingJc
             </span>
         </div>
     </Summary>
     <ChildContent>
         <div class="baron-time-budget">
             <div class="baron-time-budget__formula">
-                <BaronyTooltip Title="BT pool"
+                <BaronyTooltip Title="Pula BT"
                                Text="@PoolTooltip()">
                     <span>
-                        (Endurance @_budget.Endurance + Willpower @_budget.Willpower) × @BaronTimeRules.AttributeFactor
+                        (Wytrzymałość @_budget.Endurance + Siła woli @_budget.Willpower) × @BaronTimeRules.AttributeFactor
                         = @_budget.BaseJc BT
                         @if (_budget.ModifierPercent != 0m)
                         {
-                            <text> · modifiers @BaronyCalc.FormatPercent(_budget.ModifierPercent) → <b>@_budget.TotalJc BT</b></text>
+                            <text> · modyfikatory @BaronyCalc.FormatPercent(_budget.ModifierPercent) → <b>@_budget.TotalJc BT</b></text>
                         }
                         else
                         {
@@ -34,7 +34,7 @@
             <div class="baron-time-bars">
                 <div class="baron-time-bar">
                     <div class="baron-time-bar__label">
-                        <span>Turn allocation</span>
+                        <span>Alokacja tury</span>
                         <span>@_budget.SpentJc / @_budget.TotalJc BT</span>
                     </div>
                     <div class="baron-time-bar__track">
@@ -44,13 +44,13 @@
                 </div>
                 <div class="baron-time-bar">
                     <div class="baron-time-bar__label">
-                        <span>Barony management</span>
+                        <span>Zarządzanie baronią</span>
                         <span>@_budget.ManagementJc / @BaronTimeRules.RequiredManagementJc BT</span>
                     </div>
                     <div class="baron-time-bar__track">
                         <div class="baron-time-bar__fill @ManagementBarClass()"
                              style="@($"width:{ManagementWidth()}%")"></div>
-                        <BaronyTooltip Text="@($"Required {BaronTimeRules.RequiredManagementJc} BT")">
+                        <BaronyTooltip Text="@($"Wymagane {BaronTimeRules.RequiredManagementJc} BT")">
                             <div class="baron-time-bar__marker"
                                  style="left:100%;"></div>
                         </BaronyTooltip>
@@ -64,22 +64,22 @@
                     @if (_budget.IsManagementShort)
                     {
                         <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-1">
-                            Management shortfall: @_budget.ManagementJc / @BaronTimeRules.RequiredManagementJc BT.
-                            Expect penalties to stability, loyalty, income, etc.
+                            Niedobór zarządzania: @_budget.ManagementJc / @BaronTimeRules.RequiredManagementJc BT.
+                            Możliwe kary do stabilności, lojalności, dochodu itp.
                         </MudAlert>
                     }
                     @if (_budget.IsExpeditionOverLimit)
                     {
                         <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-1">
-                            Expeditions: @_budget.ExpeditionWeeks.ToString("0.##") weeks
-                            (@_budget.AdventureJc BT). Safe limit is @BaronTimeRules.MaxSafeExpeditionWeeks weeks
-                            (@BaronTimeRules.MaxSafeExpeditionJc BT) without extra management penalties.
+                            Wyprawy: @_budget.ExpeditionWeeks.ToString("0.##") tyg.
+                            (@_budget.AdventureJc BT). Bezpieczny limit to @BaronTimeRules.MaxSafeExpeditionWeeks tyg.
+                            (@BaronTimeRules.MaxSafeExpeditionJc BT) bez dodatkowych kar do zarządzania.
                         </MudAlert>
                     }
                     @if (_budget.IsOverspent)
                     {
                         <MudAlert Severity="Severity.Error" Dense="true" Class="mb-1">
-                            Overspent by @Math.Abs(_budget.RemainingJc) BT this turn.
+                            Przekroczono o @Math.Abs(_budget.RemainingJc) BT w tej turze.
                         </MudAlert>
                     }
                 </div>
@@ -87,7 +87,7 @@
         </div>
 
         <div class="baron-time-block">
-            <div class="baron-time-block__title">Actions this turn</div>
+            <div class="baron-time-block__title">Akcje w tej turze</div>
             <div style="overflow-x:auto;">
                 <table class="ppb-table ppb-table--source ppb-table--lined baron-time-table">
                     <colgroup>
@@ -98,10 +98,10 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th class="ppb-row-label source-col">Action</th>
-                            <th class="baron-time-col-kind">Type</th>
-                            <th class="baron-time-col-cost">Cost</th>
-                            <th class="baron-time-col-desc">Description</th>
+                            <th class="ppb-row-label source-col">Akcja</th>
+                            <th class="baron-time-col-kind">Typ</th>
+                            <th class="baron-time-col-cost">Koszt</th>
+                            <th class="baron-time-col-desc">Opis</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -129,7 +129,7 @@
                             </tr>
                         }
                         <tr class="ppb-summary-row">
-                            <td class="ppb-row-label" colspan="2">Σ spent</td>
+                            <td class="ppb-row-label" colspan="2">Σ wydano</td>
                             <td class="baron-time-cost"><b>@_budget.SpentJc BT</b></td>
                             <td class="baron-time-col-desc"></td>
                         </tr>
@@ -139,17 +139,17 @@
             @if (CanEdit)
             {
                 <MudButton Variant="Variant.Outlined" Class="mt-2" StartIcon="@Icons.Material.Filled.Add" OnClick="AddActionAsync">
-                    Add Action
+                    Dodaj akcję
                 </MudButton>
             }
         </div>
 
         <div class="baron-time-block">
-            <div class="baron-time-block__title">Pool modifiers (%)</div>
+            <div class="baron-time-block__title">Modyfikatory puli (%)</div>
             @if (_modifiers.Count == 0)
             {
                 <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                    No modifiers. Effects that raise or lower available time (illness, blessings, events) go here.
+                    Brak modyfikatorów. Tu trafiają efekty zwiększające lub zmniejszające dostępny czas (choroba, błogosławieństwa, wydarzenia).
                 </MudText>
             }
             else
@@ -163,9 +163,9 @@
                         </colgroup>
                         <thead>
                             <tr>
-                                <th class="ppb-row-label source-col">Source</th>
+                                <th class="ppb-row-label source-col">Źródło</th>
                                 <th class="baron-time-col-cost">%</th>
-                                <th class="baron-time-col-desc">Description</th>
+                                <th class="baron-time-col-desc">Opis</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -189,7 +189,7 @@
                                 </tr>
                             }
                             <tr class="ppb-summary-row">
-                                <td class="ppb-row-label">Σ modifiers</td>
+                                <td class="ppb-row-label">Σ modyfikatory</td>
                                 <td class="@PercentClass(_budget.ModifierPercent)"><b>@BaronyCalc.FormatPercent(_budget.ModifierPercent)</b></td>
                                 <td class="baron-time-col-desc"></td>
                             </tr>
@@ -200,17 +200,17 @@
             @if (CanEdit)
             {
                 <MudButton Variant="Variant.Outlined" Class="mt-2" StartIcon="@Icons.Material.Filled.Add" OnClick="AddModifierAsync">
-                    Add Modifier
+                    Dodaj modyfikator
                 </MudButton>
             }
         </div>
 
         <MudText Typo="Typo.caption" Class="mt-3" Style="color:var(--barony-muted);">
-            One turn = one quarter. Weekly expedition / adventure = @BaronTimeRules.WeeklyExpeditionJc BT
-            (up to @BaronTimeRules.MaxSafeExpeditionWeeks weeks / @BaronTimeRules.MaxSafeExpeditionJc BT without extra management penalties).
-            Great Hunt: @BaronTimeSuggestedCosts.GreatHuntJc BT (baron or officer) + @BaronTimeSuggestedCosts.GreatHuntProduction Production + @BaronTimeSuggestedCosts.GreatHuntGold gold;
-            food from the lead hunter’s Tracking, at a cost to forest fauna.
-            Other costs are set during play.
+            Jedna tura = jeden kwartał. Tygodniowa wyprawa / przygoda = @BaronTimeRules.WeeklyExpeditionJc BT
+            (do @BaronTimeRules.MaxSafeExpeditionWeeks tyg. / @BaronTimeRules.MaxSafeExpeditionJc BT bez dodatkowych kar do zarządzania).
+            Wielkie Łowy: @BaronTimeSuggestedCosts.GreatHuntJc BT (baron lub oficer) + @BaronTimeSuggestedCosts.GreatHuntProduction Produkcji + @BaronTimeSuggestedCosts.GreatHuntGold złota;
+            żywność z Tropienia głównego myśliwego, kosztem leśnej zwierzyny.
+            Pozostałe koszty ustalane są podczas gry.
         </MudText>
     </ChildContent>
 </BaronySection>
@@ -245,9 +245,9 @@
     }
 
     private string PoolTooltip() =>
-        $"Base BT = (Endurance + Willpower) × {BaronTimeRules.AttributeFactor}.\n"
-        + $"Endurance {_budget.Endurance}, Willpower {_budget.Willpower} → base {_budget.BaseJc}.\n"
-        + $"Percent modifiers: {BaronyCalc.FormatPercent(_budget.ModifierPercent)} → pool {_budget.TotalJc} BT.";
+        $"Bazowe BT = (Wytrzymałość + Siła woli) × {BaronTimeRules.AttributeFactor}.\n"
+        + $"Wytrzymałość {_budget.Endurance}, Siła woli {_budget.Willpower} → baza {_budget.BaseJc}.\n"
+        + $"Modyfikatory procentowe: {BaronyCalc.FormatPercent(_budget.ModifierPercent)} → pula {_budget.TotalJc} BT.";
 
     private double UsedWidth() =>
         _budget.TotalJc <= 0 ? 0 : Math.Min(100d, (double)_budget.SpentJc * 100d / _budget.TotalJc);
@@ -290,7 +290,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<BaronTimeActionEditDialog>(
-            isNew ? "Add Action" : "Edit Action",
+            isNew ? "Dodaj akcję" : "Edytuj akcję",
             parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
 
@@ -300,12 +300,12 @@
 
         if (string.IsNullOrWhiteSpace(saved.Name))
         {
-            _snackBar.Add("Action name is required.", Severity.Warning);
+            _snackBar.Add("Nazwa akcji jest wymagana.", Severity.Warning);
             return;
         }
 
         await _baronyRepo.SaveBaronTimeAction(saved);
-        _snackBar.Add("Action saved.", Severity.Success);
+        _snackBar.Add("Zapisano akcję.", Severity.Success);
         await OnChanged.InvokeAsync();
     }
 
@@ -315,7 +315,7 @@
             return;
 
         await _baronyRepo.DeleteBaronTimeAction(item.Id);
-        _snackBar.Add("Action removed.", Severity.Success);
+        _snackBar.Add("Usunięto akcję.", Severity.Success);
         await OnChanged.InvokeAsync();
     }
 
@@ -346,7 +346,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<BaronTimeModifierEditDialog>(
-            isNew ? "Add Modifier" : "Edit Modifier",
+            isNew ? "Dodaj modyfikator" : "Edytuj modyfikator",
             parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
 
@@ -356,12 +356,12 @@
 
         if (string.IsNullOrWhiteSpace(saved.Source))
         {
-            _snackBar.Add("Source is required.", Severity.Warning);
+            _snackBar.Add("Źródło jest wymagane.", Severity.Warning);
             return;
         }
 
         await _baronyRepo.SaveBaronTimeModifier(saved);
-        _snackBar.Add("Modifier saved.", Severity.Success);
+        _snackBar.Add("Zapisano modyfikator.", Severity.Success);
         await OnChanged.InvokeAsync();
     }
 
@@ -371,7 +371,7 @@
             return;
 
         await _baronyRepo.DeleteBaronTimeModifier(item.Id);
-        _snackBar.Add("Modifier removed.", Severity.Success);
+        _snackBar.Add("Usunięto modyfikator.", Severity.Success);
         await OnChanged.InvokeAsync();
     }
 

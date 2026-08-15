@@ -4,27 +4,27 @@
     <thead>
         <tr>
             <th rowspan="2" class="catalog-col-name catalog-th--sortable @SortClass(SortName)" @onclick="() => ToggleSort(SortName)">
-                Name<span class="catalog-sort-indicator">@SortIndicator(SortName)</span>
+                Nazwa<span class="catalog-sort-indicator">@SortIndicator(SortName)</span>
             </th>
             <th rowspan="2" class="catalog-col-lordship catalog-th--sortable @SortClass(SortLordship)" @onclick="() => ToggleSort(SortLordship)">
-                <BaronyTooltip Text="Required lordship authority level">
-                    <span>Lordship<span class="catalog-sort-indicator">@SortIndicator(SortLordship)</span></span>
+                <BaronyTooltip Text="Wymagany poziom władzy lorda">
+                    <span>Władza<span class="catalog-sort-indicator">@SortIndicator(SortLordship)</span></span>
                 </BaronyTooltip>
             </th>
             <th rowspan="2" class="catalog-col-kind catalog-th--sortable @SortClass(SortType)" @onclick="() => ToggleSort(SortType)">
-                Type<span class="catalog-sort-indicator">@SortIndicator(SortType)</span>
+                Typ<span class="catalog-sort-indicator">@SortIndicator(SortType)</span>
             </th>
             <th rowspan="2" class="catalog-col-cost catalog-th--sortable @SortClass(SortProdCost)" @onclick="() => ToggleSort(SortProdCost)">
-                <BaronyTooltip Text="Production cost">
+                <BaronyTooltip Text="Koszt produkcji">
                     <span>Prod.<span class="catalog-sort-indicator">@SortIndicator(SortProdCost)</span></span>
                 </BaronyTooltip>
             </th>
             <th rowspan="2" class="catalog-col-cost catalog-th--sortable @SortClass(SortGoldCost)" @onclick="() => ToggleSort(SortGoldCost)">
-                <BaronyTooltip Text="Gold cost">
+                <BaronyTooltip Text="Koszt złota">
                     <span>Gold<span class="catalog-sort-indicator">@SortIndicator(SortGoldCost)</span></span>
                 </BaronyTooltip>
             </th>
-            <th rowspan="2" class="catalog-col-desc">Description</th>
+            <th rowspan="2" class="catalog-col-desc">Opis</th>
             @foreach (var info in PpbCatalog.All)
             {
                 var sortKey = PpbSortKey(info.Key);
@@ -53,7 +53,7 @@
                         <span class="catalog-name-cell__actions">
                             @if (CanProposeBuild && IsCityBuilding(item))
                             {
-                                <BaronyTooltip Text="Start building project">
+                                <BaronyTooltip Text="Rozpocznij projekt budowy">
                                     <button type="button"
                                             class="catalog-name-cell__build"
                                             @onclick="() => ProposeBuildAsync(item)"
@@ -64,7 +64,7 @@
                             }
                             @if (CanManageCatalog && item.IsCustom)
                             {
-                                <BaronyTooltip Text="Edit catalog entry">
+                                <BaronyTooltip Text="Edytuj wpis katalogu">
                                     <button type="button"
                                             class="catalog-name-cell__build catalog-name-cell__build--edit"
                                             @onclick="() => EditTemplateAsync(item)"
@@ -72,7 +72,7 @@
                                         <MudIcon Icon="@Icons.Material.Filled.Edit" Size="Size.Small" />
                                     </button>
                                 </BaronyTooltip>
-                                <BaronyTooltip Text="Delete catalog entry">
+                                <BaronyTooltip Text="Usuń wpis katalogu">
                                     <button type="button"
                                             class="catalog-name-cell__build catalog-name-cell__build--delete"
                                             @onclick="() => DeleteTemplateAsync(item)"

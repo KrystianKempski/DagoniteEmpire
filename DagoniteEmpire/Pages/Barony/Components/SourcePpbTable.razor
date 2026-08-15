@@ -3,7 +3,7 @@
 <table class="ppb-table ppb-table--source ppb-table--lined">
     <thead>
         <tr>
-            <th class="ppb-row-label source-col">Source</th>
+            <th class="ppb-row-label source-col">Źródło</th>
             @foreach (var info in SkillColumns)
             {
                 <th><BaronyTooltip Text="@info.NameEn">@PpbShort(info.Key)</BaronyTooltip></th>
@@ -18,7 +18,7 @@
                     <div class="source-cell">
                         @if (!string.IsNullOrWhiteSpace(row.Description))
                         {
-                            <BaronyTooltip Title="Description" Text="@row.Description">
+                            <BaronyTooltip Title="Opis" Text="@row.Description">
                                 <span class="source-cell__name">@row.Source</span>
                             </BaronyTooltip>
                         }
@@ -76,7 +76,7 @@
 @code {
     [Parameter] public IEnumerable<BaronInfluenceRow> Rows { get; set; } = Array.Empty<BaronInfluenceRow>();
     [Parameter] public PpbVector? Summary { get; set; }
-    [Parameter] public string SummaryLabel { get; set; } = "Σ total";
+    [Parameter] public string SummaryLabel { get; set; } = "Σ suma";
     [Parameter] public bool CanEdit { get; set; }
     [Parameter] public EventCallback<BaronInfluenceRow> OnEdit { get; set; }
     [Parameter] public EventCallback<BaronInfluenceRow> OnDelete { get; set; }
@@ -93,19 +93,19 @@
 
     private static string PpbShort(Ppb p) => p switch
     {
-        Ppb.Food => "Food",
-        Ppb.Economy => "Econ",
+        Ppb.Food => "Żyw",
+        Ppb.Economy => "Gosp",
         Ppb.Production => "Prod",
-        Ppb.Loyalty => "Loy",
+        Ppb.Loyalty => "Loj",
         Ppb.Stability => "Stab",
-        Ppb.Law => "Law",
-        Ppb.Corruption => "Corr",
-        Ppb.Science => "Sci",
-        Ppb.Magic => "Mag",
-        Ppb.Culture => "Cult",
-        Ppb.Intelligence => "Intel",
-        Ppb.Defense => "Def",
-        Ppb.Treasury => "Gold",
+        Ppb.Law => "Prawo",
+        Ppb.Corruption => "Korup",
+        Ppb.Science => "Nauka",
+        Ppb.Magic => "Magia",
+        Ppb.Culture => "Kult",
+        Ppb.Intelligence => "Wyw",
+        Ppb.Defense => "Obr",
+        Ppb.Treasury => "Złoto",
         _ => p.ToString(),
     };
 

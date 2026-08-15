@@ -5,13 +5,13 @@
            ContentClass="baron-influence-dialog-content"
            ActionsClass="baron-influence-dialog-actions">
     <TitleContent>
-        <MudText Typo="Typo.h6">Unit history — @Unit.Name</MudText>
+        <MudText Typo="Typo.h6">Historia oddziału — @Unit.Name</MudText>
     </TitleContent>
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog unit-log-dialog">
             @if (Entries.Count == 0)
             {
-                <MudText Typo="Typo.body2">No history entries yet.</MudText>
+                <MudText Typo="Typo.body2">Brak wpisów historii.</MudText>
             }
             else
             {
@@ -30,7 +30,7 @@
                             <div class="unit-log-dialog__text">@entry.Text</div>
                             @if (!string.IsNullOrWhiteSpace(entry.Note))
                             {
-                                <div class="unit-log-dialog__note">Note: @entry.Note</div>
+                                <div class="unit-log-dialog__note">Notatka: @entry.Note</div>
                             }
                         </div>
                     }
@@ -42,7 +42,7 @@
         <MudButton Class="baron-influence-save-btn"
                    Variant="Variant.Filled"
                    OnClick="Close">
-            Close
+            Zamknij
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -65,7 +65,7 @@
                 Id = "synthetic-created",
                 UtcAt = Unit.CreatedAtUtc,
                 Kind = "created",
-                Text = $"Unit created: {Unit.Name}.",
+                Text = $"Utworzono oddział: {Unit.Name}.",
             });
         }
     }

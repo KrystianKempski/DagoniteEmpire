@@ -10,7 +10,7 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudTextField @bind-Value="_name"
-                          Label="Name"
+                          Label="Nazwa"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field"
@@ -20,7 +20,7 @@
             {
                 <MudNumericField T="int"
                                  @bind-Value="_population"
-                                 Label="Population (Pop)"
+                                 Label="Populacja (Pop)"
                                  HelperText="@PopulationHelp"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
@@ -31,7 +31,7 @@
             {
                 <MudCheckBox T="bool"
                              @bind-Value="_hasPalisade"
-                             Label="Palisade (+5 Defense, +3 Stability, +1 Law)"
+                             Label="Palisada (+5 Obrona, +3 Stabilność, +1 Prawo)"
                              Color="Color.Primary"
                              Dense="true"
                              Class="baron-influence-field" />
@@ -39,8 +39,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Confirm</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Potwierdź</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -71,10 +71,10 @@
     private bool NeedsPopulation => IsVillage || IsTown;
 
     private string PopulationHelp => IsTown
-        ? "Town PPB is computed from Population."
-        : "Village PPB is computed from Population, tile fertility, and palisade.";
+        ? "PPB miasta jest obliczane z Populacji."
+        : "PPB wioski jest obliczane z Populacji, żyzności pola i palisady.";
 
-    private string Title => $"Name this {MapImprovement.DisplayName(ImprovementKind).ToLowerInvariant()}";
+    private string Title => $"Nazwij: {MapImprovement.DisplayName(ImprovementKind).ToLowerInvariant()}";
 
     protected override void OnParametersSet()
     {
@@ -91,7 +91,7 @@
         var trimmed = _name.Trim();
         if (string.IsNullOrWhiteSpace(trimmed))
         {
-            _snackBar.Add("Enter a name.", Severity.Warning);
+            _snackBar.Add("Wprowadź nazwę.", Severity.Warning);
             return;
         }
 

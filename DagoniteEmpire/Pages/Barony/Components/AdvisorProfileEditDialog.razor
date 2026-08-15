@@ -7,13 +7,13 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudSelect T="int"
-                       Label="Assigned person"
+                       Label="Przypisana osoba"
                        Value="_selectedAvailableId"
                        ValueChanged="OnAvailableChanged"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Class="baron-influence-field">
-                <MudSelectItem Value="0">Nobody</MudSelectItem>
+                <MudSelectItem Value="0">Nikt</MudSelectItem>
                 @foreach (var person in SelectableAvailableAdvisors)
                 {
                     <MudSelectItem Value="@person.Id">@person.Name</MudSelectItem>
@@ -28,7 +28,7 @@
             @if (AllowTitleEdit)
             {
                 <MudTextField @bind-Value="_title"
-                              Label="Office title"
+                              Label="Tytuł urzędu"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Class="baron-influence-field mt-2"
@@ -38,7 +38,7 @@
             {
                 <MudNumericField T="decimal"
                                  @bind-Value="_upkeepGold"
-                                 Label="Upkeep cost (gold / turn)"
+                                 Label="Koszt utrzymania (złoto / tura)"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Min="0"
@@ -47,8 +47,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -89,7 +89,7 @@
     {
         if (AllowTitleEdit && string.IsNullOrWhiteSpace(_title))
         {
-            _snackBar.Add("Office title is required.", Severity.Warning);
+            _snackBar.Add("Tytuł urzędu jest wymagany.", Severity.Warning);
             return;
         }
 

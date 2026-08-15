@@ -3,7 +3,7 @@
 @inject ISnackbar _snackBar
 @inject IDialogService _dialogService
 
-<BaronySection Title="Social Group Relations">
+<BaronySection Title="Relacje grup społecznych">
     <Summary>
         <PpbSummaryChips Vector="@Glance" />
     </Summary>
@@ -23,18 +23,18 @@
                 </colgroup>
                 <thead>
                     <tr>
-                        <th rowspan="2" class="ppb-row-label social-group-col-name">Group</th>
+                        <th rowspan="2" class="ppb-row-label social-group-col-name">Grupa</th>
                         <th rowspan="2" class="social-group-col-influence">
-                            <BaronyTooltip Text="Share of society">
-                                <span>Infl.</span>
+                            <BaronyTooltip Text="Udział w społeczeństwie">
+                                <span>Wpł.</span>
                             </BaronyTooltip>
                         </th>
                         <th rowspan="2" class="social-group-col-tax">
-                            <BaronyTooltip Text="Tax rate">
-                                <span>Tax</span>
+                            <BaronyTooltip Text="Stawka podatku">
+                                <span>Podatek</span>
                             </BaronyTooltip>
                         </th>
-                        <th rowspan="2" class="social-group-col-relation">Relation</th>
+                        <th rowspan="2" class="social-group-col-relation">Relacja</th>
                         @foreach (var info in PpbCatalog.All)
                         {
                             <th colspan="2">
@@ -62,7 +62,7 @@
                                     @if (CanManage)
                                     {
                                         <span class="city-building-name-actions">
-                                            <BaronyTooltip Text="Edit social group">
+                                            <BaronyTooltip Text="Edytuj grupę społeczną">
                                                 <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                                Size="Size.Small"
                                                                OnClick="@(() => EditGroupAsync(row))" />
@@ -86,7 +86,7 @@
                     }
 
                     <tr class="ppb-summary-row">
-                        <td class="ppb-row-label social-group-col-name">Σ section</td>
+                        <td class="ppb-row-label social-group-col-name">Σ sekcja</td>
                         <td class="social-group-col-influence"><b>@FmtPctValue(InfluenceSum)</b></td>
                         <td class="social-group-col-tax"></td>
                         <td class="social-group-col-relation"></td>
@@ -123,7 +123,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<SocialGroupRelationEditDialog>(
-            $"Edit {row.Group}",
+            $"Edytuj {row.Group}",
             parameters,
             new DialogOptions { MaxWidth = MaxWidth.False, FullWidth = false, CloseOnEscapeKey = true });
 
@@ -138,12 +138,12 @@
         try
         {
             await _baronyRepo.SaveSocialRelation(saved);
-            _snackBar.Add("Social group updated.", Severity.Success);
+            _snackBar.Add("Zaktualizowano grupę społeczną.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save social group: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać grupy społecznej: " + ex.Message, Severity.Error);
         }
     }
 
@@ -165,19 +165,19 @@
 
     private static string PpbShort(Ppb p) => p switch
     {
-        Ppb.Food => "Food",
-        Ppb.Economy => "Econ",
+        Ppb.Food => "Żyw",
+        Ppb.Economy => "Gosp",
         Ppb.Production => "Prod",
-        Ppb.Loyalty => "Loy",
+        Ppb.Loyalty => "Loj",
         Ppb.Stability => "Stab",
-        Ppb.Law => "Law",
-        Ppb.Corruption => "Corr",
-        Ppb.Science => "Sci",
-        Ppb.Magic => "Mag",
-        Ppb.Culture => "Cult",
-        Ppb.Intelligence => "Intel",
-        Ppb.Defense => "Def",
-        Ppb.Treasury => "Gold",
+        Ppb.Law => "Prawo",
+        Ppb.Corruption => "Korup",
+        Ppb.Science => "Nauka",
+        Ppb.Magic => "Magia",
+        Ppb.Culture => "Kult",
+        Ppb.Intelligence => "Wyw",
+        Ppb.Defense => "Obr",
+        Ppb.Treasury => "Złoto",
         _ => p.ToString(),
     };
 }

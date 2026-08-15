@@ -5,8 +5,8 @@
     <DialogContent>
         <div class="barony-dialog-theme">
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-            Named bonuses toward main skills. Only the summed value appears in the sheet;
-            source names show on hover and here.
+            Nazwane premie do głównych umiejętności. W karcie pojawia się tylko zsumowana wartość;
+            nazwy źródeł widoczne są po najechaniu i tutaj.
         </MudText>
 
         <div class="court-other-list">
@@ -16,13 +16,13 @@
                 var entry = _entries[index];
                 <div class="court-other-row">
                     <MudTextField @bind-Value="entry.Name"
-                                  Label="Source"
+                                  Label="Źródło"
                                   Variant="Variant.Outlined"
                                   Margin="Margin.Dense"
                                   Class="court-other-row__name" />
                     <MudSelect T="string"
                                @bind-Value="entry.SkillKey"
-                               Label="Skill"
+                               Label="Umiejętność"
                                Variant="Variant.Outlined"
                                Margin="Margin.Dense"
                                Dense="true"
@@ -34,12 +34,12 @@
                     </MudSelect>
                     <MudNumericField T="int"
                                      @bind-Value="entry.Value"
-                                     Label="Value"
+                                     Label="Wartość"
                                      Variant="Variant.Outlined"
                                      Margin="Margin.Dense"
                                      HideSpinButtons="false"
                                      Class="court-other-row__value" />
-                    <BaronyTooltip Text="Remove">
+                    <BaronyTooltip Text="Usuń">
                         <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                        Size="Size.Small"
                                        Color="Color.Error"
@@ -54,13 +54,13 @@
                    StartIcon="@Icons.Material.Filled.Add"
                    Class="mt-2"
                    OnClick="Add">
-            Add source
+            Dodaj źródło
         </MudButton>
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Variant="Variant.Filled" Class="baron-influence-save-btn" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Variant="Variant.Filled" Class="baron-influence-save-btn" OnClick="Save">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -108,12 +108,12 @@
         {
             if (string.IsNullOrWhiteSpace(entry.Name))
             {
-                _snackBar.Add("Each source needs a name.", Severity.Warning);
+                _snackBar.Add("Każde źródło wymaga nazwy.", Severity.Warning);
                 return;
             }
             if (CourtSkillCatalog.FindMain(entry.SkillKey) is null)
             {
-                _snackBar.Add("Pick a main skill for each source.", Severity.Warning);
+                _snackBar.Add("Wybierz główną umiejętność dla każdego źródła.", Severity.Warning);
                 return;
             }
         }

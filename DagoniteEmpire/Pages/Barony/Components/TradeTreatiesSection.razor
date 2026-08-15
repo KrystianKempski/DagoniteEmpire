@@ -2,28 +2,28 @@
 @inject ISnackbar _snackBar
 @inject NavigationManager _nav
 
-<BaronySection Title="Trade treaties" DefaultOpen="true">
+<BaronySection Title="Traktaty handlowe" DefaultOpen="true">
     <Summary>
         <span class="projects-summary">
-            <span class="projects-summary__item">@Treaties.Count treaty@(Treaties.Count == 1 ? "" : "ies")</span>
+            <span class="projects-summary__item">@Treaties.Count @(Treaties.Count == 1 ? "traktat" : "traktaty")</span>
             @if (_pendingCount > 0)
             {
-                <span class="projects-summary__item trade-treaty-pending-summary">@_pendingCount pending MG approval</span>
+                <span class="projects-summary__item trade-treaty-pending-summary">@_pendingCount oczekuje na zatwierdzenie MG</span>
             }
             @if (_customsPerTurn > 0m)
             {
-                <span class="projects-summary__item">@_customsPerTurn.ToString("0.##") gold / turn customs</span>
+                <span class="projects-summary__item">@_customsPerTurn.ToString("0.##") złota / turę cła</span>
             }
             @if (_sweetenerPerTurn != 0m)
             {
                 <span class="projects-summary__item">
                     @if (_sweetenerPerTurn > 0m)
                     {
-                        <text>@_sweetenerPerTurn.ToString("0.##") gold / turn sweeteners paid</text>
+                        <text>@_sweetenerPerTurn.ToString("0.##") złota / turę zapłaconych zachęt</text>
                     }
                     else
                     {
-                        <text>@((-_sweetenerPerTurn).ToString("0.##")) gold / turn from sweeteners</text>
+                        <text>@((-_sweetenerPerTurn).ToString("0.##")) złota / turę z zachęt</text>
                     }
                 </span>
             }
@@ -35,10 +35,10 @@
     </Summary>
     <ChildContent>
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3 d-block">
-            Treaties are designed on the March map.
+            Traktaty projektuje się na mapie marchii.
             @if (!CanManageAsMg)
             {
-                <text> New and edited treaties require MG approval before trade bonuses and goods apply.</text>
+                <text> Nowe i edytowane traktaty wymagają zatwierdzenia MG, zanim zaczną obowiązywać premie handlowe i towary.</text>
             }
         </MudText>
 
@@ -48,7 +48,7 @@
                 <MudButton Variant="Variant.Outlined"
                            StartIcon="@Icons.Material.Filled.Add"
                            OnClick="CreateAsync">
-                    New trade treaty
+                    Nowy traktat handlowy
                 </MudButton>
             </div>
         }
@@ -56,10 +56,10 @@
         @if (Treaties.Count == 0)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                No trade treaties yet.
+                Brak traktatów handlowych.
                 @if (CanEdit)
                 {
-                    <text> Design a route on the March map to open shared goods and route bonuses.</text>
+                    <text> Zaprojektuj trasę na mapie marchii, aby otworzyć wspólne towary i premie trasy.</text>
                 }
             </MudText>
         }
@@ -72,7 +72,7 @@
                     var title = !string.IsNullOrWhiteSpace(treaty.Title)
                         ? treaty.Title
                         : lord is not null
-                            ? $"Treaty with {lord.Name} {lord.House}"
+                            ? $"Traktat z {lord.Name} {lord.House}"
                             : treaty.CounterpartyLordKey;
                     var pending = TradeTreatyApproval.IsPending(treaty);
                     var received = TradeTreatyCalculator.BaronyReceivedGoods(new[] { treaty });
@@ -85,7 +85,7 @@
                                 <MudText Typo="Typo.subtitle1">@title</MudText>
                                 @if (pending)
                                 {
-                                    <MudChip T="string" Size="Size.Small" Class="trade-treaty-pending-chip">Awaiting MG approval</MudChip>
+                                    <MudChip T="string" Size="Size.Small" Class="trade-treaty-pending-chip">Oczekuje na zatwierdzenie MG</MudChip>
                                 }
                             </div>
                             <div class="d-flex gap-2 flex-wrap">
@@ -95,42 +95,42 @@
                                                Variant="Variant.Filled"
                                                Class="baron-influence-save-btn"
                                                OnClick="() => ApproveAsync(treaty)">
-                                        Approve
+                                        Zatwierdź
                                     </MudButton>
                                 }
                                 @if (CanEdit)
                                 {
-                                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => EditAsync(treaty)">Edit route</MudButton>
-                                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteAsync(treaty)">Delete</MudButton>
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => EditAsync(treaty)">Edytuj trasę</MudButton>
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteAsync(treaty)">Usuń</MudButton>
                                 }
                             </div>
                         </div>
                         @if (lord is not null)
                         {
                             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                                @lord.Title · @lord.Holdings · Wealth @lord.Wealth
+                                @lord.Title · @lord.Holdings · Bogactwo @lord.Wealth
                             </MudText>
                         }
                         <MudText Typo="Typo.body2" Class="mt-2">
-                            <strong>Route economy:</strong>
+                            <strong>Gospodarka trasy:</strong>
                             @if (pending)
                             {
-                                <text> +@TradeTreatyCalculator.RouteEconomyBonus(treaty).ToString("0.##") after approval</text>
+                                <text> +@TradeTreatyCalculator.RouteEconomyBonus(treaty).ToString("0.##") po zatwierdzeniu</text>
                             }
                             else
                             {
                                 <text> +@TradeTreatyCalculator.RouteEconomyBonus(treaty).ToString("0.##")</text>
                             }
-                            <span style="color:var(--barony-muted);"> (each seat on the route: Wealth − 2)</span>
+                            <span style="color:var(--barony-muted);"> (każda siedziba na trasie: Bogactwo − 2)</span>
                         </MudText>
                         @if (previewReceived.Count > 0)
                         {
                             <MudText Typo="Typo.body2" Class="mt-1">
-                                <strong>Goods received:</strong>
+                                <strong>Otrzymane towary:</strong>
                                 @string.Join(", ", previewReceived.Select(g => g.Name))
                                 @if (pending)
                                 {
-                                    <span style="color:var(--barony-muted);"> (after approval)</span>
+                                    <span style="color:var(--barony-muted);"> (po zatwierdzeniu)</span>
                                 }
                             </MudText>
                         }
@@ -143,7 +143,7 @@
                                 </MudText>
                                 @if (!paragraph.IsDestination)
                                 {
-                                    <MudText Typo="Typo.body2">Customs: @paragraph.CustomsGoldPerTurn.ToString("0.##") gold/turn</MudText>
+                                    <MudText Typo="Typo.body2">Cło: @paragraph.CustomsGoldPerTurn.ToString("0.##") złota/turę</MudText>
                                 }
                                 @if (TradeTreatyParagraphLabels.SweetenerLabel(paragraph) is { } sweetener)
                                 {
@@ -151,11 +151,11 @@
                                 }
                                 @if (paragraph.BaronyGrantsGoodKeys.Count > 0)
                                 {
-                                    <MudText Typo="Typo.body2">Barony grants to @(addressee?.Name ?? "lord"): @FormatGoods(paragraph.BaronyGrantsGoodKeys)</MudText>
+                                    <MudText Typo="Typo.body2">Baronia przekazuje dla @(addressee?.Name ?? "lorda"): @FormatGoods(paragraph.BaronyGrantsGoodKeys)</MudText>
                                 }
                                 @if (paragraph.CounterpartyGrantsGoodKeys.Count > 0)
                                 {
-                                    <MudText Typo="Typo.body2">@(addressee?.Name ?? "Lord") grants: @FormatGoods(paragraph.CounterpartyGrantsGoodKeys)</MudText>
+                                    <MudText Typo="Typo.body2">@(addressee?.Name ?? "Lord") przekazuje: @FormatGoods(paragraph.CounterpartyGrantsGoodKeys)</MudText>
                                 }
                             </div>
                         }
@@ -226,13 +226,13 @@
 
         list[idx].IsApproved = true;
         await TreatiesChanged.InvokeAsync(list);
-        _snackBar.Add("Trade treaty approved.", Severity.Success);
+        _snackBar.Add("Traktat handlowy zatwierdzony.", Severity.Success);
     }
 
     private async Task DeleteAsync(BaronyTradeTreaty treaty)
     {
         var list = Treaties.Where(t => !string.Equals(t.Id, treaty.Id, StringComparison.OrdinalIgnoreCase)).ToList();
         await TreatiesChanged.InvokeAsync(list);
-        _snackBar.Add("Trade treaty removed.", Severity.Info);
+        _snackBar.Add("Traktat handlowy usunięty.", Severity.Info);
     }
 }

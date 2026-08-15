@@ -14,7 +14,7 @@
     </colgroup>
     <thead>
         <tr>
-            <th class="ppb-row-label source-col">Source</th>
+            <th class="ppb-row-label source-col">Źródło</th>
             @foreach (var info in SkillColumns)
             {
                 var inactive = IsColumnInactive(info.Key);
@@ -26,7 +26,7 @@
             }
             @if (ShowCost)
             {
-                <th class="office-cost-col">Cost</th>
+                <th class="office-cost-col">Koszt</th>
             }
         </tr>
     </thead>
@@ -38,7 +38,7 @@
                     <div class="source-cell">
                         @if (!string.IsNullOrWhiteSpace(row.Description))
                         {
-                            <BaronyTooltip Title="Description" Text="@row.Description">
+                            <BaronyTooltip Title="Opis" Text="@row.Description">
                                 <span class="source-cell__name">@row.Source</span>
                             </BaronyTooltip>
                         }
@@ -109,7 +109,7 @@
     [Parameter] public IEnumerable<AdvisorInfluenceRow> Rows { get; set; } = Array.Empty<AdvisorInfluenceRow>();
     [Parameter] public PpbVector? Summary { get; set; }
     [Parameter] public decimal SummaryCost { get; set; }
-    [Parameter] public string SummaryLabel { get; set; } = "Σ total";
+    [Parameter] public string SummaryLabel { get; set; } = "Σ suma";
     [Parameter] public IReadOnlySet<Ppb>? SignificantSkills { get; set; }
     [Parameter] public bool CanEdit { get; set; }
     [Parameter] public bool CanEditOther { get; set; }
@@ -164,7 +164,7 @@
         => inactive ? "ppb-col-inactive" : string.Empty;
 
     private static string? HeaderTitle(PpbInfo info, bool inactive)
-        => inactive ? "Not significant for this office" : info.NameEn;
+        => inactive ? "Nieistotne dla tego urzędu" : info.NameEn;
 
     private static string CostClass(decimal cost)
         => cost > 0m ? "ppb-cell-neg" : "ppb-cell-zero";

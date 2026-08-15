@@ -5,7 +5,7 @@
         <div class="project-card__title-row" @onclick="Toggle" role="button" aria-expanded="@_isOpen">
             @if (HasNotes)
             {
-                <BaronyTooltip Title="Notes" Text="@NotesTooltip">
+                <BaronyTooltip Title="Notatki" Text="@NotesTooltip">
                     <h3 class="project-card__title">@Project.Name</h3>
                 </BaronyTooltip>
             }
@@ -30,7 +30,7 @@
             {
                 @if (HasNotes)
                 {
-                    <BaronyTooltip Title="Notes" Text="@NotesTooltip">
+                    <BaronyTooltip Title="Notatki" Text="@NotesTooltip">
                         <p class="project-card__description">@Project.Description</p>
                     </BaronyTooltip>
                 }
@@ -43,7 +43,7 @@
             <div class="project-card__progress">
                 <div class="project-card__progress-bar" style="width:@($"{Project.AllocationPercent}%")"></div>
                 <span class="project-card__progress-label">
-                    @Project.AllocationPercent% funded · @CostModeShort(Project.EffectiveCostMode)
+                    @Project.AllocationPercent% sfinansowano · @CostModeShort(Project.EffectiveCostMode)
                 </span>
             </div>
 
@@ -55,7 +55,7 @@
                                Class="baron-influence-save-btn"
                                StartIcon="@Icons.Material.Filled.Savings"
                                OnClick="OnAllocate">
-                        Allocate resources
+                        Przydziel zasoby
                     </MudButton>
                 }
                 @if (CanEdit && Project.CanClearAllocation)
@@ -64,17 +64,17 @@
                                Size="Size.Small"
                                StartIcon="@Icons.Material.Filled.Undo"
                                OnClick="OnClearAllocation">
-                        Clear allocation
+                        Wyczyść przydział
                     </MudButton>
                 }
                 @if (CanManage)
                 {
-                    <BaronyTooltip Text="Edit project">
+                    <BaronyTooltip Text="Edytuj projekt">
                         <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                        Size="Size.Small"
                                        OnClick="OnEdit" />
                     </BaronyTooltip>
-                    <BaronyTooltip Text="Remove project">
+                    <BaronyTooltip Text="Usuń projekt">
                         <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                        Size="Size.Small"
                                        Color="Color.Error"
@@ -90,17 +90,17 @@
     <div class="project-card__panels">
         <section class="project-card__panel project-card__panel--cost">
             <div class="project-card__panel-head">
-                <h4 class="project-card__panel-title">Cost</h4>
+                <h4 class="project-card__panel-title">Koszt</h4>
                 @if (_selectableModes.Count > 1)
                 {
-                    <div class="project-cost-mode-switch" role="group" aria-label="Payment method">
+                    <div class="project-cost-mode-switch" role="group" aria-label="Metoda płatności">
                         @foreach (var mode in _selectableModes)
                         {
                             var isActive = Project.EffectiveCostMode == mode;
                             var isLocked = !isActive && (!CanEdit || !Project.CanSwitchCostMode);
                             @if (isLocked)
                             {
-                                <BaronyTooltip Text="Locked after first allocation">
+                                <BaronyTooltip Text="Zablokowane po pierwszym przydziale">
                                     <button type="button"
                                             class="project-cost-mode-switch__btn"
                                             disabled="true"
@@ -128,7 +128,7 @@
             @if (_costRows.Count == 0)
             {
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                    No cost defined for @CostModeShort(Project.EffectiveCostMode).
+                    Brak zdefiniowanego kosztu dla @CostModeShort(Project.EffectiveCostMode).
                 </MudText>
             }
             else
@@ -143,10 +143,10 @@
                         </colgroup>
                         <thead>
                             <tr>
-                                <th class="resource-col-name">Resource</th>
-                                <th>Required</th>
-                                <th>Allocated</th>
-                                <th>Remaining</th>
+                                <th class="resource-col-name">Zasób</th>
+                                <th>Wymagane</th>
+                                <th>Przydzielone</th>
+                                <th>Pozostało</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -166,16 +166,16 @@
         </section>
 
         <section class="project-card__panel project-card__panel--output">
-            <h4 class="project-card__panel-title">Expected Output</h4>
+            <h4 class="project-card__panel-title">Oczekiwany wynik</h4>
             @if (HideResult)
             {
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                    Result hidden until the project is completed.
+                    Wynik ukryty do czasu ukończenia projektu.
                 </MudText>
             }
             else if (!HasOutput)
             {
-                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">No PPB output defined.</MudText>
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">Brak zdefiniowanego wyniku PPB.</MudText>
             }
             else
             {
@@ -282,7 +282,7 @@
     private static string CostModeShort(string mode) => mode switch
     {
         ProjectCostMode.GoldProduction => "Gold & Prod",
-        ProjectCostMode.Materials => "Materials",
+        ProjectCostMode.Materials => "Materiały",
         ProjectCostMode.Combined => "Gold+Prod+Def",
         _ => mode,
     };
@@ -310,19 +310,19 @@
 
     private string TurnsLabel => Project.Status == ProjectStatus.Draft
         || ProjectStatus.IsResourceAllocation(Project.Status)
-        ? $"{Project.TurnsRemaining} turn{(Project.TurnsRemaining == 1 ? "" : "s")} to complete (clock starts after full funding)"
-        : $"{Project.TurnsRemaining} turn{(Project.TurnsRemaining == 1 ? "" : "s")} left";
+        ? $"{Project.TurnsRemaining} tur do ukończenia (zegar startuje po pełnym sfinansowaniu)"
+        : $"{Project.TurnsRemaining} tur pozostało";
 
     private static string OutputLabel(string kind) =>
         ProjectOutputKind.All.Contains(kind) ? kind : kind;
 
     private static string StatusLabel(string status) => status switch
     {
-        ProjectStatus.Draft => "Draft",
-        ProjectStatus.ResourceAllocation => "Resource allocation",
-        ProjectStatus.InProgress => "In progress",
-        ProjectStatus.Completed => "Completed",
-        ProjectStatus.Cancelled => "Cancelled",
+        ProjectStatus.Draft => "Szkic",
+        ProjectStatus.ResourceAllocation => "Alokacja zasobów",
+        ProjectStatus.InProgress => "W toku",
+        ProjectStatus.Completed => "Ukończono",
+        ProjectStatus.Cancelled => "Anulowano",
         _ => status,
     };
 

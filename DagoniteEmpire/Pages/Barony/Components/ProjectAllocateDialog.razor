@@ -7,19 +7,19 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog project-allocate-dialog">
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);" Class="mb-3">
-                Transfer resources from your barony stocks into <strong>@Project.Name</strong>.
-                Payment method: <strong>@CostModeLabel(Project.EffectiveCostMode)</strong>.
+                Przenieś zasoby z zapasów baronii do <strong>@Project.Name</strong>.
+                Metoda płatności: <strong>@CostModeLabel(Project.EffectiveCostMode)</strong>.
                 @if (Project.IsCombinedCost)
                 {
-                    <text> Gold, Production and Materials (e.g. Defense) are all required — fund every row.</text>
+                    <text> Złoto, Produkcja i Materiały (np. Obrona) są wszystkie wymagane — opłać każdy wiersz.</text>
                 }
-                Allocated resources leave your current stocks immediately.
+                Przydzielone zasoby natychmiast opuszczają bieżące zapasy.
             </MudText>
 
             @if (_rows.Count == 0)
             {
                 <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                    This project has no remaining resource costs.
+                    Ten projekt nie ma pozostałych kosztów zasobów.
                 </MudText>
             }
             else
@@ -28,12 +28,12 @@
                     <table class="ppb-table ppb-table--resources ppb-table--project-allocate ppb-table--lined">
                         <thead>
                             <tr>
-                                <th class="resource-col-name">Resource</th>
-                                <th>Required</th>
-                                <th>Allocated</th>
-                                <th>Remaining</th>
-                                <th>In stock</th>
-                                <th>Add now</th>
+                                <th class="resource-col-name">Zasób</th>
+                                <th>Wymagane</th>
+                                <th>Przydzielone</th>
+                                <th>Pozostało</th>
+                                <th>W magazynie</th>
+                                <th>Dodaj teraz</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -63,7 +63,7 @@
                                                        Size="Size.Small"
                                                        Class="project-allocate-dialog__fill"
                                                        OnClick="@(() => FillRow(row.Key))">
-                                                Max
+                                                Maks
                                             </MudButton>
                                         }
                                     </td>
@@ -77,24 +77,24 @@
                     <MudButton Variant="Variant.Text"
                                Size="Size.Small"
                                OnClick="FillAll">
-                        Fill all (up to stock &amp; remaining)
+                        Wypełnij wszystko (do zapasu i pozostałej ilości)
                     </MudButton>
                     <MudButton Variant="Variant.Text"
                                Size="Size.Small"
                                OnClick="ClearAll">
-                        Clear
+                        Wyczyść
                     </MudButton>
                 </div>
             }
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
         <MudButton Class="baron-influence-save-btn"
                    Variant="Variant.Filled"
                    Disabled="@(_rows.Count == 0)"
                    OnClick="Save">
-            Allocate
+            Przydziel
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -134,9 +134,9 @@
 
     private static string CostModeLabel(string mode) => mode switch
     {
-        ProjectCostMode.GoldProduction => "Gold & Production",
-        ProjectCostMode.Materials => "Materials",
-        ProjectCostMode.Combined => "Combined (Gold, Production & Materials)",
+        ProjectCostMode.GoldProduction => "Złoto i Produkcja",
+        ProjectCostMode.Materials => "Materiały",
+        ProjectCostMode.Combined => "Łączone (Złoto, Produkcja i Materiały)",
         _ => mode,
     };
 
@@ -191,7 +191,7 @@
                 continue;
             if (add > row.MaxAdd)
             {
-                _snackBar.Add($"Amount for {row.Name} exceeds available stock or remaining cost.", Severity.Warning);
+                _snackBar.Add($"Ilość dla {row.Name} przekracza dostępny zapas lub pozostały koszt.", Severity.Warning);
                 return;
             }
             amounts[row.Key] = add;
@@ -200,7 +200,7 @@
 
         if (!any)
         {
-            _snackBar.Add("Enter at least one resource amount.", Severity.Warning);
+            _snackBar.Add("Wprowadź co najmniej jedną ilość zasobu.", Severity.Warning);
             return;
         }
 

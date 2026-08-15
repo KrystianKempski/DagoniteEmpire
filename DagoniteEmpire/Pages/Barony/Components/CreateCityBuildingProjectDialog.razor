@@ -7,8 +7,8 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog project-edit-dialog">
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                City building project — when finished, adds this building to Domain Panel (City and Buildings).
-                Paid with Gold &amp; Production only.
+                Projekt budynku miejskiego — po ukończeniu dodaje ten budynek do Panelu Domeny (Miasto i Budynki).
+                Opłacany wyłącznie Złotem i Produkcją.
             </MudText>
 
             <MudText Typo="Typo.subtitle2" Class="mb-1">@Template.Name</MudText>
@@ -20,28 +20,28 @@
             }
 
             <MudTextField @bind-Value="_name"
-                          Label="Project name"
+                          Label="Nazwa projektu"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Required="true"
                           Class="baron-influence-field" />
 
-            <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Cost (forced)</MudText>
+            <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Koszt (wymuszony)</MudText>
             <div class="terrain-build-project-cost">
-                <span>Gold: <b>@Fmt(Template.GoldCost)</b></span>
-                <span>Production: <b>@Fmt(Template.ProductionCost)</b></span>
+                <span>Złoto: <b>@Fmt(Template.GoldCost)</b></span>
+                <span>Produkcja: <b>@Fmt(Template.ProductionCost)</b></span>
             </div>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-1">
-                Output type: @ProjectOutputKind.Building · Payment: Gold &amp; Production only
+                Typ wyniku: @ProjectOutputKind.Building · Płatność: tylko Złoto i Produkcja
             </MudText>
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Close</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Zamknij</MudButton>
         <MudButton Class="baron-influence-save-btn"
                    Variant="Variant.Filled"
                    OnClick="MakeProject">
-            Make project
+            Utwórz projekt
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -56,7 +56,7 @@
 
     protected override void OnInitialized()
     {
-        _name = $"Build {Template.Name}";
+        _name = $"Budowa {Template.Name}";
     }
 
     private void Cancel() => MudDialog.Cancel();
@@ -65,13 +65,13 @@
     {
         if (Template.Id <= 0)
         {
-            _snackBar.Add("Invalid building template.", Severity.Warning);
+            _snackBar.Add("Nieprawidłowy szablon budynku.", Severity.Warning);
             return;
         }
 
         if (string.IsNullOrWhiteSpace(_name))
         {
-            _snackBar.Add("Project name is required.", Severity.Warning);
+            _snackBar.Add("Nazwa projektu jest wymagana.", Severity.Warning);
             return;
         }
 
@@ -91,7 +91,7 @@
             CostMaterials = new(),
             ResultAdditive = Template.EffectAdditive.Clone(),
             ResultPercent = Template.EffectPercent.Clone(),
-            ResultDescription = $"Construct {Template.Name} in the city.",
+            ResultDescription = $"Budowa {Template.Name} w mieście.",
             Status = ProjectStatus.ResourceAllocation,
             BuildingTemplateId = Template.Id,
         };

@@ -21,7 +21,7 @@
                 <div class="march-map-media" @ref="_mediaRef">
                 <img class="march-map-image"
                      src="@Document.ImageUrl"
-                     alt="Eastern March map"
+                     alt="Mapa Wschodniej Marchii"
                      draggable="false"
                      @onerror="OnImageError" />
                 <svg class="march-map-overlay"
@@ -154,7 +154,7 @@
                                                    width="@Fmt(lockCss)"
                                                    height="@Fmt(lockCss)"
                                                    class="march-map-marker__lock-fo">
-                                        <BaronyTooltip Text="Trade blocked — no trade routes with this barony">
+                                        <BaronyTooltip Text="Handel zablokowany — brak szlaków handlowych z tą baronią">
                                             <div class="march-map-marker__lock" xmlns="http://www.w3.org/1999/xhtml">
                                                 <MudIcon Icon="@Icons.Material.Filled.Lock"
                                                          Class="march-map-marker__lock-icon" />
@@ -177,7 +177,7 @@
     {
         <div class="march-map-missing-image">
             <MudAlert Severity="Severity.Info" Dense="true">
-                Map image not found at <code>@Document.ImageUrl</code>.
+                Nie znaleziono obrazu mapy pod <code>@Document.ImageUrl</code>.
             </MudAlert>
         </div>
     }
@@ -192,17 +192,17 @@
             @if (linked is not null)
             {
                 <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
-                    @linked.Name @linked.House · @linked.Title · Wealth @linked.Wealth
+                    @linked.Name @linked.House · @linked.Title · Zamożność @linked.Wealth
                 </MudText>
             }
             <MudTextField @bind-Value="_selectedNode.Label"
-                          Label="Name"
+                          Label="Nazwa"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="mb-2"
                           @bind-Value:after="OnNodeLabelChangedAsync" />
             <MudSelect T="string"
-                       Label="Place type"
+                       Label="Typ miejsca"
                        Value="@MarchMapNodeKind.Normalize(_selectedNode.Kind)"
                        ValueChanged="OnPlaceKindChanged"
                        Variant="Variant.Outlined"
@@ -214,14 +214,14 @@
                 }
             </MudSelect>
             <MudSelect T="string"
-                       Label="Linked lord"
+                       Label="Powiązany lord"
                        Value="_selectedNode.LordKey ?? string.Empty"
                        ValueChanged="OnLordKeyChanged"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Class="mb-2"
                        Clearable="true">
-                <MudSelectItem Value="@string.Empty">Auto (from place name)</MudSelectItem>
+                <MudSelectItem Value="@string.Empty">Auto (z nazwy miejsca)</MudSelectItem>
                 @foreach (var lord in KnownLordsCatalog.EasternMarch.OrderBy(l => l.Name))
                 {
                     <MudSelectItem Value="@KnownLordsCatalog.LordKey(lord)">@KnownLordsCatalog.DisplayName(lord)</MudSelectItem>
@@ -230,14 +230,14 @@
             @if (CanManageTrade)
             {
                 <MudNumericField T="decimal?"
-                                 Label="Default toll (gold/turn)"
+                                 Label="Domyślne cło (złoto/tura)"
                                  Value="_selectedNode.DefaultCustomsGoldPerTurn"
                                  ValueChanged="OnDefaultCustomsChanged"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Min="0"
                                  Class="mb-2"
-                                 HelperText="@($"Empty = {MarchMapTradePathfinder.DefaultCustomsGoldPerTurn:0}")" />
+                                 HelperText="@($"Puste = {MarchMapTradePathfinder.DefaultCustomsGoldPerTurn:0}")" />
                 @if (!string.IsNullOrWhiteSpace(_selectedNode.LordKey) &&
                      !PlayerBaronyMarchSeats.IsPlayerSeat(_selectedNode, PlayerSeatNodeId))
                 {
@@ -245,11 +245,11 @@
                                Value="@IsBlocked(_selectedNode)"
                                ValueChanged="OnBlockedToggled"
                                Color="Color.Warning"
-                               Label="Block trade with this barony"
+                               Label="Zablokuj handel z tą baronią"
                                Class="mb-2" />
                 }
             }
-            <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text" OnClick="DeleteSelectedNode">Remove place</MudButton>
+            <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text" OnClick="DeleteSelectedNode">Usuń miejsce</MudButton>
         </div>
     }
 
@@ -263,18 +263,18 @@
             @if (mgLord is not null)
             {
                 <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
-                    @mgLord.Name @mgLord.House · Wealth @mgLord.Wealth
+                    @mgLord.Name @mgLord.House · Zamożność @mgLord.Wealth
                 </MudText>
             }
             <MudNumericField T="decimal?"
-                             Label="Default toll (gold/turn)"
+                             Label="Domyślne cło (złoto/tura)"
                              Value="_selectedNode.DefaultCustomsGoldPerTurn"
                              ValueChanged="OnDefaultCustomsChanged"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="0"
                              Class="mb-2"
-                             HelperText="@($"Empty = {MarchMapTradePathfinder.DefaultCustomsGoldPerTurn:0}")" />
+                             HelperText="@($"Puste = {MarchMapTradePathfinder.DefaultCustomsGoldPerTurn:0}")" />
             @if (!string.IsNullOrWhiteSpace(_selectedNode.LordKey) &&
                  !PlayerBaronyMarchSeats.IsPlayerSeat(_selectedNode, PlayerSeatNodeId))
             {
@@ -282,7 +282,7 @@
                            Value="@IsBlocked(_selectedNode)"
                            ValueChanged="OnBlockedToggled"
                            Color="Color.Warning"
-                           Label="Block trade with this barony" />
+                           Label="Zablokuj handel z tą baronią" />
             }
         </div>
     }
@@ -290,19 +290,19 @@
     @if (CanEdit && _selectedRoute is not null)
     {
         <div class="march-map-inspector barony-panel">
-            <MudText Typo="Typo.subtitle2" Class="mb-2">Trade link</MudText>
+            <MudText Typo="Typo.subtitle2" Class="mb-2">Połączenie handlowe</MudText>
             <MudText Typo="Typo.body2" Class="mb-3">@RouteLabel(_selectedRoute)</MudText>
-            <MudText Typo="Typo.caption" Class="mb-1">Route type</MudText>
+            <MudText Typo="Typo.caption" Class="mb-1">Typ trasy</MudText>
             <MudButtonGroup Variant="Variant.Outlined" Class="mb-3 march-map-route-type-buttons march-map-link-kind-group">
                 <MudButton Class="@RouteTypeButtonClass(MarchRouteKind.Road)"
-                           OnClick="() => SetRouteKind(MarchRouteKind.Road)">Road</MudButton>
+                           OnClick="() => SetRouteKind(MarchRouteKind.Road)">Droga</MudButton>
                 <MudButton Class="@RouteTypeButtonClass(MarchRouteKind.River)"
-                           OnClick="() => SetRouteKind(MarchRouteKind.River)">River</MudButton>
+                           OnClick="() => SetRouteKind(MarchRouteKind.River)">Rzeka</MudButton>
             </MudButtonGroup>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                Tip: use <strong>Edit links</strong> and click a line, or pick type before <strong>Connect</strong>.
+                Wskazówka: użyj opcji <strong>Edytuj połączenia</strong> i kliknij linię lub wybierz typ przed <strong>Połącz</strong>.
             </MudText>
-            <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text" Class="mt-2" OnClick="DeleteSelectedRoute">Remove link</MudButton>
+            <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text" Class="mt-2" OnClick="DeleteSelectedRoute">Usuń połączenie</MudButton>
         </div>
     }
 </div>
@@ -489,7 +489,7 @@
         var node = new MarchMapNode
         {
             Id = Guid.NewGuid().ToString("N"),
-            Label = "New place",
+            Label = "Nowe miejsce",
             Kind = MarchMapNodeKind.Normalize(NewPlaceKind),
             X = coords.X,
             Y = coords.Y,

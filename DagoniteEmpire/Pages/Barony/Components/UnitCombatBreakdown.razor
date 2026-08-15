@@ -3,49 +3,49 @@
 
 @* Excel-style combat breakdown: full block titles, short column labels. *@
 <div class="unit-combat-break">
-    @Block("Attack",
-        $"Skill ({AttackSkillName}) + weapon attack (± quality) + commander + other + casualty loss.",
+    @Block("Atak",
+        $"Umiejętność ({AttackSkillName}) + atak broni (± jakość) + dowódca + inne + straty.",
         UnitCombatStatKey.Attack,
         Combat.LossAttack,
-        ("Skl", "Skill", Combat.AttackSkill, "Weapon-type skill total"),
-        ("Gear", "Gear", Combat.WeaponAttackBonus, "Weapon attack including quality"),
-        ("Cmd", "Commander", Combat.CommanderAttack, "Commander bonus"),
+        ("Skl", "Umiejętność", Combat.AttackSkill, "Suma umiejętności typu broni"),
+        ("Gear", "Sprzęt", Combat.WeaponAttackBonus, "Atak broni wraz z jakością"),
+        ("Cmd", "Dowódca", Combat.CommanderAttack, "Premia dowódcy"),
         Combat.Attack)
 
-    @Block("Defense",
-        $"Highest eligible defense skill ({DefenseSkillName}): Dodges always; Shields only with a shield; Armor only with armor. Plus gear defense + commander + other + casualty loss.",
+    @Block("Obrona",
+        $"Najwyższa kwalifikująca się umiejętność obrony ({DefenseSkillName}): Uniki zawsze; Tarcze tylko z tarczą; Pancerz tylko z pancerzem. Plus obrona sprzętu + dowódca + inne + straty.",
         UnitCombatStatKey.Defense,
         Combat.LossDefense,
-        ("Skl", "Skill", Combat.DefenseSkill, $"Highest eligible defense skill ({DefenseSkillName})"),
-        ("Gear", "Gear", Combat.WeaponDefenseBonus, "Weapon + armor + shield defense"),
-        ("Cmd", "Commander", Combat.CommanderDefense, "Commander bonus"),
+        ("Skl", "Umiejętność", Combat.DefenseSkill, $"Najwyższa kwalifikująca się umiejętność obrony ({DefenseSkillName})"),
+        ("Gear", "Sprzęt", Combat.WeaponDefenseBonus, "Obrona broni + pancerza + tarczy"),
+        ("Cmd", "Dowódca", Combat.CommanderDefense, "Premia dowódcy"),
         Combat.Defense)
 
-    @Block("Damage",
-        $"Weapon damage (± quality) + {UnitAttr.Label(Combat.DamageAttrKey ?? UnitAttr.Build)} (from primary weapon skill) + other.",
+    @Block("Obrażenia",
+        $"Obrażenia broni (± jakość) + {UnitAttr.Label(Combat.DamageAttrKey ?? UnitAttr.Build)} (z głównej umiejętności broni) + inne.",
         UnitCombatStatKey.Damage,
         lossValue: null,
         (UnitAttr.Letter(Combat.DamageAttrKey ?? UnitAttr.Build),
             UnitAttr.Label(Combat.DamageAttrKey ?? UnitAttr.Build),
             Combat.AttrDamageBonus,
-            $"{UnitAttr.Label(Combat.DamageAttrKey ?? UnitAttr.Build)} linked to the equipped weapon's skill"),
-        ("Gear", "Gear", Combat.WeaponDamageBonus, "Weapon damage including quality"),
+            $"{UnitAttr.Label(Combat.DamageAttrKey ?? UnitAttr.Build)} powiązane z umiejętnością wyposażonej broni"),
+        ("Gear", "Sprzęt", Combat.WeaponDamageBonus, "Obrażenia broni wraz z jakością"),
         Combat.Damage)
 
-    @Block("Move",
-        "Race move + floor(Run/3) + gear move penalties + other.",
+    @Block("Ruch",
+        "Ruch rasy + floor(Run/3) + kary do ruchu od sprzętu + inne.",
         UnitCombatStatKey.Move,
         lossValue: null,
-        ("Race", "Race", Combat.RaceMove, RaceMoveTip),
-        ("Run", "Run", Combat.RunMove, "floor(Run / 3)"),
-        ("Gear", "Gear", Combat.EquipmentMovePenalty, "Weapon/armor/shield move penalties"),
+        ("Race", "Rasa", Combat.RaceMove, RaceMoveTip),
+        ("Run", "Bieg", Combat.RunMove, "floor(Run / 3)"),
+        ("Gear", "Sprzęt", Combat.EquipmentMovePenalty, "Kary do ruchu od broni/pancerza/tarczy"),
         Combat.Move)
 
-    @Block("Armor",
-        "Armor value from body armor only (shields do not add Armor). Reduces incoming damage.",
+    @Block("Pancerz",
+        "Wartość pancerza tylko ze zbroi (tarcze nie dodają Pancerza). Redukuje otrzymywane obrażenia.",
         UnitCombatStatKey.Armor,
         lossValue: null,
-        ("Gear", "Gear", Combat.ArmorFromGear, "Body armor Armor value"),
+        ("Gear", "Sprzęt", Combat.ArmorFromGear, "Wartość pancerza ze zbroi"),
         Combat.Armor)
 
     @HpBlock()
@@ -69,7 +69,7 @@
         get
         {
             var race = UnitRaceCatalog.Find(Unit?.RaceKey);
-            return $"{race.Name}: Move +{race.MoveBonus}.";
+            return $"{race.Name}: Ruch +{race.MoveBonus}.";
         }
     }
 
@@ -82,7 +82,7 @@
     {
         var lines = UnitCombatOtherFormulas.TooltipLines(UnitCombatOtherFormulas.Get(Unit?.CombatOther, statKey));
         return CanEditOther
-            ? $"{tipTitle}\n\n{lines}\n\nClick to edit sources."
+            ? $"{tipTitle}\n\n{lines}\n\nKliknij, aby edytować źródła."
             : $"{tipTitle}\n\n{lines}";
     }
 
@@ -169,19 +169,19 @@
         var baseHp = Combat.MaxHp - Combat.OtherHp - Combat.LossHp;
         var cur = CurrentHp ?? Combat.MaxHp;
         <div class="unit-combat-break__block">
-            <BaronyTooltip Title="Hit points"
-                           Text="Maximum = Build×2 + Will×2 + Endurance + Discipline×3 + other + casualty loss. Current tracks wounds in play."
+            <BaronyTooltip Title="Punkty życia"
+                           Text="Maksimum = Build×2 + Will×2 + Endurance + Discipline×3 + inne + straty. Bieżące odzwierciedla rany w trakcie gry."
                            Placement="Placement.Bottom">
-                <div class="unit-combat-break__title">Hit points</div>
+                <div class="unit-combat-break__title">Punkty życia</div>
             </BaronyTooltip>
             <div class="unit-combat-break__cols">
-                @Col("Max", "Maximum", baseHp, "Formula maximum before other and casualty modifiers")
+                @Col("Max", "Maksimum", baseHp, "Maksimum ze wzoru przed modyfikatorami inne i strat")
                 @OtherCol(UnitCombatStatKey.Hp)
                 @LossCol(Combat.LossHp)
                 @Tot(Combat.MaxHp)
                 @if (CurrentHp.HasValue)
                 {
-                    @Col("Cur", "Current", cur, "Current hit points")
+                    @Col("Cur", "Bieżące", cur, "Bieżące punkty życia")
                 }
             </div>
         </div>
@@ -199,7 +199,7 @@
 
     private RenderFragment LossCol(int value) => __builder =>
     {
-        <BaronyTooltip Title="Casualty loss" Text="@LossTip" Placement="Placement.Top">
+        <BaronyTooltip Title="Straty" Text="@LossTip" Placement="Placement.Top">
             <div class="unit-combat-break__col @(value != 0 ? "unit-combat-break__col--loss" : "unit-combat-break__col--zero")">
                 <span class="unit-combat-break__lab">Loss</span>
                 <b class="unit-combat-break__val">@value</b>
@@ -210,8 +210,8 @@
     private RenderFragment OtherCol(string statKey) => __builder =>
     {
         var value = OtherValue(statKey);
-        var tip = OtherTip("Other modifiers — named sources summed into this column.", statKey);
-        <BaronyTooltip Title="Other" Text="@tip" Placement="Placement.Top">
+        var tip = OtherTip("Inne modyfikatory — nazwane źródła zsumowane w tej kolumnie.", statKey);
+        <BaronyTooltip Title="Inne" Text="@tip" Placement="Placement.Top">
             @if (CanEditOther && Unit is not null)
             {
                 <button type="button"
@@ -233,7 +233,7 @@
 
     private RenderFragment Tot(int value) => __builder =>
     {
-        <BaronyTooltip Title="Total" Text="Sum of the columns to the left (with casualty floors when depleted)." Placement="Placement.Top">
+        <BaronyTooltip Title="Suma" Text="Suma kolumn po lewej (z minimalnymi wartościami przy wyczerpaniu)." Placement="Placement.Top">
             <div class="unit-combat-break__col unit-combat-break__col--tot">
                 <span class="unit-combat-break__lab">Tot</span>
                 <b class="unit-combat-break__val">@value</b>
@@ -251,14 +251,14 @@
 
         var parameters = new DialogParameters
         {
-            [nameof(UnitNamedModifiersDialog.Title)] = $"{UnitCombatStatKey.Label(statKey)} — other",
+            [nameof(UnitNamedModifiersDialog.Title)] = $"{UnitCombatStatKey.Label(statKey)} — inne",
             [nameof(UnitNamedModifiersDialog.Hint)] =
-                "Each row is a named source (e.g. blessing, terrain, magic). The sum fills the Other column.",
+                "Każdy wiersz to nazwane źródło (np. błogosławieństwo, teren, magia). Suma wypełnia kolumnę Inne.",
             [nameof(UnitNamedModifiersDialog.Modifiers)] = existing,
         };
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await _dialogService.ShowAsync<UnitNamedModifiersDialog>(
-            $"{UnitCombatStatKey.Label(statKey)} — other",
+            $"{UnitCombatStatKey.Label(statKey)} — inne",
             parameters,
             options);
         var result = await dialog.Result;

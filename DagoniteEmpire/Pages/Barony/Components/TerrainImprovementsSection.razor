@@ -3,14 +3,14 @@
 @inject ISnackbar _snackBar
 @inject IDialogService _dialogService
 
-<BaronySection Title="Terrain Improvements">
+<BaronySection Title="Ulepszenia terenu">
     <Summary>
         <PpbSummaryChips Vector="@Glance" />
     </Summary>
     <ChildContent>
         @if (VisibleImprovements.Count == 0)
         {
-            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No terrain improvements in your domain yet. Place them on tiles belonging to the baron’s primary domain.</MudText>
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">Brak ulepszeń terenu w Twojej domenie. Umieść je na polach należących do głównej domeny barona.</MudText>
         }
         else
         {
@@ -28,12 +28,12 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th rowspan="2" class="ppb-row-label city-building-col-name">Name</th>
+                            <th rowspan="2" class="ppb-row-label city-building-col-name">Nazwa</th>
                             <th rowspan="2" class="city-building-col-owner">
-                                <BaronyTooltip Text="Land ownership">Owner</BaronyTooltip>
+                                <BaronyTooltip Text="Własność ziemi">Właściciel</BaronyTooltip>
                             </th>
                             <th class="city-building-col-pop">
-                                <BaronyTooltip Text="Population (additive)">Pop</BaronyTooltip>
+                                <BaronyTooltip Text="Populacja (dodatek)">Pop</BaronyTooltip>
                             </th>
                             @foreach (var info in PpbCatalog.All)
                             {
@@ -57,13 +57,13 @@
                             <tr class="@(inactive ? "terrain-improvement-row--inactive" : null)">
                                 <td class="city-building-col-name">
                                     <div class="city-building-name-cell">
-                                        <BaronyTooltip Title="Description" Text="@NameTooltip(item)">
+                                        <BaronyTooltip Title="Opis" Text="@NameTooltip(item)">
                                             <span class="city-building-name-text">@DisplayLabel(item)</span>
                                         </BaronyTooltip>
                                         @if (CanManage)
                                         {
                                             <span class="city-building-name-actions">
-                                                <BaronyTooltip Text="Edit improvement">
+                                                <BaronyTooltip Text="Edytuj ulepszenie">
                                                     <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                                    Size="Size.Small"
                                                                    OnClick="@(() => EditAsync(item))" />
@@ -83,7 +83,7 @@
                                         else
                                         {
                                             <img src="/icons/jewel-crown.svg"
-                                                 alt="Demesne"
+                                                 alt="Domena"
                                                  width="20"
                                                  height="20"
                                                  class="terrain-improvement-owner__crown" />
@@ -94,7 +94,7 @@
                                     @onclick="@(() => EditPopulationAsync(item))">
                                     @if (BaronyCalc.IsVillage(item))
                                     {
-                                        <BaronyTooltip Text="Population — input for village PPB formulas.">
+                                        <BaronyTooltip Text="Populacja — dane wejściowe do wzorów PPB wioski.">
                                             <span>@FmtAdd(item.Population)</span>
                                         </BaronyTooltip>
                                     }
@@ -127,7 +127,7 @@
                         }
 
                         <tr class="ppb-summary-row">
-                            <td class="ppb-row-label city-building-col-name">Σ section</td>
+                            <td class="ppb-row-label city-building-col-name">Σ sekcji</td>
                             <td class="city-building-col-owner"></td>
                             <td class="@PopulationCellClass(PopulationSum, inactive: false)"><b>@FmtAdd(PopulationSum)</b></td>
                             @foreach (var info in PpbCatalog.All)
@@ -189,14 +189,14 @@
         if (BaronyCalc.IsVillage(item))
         {
             var palisade = item.HasPalisade
-                ? "surrounded by a palisade"
-                : "without a palisade";
+                ? "otoczona palisadą"
+                : "bez palisady";
             var owner = VillageOwnerName(item);
-            var text = $"A village {palisade}, owned by lord {owner}.";
+            var text = $"Wioska {palisade}, własność lorda {owner}.";
             if (!item.IsActive)
             {
                 var inactive = string.IsNullOrWhiteSpace(item.InactiveReason)
-                    ? "Inactive — excluded from totals."
+                    ? "Nieaktywne — wyłączone z sum."
                     : item.InactiveReason.Trim();
                 text = $"{text}\n\n{inactive}";
             }
@@ -207,7 +207,7 @@
         if (item.IsActive)
             return null;
         return string.IsNullOrWhiteSpace(item.InactiveReason)
-            ? "Inactive — excluded from totals."
+            ? "Nieaktywne — wyłączone z sum."
             : item.InactiveReason.Trim();
     }
 
@@ -222,7 +222,7 @@
             return fief.LiegeName.Trim();
         }
 
-        return "unknown";
+        return "nieznany";
     }
 
     private string? VillageAdditiveTooltip(TerrainImprovementDTO item, Ppb key, PpbVector effective)
@@ -262,7 +262,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<TerrainImprovementEditDialog>(
-            "Edit Improvement",
+            "Edytuj ulepszenie",
             parameters,
             new DialogOptions
             {
@@ -278,12 +278,12 @@
         try
         {
             await _baronyRepo.SaveImprovement(saved);
-            _snackBar.Add("Improvement updated.", Severity.Success);
+            _snackBar.Add("Zaktualizowano ulepszenie.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save improvement: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać ulepszenia: " + ex.Message, Severity.Error);
         }
     }
 
@@ -299,7 +299,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<PopulationEditDialog>(
-            "Population",
+            "Populacja",
             parameters,
             new DialogOptions
             {
@@ -318,12 +318,12 @@
         try
         {
             await _baronyRepo.SaveImprovement(draft);
-            _snackBar.Add("Population updated.", Severity.Success);
+            _snackBar.Add("Zaktualizowano populację.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save improvement: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać ulepszenia: " + ex.Message, Severity.Error);
         }
     }
 
@@ -335,7 +335,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<VillageEditDialog>(
-            "Edit village",
+            "Edytuj wioskę",
             parameters,
             new DialogOptions
             {
@@ -351,12 +351,12 @@
         try
         {
             await _baronyRepo.SaveImprovement(saved);
-            _snackBar.Add("Village updated.", Severity.Success);
+            _snackBar.Add("Zaktualizowano wioskę.", Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save village: " + ex.Message, Severity.Error);
+            _snackBar.Add("Nie udało się zapisać wioski: " + ex.Message, Severity.Error);
         }
     }
 

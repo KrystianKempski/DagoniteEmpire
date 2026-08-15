@@ -5,7 +5,7 @@
            ContentClass="baron-influence-dialog-content"
            ActionsClass="baron-influence-dialog-actions">
     <TitleContent>
-        <MudText Typo="Typo.h6">Troop count</MudText>
+        <MudText Typo="Typo.h6">Liczebność</MudText>
     </TitleContent>
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
@@ -16,13 +16,13 @@
                 </MudText>
             }
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Full strength is @FullStrength. Each 10% lost → −1 Attack/Defense, −4 Max HP
-                (floors: Atk/Def ≥ 1, Max HP ≥ 10). Understrength units regenerate
-                +@UnitRules.TroopRegenPerTurn troops per turn.
+                Pełna liczebność to @FullStrength. Każde utracone 10% → −1 Atak/Obrona, −4 Maks. HP
+                (minima: Atk/Def ≥ 1, Maks. HP ≥ 10). Oddziały poniżej pełnej liczebności regenerują
+                +@UnitRules.TroopRegenPerTurn żołnierzy na turę.
             </MudText>
             <MudNumericField T="int"
                              @bind-Value="_value"
-                             Label="Troops"
+                             Label="Liczebność"
                              HelperText="@Helper"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
@@ -32,8 +32,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -52,8 +52,8 @@
         {
             var preview = UnitCasualtyFormulas.Compute(_value, FullStrength);
             return preview.Steps == 0
-                ? "No casualty penalty at this strength."
-                : $"Preview: {preview.Steps} steps → Atk {preview.Attack}, Def {preview.Defense}, HP {preview.Hp}.";
+                ? "Brak kary za straty przy tej liczebności."
+                : $"Podgląd: {preview.Steps} kroków → Atk {preview.Attack}, Def {preview.Defense}, HP {preview.Hp}.";
         }
     }
 

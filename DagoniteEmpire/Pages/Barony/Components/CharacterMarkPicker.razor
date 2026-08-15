@@ -27,7 +27,7 @@
 
                         <button type="button"
                                 class="character-mark-menu__active-item"
-                                title="@($"Remove: {BaronyCharacterMarkCatalog.Tooltip(parsed)}")"
+                                title="@($"Usuń: {BaronyCharacterMarkCatalog.Tooltip(parsed)}")"
                                 @onclick="@(() => RemoveMarkAsync(mark))">
                             <MudIcon Icon="@CharacterMarkIcons.MaterialIcon(parsed.IconKey)"
                                      Size="Size.Small"
@@ -37,7 +37,7 @@
                 </div>
             }
             <div class="character-mark-menu__section">
-                <span class="character-mark-menu__label">Icon</span>
+                <span class="character-mark-menu__label">Ikona</span>
                 <div class="character-mark-menu__icons">
                     @foreach (var icon in BaronyCharacterMarkCatalog.Icons)
                     {
@@ -52,7 +52,7 @@
                 </div>
             </div>
             <div class="character-mark-menu__section">
-                <span class="character-mark-menu__label">Color</span>
+                <span class="character-mark-menu__label">Kolor</span>
                 <div class="character-mark-menu__colors">
                     @foreach (var color in BaronyCharacterMarkCatalog.Colors)
                     {
@@ -70,7 +70,7 @@
                            Variant="Variant.Text"
                            Class="character-mark-menu__clear"
                            OnClick="ClearAsync">
-                    Clear all
+                    Wyczyść wszystko
                 </MudButton>
             }
         </div>

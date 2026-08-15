@@ -6,19 +6,19 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudTextField Value="@Relation.Group"
-                          Label="Group"
+                          Label="Grupa"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Disabled="true"
                           Class="baron-influence-field" />
 
             <MudSwitch @bind-Value="_isActive"
-                       Label="Active in barony"
+                       Label="Aktywna w baronii"
                        Color="Color.Primary"
                        Class="baron-influence-field" />
 
             <MudNumericField @bind-Value="_influencePercent"
-                             Label="Influence (%)"
+                             Label="Wpływ (%)"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="0"
@@ -26,7 +26,7 @@
                              Class="baron-influence-field" />
 
             <MudNumericField @bind-Value="_taxPercent"
-                             Label="Tax (%)"
+                             Label="Podatek (%)"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="0"
@@ -34,7 +34,7 @@
                              Class="baron-influence-field" />
 
             <MudNumericField @bind-Value="RelationScore"
-                             Label="Relation score"
+                             Label="Poziom relacji"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="-100"
@@ -42,13 +42,13 @@
                              Class="baron-influence-field" />
 
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Label: <b>@SocialRelation.Label(_relationScore)</b>
+                Relacja: <b>@SocialRelation.Label(_relationScore)</b>
             </MudText>
 
             @if (_previewEffects.Count > 0)
             {
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                    PPB effects (computed from relation):
+                    Efekty PPB (obliczone z relacji):
                 </MudText>
                 <MudText Typo="Typo.caption" Class="mb-2">
                     @string.Join(" · ", _previewEffects)
@@ -57,14 +57,14 @@
             else
             {
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                    No PPB effects for this group at the current relation.
+                    Brak efektów PPB dla tej grupy przy obecnej relacji.
                 </MudText>
             }
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 

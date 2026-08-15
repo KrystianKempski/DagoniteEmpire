@@ -1,7 +1,7 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
 <div class="terrain-page__layers">
-    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">Layers:</MudText>
+    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">Warstwy:</MudText>
     @foreach (var layer in AllLayers)
     {
         var on = IsVisible(layer);
@@ -21,7 +21,7 @@
                    Class="barony-turn-btn barony-turn-btn--ghost"
                    StartIcon="@Icons.Material.Filled.DeleteSweep"
                    OnClick="OnClearLayer">
-            Clear current layer
+            Wyczyść bieżącą warstwę
         </MudButton>
     }
 </div>
@@ -39,12 +39,12 @@
 
     private static string Label(TerrainMapLayer layer) => layer switch
     {
-        TerrainMapLayer.Fertility => "Fertility",
-        TerrainMapLayer.TerrainType => "Terrain type",
-        TerrainMapLayer.Domain => "Domain",
-        TerrainMapLayer.Fief => "Fief",
-        TerrainMapLayer.Resources => "Resources",
-        TerrainMapLayer.Improvements => "Improvements",
+        TerrainMapLayer.Fertility => "Żyzność",
+        TerrainMapLayer.TerrainType => "Rodzaj terenu",
+        TerrainMapLayer.Domain => "Domena",
+        TerrainMapLayer.Fief => "Lenno",
+        TerrainMapLayer.Resources => "Zasoby",
+        TerrainMapLayer.Improvements => "Ulepszenia",
         _ => layer.ToString(),
     };
 }

@@ -5,23 +5,23 @@
            ContentClass="baron-influence-dialog-content"
            ActionsClass="baron-influence-dialog-actions">
     <TitleContent>
-        <MudText Typo="Typo.h6">@(IsEdit ? "Edit domain" : "Add domain")</MudText>
+        <MudText Typo="Typo.h6">@(IsEdit ? "Edytuj domenę" : "Dodaj domenę")</MudText>
     </TitleContent>
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudTextField @bind-Value="_name"
-                          Label="Domain name"
+                          Label="Nazwa domeny"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field"
                           Required="true" />
             <MudTextField @bind-Value="_lordName"
-                          Label="Lord name"
+                          Label="Imię lorda"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field"
                           Required="true" />
-            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">Domain color</MudText>
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">Kolor domeny</MudText>
             <div class="terrain-domain-color-row">
                 @foreach (var swatch in Swatches)
                 {
@@ -29,11 +29,11 @@
                         <button type="button"
                                 class="terrain-fertility-swatch @(swatch == _colorHex ? "terrain-fertility-swatch--selected" : "")"
                                 style="background-color: @swatch"
-                                aria-label="@($"Color {swatch}")"
+                                aria-label="@($"Kolor {swatch}")"
                                 @onclick="() => _colorHex = swatch"></button>
                     </BaronyTooltip>
                 }
-                <BaronyTooltip Text="Custom color">
+                <BaronyTooltip Text="Własny kolor">
                     <label class="terrain-domain-custom-color">
                         <input type="color"
                                class="terrain-domain-color-input"
@@ -45,8 +45,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@(IsEdit ? "Save" : "Add")</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@(IsEdit ? "Zapisz" : "Dodaj")</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -87,13 +87,13 @@
     {
         if (string.IsNullOrWhiteSpace(_name))
         {
-            _snackBar.Add("Domain name is required.", Severity.Warning);
+            _snackBar.Add("Nazwa domeny jest wymagana.", Severity.Warning);
             return;
         }
 
         if (string.IsNullOrWhiteSpace(_lordName))
         {
-            _snackBar.Add("Lord name is required.", Severity.Warning);
+            _snackBar.Add("Imię lorda jest wymagane.", Severity.Warning);
             return;
         }
 
