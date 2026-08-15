@@ -164,11 +164,11 @@
 
     private sealed class InputModel
     {
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage = "Pole {0} jest wymagane.")]
+        [EmailAddress(ErrorMessage = "Pole {0} musi być prawidłowym adresem e-mail.")]
         public string Email { get; set; } = "";
 
-        [Required]
+        [Required(ErrorMessage = "Pole {0} jest wymagane.")]
         [DataType(DataType.Password)]
         public string Password { get; set; } = "";
 

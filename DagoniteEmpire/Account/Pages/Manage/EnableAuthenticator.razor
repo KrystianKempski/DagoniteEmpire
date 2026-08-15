@@ -163,7 +163,7 @@ else
 
     private sealed class InputModel
     {
-        [Required]
+        [Required(ErrorMessage = "Pole {0} jest wymagane.")]
         [StringLength(7, ErrorMessage = "Pole {0} musi mieć co najmniej {2} i maksymalnie {1} znaków.", MinimumLength = 6)]
         [DataType(DataType.Text)]
         [Display(Name = "Kod weryfikacyjny")]

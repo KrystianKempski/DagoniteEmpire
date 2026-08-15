@@ -3,7 +3,7 @@
 > Tu zbieram pytania/niejasności napotkane w trakcie tłumaczenia.
 > Dopisuj odpowiedzi pod pytaniami (np. w linii `ODP:`), a ja je uwzględnię.
 
-## Status: otwarte
+## Status: 3 zrealizowane (waluty, DataLabel, Faza 2b), 2 odroczone do Fazy 8 (TraitLabel, trudność/rzut)
 
 <!-- Format:
 ### [Faza X] Krótki tytuł — plik/miejsce
@@ -18,29 +18,34 @@ Domyślne komunikaty ASP.NET Core są po angielsku i NIE są tekstem w naszych p
 Aby je spolszczyć, trzeba dodać (a) własny `IdentityErrorDescriber` po polsku
 oraz (b) lokalizację DataAnnotations lub jawne `ErrorMessage` przy każdym polu.
 Proponuję zrobić to w osobnej mini-turze (Faza 2b) albo w Fazie 10 (QA).
-ODP:
+ODP: zrób kiedy Ci pasuje
+✅ ZROBIONE: dodano `PolishIdentityErrorDescriber` (zarejestrowany w Program.cs) oraz
+polskie `ErrorMessage` przy `[Required]`/`[EmailAddress]`/`[Phone]` we wszystkich stronach Account.
 
 ### [Faza 3] Nazwy walut (lore) — WealthRecordsDialog
 Waluty świata gry: **Imperials / Talars / Hellers / Coppers** zostawiłem po angielsku
 (nazwy własne/lore). Czy spolszczyć na Imperiały / Talary / Halerze / Miedziaki?
 Uwaga: te nazwy mogą występować też w wielu innych miejscach (majątek postaci, baronia).
-ODP:
+ODP: spolszcz na Imperiale / Talary/ Halerze /miedziaki
+✅ ZROBIONE: WealthRecordsDialog — etykiety i tytuły kolumn → Imperiale/Talary/Halerze/Miedziaki
+(nazwy właściwości/pól DTO bez zmian; poza tym waluty pojawiają się głównie jako ikony).
 
 ### [Faza 3] Etykiety mobilne DataLabel — ProfessionPage
 Atrybuty `DataLabel="..."` (Spell slots, Prepared, Level, Known, Today, ready, actions)
 pokazywane przez MudBlazor jako nagłówki kolumn na wąskim ekranie — zostały po angielsku
 (poza pierwotnym allowlistem). Spolszczyć dla spójności na mobile? (drobne)
-ODP:
+ODP:spolszczyć. 
+✅ ZROBIONE: Poziom/Znane/Dzisiaj/Sloty zaklęć/Przygotowane/Gotowe/Akcje.
 
 ### [Faza 3] Podpisy przycisków z DTO (TraitLabel) — TraitsComponent
 Napisy „Dodaj …/Istniejące …" biorą się z właściwości DTO `TraitLabel` (w DA_Models),
 a nie z markup. Pełne spolszczenie wymaga tłumaczenia w DTO — do zrobienia w Fazie 8.
-ODP:
+ODP: ok
 
 ### [Faza 3] Nazwy poziomów trudności / wynik rzutu — MakeSkillRollDialog
 `SD.GetDifficultyName(...)` i wyjście `RollService` (DA_Common) nadal po angielsku —
 do spolszczenia w Fazie 8 (backend).
-ODP:
+ODP:ok
 
 ---
 

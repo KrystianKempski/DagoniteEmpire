@@ -164,21 +164,21 @@
 
     private sealed class InputModel
     {
-        [Required]
+        [Required(ErrorMessage = "Pole {0} jest wymagane.")]
         [StringLength(15, ErrorMessage = "Pole {0} musi mieć co najmniej {2} i maksymalnie {1} znaków.", MinimumLength = 6)]
         [Display(Name = "Nazwa użytkownika")]
         public string UserName { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Pole {0} jest wymagane.")]
         [Display(Name = "Rola użytkownika")]
         public string UserRole { get; set; }
 
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage = "Pole {0} jest wymagane.")]
+        [EmailAddress(ErrorMessage = "Pole {0} musi być prawidłowym adresem e-mail.")]
         [Display(Name = "Email")]
         public string Email { get; set; } = "";
 
-        [Required]
+        [Required(ErrorMessage = "Pole {0} jest wymagane.")]
         [StringLength(100, ErrorMessage = "Pole {0} musi mieć co najmniej {2} i maksymalnie {1} znaków.", MinimumLength = 6)]
         [DataType(DataType.Password)]
         [Display(Name = "Hasło")]

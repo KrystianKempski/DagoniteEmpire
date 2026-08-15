@@ -108,6 +108,7 @@ public class Program
             .AddRoles<IdentityRole>()
             .AddRoleManager<RoleManager<IdentityRole>>()
             .AddRoleStore<RoleStore<IdentityRole, ApplicationDbContext>>()
+            .AddErrorDescriber<DagoniteEmpire.Account.PolishIdentityErrorDescriber>()
             .AddDefaultTokenProviders()
             .AddEntityFrameworkStores<ApplicationDbContext>();
 

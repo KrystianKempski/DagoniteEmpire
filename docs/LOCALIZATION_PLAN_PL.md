@@ -192,14 +192,15 @@ Strony scaffoldowane ASP.NET (angielskie): logowanie, rejestracja, 2FA, zarządz
 - [x] `Account/Pages/*.razor` (Login, Register, ForgotPassword, ResetPassword, 2FA, Lockout, …)
 - [x] `Account/Pages/Manage/*.razor` (profil, hasło, e-mail, klucze, dane osobowe)
 - [x] `Account/Shared/*.razor` (`StatusMessage` — przełącznik koloru na prefiks „Błąd")
-- [ ] Komunikaty walidacji / `DataAnnotations` z frameworka — **odłożone (Faza 2b/10)**, patrz QUESTIONS
+- [x] **Faza 2b**: komunikaty walidacji frameworka — `PolishIdentityErrorDescriber` (reguły haseł/konta/role) + polskie `ErrorMessage` przy `[Required]`/`[EmailAddress]`/`[Phone]`
 
 ### Faza 3 — System postaci 🟡 (L) — ~18 + 5 + część Dialogs ✅ UKOŃCZONA
 Rdzeń rozgrywki gracza-bohatera.
 - [x] `Pages/Components/*` (PanelCharacter, Attribute/BaseSkills/SpecialSkills/Traits, Race, Profession, Equipment, Portrait, Languages, Date, BattleStats, BattleMap, BattleDrawer, MobsList)
 - [x] `Pages/CharacterPages/*` (CharacterList, CharacterUpsert, ProfessionPage, EquipmentPage, HealthPage)
 - [x] Dialogi postaci w `Pages/Dialogs/*` (CreateTrait, CreateWound, CreateRace, CreateProfession(+Skill), AddStatus, SelectLanguage, MakeSkillRoll, Spell, HumanRaceTraits, ExistingTrait/Equipment, EquipmentTemplateSelect, CreateEquipmentSlot, CharDescription, WealthRecords)
-- [ ] Drobne odłożone: waluty (lore), DataLabel mobilne, TraitLabel z DTO, wynik rzutu (Faza 8) — patrz QUESTIONS
+- [x] Waluty (lore) → Imperiale/Talary/Halerze/Miedziaki (WealthRecordsDialog); DataLabel mobilne w ProfessionPage spolszczone
+- [ ] Odłożone do Fazy 8: TraitLabel z DTO, nazwy trudności / wynik rzutu — patrz QUESTIONS
 
 ### Faza 4 — Kampania i czat 🟡 (M) — ~3 + Dialogs + Chat
 - [ ] `Pages/Campaign/*` (CampaignList, ChapterList, ChapterThread)

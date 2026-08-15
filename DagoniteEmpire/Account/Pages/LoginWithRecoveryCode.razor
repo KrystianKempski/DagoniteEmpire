@@ -77,7 +77,7 @@
 
     private sealed class InputModel
     {
-        [Required]
+        [Required(ErrorMessage = "Pole {0} jest wymagane.")]
         [DataType(DataType.Text)]
         [Display(Name = "Kod odzyskiwania")]
         public string RecoveryCode { get; set; } = "";

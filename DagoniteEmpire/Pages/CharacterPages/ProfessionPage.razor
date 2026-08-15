@@ -364,15 +364,15 @@
                             <MudTh Style="text-align:center; padding: 4px;  font-size:13px; font-weight:bold;">Sloty zaklęć</MudTh>
                         </HeaderContent>
                         <RowTemplate>
-                            <MudTd Style="text-align:center; width: 60px; padding: 4px; font-size:26px; font-weight:bold" DataLabel="Level">@context.Level</MudTd>
-                            <MudTd Style="text-align:center; width: 60px; padding: 4px;" DataLabel="Known">@context.KnownSpells</MudTd>
-                            <MudTd Style="text-align:center; width: 60px; padding: 4px;" DataLabel="Today">@context.PerDay</MudTd>
-                            <MudTd Style="text-align:center; padding: 4px;" DataLabel="Spell slots">
+                            <MudTd Style="text-align:center; width: 60px; padding: 4px; font-size:26px; font-weight:bold" DataLabel="Poziom">@context.Level</MudTd>
+                            <MudTd Style="text-align:center; width: 60px; padding: 4px;" DataLabel="Znane">@context.KnownSpells</MudTd>
+                            <MudTd Style="text-align:center; width: 60px; padding: 4px;" DataLabel="Dzisiaj">@context.PerDay</MudTd>
+                            <MudTd Style="text-align:center; padding: 4px;" DataLabel="Sloty zaklęć">
                                 <MudTable T="SpellSlot" Items="@context.SpellSlots" Hover="true" Breakpoint="Breakpoint.None">
                                     <RowTemplate Context="slotContext">
                                         @if(slotContext.Spell is not null)
                                         {
-                                            <MudTd Style="padding: 4px;" DataLabel="Prepared">
+                                            <MudTd Style="padding: 4px;" DataLabel="Przygotowane">
                                                 <MudTooltip >
                                                     <ChildContent>
                                                         <MudLink Href="@slotContext.Spell.Link">@slotContext.Spell.Name</MudLink>
@@ -387,15 +387,15 @@
                                         }
                                         else
                                         {
-                                            <MudTd Style="padding: 4px;" DataLabel="Prepared">Wybierz zaklęcie</MudTd>
+                                            <MudTd Style="padding: 4px;" DataLabel="Przygotowane">Wybierz zaklęcie</MudTd>
                                         }
-                                        <MudTd Style="width: 60px; padding: 4px;" DataLabel="ready">
+                                        <MudTd Style="width: 60px; padding: 4px;" DataLabel="Gotowe">
                                         
                                             <MudNumericField Class="dense-numeric-field text-center" IconSize="Size.Small"
                                                              ShrinkLabel="true" Value=@slotContext.Prepared ValueChanged="(int newValue)=>ChangePreparedSpells(slotContext,context,newValue)" Immediate="true"
                                                              For="@(() => slotContext.Prepared)"  />
                                         </MudTd>
-                                        <MudTd Style="width: 60px; padding: 4px;" DataLabel="actions">
+                                        <MudTd Style="width: 60px; padding: 4px;" DataLabel="Akcje">
                                             <div class="d-flex px-0">
                                                 @if(slotContext.Spell is not null && string.IsNullOrEmpty(slotContext.Spell.Name) == false){
                                                     <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,true))" Icon="@Icons.Material.Filled.Edit" aria-label="Zmień zaklęcie"></MudIconButton>
@@ -438,7 +438,7 @@
                                     {
                                         <MudTooltip >
                                             <ChildContent>
-                                                <MudTd Style="padding: 4px;" DataLabel="Prepared" >
+                                                <MudTd Style="padding: 4px;" DataLabel="Przygotowane" >
                                                     <MudLink Href="@slotContext.Spell.Link">@slotContext.Spell.Name</MudLink>
                                                 </MudTd>
                                             </ChildContent>
@@ -451,15 +451,15 @@
                                     }
                                     else
                                     {
-                                        <MudTd Style="padding: 4px;" DataLabel="Prepared">Wybierz zaklęcie</MudTd>
+                                        <MudTd Style="padding: 4px;" DataLabel="Przygotowane">Wybierz zaklęcie</MudTd>
                                     }
-                                    <MudTd Style="width: 60px; padding: 4px;" DataLabel="ready">
+                                    <MudTd Style="width: 60px; padding: 4px;" DataLabel="Gotowe">
 
                                         <MudNumericField Class="dense-numeric-field text-center" IconSize="Size.Small"
                                                          ShrinkLabel="true" Value=@slotContext.Prepared ValueChanged="(int newValue)=>ChangePreparedSpells(slotContext,context,newValue)" Immediate="true"
                                                          For="@(() => slotContext.Prepared)" />
                                     </MudTd>
-                                    <MudTd Style="width: 60px; padding: 4px;" DataLabel="actions">
+                                    <MudTd Style="width: 60px; padding: 4px;" DataLabel="Akcje">
                                         <div class="d-flex px-0">
                                             @if (slotContext.Spell is not null && string.IsNullOrEmpty(slotContext.Spell.Name) == false)
                                             {

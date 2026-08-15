@@ -126,8 +126,8 @@
 
     private sealed class InputModel
     {
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage = "Pole {0} jest wymagane.")]
+        [EmailAddress(ErrorMessage = "Pole {0} musi być prawidłowym adresem e-mail.")]
         [Display(Name = "Nowy adres e-mail")]
         public string? NewEmail { get; set; }
     }
