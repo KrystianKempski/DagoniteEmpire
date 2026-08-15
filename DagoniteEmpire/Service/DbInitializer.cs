@@ -2899,16 +2899,13 @@ namespace DagoniteEmpire.Service
             }
         }
 
+        // The demo baron is now built on demand straight from the embedded snapshot at session
+        // creation (see DemoBaronFactory in DemoBaronyService), so no persistent template
+        // character is needed. Remove any left over from the old "template" approach so a stale
+        // "Aldric Emberfall" template can't linger in the Duke lists on dev/production.
         private static async Task EnsureGenericDemoBaronAsync(ApplicationDbContext contex)
         {
-            var snapshot = DA_Models.DemoBaronSeed.Load();
-
-            // The demo template (UserName == DemoBaronTemplateUserName) is a throwaway system
-            // record. Always drop and rebuild it from the snapshot so every environment — and
-            // every deploy — reflects the current source of truth. Otherwise a stale template on
-            // a shared/production DB survives the completeness guard forever (an old template
-            // with the full skill count but poor data would never be replaced).
-            var staleTemplates = await contex.Characters
+            var legacyTemplates = await contex.Characters
                 .Include(c => c.Attributes)
                 .Include(c => c.BaseSkills)
                 .Include(c => c.SpecialSkills)
@@ -2916,177 +2913,11 @@ namespace DagoniteEmpire.Service
                 .Include(c => c.Languages)
                 .Where(c => c.UserName == SD.DemoBaronTemplateUserName)
                 .ToListAsync();
-            if (staleTemplates.Count > 0)
-            {
-                contex.Characters.RemoveRange(staleTemplates);
-                await contex.SaveChangesAsync();
-            }
-
-            // If a hand-authored source character already exists (the authoring DB holds the
-            // real "Aldric Emberfall" under a real owner), the demo clones it directly — don't
-            // add a duplicate template. Demo/system-owned copies never count as hand-authored.
-            var handAuthored = await contex.Characters
-                .Include(c => c.SpecialSkills)
-                .FirstOrDefaultAsync(c => c.NPCName == snapshot.NpcName
-                                          && c.UserName != SD.DemoBaronTemplateUserName
-                                          && c.UserName != SD.DemoBaronUserName
-                                          && c.UserName != SD.DemoGmUserName);
-            if (handAuthored is not null
-                && handAuthored.ProfessionId > 0
-                && (handAuthored.SpecialSkills?.Count ?? 0) >= snapshot.SpecialSkills.Length)
+            if (legacyTemplates.Count == 0)
                 return;
 
-            var created = await BuildDemoBaronFromSnapshotAsync(contex, snapshot);
-            contex.Characters.Add(created);
+            contex.Characters.RemoveRange(legacyTemplates);
             await contex.SaveChangesAsync();
-        }
-
-        /// <summary>
-        /// Materialises the demo baron from the embedded snapshot of the hand-authored
-        /// "Aldric Emberfall" (see <see cref="DA_Models.DemoBaronSeed"/>). Foreign keys
-        /// (profession, race, languages) are resolved by name — creating the profession/race
-        /// when absent — so every database seeds an identical, fully populated character.
-        /// </summary>
-        private static async Task<Character> BuildDemoBaronFromSnapshotAsync(
-            ApplicationDbContext contex, DA_Models.DemoBaronSeed.CharacterData snapshot)
-        {
-            int professionId = 0;
-            if (snapshot.Profession is { } prof)
-            {
-                var profession = await contex.Professions
-                    .FirstOrDefaultAsync(p => p.Name == prof.Name);
-                if (profession is null)
-                {
-                    profession = new Profession
-                    {
-                        Name = prof.Name,
-                        Description = prof.Description ?? string.Empty,
-                        RelatedAttributeName = prof.RelatedAttributeName ?? string.Empty,
-                        ClassLevel = prof.ClassLevel,
-                        CurrentFocusPoints = prof.CurrentFocusPoints,
-                        IsApproved = prof.IsApproved,
-                        IsUniversal = prof.IsUniversal,
-                        CasterType = (SpellcasterType)prof.CasterType,
-                    };
-                    contex.Professions.Add(profession);
-                    await contex.SaveChangesAsync();
-                }
-                professionId = profession.Id;
-            }
-
-            int? raceId = null;
-            if (snapshot.Race is { } raceData)
-            {
-                var race = await contex.Races
-                    .FirstOrDefaultAsync(r => r.Name == raceData.Name);
-                if (race is null)
-                {
-                    race = new Race
-                    {
-                        Name = raceData.Name,
-                        Index = raceData.Index,
-                        Description = raceData.Description ?? string.Empty,
-                        RaceApproved = raceData.RaceApproved,
-                    };
-                    contex.Races.Add(race);
-                    await contex.SaveChangesAsync();
-                }
-                raceId = race.Id;
-            }
-
-            var created = new Character
-            {
-                UserName = SD.DemoBaronTemplateUserName,
-                Relation = (Relation)snapshot.Relation,
-                NPCName = snapshot.NpcName,
-                Description = snapshot.Description,
-                Age = snapshot.Age,
-                ImageUrl = snapshot.ImageUrl,
-                IconUrl = snapshot.IconUrl,
-                NPCType = snapshot.NpcType ?? SD.NPCType.Duke,
-                AttributePoints = snapshot.AttributePoints,
-                CurrentExpPoints = snapshot.CurrentExpPoints,
-                UsedExpPoints = snapshot.UsedExpPoints,
-                TraitBalance = snapshot.TraitBalance,
-                WeaponSet = snapshot.WeaponSet,
-                DateNumber = snapshot.DateNumber,
-                RaceId = raceId,
-                ProfessionId = professionId,
-                IsApproved = true,
-                Attributes = snapshot.Attributes
-                    .OrderBy(a => a.Index)
-                    .Select(a => new DA_DataAccess.CharacterClasses.Attribute
-                    {
-                        Name = a.Name,
-                        FeatureType = a.FeatureType,
-                        Index = a.Index,
-                        BaseBonus = a.BaseBonus,
-                        RaceBonus = a.RaceBonus,
-                        GearBonus = a.GearBonus,
-                        TraitBonus = a.TraitBonus,
-                        OtherBonuses = a.OtherBonuses,
-                        TempBonuses = a.TempBonuses,
-                        HealthBonus = a.HealthBonus,
-                    })
-                    .ToList(),
-                BaseSkills = snapshot.BaseSkills
-                    .OrderBy(s => s.Index)
-                    .Select(s => new BaseSkill
-                    {
-                        Name = s.Name,
-                        FeatureType = s.FeatureType,
-                        Index = s.Index,
-                        BaseBonus = s.BaseBonus,
-                        RaceBonus = s.RaceBonus,
-                        GearBonus = s.GearBonus,
-                        TraitBonus = s.TraitBonus,
-                        OtherBonuses = s.OtherBonuses,
-                        TempBonuses = s.TempBonuses,
-                        HealthBonus = s.HealthBonus,
-                        RelatedAttribute1 = s.RelatedAttribute1,
-                        RelatedAttribute2 = s.RelatedAttribute2,
-                    })
-                    .ToList(),
-                SpecialSkills = snapshot.SpecialSkills
-                    .Select(s => new SpecialSkill
-                    {
-                        Name = s.Name,
-                        FeatureType = s.FeatureType,
-                        Index = s.Index,
-                        BaseBonus = s.BaseBonus,
-                        RaceBonus = s.RaceBonus,
-                        GearBonus = s.GearBonus,
-                        TraitBonus = s.TraitBonus,
-                        OtherBonuses = s.OtherBonuses,
-                        TempBonuses = s.TempBonuses,
-                        HealthBonus = s.HealthBonus,
-                        RelatedAttribute1 = s.RelatedAttribute1,
-                        RelatedAttribute2 = s.RelatedAttribute2,
-                        RelatedBaseSkillName = s.RelatedBaseSkillName,
-                        ChosenAttribute = s.ChosenAttribute,
-                        Editable = s.Editable,
-                    })
-                    .ToList(),
-                EquipmentSlots = snapshot.EquipmentSlots
-                    .Select(e => new EquipmentSlot
-                    {
-                        Count = e.Count,
-                        EquipmentID = e.EquipmentID,
-                        IsEquipped = e.IsEquipped,
-                        SlotType = e.SlotType,
-                    })
-                    .ToList(),
-            };
-
-            if (snapshot.Languages.Length > 0)
-            {
-                var names = snapshot.Languages;
-                created.Languages = await contex.Languages
-                    .Where(l => names.Contains(l.Name))
-                    .ToListAsync();
-            }
-
-            return created;
         }
 
         /// <summary>Reseed catalog when empty, legacy Polish, or outdated farm/mine/quarry/sawmill names.</summary>

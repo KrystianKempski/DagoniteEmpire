@@ -5,6 +5,7 @@ using DA_Common;
 using DA_DataAccess.BaronyData;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Data;
+using DA_Models;
 using Microsoft.EntityFrameworkCore;
 using Attribute = DA_DataAccess.CharacterClasses.Attribute;
 
@@ -31,123 +32,15 @@ namespace DA_Business.Services
             int characterId;
             await using (var ctx = await _db.CreateDbContextAsync())
             {
-                var sourceQuery = ctx.Characters
-                    .AsNoTracking()
-                    .Include(c => c.Attributes)
-                    .Include(c => c.BaseSkills)
-                    .Include(c => c.SpecialSkills)
-                    .Include(c => c.EquipmentSlots)
-                    .Include(c => c.Languages);
+                // Build the demo baron straight from the embedded snapshot so it is always the
+                // authored "Aldric Emberfall" (portrait, class, full skill sheet) — never a
+                // stale template or some other character that happens to exist on the DB.
+                var snapshot = DemoBaronSeed.Load();
+                var baron = await DemoBaronFactory.BuildAsync(ctx, SD.DemoBaronUserName, snapshot);
 
-                // Prefer the seeded demo template (rebuilt from the snapshot on every startup);
-                // fall back to any character with the source name (the authoring DB holds the
-                // hand-made Aldric under a real owner).
-                var source = await sourceQuery
-                        .FirstOrDefaultAsync(c => c.UserName == SD.DemoBaronTemplateUserName)
-                    ?? await sourceQuery
-                        .FirstOrDefaultAsync(c => c.NPCName == SD.DemoBaronSourceCharacterName)
-                    ?? throw new InvalidOperationException(
-                        $"Demo baron source character '{SD.DemoBaronSourceCharacterName}' not found.");
-
-                var clone = new Character
-                {
-                    UserName = SD.DemoBaronUserName,
-                    Relation = source.Relation,
-                    NPCName = source.NPCName,
-                    Description = source.Description,
-                    Age = source.Age,
-                    ImageUrl = source.ImageUrl,
-                    IconUrl = source.IconUrl,
-                    NPCType = SD.NPCType.Duke,
-                    AttributePoints = source.AttributePoints,
-                    CurrentExpPoints = source.CurrentExpPoints,
-                    UsedExpPoints = source.UsedExpPoints,
-                    TraitBalance = source.TraitBalance,
-                    RaceId = source.RaceId,
-                    IsApproved = true,
-                    ProfessionId = source.ProfessionId,
-                    WeaponSet = source.WeaponSet,
-                    DateNumber = source.DateNumber,
-                    Attributes = source.Attributes?
-                        .OrderBy(a => a.Index)
-                        .Select(a => new Attribute
-                        {
-                            Name = a.Name,
-                            FeatureType = a.FeatureType,
-                            Index = a.Index,
-                            BaseBonus = a.BaseBonus,
-                            RaceBonus = a.RaceBonus,
-                            GearBonus = a.GearBonus,
-                            TraitBonus = a.TraitBonus,
-                            OtherBonuses = a.OtherBonuses,
-                            TempBonuses = a.TempBonuses,
-                            HealthBonus = a.HealthBonus,
-                        })
-                        .ToList(),
-                    BaseSkills = source.BaseSkills?
-                        .OrderBy(s => s.Index)
-                        .Select(s => new BaseSkill
-                        {
-                            Name = s.Name,
-                            FeatureType = s.FeatureType,
-                            Index = s.Index,
-                            BaseBonus = s.BaseBonus,
-                            RaceBonus = s.RaceBonus,
-                            GearBonus = s.GearBonus,
-                            TraitBonus = s.TraitBonus,
-                            OtherBonuses = s.OtherBonuses,
-                            TempBonuses = s.TempBonuses,
-                            HealthBonus = s.HealthBonus,
-                            RelatedAttribute1 = s.RelatedAttribute1,
-                            RelatedAttribute2 = s.RelatedAttribute2,
-                        })
-                        .ToList(),
-                    SpecialSkills = source.SpecialSkills?
-                        .OrderBy(s => s.RelatedBaseSkillName)
-                        .ThenBy(s => s.Index)
-                        .ThenBy(s => s.Name)
-                        .Select(s => new SpecialSkill
-                        {
-                            Name = s.Name,
-                            FeatureType = s.FeatureType,
-                            Index = s.Index,
-                            BaseBonus = s.BaseBonus,
-                            RaceBonus = s.RaceBonus,
-                            GearBonus = s.GearBonus,
-                            TraitBonus = s.TraitBonus,
-                            OtherBonuses = s.OtherBonuses,
-                            TempBonuses = s.TempBonuses,
-                            HealthBonus = s.HealthBonus,
-                            RelatedAttribute1 = s.RelatedAttribute1,
-                            RelatedAttribute2 = s.RelatedAttribute2,
-                            RelatedBaseSkillName = s.RelatedBaseSkillName,
-                            ChosenAttribute = s.ChosenAttribute,
-                            Editable = s.Editable,
-                        })
-                        .ToList(),
-                    EquipmentSlots = source.EquipmentSlots?
-                        .OrderBy(s => s.Id)
-                        .Select(s => new EquipmentSlot
-                        {
-                            Count = s.Count,
-                            EquipmentID = s.EquipmentID,
-                            IsEquipped = s.IsEquipped,
-                            SlotType = s.SlotType,
-                        })
-                        .ToList(),
-                };
-
-                if (source.Languages is { Count: > 0 })
-                {
-                    var languageIds = source.Languages.Select(l => l.Id).ToList();
-                    clone.Languages = await ctx.Languages
-                        .Where(l => languageIds.Contains(l.Id))
-                        .ToListAsync();
-                }
-
-                ctx.Characters.Add(clone);
+                ctx.Characters.Add(baron);
                 await ctx.SaveChangesAsync();
-                characterId = clone.Id;
+                characterId = baron.Id;
             }
 
             // Reuse the standard barony creation path so the demo gets the exact same seeded Darkhold state.
