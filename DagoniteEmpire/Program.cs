@@ -34,6 +34,7 @@ using DA_Models;
 using MimeKit;
 using DA_Scribe.Extensions;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Localization;
 
 
 public class Program
@@ -83,6 +84,17 @@ public class Program
 
         builder.Services.AddMudServices(c => { c.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight; });
         builder.Host.UseNLog();
+
+        // Localization (i18n): key = English source text, PL values in Resources/**/*.pl.resx.
+        // English needs no resx (falls back to the key). Culture chosen via cookie (switcher).
+        builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+        var supportedCultures = new[] { "en", "pl" };
+        builder.Services.Configure<RequestLocalizationOptions>(options =>
+        {
+            options.SetDefaultCulture("en")
+                   .AddSupportedCultures(supportedCultures)
+                   .AddSupportedUICultures(supportedCultures);
+        });
 
 
         /// DB context 
@@ -211,6 +223,7 @@ public class Program
         }
         app.UseMiddleware<ErrorHandlingMiddleware>();
         app.UseHttpsRedirection();
+        app.UseRequestLocalization();
         app.UseAuthentication();
         app.UseAuthorization();
         app.UseMiddleware<WikiStaticFileMiddleware>();
