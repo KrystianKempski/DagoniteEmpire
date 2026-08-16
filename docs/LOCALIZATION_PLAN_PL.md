@@ -290,10 +290,16 @@ wyświetlaną narrację/opisy, zostawiając wszystkie klucze.
 
 **Uwaga:** opisy seedowe działają tylko przy świeżym seedzie; istniejące bazy mają starą treść.
 
-### Faza 9 — Panel MG, Wiki, Scribe 🟡 (M)
-- [ ] `Pages/GameMaster/*` (GameMasterPanel, CreateBaronyDialog, GmBaronySection, GmApprovedEquipmentSection)
-- [ ] `Pages/Wiki/WikiPage.razor` + `Components/WikiNavLink.razor`
-- [ ] ~~`Pages/Scribe/ScribePage.razor`~~ — **poza zakresem** (moduł Scribe nieużywany, nie tłumaczyć)
+### Faza 9 — Panel MG, Wiki, Scribe ✅ UKOŃCZONA (M)
+- [x] `Pages/GameMaster/*`:
+  - `GameMasterPanel.razor` — już PL; przetłumaczono tytuł dialogu `"Battle log"` → „Archiwum bitew".
+  - `GmBaronySection.razor` — całość: nagłówek „Baronie", przyciski „Odśwież"/„Utwórz baronię"/„Otwórz", nagłówki tabeli (Baronia/Baron/Opis/Akcje) + DataLabel, tekst pomocniczy, brak rekordów, snackbary błędów, tytuł dialogu.
+  - `CreateBaronyDialog.razor` — całość: etykiety/placeholdery/alert/przyciski/snackbary. Klucze profilu `"darkhold"`/`"custom"` ZOSTAWIONE (`Value=`, porównania). „Darkhold" jako nazwa własna zachowana.
+  - `GmApprovedEquipmentSection.razor` — już w pełni PL, bez zmian.
+- [x] `Pages/Wiki/WikiPage.razor` — już PL (alert), reszta to komentarze i ścieżki tras. Tytuł iframe „DagoniteEmpire Wiki" (nazwa własna) i etykieta „Wiki" ZOSTAWIONE.
+- [x] `Components/WikiNavLink.razor` — tylko etykieta/tooltip „Wiki" (zgodnie z glosariuszem zostaje).
+- **„Duke"** jako nazwa typu (`SD.NPCType.Duke`) ZOSTAWIONE — enum renderuje się jako „Duke" i tak jest używany w polskim tekście w innych miejscach (CharacterUpsert).
+- [x] ~~`Pages/Scribe/ScribePage.razor`~~ — **poza zakresem** (moduł Scribe nieużywany, nie tłumaczyć)
 
 ### Faza 10 — QA, testy, spójność 🟡 (M)
 - [ ] Zaktualizować testy asertujące stringi (`CombatStateStringTests`, `RichTextTests`, `WoundsTurnSummaryTests`, `CombatStateStringTests` itp.)

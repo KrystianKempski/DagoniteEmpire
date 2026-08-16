@@ -6,33 +6,33 @@
     <DialogContent>
         <MudRadioGroup T="string"
                        @bind-Value="_seedProfile"
-                       Label="Barony profile"
+                       Label="Profil baronii"
                        Class="mb-3">
-            <MudRadio T="string" Value='@("darkhold")'>Darkhold (pre-seeded)</MudRadio>
-            <MudRadio T="string" Value='@("custom")'>Custom (blank start)</MudRadio>
+            <MudRadio T="string" Value='@("darkhold")'>Darkhold (gotowy seed)</MudRadio>
+            <MudRadio T="string" Value='@("custom")'>Własna (pusty start)</MudRadio>
         </MudRadioGroup>
 
         <MudTextField @bind-Value="_name"
-                      Label="Barony name"
+                      Label="Nazwa baronii"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense"
                       Required="true"
                       Disabled="@IsDarkholdProfile"
                       Class="mb-3" />
         <MudTextField @bind-Value="_description"
-                      Label="Description"
+                      Label="Opis"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense"
                       Lines="3"
                       Class="mb-3" />
         <MudSelect T="CharacterDTO?"
-                   Label="Baron character (Duke)"
+                   Label="Postać barona (Duke)"
                    @bind-Value="_selectedCharacter"
                    Variant="Variant.Outlined"
                    Margin="Margin.Dense"
                    Dense="true"
                    Required="true"
-                   Placeholder="Select a Duke character">
+                   Placeholder="Wybierz postać typu Duke">
             @foreach (var character in _eligibleCharacters)
             {
                 <MudSelectItem Value="@character">@CharacterLabel(character)</MudSelectItem>
@@ -41,17 +41,17 @@
         @if (_eligibleCharacters.Count == 0)
         {
             <MudAlert Severity="Severity.Info" Class="mt-3" Dense="true">
-                No eligible Duke characters. Create and approve a character with type Duke that does not already have a barony.
+                Brak dostępnych postaci typu Duke. Utwórz i zatwierdź postać typu Duke, która nie ma jeszcze baronii.
             </MudAlert>
         }
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Anuluj</MudButton>
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    Disabled="@(_eligibleCharacters.Count == 0)"
                    OnClick="SaveAsync">
-            Create barony
+            Utwórz baronię
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -97,13 +97,13 @@
     {
         if (string.IsNullOrWhiteSpace(_name))
         {
-            _snackBar.Add("Barony name is required.", Severity.Warning);
+            _snackBar.Add("Nazwa baronii jest wymagana.", Severity.Warning);
             return;
         }
 
         if (_selectedCharacter is null)
         {
-            _snackBar.Add("Select a baron character.", Severity.Warning);
+            _snackBar.Add("Wybierz postać barona.", Severity.Warning);
             return;
         }
 
@@ -119,7 +119,7 @@
                 _description,
                 _seedProfile);
 
-            _snackBar.Add($"Barony \"{barony.Name}\" created (with campaign).", Severity.Success);
+            _snackBar.Add($"Utworzono baronię \"{barony.Name}\" (wraz z kampanią).", Severity.Success);
             MudDialog.Close(DialogResult.Ok(barony));
         }
         catch (RepositoryErrorException ex)
@@ -128,7 +128,7 @@
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Failed to create barony: " + ex.Message, Severity.Error);
+            _snackBar.Add("Błąd tworzenia baronii: " + ex.Message, Severity.Error);
         }
     }
 }
