@@ -1,5 +1,6 @@
 ﻿using Abp.Collections.Extensions;
 using DA_Common;
+using DA_Common.Localization;
 using DA_DataAccess.CharacterClasses;
 using DA_Models.CharacterModels;
 using System;
@@ -281,7 +282,7 @@ namespace DA_Models.ComponentModels
             NewWounds = new List<WoundDTO>();
             if (Attacker.Props is null || Defender.Props is null)
             {
-                ResultStringMG += $"Error! No Attacker or Defender properties are loaded";
+                ResultStringMG += Loc.T("Error! No Attacker or Defender properties are loaded");
                 return;
             }
         }
@@ -333,7 +334,7 @@ namespace DA_Models.ComponentModels
                     break;                   
             }
             ResultStringMG.NewLine();
-            ResultStringMG += $"Attack is aimed at the {RichText.BoldText(AttackLocation.ToLower())} {SD.BonusText(AttackCurrValue)}";
+            ResultStringMG += Loc.T("Attack is aimed at the {0} {1}", RichText.BoldText(AttackLocation.ToLower()), SD.BonusText(AttackCurrValue));
             AttackValue += AttackCurrValue;
         }
 
@@ -356,28 +357,28 @@ namespace DA_Models.ComponentModels
                 case SD.DefenceType.Dodge:
                     weaponCurrValue += Attacker.Props.Get(SD.BattleProperty.AttackDodge).SumBonus;
                     DefenceCurrValue += Defender.Props.Get(SD.BattleProperty.DefenceDodge).SumBonus;                   
-                    defenceString = SD.DefenceType.Dodge.ToLower();
+                    defenceString = Loc.T(SD.DefenceType.Dodge.ToLower());
                     break;
                 case SD.DefenceType.Parry:
                     weaponCurrValue = Attacker.Props.Get(SD.BattleProperty.AttackParry).SumBonus;
                     DefenceCurrValue += Defender.Props.Get(SD.BattleProperty.DefenceParry).SumBonus;
-                    defenceString = SD.DefenceType.Parry.ToLower();
+                    defenceString = Loc.T(SD.DefenceType.Parry.ToLower());
                     break;
                 case SD.DefenceType.Shield:
                     weaponCurrValue += Attacker.Props.Get(SD.BattleProperty.AttackShield).SumBonus;
                     DefenceCurrValue += Defender.Props.Get(SD.BattleProperty.DefenceShield).SumBonus;
-                    defenceString = "deflect with shield";
+                    defenceString = Loc.T("deflect with shield");
                     break;
                 case SD.DefenceType.Armor:
                     weaponCurrValue += Attacker.Props.Get(SD.BattleProperty.AttackArmor).SumBonus;
                     DefenceCurrValue += Defender.Props.Get(SD.BattleProperty.DefenceArmor).SumBonus;
-                    defenceString = "deflect with armor";
+                    defenceString = Loc.T("deflect with armor");
                     break;
             }
 
             if (Attacker?.Props?.MainWeaponUsed?.Name is null)
                 throw new Exception("Attacker weapon is missing");
-            weaponString += $"using {Attacker.Props.MainWeaponUsed.Name} {SD.BonusText(weaponCurrValue)} ";
+            weaponString += Loc.T("using {0} {1}", Attacker.Props.MainWeaponUsed.Name, SD.BonusText(weaponCurrValue)) + " ";
             AttackValue += weaponCurrValue;
             AttackCurrValue = 0;
 
@@ -394,13 +395,13 @@ namespace DA_Models.ComponentModels
                     if(Attacker.NewStates.Contains(States.Names.Cautious) == false ||
                        Attacker.OldStates.Contains(States.Names.Cautious) == false)  // dont add it twice
                         Attacker.NewStates += $"{States.Names.Cautious}:{States.Duration.SingleTurn}, ";  // add new state
-                    actionDescription = "cautiously";
+                    actionDescription = Loc.T("cautiously");
                     Attacker.ActionLeft -= 1;
                     break;                
                 case SD.AttackAction.Charge:
                     actionBonus = 5;
                     AdditionalDamage += 3;
-                    actionDescription = "charging";
+                    actionDescription = Loc.T("charging");
                     Attacker.ActionLeft -= 2;
                     break;
                 case SD.AttackAction.Raging:
@@ -409,12 +410,12 @@ namespace DA_Models.ComponentModels
                     if (Attacker.NewStates.Contains(States.Names.Unbalanced) == false ||
                         Attacker.OldStates.Contains(States.Names.Unbalanced) == false)
                         Attacker.NewStates += $"{States.Names.Unbalanced}:{States.Duration.SingleTurn}, ";
-                    actionDescription = "furiously!";
+                    actionDescription = Loc.T("furiously!");
                     Attacker.ActionLeft -= 2;
                     break;
                 case SD.AttackAction.Strong:
                     actionBonus = 5;
-                    actionDescription = "with all strength";
+                    actionDescription = Loc.T("with all strength");
                     Attacker.ActionLeft -= 2;
                     break;
             }
@@ -439,7 +440,7 @@ namespace DA_Models.ComponentModels
             {
                 AttackValue += SD.FightModifiers.FlankingAttackBonus;
                 IsShieldDefenceAllowed = false;
-                actionDisplay += $" {RichText.BoldText("flanking")}{SD.BonusText(SD.FightModifiers.FlankingAttackBonus)}";
+                actionDisplay += $" {RichText.BoldText(Loc.T("flanking"))}{SD.BonusText(SD.FightModifiers.FlankingAttackBonus)}";
             }
 
             // add weapon bonus if exists
@@ -447,13 +448,13 @@ namespace DA_Models.ComponentModels
             if (AttackCurrValue > 0)
             {
                 AttackValue += AttackCurrValue;
-                weaponModifierString += ", with precise weapon" + SD.BonusText(AttackCurrValue);
+                weaponModifierString += ", " + Loc.T("with precise weapon") + SD.BonusText(AttackCurrValue);
             }
             AttackCurrValue = Attacker.Props.Get(SD.WeaponQuality.Bulky).SumBonus;
             if (AttackCurrValue > 0)
             {
                 AttackValue -= AttackCurrValue;
-                weaponModifierString += ", with crude weapon" + SD.BonusText(-AttackCurrValue);
+                weaponModifierString += ", " + Loc.T("with crude weapon") + SD.BonusText(-AttackCurrValue);
             }
             string attackerStatesString = GetStatesString(Attacker.OldStates);
             string defenderStatesString = GetStatesString(Defender.OldStates);
@@ -464,7 +465,7 @@ namespace DA_Models.ComponentModels
             if(attackerStatesString.Length > 0) attackerStatesString = $"({attackerStatesString})";
             if (defenderStatesString.Length > 0) defenderStatesString = $"({defenderStatesString})";
 
-            ResultStringMG += $"{RichText.BoldText(Attacker.Name)} {attackerStatesString} attacks{actionDisplay} {weaponString}{weaponModifierString}, {RichText.BoldText(Defender.Name)} {defenderStatesString} tries to {defenceString}.";
+            ResultStringMG += Loc.T("{0} {1} attacks{2} {3}{4}, {5} {6} tries to {7}.", RichText.BoldText(Attacker.Name), attackerStatesString, actionDisplay, weaponString, weaponModifierString, RichText.BoldText(Defender.Name), defenderStatesString, defenceString);
         }
 
         public static int GetSurroundedDefencePenalty(string defenceType, int attackerCount)
@@ -499,8 +500,8 @@ namespace DA_Models.ComponentModels
         private string FormatSurroundedModifier(int penalty)
         {
             var label = string.Equals(DefenceType, SD.DefenceType.Armor, StringComparison.Ordinal)
-                ? $"{RichText.BoldText("surrounded")} {RichText.BoldText("armored")}"
-                : RichText.BoldText("surrounded");
+                ? $"{RichText.BoldText(Loc.T("surrounded"))} {RichText.BoldText(Loc.T("armored"))}"
+                : RichText.BoldText(Loc.T("surrounded"));
             return $" {label}{SD.BonusText(-penalty)}";
         }
 
@@ -628,7 +629,7 @@ namespace DA_Models.ComponentModels
             IsCriticalHit = RollService.IsCriticalSuccess(Attacker.Roll.Item1);
             IsCriticalDefense = RollService.IsCriticalSuccess(Defender.Roll.Item1);
             ResultStringMG.NewLine();
-            ResultStringMG += $"{Attacker.Name} roll: {RichText.BoldText(Attacker.Roll.Item2)}, {Defender.Name} roll: {RichText.BoldText(Defender.Roll.Item2)}";
+            ResultStringMG += Loc.T("{0} roll: {1}, {2} roll: {3}", Attacker.Name, RichText.BoldText(Attacker.Roll.Item2), Defender.Name, RichText.BoldText(Defender.Roll.Item2));
             AttackValue += Attacker.Roll.Item1;
             DefenceValue += Defender.Roll.Item1;
             HitValue = AttackValue - DefenceValue;
@@ -646,13 +647,13 @@ namespace DA_Models.ComponentModels
                 IsHit = true;
             }
             if (IsCriticalHit)
-                attackString = "Critical Hit!";
+                attackString = Loc.T("Critical Hit!");
             else if (IsCriticalDefense)
-                attackString = "Critical Defence!";
+                attackString = Loc.T("Critical Defence!");
             else
-                attackString = IsHit ? "Hit!" : "Miss!";
+                attackString = IsHit ? Loc.T("Hit!") : Loc.T("Miss!");
             ResultStringMG.NewLine();
-            ResultStringMG += $" {Attacker.Name} summary: {RichText.BoldText(AttackValue.ToString())}, {Defender.Name} summary: {RichText.BoldText(DefenceValue.ToString())}. {RichText.BoldText(attackString)}";
+            ResultStringMG += Loc.T(" {0} summary: {1}, {2} summary: {3}. {4}", Attacker.Name, RichText.BoldText(AttackValue.ToString()), Defender.Name, RichText.BoldText(DefenceValue.ToString()), RichText.BoldText(attackString));
             if(IsHit == false)
             {
                 WriteNewStatesSummary();
@@ -666,11 +667,11 @@ namespace DA_Models.ComponentModels
             string attackString = string.Empty;
             // damage from attack
             ResultStringMG.NewLine();
-            ResultStringMG += $"Damage dealt from attack: {HitValue}";
+            ResultStringMG += Loc.T("Damage dealt from attack: {0}", HitValue);
             int dmgDeflected = Defender.Props.Get(SD.BattleProperty.ArmorClass).SumBonus - Attacker.Props.Get(SD.WeaponQuality.ArmorPiercing).SumBonus;
             if (dmgDeflected > 0)
             {
-                attackString = $", deflected by armor: -{dmgDeflected} ";
+                attackString = ", " + Loc.T("deflected by armor: -{0}", dmgDeflected) + " ";
             }
             else
             {
@@ -683,7 +684,7 @@ namespace DA_Models.ComponentModels
             int dmgfromWeaponQuality = Attacker.Props.Get(SD.WeaponQuality.Devastating).SumBonus;
             if (dmgfromWeaponQuality > 0)
             {
-                attackString = $", from devastating weapon: {dmgfromWeaponQuality}";
+                attackString = ", " + Loc.T("from devastating weapon: {0}", dmgfromWeaponQuality);
             }
             else
             {
@@ -691,7 +692,7 @@ namespace DA_Models.ComponentModels
                 if (dmgfromWeaponQuality > 0)
                 {
                     dmgfromWeaponQuality = -dmgfromWeaponQuality;
-                    attackString = $", from weak weapon: {dmgfromWeaponQuality}";
+                    attackString = ", " + Loc.T("from weak weapon: {0}", dmgfromWeaponQuality);
                 }
             }
             ResultStringMG += $"{attackString}";
@@ -699,22 +700,22 @@ namespace DA_Models.ComponentModels
             // damage from actions (rage, charge)
             if (AdditionalDamage != 0)
             {
-                attackString = $", from action: {AdditionalDamage}";
+                attackString = ", " + Loc.T("from action: {0}", AdditionalDamage);
             }
             ResultStringMG += $"{attackString}";
             attackString = string.Empty;
             if (CriticalHitDamageBonus > 0)
             {
-                attackString = $", from critical hit: +{CriticalHitDamageBonus}";
+                attackString = ", " + Loc.T("from critical hit: +{0}", CriticalHitDamageBonus);
             }
             ResultStringMG += $"{attackString}";
             DamageDelt = (AttackValue - DefenceValue) - dmgDeflected + AdditionalDamage + dmgfromWeaponQuality + CriticalHitDamageBonus;
             if (DamageDelt < 0) DamageDelt = 0;
             WoundSeverity = Wounds.SeverityFromDmg(DamageDelt);
             ResultStringMG.NewLine();
-            ResultStringMG += $"Summary damage: {DamageDelt} - {RichText.BoldText($"{WoundSeverity} wound")}";
+            ResultStringMG += Loc.T("Summary damage: {0} - {1}", DamageDelt, RichText.BoldText(Loc.T("{0} wound", WoundSeverity)));
             if (AttackLocation.IsNullOrEmpty() == false)
-                ResultStringMG += $" to {RichText.BoldText(AttackLocation.ToLower())}";
+                ResultStringMG += " " + Loc.T("to {0}", RichText.BoldText(AttackLocation.ToLower()));
         }
         public void CalculateAndAddWound()
         {
@@ -725,14 +726,14 @@ namespace DA_Models.ComponentModels
             if(DC != 0) 
             { 
                 ResultStringMG.NewLine();
-                ResultStringMG += $"Pain resistance test: {painResRoll.Item2}";
+                ResultStringMG += Loc.T("Pain resistance test: {0}", painResRoll.Item2);
             }
 
             //create wound
             WoundDTO newWound = new();
             newWound.DateStart = Date;
             newWound.IsIgnored = painResRoll.Item1;
-            newWound.Description = $"Wound inflicted by {Attacker.Name} after {AttackAction} attack.";
+            newWound.Description = Loc.T("Wound inflicted by {0} after {1} attack.", Attacker.Name, AttackAction);
             if (AttackLocation.IsNullOrEmpty())
             {
                 newWound.Location = Wounds.RandomLocation();
@@ -781,7 +782,7 @@ namespace DA_Models.ComponentModels
                 Defender.NewStates = _pendingMobOverflow.NewStates;
                 Defender.States = new List<TraitDTO>();
                 ResultStringMG.NewLine();
-                ResultStringMG += "Mob is dead — wounds exceed maximum health by 8 or more.";
+                ResultStringMG += Loc.T("Mob is dead — wounds exceed maximum health by 8 or more.");
                 _pendingMobOverflow = MobWoundOverflowResult.None;
                 WriteNewStatesSummary();
                 ResultStringMG.EndText();
@@ -835,7 +836,7 @@ namespace DA_Models.ComponentModels
                         default: continue;
                     }
                     ResultStringMG.NewLine();
-                    ResultStringMG += $"Test against {stateTest}: {result.Item2}";
+                    ResultStringMG += Loc.T("Test against {0}: {1}", stateTest, result.Item2);
                     if (result.Item1 == false)
                     {
                         if(stateTest == States.Names.Dead)
@@ -869,7 +870,7 @@ namespace DA_Models.ComponentModels
             {
                 Defender.NewStates = CombatStateString.Merge(Defender.NewStates, _pendingMobOverflow.NewStates);
                 ResultStringMG.NewLine();
-                ResultStringMG += "Mob loses consciousness — wounds exceed maximum health.";
+                ResultStringMG += Loc.T("Mob loses consciousness — wounds exceed maximum health.");
                 _pendingMobOverflow = MobWoundOverflowResult.None;
             }
 
@@ -883,14 +884,14 @@ namespace DA_Models.ComponentModels
             if (!string.IsNullOrEmpty(attackerStates))
             {
                 ResultStringMG.NewLine();
-                ResultStringMG += $"{Attacker.Name} new states: {attackerStates}";
+                ResultStringMG += Loc.T("{0} new states: {1}", Attacker.Name, attackerStates);
             }
 
             var defenderStates = FormatNewStatesForDisplay(Defender.NewStates);
             if (!string.IsNullOrEmpty(defenderStates))
             {
                 ResultStringMG.NewLine();
-                ResultStringMG += $"{Defender.Name} new states: {defenderStates}";
+                ResultStringMG += Loc.T("{0} new states: {1}", Defender.Name, defenderStates);
             }
         }
 

@@ -209,6 +209,11 @@ public class Program
 
         var app = builder.Build();
         app.UsePathBase("/");
+
+        // Bridge the shared localizer into DA_Common.Loc so backend class libraries
+        // (static helpers, catalogs, combat engine) can localize without DI injection.
+        DA_Common.Localization.Loc.Configure(
+            app.Services.GetRequiredService<Microsoft.Extensions.Localization.IStringLocalizer<DagoniteEmpire.Localization.SharedResources>>());
         //app.UseStatusCodePages();
 
         if (!app.Environment.IsDevelopment())

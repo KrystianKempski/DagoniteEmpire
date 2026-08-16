@@ -120,7 +120,7 @@ namespace DA_Business.Repository.BaronyRepos
                 var entity = new Barony
                 {
                     CharacterId = characterId,
-                    Name = string.IsNullOrWhiteSpace(name) ? "Nowa Baronia" : name.Trim(),
+                    Name = string.IsNullOrWhiteSpace(name) ? "New Barony" : name.Trim(),
                     Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
                     TerrainMapWidth = TerrainMapGrid.DefaultSize,
                     TerrainMapHeight = TerrainMapGrid.DefaultSize,

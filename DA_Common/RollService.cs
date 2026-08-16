@@ -1,4 +1,5 @@
 using System.Text;
+using DA_Common.Localization;
 
 namespace DA_Common;
 
@@ -43,7 +44,7 @@ public static class RollService
         var roll = RollDice();
         var total = skill + roll.Sum;
         var success = total >= dc;
-        var outcome = success ? "Success!" : "Fail!";
+        var outcome = success ? Loc.T("Success!") : Loc.T("Fail!");
         var text = $"{skill} + {roll.Text} is {RichText.BoldText(total.ToString())} vs DC: {RichText.BoldText(dc.ToString())}. {RichText.BoldText(outcome)}";
         return new RollCheckResult(success, text);
     }
@@ -81,11 +82,11 @@ public static class RollService
         var firstWins = total1 >= total2;
         string outcome;
         if (isTie)
-            outcome = $"Tie! {RichText.BoldText(name1)} wins on equal totals.";
+            outcome = Loc.T("Tie! {0} wins on equal totals.", RichText.BoldText(name1));
         else if (firstWins)
-            outcome = $"{RichText.BoldText(name1)} wins!";
+            outcome = Loc.T("{0} wins!", RichText.BoldText(name1));
         else
-            outcome = $"{RichText.BoldText(name2)} wins!";
+            outcome = Loc.T("{0} wins!", RichText.BoldText(name2));
 
         var text = $"{side1} vs {side2}. {outcome}";
         return new OppositeRollResult(firstWins, isTie, text);
