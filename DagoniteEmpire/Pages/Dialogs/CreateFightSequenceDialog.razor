@@ -372,7 +372,7 @@
                 var fighter = FightSequenceModel.AddFighter(characterParams);
                 if (fighter is null)
                 {
-                    Snackbar.Add("Error while selecting Attacker: character battle data is missing", Severity.Warning);
+                    Snackbar.Add(L["Error while selecting Attacker: character battle data is missing"], Severity.Warning);
                     return;
                 }
                 FightSequence.Attacker = fighter;
@@ -386,7 +386,7 @@
                 var fighter = FightSequenceModel.AddFighter(mob);
                 if (fighter is null)
                 {
-                    Snackbar.Add("Error while selecting Attacker: mob data is missing", Severity.Warning);
+                    Snackbar.Add(L["Error while selecting Attacker: mob data is missing"], Severity.Warning);
                     return;
                 }
                 FightSequence.Attacker = fighter;
@@ -395,7 +395,7 @@
         }
         catch(Exception ex)
         {
-            Snackbar.Add("Error while selecting Attacker: " + ex.Message, Severity.Error);
+            Snackbar.Add(L["Error while selecting Attacker: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -422,7 +422,7 @@
                 var fighter = FightSequenceModel.AddFighter(characterParams);
                 if (fighter is null)
                 {
-                    Snackbar.Add("Error while selecting Defender: character battle data is missing", Severity.Warning);
+                    Snackbar.Add(L["Error while selecting Defender: character battle data is missing"], Severity.Warning);
                     return;
                 }
                 FightSequence.Defender = fighter;
@@ -438,7 +438,7 @@
                 var fighter = FightSequenceModel.AddFighter(mob);
                 if (fighter is null)
                 {
-                    Snackbar.Add("Error while selecting Defender: mob data is missing", Severity.Warning);
+                    Snackbar.Add(L["Error while selecting Defender: mob data is missing"], Severity.Warning);
                     return;
                 }
                 FightSequence.Defender = fighter;
@@ -449,7 +449,7 @@
         }
         catch(Exception ex)
         {
-            Snackbar.Add("Error while selecting Defender: " + ex.Message, Severity.Error);
+            Snackbar.Add(L["Error while selecting Defender: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -466,7 +466,7 @@
             if (SelectedAttacker == string.Empty || SelectedDefender == string.Empty || FightSequence is null || FightSequence.AttackAction == string.Empty ||
                (_isTargeted == true && FightSequence.AttackLocation == string.Empty))
             {
-                Snackbar.Add("Some component is missing", Severity.Warning);
+                Snackbar.Add(L["Some component is missing"], Severity.Warning);
                 return;
             }
 
@@ -478,7 +478,7 @@
             var result = FightSequence.CalculateAndWriteAttack();
             if (string.IsNullOrEmpty(result) == false)
             {
-                Snackbar.Add("Error: " + result, Severity.Warning);
+                Snackbar.Add(L["Error: "] + result, Severity.Warning);
                 return;
             }
 
@@ -492,7 +492,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add("Error while rolling: " + ex.Message, Severity.Error);
+            Snackbar.Add(L["Error while rolling: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -556,7 +556,7 @@
 
             if (string.IsNullOrWhiteSpace(FightResult))
             {
-                Snackbar.Add("Roll first before saving", Severity.Warning);
+                Snackbar.Add(L["Roll first before saving"], Severity.Warning);
                 return;
             }
 
@@ -572,7 +572,7 @@
         }
         catch(Exception ex)
         {
-            Snackbar.Add("Error while saving: " + ex.Message, Severity.Error);
+            Snackbar.Add(L["Error while saving: "] + ex.Message, Severity.Error);
         }
     }
 }

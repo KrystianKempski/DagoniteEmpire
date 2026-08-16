@@ -995,7 +995,7 @@
             await _baronyRepo.SaveSeatRoom(draft);
             _suppressRoomClick = true;
             if (issue == SeatRoomLayoutIssue.None)
-                _snackBar.Add("Chamber moved.", Severity.Success);
+                _snackBar.Add(L["Chamber moved."], Severity.Success);
             else
                 _snackBar.Add($"Chamber moved — {SeatRoomLayout.IssueLabel(issue)}.", Severity.Warning);
 
@@ -1003,7 +1003,7 @@
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not move chamber: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not move chamber: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -1076,7 +1076,7 @@
         {
             ApplyLocalTile(x, y, previous);
             await InvokeAsync(StateHasChanged);
-            _snackBar.Add("Could not paint tile: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not paint tile: "] + ex.Message, Severity.Error);
             _paintStrokeActive = false;
         }
     }
@@ -1113,7 +1113,7 @@
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not add floor: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not add floor: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -1130,12 +1130,12 @@
             Seat.ActiveLevels = next;
             Seat.Tiles.RemoveAll(t => t.Level == removed);
             _currentLevel = next.Contains(SeatFloorLevel.Ground) ? SeatFloorLevel.Ground : next[0];
-            _snackBar.Add("Floor removed.", Severity.Success);
+            _snackBar.Add(L["Floor removed."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not remove floor: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not remove floor: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -1203,12 +1203,12 @@
         try
         {
             await _baronyRepo.SaveSeat(saved);
-            _snackBar.Add("Grid updated.", Severity.Success);
+            _snackBar.Add(L["Grid updated."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save grid: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save grid: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -1242,7 +1242,7 @@
 
         if (string.IsNullOrWhiteSpace(saved.Name))
         {
-            _snackBar.Add("Chamber name is required.", Severity.Warning);
+            _snackBar.Add(L["Chamber name is required."], Severity.Warning);
             return;
         }
 
@@ -1257,7 +1257,7 @@
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save chamber: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save chamber: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -1286,12 +1286,12 @@
                 assignment.PurposeTemplateId,
                 assignment.OccupantAdvisorId,
                 assignment.OccupantCustom);
-            _snackBar.Add("Purpose updated.", Severity.Success);
+            _snackBar.Add(L["Purpose updated."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not assign purpose: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not assign purpose: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -1300,12 +1300,12 @@
         try
         {
             await _baronyRepo.DeleteSeatRoom(room.Id);
-            _snackBar.Add("Chamber removed.", Severity.Success);
+            _snackBar.Add(L["Chamber removed."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not delete chamber: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not delete chamber: "] + ex.Message, Severity.Error);
         }
     }
 

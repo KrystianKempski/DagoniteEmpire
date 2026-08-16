@@ -97,13 +97,13 @@
     {
         if (string.IsNullOrWhiteSpace(_name))
         {
-            _snackBar.Add("Barony name is required.", Severity.Warning);
+            _snackBar.Add(L["Barony name is required."], Severity.Warning);
             return;
         }
 
         if (_selectedCharacter is null)
         {
-            _snackBar.Add("Select a baron character.", Severity.Warning);
+            _snackBar.Add(L["Select a baron character."], Severity.Warning);
             return;
         }
 
@@ -128,7 +128,7 @@
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Failed to create barony: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Failed to create barony: "] + ex.Message, Severity.Error);
         }
     }
 }

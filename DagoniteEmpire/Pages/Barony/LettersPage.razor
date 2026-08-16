@@ -789,11 +789,11 @@ else if (Barony is not null)
             await _baronyRepo.SaveLetterThread(_selected);
             var listed = _threads.FirstOrDefault(t => t.Id == _selected.Id);
             if (listed is not null) listed.Title = title;
-            _snackBar.Add("Thread renamed.", Severity.Success);
+            _snackBar.Add(L["Thread renamed."], Severity.Success);
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Rename failed: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Rename failed: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -817,7 +817,7 @@ else if (Barony is not null)
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Delete failed: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Delete failed: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -840,7 +840,7 @@ else if (Barony is not null)
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Delete failed: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Delete failed: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -851,7 +851,7 @@ else if (Barony is not null)
 
         if (CanWriteAsBaron && BaronIsAwaitingReply(_selected))
         {
-            _snackBar.Add("Wait for a reply before sending another letter in this thread.", Severity.Warning);
+            _snackBar.Add(L["Wait for a reply before sending another letter in this thread."], Severity.Warning);
             return;
         }
 
@@ -880,7 +880,7 @@ else if (Barony is not null)
             var html = await TryGetEditorHtmlAsync(_editor, _draft.BodyHtml) ?? _draft.BodyHtml;
             if (IsEffectivelyEmptyHtml(html))
             {
-                _snackBar.Add("Write something before sending.", Severity.Warning);
+                _snackBar.Add(L["Write something before sending."], Severity.Warning);
                 StartAutoSaveLoop();
                 return;
             }
@@ -917,19 +917,19 @@ else if (Barony is not null)
             var sent = await _baronyRepo.SaveLetterMessage(_draft);
             if (sent.IsDraft)
             {
-                _snackBar.Add("Send failed: message stayed as draft.", Severity.Error);
+                _snackBar.Add(L["Send failed: message stayed as draft."], Severity.Error);
                 StartAutoSaveLoop();
                 return;
             }
 
             // Baron: reload into edit-last-letter mode. GM: reload may create a new inbound draft.
             _skipNextDraftPersist = true;
-            _snackBar.Add("Letter sent.", Severity.Success);
+            _snackBar.Add(L["Letter sent."], Severity.Success);
             await ReloadAsync(selectThreadId: _selected.Id);
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Send failed: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Send failed: "] + ex.Message, Severity.Error);
             if (_canUseComposer) StartAutoSaveLoop();
         }
         finally
@@ -953,7 +953,7 @@ else if (Barony is not null)
             var html = await TryGetEditorHtmlAsync(_editor, _draft.BodyHtml) ?? _draft.BodyHtml;
             if (IsEffectivelyEmptyHtml(html))
             {
-                _snackBar.Add("Letter cannot be empty.", Severity.Warning);
+                _snackBar.Add(L["Letter cannot be empty."], Severity.Warning);
                 StartAutoSaveLoop();
                 return;
             }
@@ -972,12 +972,12 @@ else if (Barony is not null)
             _editor = null;
             _shouldLoadEditor = false;
             _saveHint = null;
-            _snackBar.Add("Letter updated.", Severity.Success);
+            _snackBar.Add(L["Letter updated."], Severity.Success);
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Save failed: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Save failed: "] + ex.Message, Severity.Error);
             StartAutoSaveLoop();
         }
         finally

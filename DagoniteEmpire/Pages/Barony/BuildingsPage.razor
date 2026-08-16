@@ -162,7 +162,7 @@ else
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save catalog entry: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save catalog entry: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -173,7 +173,7 @@ else
 
         if (!string.Equals(template.Kind, BuildingKind.Building, StringComparison.OrdinalIgnoreCase))
         {
-            _snackBar.Add("Terrain improvements are built from the Terrain map.", Severity.Info);
+            _snackBar.Add(L["Terrain improvements are built from the Terrain map."], Severity.Info);
             return;
         }
 
@@ -195,11 +195,11 @@ else
         try
         {
             await _baronyRepo.SaveProject(project);
-            _snackBar.Add("Building project added — see the Projects tab.", Severity.Success);
+            _snackBar.Add(L["Building project added — see the Projects tab."], Severity.Success);
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not create project: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not create project: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -236,7 +236,7 @@ else
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not update catalog entry: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not update catalog entry: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -260,7 +260,7 @@ else
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not delete catalog entry: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not delete catalog entry: "] + ex.Message, Severity.Error);
         }
     }
 

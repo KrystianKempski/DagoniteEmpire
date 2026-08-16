@@ -176,7 +176,7 @@
 
         if (string.IsNullOrWhiteSpace(saved.Name))
         {
-            _snackBar.Add("Template name is required.", Severity.Warning);
+            _snackBar.Add(L["Template name is required."], Severity.Warning);
             return;
         }
 
@@ -191,7 +191,7 @@
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save template: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save template: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -200,12 +200,12 @@
         try
         {
             await _baronyRepo.DeleteSeatPurposeTemplate(t.Id);
-            _snackBar.Add("Template removed.", Severity.Success);
+            _snackBar.Add(L["Template removed."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not delete template: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not delete template: "] + ex.Message, Severity.Error);
         }
     }
 

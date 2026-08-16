@@ -231,9 +231,9 @@
 
         MudDialog.Close(DialogResult.Ok(NewMob));
         if (IsEdit)
-            Snackbar.Add("Mob edited", Severity.Success);
+            Snackbar.Add(L["Mob edited"], Severity.Success);
         else 
-            Snackbar.Add("Mob created", Severity.Success);
+            Snackbar.Add(L["Mob created"], Severity.Success);
     }
 
     private void UploadFiles(IBrowserFile file)
@@ -293,7 +293,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add("Error while image upload: " + ex.ToString(), Severity.Error);
+            Snackbar.Add(L["Error while image upload: "] + ex.ToString(), Severity.Error);
         }
     }
     private async Task<DialogOptions> SetOptions(MaxWidth maxWidth = MaxWidth.Medium)

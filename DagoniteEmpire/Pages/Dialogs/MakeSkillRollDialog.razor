@@ -379,7 +379,7 @@
         }
         catch(Exception ex)
         {
-            Snackbar.Add("Error while selecting Attacker: " + ex.Message);
+            Snackbar.Add(L["Error while selecting Attacker: "] + ex.Message);
         }
     }
 
@@ -412,7 +412,7 @@
         }
         catch(Exception ex)
         {
-            Snackbar.Add("Error while selecting Defender: " + ex.Message);
+            Snackbar.Add(L["Error while selecting Defender: "] + ex.Message);
         }
     }
 
@@ -474,7 +474,7 @@
         if (!IsRollerReady() || string.IsNullOrEmpty(RollerName)
             || (IsOppositeRoll && (!IsDefenderReady() || string.IsNullOrEmpty(DefenderName))))
         {
-            Snackbar.Add("Some component is missing", Severity.Warning);
+            Snackbar.Add(L["Some component is missing"], Severity.Warning);
             return;
         }
 
@@ -548,7 +548,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add("Error while rolling: " + ex.Message, Severity.Error);
+            Snackbar.Add(L["Error while rolling: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -558,16 +558,16 @@
         {
             if (string.IsNullOrEmpty(RollResultString))
             {
-                Snackbar.Add("Make a roll first", Severity.Warning);
+                Snackbar.Add(L["Make a roll first"], Severity.Warning);
                 return;
             }
 
             MudDialog.Close(DialogResult.Ok(new SkillRollDialogResult(RollResultString, WrapForThread: true)));
-            Snackbar.Add("Roll added", Severity.Success);
+            Snackbar.Add(L["Roll added"], Severity.Success);
         }
         catch(Exception ex)
         {
-            Snackbar.Add("Error while saving: " + ex.Message, Severity.Error);
+            Snackbar.Add(L["Error while saving: "] + ex.Message, Severity.Error);
         }
     }    
 }

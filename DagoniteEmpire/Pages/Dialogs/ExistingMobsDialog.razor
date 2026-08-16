@@ -62,7 +62,7 @@
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Error while initialize: " + ex.ToString(), Severity.Error);
+            _snackBar.Add(L["Error while initialize: "] + ex.ToString(), Severity.Error);
         }
     }
 
@@ -90,7 +90,7 @@
         }
         Mobs = (await _mobRepository.GetAll()).ToList();
         MudDialog.Close(DialogResult.Ok(Mobs));
-        _snackBar.Add("Selected mobs added to chapter", Severity.Success);
+        _snackBar.Add(L["Selected mobs added to chapter"], Severity.Success);
     }
 
     private async Task Close()
@@ -98,7 +98,7 @@
         //if (Mobs.Any())
         //    await _mobRepository.Update(Mobs.First());
         MudDialog.Close(DialogResult.Ok(Mobs));
-        _snackBar.Add("Mobs modyfied", Severity.Success);
+        _snackBar.Add(L["Mobs modyfied"], Severity.Success);
     }
 
     private void SelectedItemsChanged(HashSet<MobDTO> mobs)

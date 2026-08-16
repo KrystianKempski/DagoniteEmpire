@@ -178,7 +178,7 @@
     {
         if (string.IsNullOrWhiteSpace(_title))
         {
-            _snackBar.Add("Thread title is required.", Severity.Warning);
+            _snackBar.Add(L["Thread title is required."], Severity.Warning);
             return;
         }
 
@@ -223,7 +223,7 @@
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not create thread: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not create thread: "] + ex.Message, Severity.Error);
         }
         finally
         {

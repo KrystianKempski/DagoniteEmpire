@@ -186,7 +186,7 @@
 
         if (string.IsNullOrWhiteSpace(saved.Source))
         {
-            _snackBar.Add("Source name is required.", Severity.Warning);
+            _snackBar.Add(L["Source name is required."], Severity.Warning);
             return;
         }
 
@@ -206,7 +206,7 @@
 
         BaronyCalc.SyncAdvisorAdditive(Advisor, mods);
         await _baronyRepo.SaveAdvisor(Advisor);
-        _snackBar.Add("Bonus source saved.", Severity.Success);
+        _snackBar.Add(L["Bonus source saved."], Severity.Success);
         await OnChanged.InvokeAsync();
     }
 
@@ -219,7 +219,7 @@
         var mods = CustomModifiers.Where(m => m.Id != row.ModifierId).ToList();
         BaronyCalc.SyncAdvisorAdditive(Advisor, mods);
         await _baronyRepo.SaveAdvisor(Advisor);
-        _snackBar.Add("Bonus source removed.", Severity.Success);
+        _snackBar.Add(L["Bonus source removed."], Severity.Success);
         await OnChanged.InvokeAsync();
     }
 
@@ -232,7 +232,7 @@
             await _baronyRepo.DeleteAdvisorInfluenceModifier(modifier.Id);
 
         await _baronyRepo.DeleteAdvisor(Advisor.Id);
-        _snackBar.Add("Office removed.", Severity.Success);
+        _snackBar.Add(L["Office removed."], Severity.Success);
         await OnChanged.InvokeAsync();
     }
 
@@ -240,7 +240,7 @@
     {
         BaronyCalc.SyncAdvisorAdditive(Advisor, CustomModifiers);
         await _baronyRepo.SaveAdvisor(Advisor);
-        _snackBar.Add("Office updated.", Severity.Success);
+        _snackBar.Add(L["Office updated."], Severity.Success);
         await OnChanged.InvokeAsync();
     }
 

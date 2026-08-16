@@ -108,12 +108,12 @@
         {
             if (string.IsNullOrWhiteSpace(entry.Name))
             {
-                _snackBar.Add("Each source needs a name.", Severity.Warning);
+                _snackBar.Add(L["Each source needs a name."], Severity.Warning);
                 return;
             }
             if (CourtSkillCatalog.FindMain(entry.SkillKey) is null)
             {
-                _snackBar.Add("Pick a main skill for each source.", Severity.Warning);
+                _snackBar.Add(L["Pick a main skill for each source."], Severity.Warning);
                 return;
             }
         }

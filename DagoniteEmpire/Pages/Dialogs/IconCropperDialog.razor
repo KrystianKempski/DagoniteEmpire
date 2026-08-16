@@ -110,11 +110,11 @@
             var croppedCanvas = await cropperComponent!.GetCroppedCanvasAsync(getCroppedCanvasOptions);
             var uploadedUrl = await JSRuntime.InvokeAsync<string>("uploadEllipseIcon", croppedCanvas.JSRuntimeObjectRef, SD.Icon);
             MudDialog.Close(DialogResult.Ok(uploadedUrl));
-            Snackbar.Add("Icon created", Severity.Success);
+            Snackbar.Add(L["Icon created"], Severity.Success);
         }
         catch (Exception ex)
         {
-            Snackbar.Add("Error! " + ex.Message, Severity.Error);
+            Snackbar.Add(L["Error! "] + ex.Message, Severity.Error);
         }
     }
 }

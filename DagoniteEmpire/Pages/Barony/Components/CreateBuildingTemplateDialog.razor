@@ -210,20 +210,20 @@
         var trimmedName = _name.Trim();
         if (string.IsNullOrWhiteSpace(trimmedName))
         {
-            _snackBar.Add("Name is required.", Severity.Warning);
+            _snackBar.Add(L["Name is required."], Severity.Warning);
             return;
         }
 
         if (ExistingNames.Contains(trimmedName)
             && !string.Equals(trimmedName, InitialTemplate?.Name, StringComparison.OrdinalIgnoreCase))
         {
-            _snackBar.Add("A catalog entry with this name already exists.", Severity.Warning);
+            _snackBar.Add(L["A catalog entry with this name already exists."], Severity.Warning);
             return;
         }
 
         if (IsImprovement && string.IsNullOrWhiteSpace(_mapPinKind))
         {
-            _snackBar.Add("Select an icon for improvements.", Severity.Warning);
+            _snackBar.Add(L["Select an icon for improvements."], Severity.Warning);
             return;
         }
 

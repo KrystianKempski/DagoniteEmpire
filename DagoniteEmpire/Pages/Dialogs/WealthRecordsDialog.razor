@@ -119,7 +119,7 @@
     {
         if (NewDescription == string.Empty)
         {
-            Snackbar.Add("Add description", Severity.Warning);
+            Snackbar.Add(L["Add description"], Severity.Warning);
             return;
         }
         if (ButtonText == "ADD")
@@ -131,7 +131,7 @@
             newRecord.Value = (decimal)Imperials + (decimal)Talars * 0.1m + (decimal)Hellers * 0.01m + (decimal)Coppers * 0.0001m;
             if (newRecord.Value == 0.0m)
             {
-                Snackbar.Add("Add value", Severity.Warning);
+                Snackbar.Add(L["Add value"], Severity.Warning);
                 return;
             }
             newRecord.DateNumber = Date.AllDays;

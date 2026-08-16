@@ -226,13 +226,13 @@
 
         list[idx].IsApproved = true;
         await TreatiesChanged.InvokeAsync(list);
-        _snackBar.Add("Trade treaty approved.", Severity.Success);
+        _snackBar.Add(L["Trade treaty approved."], Severity.Success);
     }
 
     private async Task DeleteAsync(BaronyTradeTreaty treaty)
     {
         var list = Treaties.Where(t => !string.Equals(t.Id, treaty.Id, StringComparison.OrdinalIgnoreCase)).ToList();
         await TreatiesChanged.InvokeAsync(list);
-        _snackBar.Add("Trade treaty removed.", Severity.Info);
+        _snackBar.Add(L["Trade treaty removed."], Severity.Info);
     }
 }

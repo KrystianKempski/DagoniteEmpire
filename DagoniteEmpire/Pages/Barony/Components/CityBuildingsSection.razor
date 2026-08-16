@@ -273,12 +273,12 @@
         try
         {
             await _baronyRepo.SaveImprovement(draft);
-            _snackBar.Add("Town population updated.", Severity.Success);
+            _snackBar.Add(L["Town population updated."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save town: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save town: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -310,12 +310,12 @@
         try
         {
             await _baronyRepo.SaveImprovement(saved);
-            _snackBar.Add("Town updated.", Severity.Success);
+            _snackBar.Add(L["Town updated."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save town: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save town: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -374,7 +374,7 @@
 
         if (string.IsNullOrWhiteSpace(saved.Name))
         {
-            _snackBar.Add("Building name is required.", Severity.Warning);
+            _snackBar.Add(L["Building name is required."], Severity.Warning);
             return;
         }
 
@@ -401,7 +401,7 @@
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save building: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save building: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -426,12 +426,12 @@
 
             var restored = BaronyCalc.FromStarterCatalogTemplate(BaronyId, building.CoreKey, template);
             await _baronyRepo.SaveBuilding(restored);
-            _snackBar.Add("Core building restored from catalog.", Severity.Success);
+            _snackBar.Add(L["Core building restored from catalog."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not reset building: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not reset building: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -443,12 +443,12 @@
         try
         {
             await _baronyRepo.DeleteBuilding(building.Id);
-            _snackBar.Add("Building removed.", Severity.Success);
+            _snackBar.Add(L["Building removed."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not remove building: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not remove building: "] + ex.Message, Severity.Error);
         }
     }
 

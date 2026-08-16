@@ -280,7 +280,7 @@
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save event: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save event: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -297,12 +297,12 @@
         try
         {
             await _baronyRepo.DeleteEvent(item.Id);
-            _snackBar.Add("Event removed.", Severity.Success);
+            _snackBar.Add(L["Event removed."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not remove event: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not remove event: "] + ex.Message, Severity.Error);
         }
     }
 

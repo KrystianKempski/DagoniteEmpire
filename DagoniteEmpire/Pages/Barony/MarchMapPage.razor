@@ -465,7 +465,7 @@ else
 
         if (_playerSeatNodeId is null)
         {
-            _snackBar.Add("Your barony seat is not on the map.", Severity.Warning);
+            _snackBar.Add(L["Your barony seat is not on the map."], Severity.Warning);
             return;
         }
 
@@ -477,7 +477,7 @@ else
 
         if (string.Equals(node.Id, _playerSeatNodeId, StringComparison.OrdinalIgnoreCase))
         {
-            _snackBar.Add("Select a different city as the trade partner.", Severity.Info);
+            _snackBar.Add(L["Select a different city as the trade partner."], Severity.Info);
             return;
         }
 
@@ -491,7 +491,7 @@ else
             _document, _playerSeatNodeId, node.Id, _blockedLordKeys);
         if (path is null)
         {
-            _snackBar.Add("No trade route — a seat may be blocked or roads are incomplete.", Severity.Warning);
+            _snackBar.Add(L["No trade route — a seat may be blocked or roads are incomplete."], Severity.Warning);
             ClearDesignPath();
             return;
         }
@@ -504,7 +504,7 @@ else
     {
         if (!_manualReachableNodeIds.Any(id => string.Equals(id, node.Id, StringComparison.OrdinalIgnoreCase)))
         {
-            _snackBar.Add("Pick a neighboring city directly linked to the previous step (not blocked).", Severity.Info);
+            _snackBar.Add(L["Pick a neighboring city directly linked to the previous step (not blocked)."], Severity.Info);
             return;
         }
 
@@ -517,7 +517,7 @@ else
     {
         if (_playerSeatNodeId is null)
         {
-            _snackBar.Add("Your barony seat is not on the map.", Severity.Warning);
+            _snackBar.Add(L["Your barony seat is not on the map."], Severity.Warning);
             return;
         }
 
@@ -549,7 +549,7 @@ else
             var path = MarchMapTradePathfinder.PathFromNodeIds(_document, _manualPathNodeIds);
             if (path is null)
             {
-                _snackBar.Add("Invalid manual route — clear and try again.", Severity.Error);
+                _snackBar.Add(L["Invalid manual route — clear and try again."], Severity.Error);
                 CancelManualRouteDesign();
                 return;
             }
@@ -741,7 +741,7 @@ else
             SetDesignPath(MarchMapTradePathfinder.FindShortestPath(
                 _document, _playerSeatNodeId!, endId, _blockedLordKeys));
             if (_designPath is null)
-                _snackBar.Add("Current design route is no longer reachable.", Severity.Warning);
+                _snackBar.Add(L["Current design route is no longer reachable."], Severity.Warning);
         }
 
         await InvokeAsync(StateHasChanged);
@@ -769,7 +769,7 @@ else
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save march map: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save march map: "] + ex.Message, Severity.Error);
         }
         finally
         {
@@ -787,6 +787,6 @@ else
         ResolvePlayerSeat();
         RefreshTradeRouteOverlays();
         ClearDesignPath();
-        _snackBar.Add("Map reset to default seed layout.", Severity.Info);
+        _snackBar.Add(L["Map reset to default seed layout."], Severity.Info);
     }
 }

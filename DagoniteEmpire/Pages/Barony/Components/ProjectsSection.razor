@@ -152,7 +152,7 @@
         try
         {
             await _baronyRepo.AllocateProjectResources(item.Id, amounts);
-            _snackBar.Add("Resources allocated to project.", Severity.Success);
+            _snackBar.Add(L["Resources allocated to project."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
@@ -177,7 +177,7 @@
         try
         {
             await _baronyRepo.ClearProjectAllocations(item.Id);
-            _snackBar.Add("Project allocation cleared.", Severity.Success);
+            _snackBar.Add(L["Project allocation cleared."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
@@ -250,7 +250,7 @@
         {
             if (!isNew)
             {
-                _snackBar.Add("Only the game master can edit existing projects.", Severity.Warning);
+                _snackBar.Add(L["Only the game master can edit existing projects."], Severity.Warning);
                 return;
             }
 
@@ -276,7 +276,7 @@
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save project: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save project: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -296,12 +296,12 @@
         try
         {
             await _baronyRepo.DeleteProject(item.Id);
-            _snackBar.Add("Project removed.", Severity.Success);
+            _snackBar.Add(L["Project removed."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not remove project: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not remove project: "] + ex.Message, Severity.Error);
         }
     }
 

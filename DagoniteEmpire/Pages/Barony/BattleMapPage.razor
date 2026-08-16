@@ -1007,7 +1007,7 @@ else
             return;
         if (unit.CurrentHp <= 0)
         {
-            _snackBar.Add("Broken units (0 HP) cannot be deployed.", Severity.Warning);
+            _snackBar.Add(L["Broken units (0 HP) cannot be deployed."], Severity.Warning);
             return;
         }
         _deployUnitId = unitId;
@@ -1142,9 +1142,9 @@ else
                         if (attacker.Range > 0 && IsPinned(attacker) && !AreAdjacent(attacker, planClicked))
                             _snackBar.Add($"{attacker.Label} is engaged — can only fight adjacent enemies.", Severity.Warning);
                         else if (attacker.Range > 0)
-                            _snackBar.Add("Target is out of range.", Severity.Warning);
+                            _snackBar.Add(L["Target is out of range."], Severity.Warning);
                         else
-                            _snackBar.Add("Unit is not adjacent to the selected target.", Severity.Warning);
+                            _snackBar.Add(L["Unit is not adjacent to the selected target."], Severity.Warning);
                     }
                     else
                     {
@@ -1229,23 +1229,23 @@ else
             return;
         if (unit.CurrentHp <= 0)
         {
-            _snackBar.Add("Broken units (0 HP) cannot be deployed.", Severity.Warning);
+            _snackBar.Add(L["Broken units (0 HP) cannot be deployed."], Severity.Warning);
             _deployUnitId = null;
             return;
         }
         if (Map.Tokens.Any(t => t.UnitId == unitId))
         {
-            _snackBar.Add("Unit already on the map.", Severity.Warning);
+            _snackBar.Add(L["Unit already on the map."], Severity.Warning);
             return;
         }
         if (!IsDeployCell(x, y))
         {
-            _snackBar.Add("Deploy only inside the deployment zone.", Severity.Warning);
+            _snackBar.Add(L["Deploy only inside the deployment zone."], Severity.Warning);
             return;
         }
         if (!CanPlace(x, y, 1))
         {
-            _snackBar.Add("Cell occupied.", Severity.Warning);
+            _snackBar.Add(L["Cell occupied."], Severity.Warning);
             return;
         }
 
@@ -1351,7 +1351,7 @@ else
             CancelEditEnemy();
         if (string.IsNullOrWhiteSpace(_enemyDraft.Label))
         {
-            _snackBar.Add("Enemy name required.", Severity.Warning);
+            _snackBar.Add(L["Enemy name required."], Severity.Warning);
             return;
         }
         var abilityError = ValidateEnemyDraftAbilitiesSet();
@@ -1363,7 +1363,7 @@ else
         _placingEnemy = true;
         _deployUnitId = null;
         _tool = "token";
-        _snackBar.Add("Click a cell to place the enemy token.", Severity.Info);
+        _snackBar.Add(L["Click a cell to place the enemy token."], Severity.Info);
     }
 
     private void BeginEditEnemy(string tokenId)
@@ -1396,7 +1396,7 @@ else
 
         if (string.IsNullOrWhiteSpace(_enemyDraft.Label))
         {
-            _snackBar.Add("Enemy name required.", Severity.Warning);
+            _snackBar.Add(L["Enemy name required."], Severity.Warning);
             return;
         }
         var abilityError = ValidateEnemyDraftAbilitiesSet();
@@ -1464,7 +1464,7 @@ else
         }
         if (Map is null || !CanPlace(x, y, 1))
         {
-            _snackBar.Add("Cannot place here.", Severity.Warning);
+            _snackBar.Add(L["Cannot place here."], Severity.Warning);
             return;
         }
         var hp = Math.Max(1, _enemyDraft.Hp);
@@ -1569,7 +1569,7 @@ else
         {
             if (!token.IsEnemy && !IsDeployFootprint(nx, ny, size))
             {
-                _snackBar.Add("Allies stay in the deployment zone during setup.", Severity.Warning);
+                _snackBar.Add(L["Allies stay in the deployment zone during setup."], Severity.Warning);
                 return false;
             }
             if (!CanPlace(nx, ny, size, token.Id))
@@ -1586,13 +1586,13 @@ else
         if (!IsMovementPhase)
         {
             if (IsCombatPhase)
-                _snackBar.Add("Movement is locked during the combat phase.", Severity.Info);
+                _snackBar.Add(L["Movement is locked during the combat phase."], Severity.Info);
             return false;
         }
 
         if (ActiveTokenId != token.Id)
         {
-            _snackBar.Add("Wait for this unit's movement order.", Severity.Warning);
+            _snackBar.Add(L["Wait for this unit's movement order."], Severity.Warning);
             return false;
         }
 
@@ -1639,33 +1639,33 @@ else
         if (token.ChargeBonus)
         {
             _snackBar.Add(
-                "A charging unit takes no further orders — undo to replan.", Severity.Warning);
+                L["A charging unit takes no further orders — undo to replan."], Severity.Warning);
             return false;
         }
 
         if (budget <= 0)
         {
-            _snackBar.Add("No movement left — Finish move or clear path.", Severity.Warning);
+            _snackBar.Add(L["No movement left — Finish move or clear path."], Severity.Warning);
             return false;
         }
 
         var reachable = ComputeReachableAnchorsFrom(token, fromX, fromY, budget);
         if (!reachable.Contains((nx, ny)))
         {
-            _snackBar.Add("Out of movement range.", Severity.Warning);
+            _snackBar.Add(L["Out of movement range."], Severity.Warning);
             return false;
         }
 
         if (!CanPlaceWaypoint(token, nx, ny))
         {
-            _snackBar.Add("Destination blocked (unit or another order).", Severity.Warning);
+            _snackBar.Add(L["Destination blocked (unit or another order)."], Severity.Warning);
             return false;
         }
 
         var cost = EstimateMoveCostFrom(token, fromX, fromY, nx, ny, budget);
         if (cost < 0 || cost > budget)
         {
-            _snackBar.Add("Not enough movement.", Severity.Warning);
+            _snackBar.Add(L["Not enough movement."], Severity.Warning);
             return false;
         }
 
@@ -1739,14 +1739,14 @@ else
 
         if (token.ChargeBonus)
         {
-            _snackBar.Add("This unit is already charging — undo to replan.", Severity.Warning);
+            _snackBar.Add(L["This unit is already charging — undo to replan."], Severity.Warning);
             return Task.CompletedTask;
         }
 
         var (_, _, budget) = GetTipPlanOrigin(token);
         if (budget < 3)
         {
-            _snackBar.Add("Need at least 3 move points to charge.", Severity.Warning);
+            _snackBar.Add(L["Need at least 3 move points to charge."], Severity.Warning);
             return Task.CompletedTask;
         }
 
@@ -2113,7 +2113,7 @@ else
         if (token.ChargeBonus)
         {
             _snackBar.Add(
-                "A charging unit takes no further orders — undo to replan.", Severity.Warning);
+                L["A charging unit takes no further orders — undo to replan."], Severity.Warning);
             return Task.CompletedTask;
         }
 
@@ -2124,7 +2124,7 @@ else
         {
             if (token.RemainingMove < 1 && !CommanderFreeFacingAvailable(token, inPlace: true))
             {
-                _snackBar.Add("Need at least 1 move point to change facing.", Severity.Warning);
+                _snackBar.Add(L["Need at least 1 move point to change facing."], Severity.Warning);
                 return Task.CompletedTask;
             }
 
@@ -2144,7 +2144,7 @@ else
         if (tip.RemainingMoveAfter < 1 && tip.FacingCostPaid <= 0
             && !CommanderFreeFacingAvailable(token, tipInPlace))
         {
-            _snackBar.Add("Need at least 1 move point to change facing.", Severity.Warning);
+            _snackBar.Add(L["Need at least 1 move point to change facing."], Severity.Warning);
             return Task.CompletedTask;
         }
 
@@ -2205,7 +2205,7 @@ else
             {
                 if (tip.RemainingMoveAfter < 1)
                 {
-                    _snackBar.Add("Need 1 move point to change facing.", Severity.Warning);
+                    _snackBar.Add(L["Need 1 move point to change facing."], Severity.Warning);
                     CancelFacingEdit();
                     return;
                 }
@@ -2794,7 +2794,7 @@ else
 
         if (assigned == 0 && cleared == 0)
         {
-            _snackBar.Add("No attack targets could be auto-assigned.", Severity.Info);
+            _snackBar.Add(L["No attack targets could be auto-assigned."], Severity.Info);
             return;
         }
 
@@ -3300,7 +3300,7 @@ else
             return;
         if (Map.Tokens.Count == 0)
         {
-            _snackBar.Add("Place at least one token before beginning.", Severity.Warning);
+            _snackBar.Add(L["Place at least one token before beginning."], Severity.Warning);
             return;
         }
 
@@ -3855,7 +3855,7 @@ else
         await SaveAsync(systemMessage: "Battle ended. Ally HP and XP synced to Army.");
         _selectedTokenId = null;
         RefreshRange();
-        _snackBar.Add("Battle ended — Army HP and XP updated.", Severity.Success);
+        _snackBar.Add(L["Battle ended — Army HP and XP updated."], Severity.Success);
     }
 
     /// <summary>Writes CurrentHp for every ally that entered the battle; returns summary lines.</summary>
@@ -3905,7 +3905,7 @@ else
         {
             Logger.LogError(ex, "Failed to sync battle HP to Army for barony {BaronyId}", BaronyId);
             lines.Add("ERROR: failed to sync some HP values to Army — check server logs.");
-            _snackBar.Add("Failed to sync some HP values to Army.", Severity.Error);
+            _snackBar.Add(L["Failed to sync some HP values to Army."], Severity.Error);
         }
 
         _allyStartHp.Clear();
@@ -3946,7 +3946,7 @@ else
 
         if (!CanControlToken(active))
         {
-            _snackBar.Add("Not your order.", Severity.Warning);
+            _snackBar.Add(L["Not your order."], Severity.Warning);
             return;
         }
 
@@ -4017,7 +4017,7 @@ else
 
         if (!active.HasPath)
         {
-            _snackBar.Add("Nothing to undo.", Severity.Info);
+            _snackBar.Add(L["Nothing to undo."], Severity.Info);
             return;
         }
 
@@ -4041,7 +4041,7 @@ else
             var last = Map.TurnState.CurrentIndex >= Map.TurnState.InitiativeOrder.Count - 1;
             if (!last)
             {
-                _snackBar.Add("Only the Game Master can resolve all movement early.", Severity.Warning);
+                _snackBar.Add(L["Only the Game Master can resolve all movement early."], Severity.Warning);
                 return;
             }
         }
@@ -5040,7 +5040,7 @@ else
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to save barony battle map");
-            _snackBar.Add("Failed to save battle map.", Severity.Error);
+            _snackBar.Add(L["Failed to save battle map."], Severity.Error);
         }
     }
 

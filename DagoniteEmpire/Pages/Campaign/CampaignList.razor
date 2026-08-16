@@ -288,7 +288,7 @@
             var chapters = (await _chapterRepository.GetAll(campaign.Id)).ToList();
             if (!chapters.Any())
             {
-                _snackBar.Add("This campaign does not have any chapters yet.", Severity.Info);
+                _snackBar.Add(L["This campaign does not have any chapters yet."], Severity.Info);
                 return;
             }
 
@@ -311,7 +311,7 @@
 
             if (latestChapter.ChapterId == 0)
             {
-                _snackBar.Add("No posts have been written in this campaign yet.", Severity.Info);
+                _snackBar.Add(L["No posts have been written in this campaign yet."], Severity.Info);
                 return;
             }
 
@@ -319,7 +319,7 @@
         }
         catch (Exception e)
         {
-            _snackBar.Add("Error while going to latest post: " + e.Message, Severity.Error);
+            _snackBar.Add(L["Error while going to latest post: "] + e.Message, Severity.Error);
         }
     }
 

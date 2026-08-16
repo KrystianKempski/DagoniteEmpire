@@ -524,7 +524,7 @@ else if (Barony is not null)
                 TurnNumber = Barony.TurnNumber,
             });
             await ReloadAsync();
-            _snackBar.Add("Audience granted.", Severity.Success);
+            _snackBar.Add(L["Audience granted."], Severity.Success);
         }
         catch (Exception ex)
         {
@@ -585,7 +585,7 @@ else if (Barony is not null)
 
             await ReloadAsync();
             NotifyResourceHud();
-            _snackBar.Add("Resources added.", Severity.Success);
+            _snackBar.Add(L["Resources added."], Severity.Success);
         }
         catch (Exception ex)
         {
@@ -658,7 +658,7 @@ else if (Barony is not null)
             });
 
             await ReloadAsync();
-            _snackBar.Add("Project added.", Severity.Success);
+            _snackBar.Add(L["Project added."], Severity.Success);
         }
         catch (Exception ex)
         {
@@ -686,7 +686,7 @@ else if (Barony is not null)
 
             if (campaign is null || campaign.Id <= 0)
             {
-                _snackBar.Add("No campaign found for this baron. Create a barony campaign first.", Severity.Warning);
+                _snackBar.Add(L["No campaign found for this baron. Create a barony campaign first."], Severity.Warning);
                 return;
             }
 
@@ -792,7 +792,7 @@ else if (Barony is not null)
         {
             await _baronyRepo.ResolveAudience(a.Id, data.GmSummary, data.OutcomeNotes);
             await ReloadAsync();
-            _snackBar.Add("Audience resolved.", Severity.Success);
+            _snackBar.Add(L["Audience resolved."], Severity.Success);
         }
         catch (Exception ex)
         {
@@ -817,7 +817,7 @@ else if (Barony is not null)
         {
             await _baronyRepo.DeferAudience(a.Id);
             await ReloadAsync();
-            _snackBar.Add("Audience deferred.", Severity.Info);
+            _snackBar.Add(L["Audience deferred."], Severity.Info);
         }
         catch (Exception ex)
         {
@@ -842,7 +842,7 @@ else if (Barony is not null)
         {
             await _baronyRepo.DismissAudience(a.Id);
             await ReloadAsync();
-            _snackBar.Add("Audience dismissed.", Severity.Info);
+            _snackBar.Add(L["Audience dismissed."], Severity.Info);
         }
         catch (Exception ex)
         {

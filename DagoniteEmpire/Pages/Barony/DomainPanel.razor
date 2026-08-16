@@ -404,12 +404,12 @@ else if (_overview is not null)
             await _baronyRepo.UpdateBarony(_overview.Barony);
             if (Barony is not null)
                 Barony.Unrest = _overview.Barony.Unrest;
-            _snackBar.Add("Unrest updated.", Severity.Success);
+            _snackBar.Add(L["Unrest updated."], Severity.Success);
             await ReloadOverviewAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save unrest: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save unrest: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -450,12 +450,12 @@ else if (_overview is not null)
                 Barony.ConjunctureDice = _overview.Barony.ConjunctureDice;
                 Barony.ConjunctureModifier = _overview.Barony.ConjunctureModifier;
             }
-            _snackBar.Add("Conjuncture updated.", Severity.Success);
+            _snackBar.Add(L["Conjuncture updated."], Severity.Success);
             await ReloadOverviewAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save conjuncture: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save conjuncture: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -478,12 +478,12 @@ else if (_overview is not null)
             if (_overview is not null)
                 _overview.Barony.PlayerTurnReady = true;
             Barony.PlayerTurnReady = true;
-            _snackBar.Add("Turn marked finished — waiting for the Game Master.", Severity.Success);
+            _snackBar.Add(L["Turn marked finished — waiting for the Game Master."], Severity.Success);
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not end turn: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not end turn: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -498,12 +498,12 @@ else if (_overview is not null)
             if (_overview is not null)
                 _overview.Barony.PlayerTurnReady = false;
             Barony.PlayerTurnReady = false;
-            _snackBar.Add("End-turn mark cleared.", Severity.Info);
+            _snackBar.Add(L["End-turn mark cleared."], Severity.Info);
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not clear ready flag: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not clear ready flag: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -564,7 +564,7 @@ else if (_overview is not null)
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not resolve turn: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not resolve turn: "] + ex.Message, Severity.Error);
         }
         finally
         {

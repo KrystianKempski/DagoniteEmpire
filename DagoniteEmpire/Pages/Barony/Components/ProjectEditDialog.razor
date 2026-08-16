@@ -169,7 +169,7 @@
     {
         if (string.IsNullOrWhiteSpace(_name))
         {
-            _snackBar.Add("Name is required.", Severity.Warning);
+            _snackBar.Add(L["Name is required."], Severity.Warning);
             return;
         }
 
@@ -194,7 +194,7 @@
                 if (Project.ResultAdditive.IsEmpty)
                 {
                     _snackBar.Add(
-                        "One-time resources need at least one cumulative resource (Food, Gold, Production, …).",
+                        L["One-time resources need at least one cumulative resource (Food, Gold, Production, …)."],
                         Severity.Warning);
                     return;
                 }

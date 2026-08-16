@@ -224,7 +224,7 @@
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save decree: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save decree: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -241,12 +241,12 @@
         try
         {
             await _baronyRepo.DeleteDecree(item.Id);
-            _snackBar.Add("Decree removed.", Severity.Success);
+            _snackBar.Add(L["Decree removed."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not remove decree: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not remove decree: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -265,7 +265,7 @@
         catch (Exception ex)
         {
             item.IsActive = previous;
-            _snackBar.Add("Could not update active state: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not update active state: "] + ex.Message, Severity.Error);
         }
     }
 

@@ -178,7 +178,7 @@
 
         if (string.IsNullOrWhiteSpace(saved.Name))
         {
-            _snackBar.Add("Name is required.", Severity.Warning);
+            _snackBar.Add(L["Name is required."], Severity.Warning);
             return;
         }
 
@@ -194,7 +194,7 @@
         }
 
         await _baronyRepo.SaveBaronArtifact(saved);
-        _snackBar.Add("Item saved.", Severity.Success);
+        _snackBar.Add(L["Item saved."], Severity.Success);
         await OnChanged.InvokeAsync();
     }
 
@@ -204,7 +204,7 @@
             return;
 
         await _baronyRepo.DeleteBaronArtifact(item.Id);
-        _snackBar.Add("Item removed.", Severity.Success);
+        _snackBar.Add(L["Item removed."], Severity.Success);
         await OnChanged.InvokeAsync();
     }
 

@@ -414,12 +414,12 @@ else if (_overview is not null)
                 Barony.LiegeTributePercent = _overview.Barony.LiegeTributePercent;
                 Barony.VassalTributePercent = _overview.Barony.VassalTributePercent;
             }
-            _snackBar.Add("Fief tribute rates saved.", Severity.Success);
+            _snackBar.Add(L["Fief tribute rates saved."], Severity.Success);
             await ReloadAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save tribute rates: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save tribute rates: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -451,7 +451,7 @@ else if (_overview is not null)
         var amount = PpbFormat.Round(Math.Min(_transferAmount, _overview.Barony.TreasuryGold));
         if (amount <= 0)
         {
-            _snackBar.Add("Not enough funds in treasury.", Severity.Warning);
+            _snackBar.Add(L["Not enough funds in treasury."], Severity.Warning);
             return;
         }
 
@@ -486,7 +486,7 @@ else if (_overview is not null)
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Transfer failed: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Transfer failed: "] + ex.Message, Severity.Error);
             await ReloadAsync();
         }
     }
@@ -499,7 +499,7 @@ else if (_overview is not null)
         var amount = PpbFormat.Round(Math.Min(_transferAmount, _overview.Barony.BaronPurseGold));
         if (amount <= 0)
         {
-            _snackBar.Add("Not enough funds in purse.", Severity.Warning);
+            _snackBar.Add(L["Not enough funds in purse."], Severity.Warning);
             return;
         }
 
@@ -534,7 +534,7 @@ else if (_overview is not null)
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Transfer failed: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Transfer failed: "] + ex.Message, Severity.Error);
             await ReloadAsync();
         }
     }
@@ -581,7 +581,7 @@ else if (_overview is not null)
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save purse source: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save purse source: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -601,12 +601,12 @@ else if (_overview is not null)
         try
         {
             await _baronyRepo.DeletePurseSource(src.Id);
-            _snackBar.Add("Purse source removed.", Severity.Success);
+            _snackBar.Add(L["Purse source removed."], Severity.Success);
             await ReloadAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not remove purse source: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not remove purse source: "] + ex.Message, Severity.Error);
         }
     }
 

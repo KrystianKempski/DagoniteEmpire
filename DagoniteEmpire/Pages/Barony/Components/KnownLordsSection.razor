@@ -275,12 +275,12 @@
         {
             var normalized = BaronyCharacterMarkDTO.NormalizeList(marks);
             await _baronyRepo.SaveKnownLordMarks(BaronyId, lordKey, normalized);
-            _snackBar.Add(normalized.Count > 0 ? "Marks updated." : "Marks cleared.", Severity.Success);
+            _snackBar.Add(normalized.Count > 0 ? L["Marks updated."] : L["Marks cleared."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save marks: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save marks: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -321,12 +321,12 @@
                 BaronyId,
                 lordKey,
                 string.IsNullOrWhiteSpace(saved) ? null : saved);
-            _snackBar.Add("Notes updated.", Severity.Success);
+            _snackBar.Add(L["Notes updated."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save notes: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save notes: "] + ex.Message, Severity.Error);
         }
     }
 

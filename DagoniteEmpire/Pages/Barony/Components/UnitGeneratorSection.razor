@@ -568,7 +568,7 @@
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save gear quality: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save gear quality: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -984,7 +984,7 @@
         if (_busy) return;
         if (string.IsNullOrWhiteSpace(_name))
         {
-            _snackBar.Add("Name the unit first.", Severity.Warning);
+            _snackBar.Add(L["Name the unit first."], Severity.Warning);
             return;
         }
 

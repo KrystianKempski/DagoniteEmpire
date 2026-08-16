@@ -97,19 +97,19 @@
     {
         if (string.IsNullOrWhiteSpace(_name))
         {
-            _snackBar.Add("Name is required.", Severity.Warning);
+            _snackBar.Add(L["Name is required."], Severity.Warning);
             return;
         }
 
         if (_startTurn < 1)
         {
-            _snackBar.Add("Start turn must be at least 1.", Severity.Warning);
+            _snackBar.Add(L["Start turn must be at least 1."], Severity.Warning);
             return;
         }
 
         if (!_noEnd && _endTurn < _startTurn)
         {
-            _snackBar.Add("End turn cannot be before start turn.", Severity.Warning);
+            _snackBar.Add(L["End turn cannot be before start turn."], Severity.Warning);
             return;
         }
 

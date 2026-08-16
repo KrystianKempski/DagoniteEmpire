@@ -278,12 +278,12 @@
         try
         {
             await _baronyRepo.SaveImprovement(saved);
-            _snackBar.Add("Improvement updated.", Severity.Success);
+            _snackBar.Add(L["Improvement updated."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save improvement: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save improvement: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -318,12 +318,12 @@
         try
         {
             await _baronyRepo.SaveImprovement(draft);
-            _snackBar.Add("Population updated.", Severity.Success);
+            _snackBar.Add(L["Population updated."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save improvement: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save improvement: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -351,12 +351,12 @@
         try
         {
             await _baronyRepo.SaveImprovement(saved);
-            _snackBar.Add("Village updated.", Severity.Success);
+            _snackBar.Add(L["Village updated."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save village: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save village: "] + ex.Message, Severity.Error);
         }
     }
 

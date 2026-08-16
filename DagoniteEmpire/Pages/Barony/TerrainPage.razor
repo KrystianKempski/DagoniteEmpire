@@ -318,19 +318,19 @@ else
 
         if (!_tileIndex.TryGetValue((cell.X, cell.Y), out var tile) || tile.Id <= 0)
         {
-            _snackBar.Add("This tile is not ready yet.", Severity.Warning);
+            _snackBar.Add(L["This tile is not ready yet."], Severity.Warning);
             return;
         }
 
         if (_playerPrimaryDomainId is not int primaryId || tile.MapDomainId != primaryId)
         {
-            _snackBar.Add("You can only start construction on tiles in your domain.", Severity.Info);
+            _snackBar.Add(L["You can only start construction on tiles in your domain."], Severity.Info);
             return;
         }
 
         if (_improvementByTileId.ContainsKey(tile.Id))
         {
-            _snackBar.Add("This tile already has an improvement.", Severity.Info);
+            _snackBar.Add(L["This tile already has an improvement."], Severity.Info);
             return;
         }
 
@@ -342,7 +342,7 @@ else
 
         if (TerrainImprovementCatalogMap.IsWaterTile(tile.BaseType))
         {
-            _snackBar.Add("Cannot place improvements on water.", Severity.Warning);
+            _snackBar.Add(L["Cannot place improvements on water."], Severity.Warning);
             return;
         }
 
@@ -367,13 +367,13 @@ else
             if (lockedHerd.Count > 0)
             {
                 _snackBar.Add(
-                    "Herd improvements need breeding stock from trade first: " + string.Join("; ", lockedHerd),
+                    L["Herd improvements need breeding stock from trade first: "] + string.Join("; ", lockedHerd),
                     Severity.Info);
             }
             else
             {
                 _snackBar.Add(
-                    "Nothing from the improvement catalog can be built on this tile (check terrain, features, and resources).",
+                    L["Nothing from the improvement catalog can be built on this tile (check terrain, features, and resources)."],
                     Severity.Info);
             }
             return;
@@ -401,12 +401,12 @@ else
             var saved = await _baronyRepo.SaveProject(project);
             if (saved.TileId is int tid)
                 _constructionByTileId[tid] = saved;
-            _snackBar.Add("Building project added — see the Projects tab.", Severity.Success);
+            _snackBar.Add(L["Building project added — see the Projects tab."], Severity.Success);
             StateHasChanged();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not create project: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not create project: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -486,7 +486,7 @@ else
 
         if (_fiefs.Any(f => f.SeniorDomainId == domainId && !TerrainMapVisuals.IsProtectedDefaultFief(f)))
         {
-            _snackBar.Add("Cannot delete a domain that is a senior for other fiefs.", Severity.Warning);
+            _snackBar.Add(L["Cannot delete a domain that is a senior for other fiefs."], Severity.Warning);
             return;
         }
 
@@ -990,7 +990,7 @@ else
 
         if (TerrainImprovementCatalogMap.IsWaterTile(tile.BaseType))
         {
-            _snackBar.Add("Cannot place improvements on water.", Severity.Warning);
+            _snackBar.Add(L["Cannot place improvements on water."], Severity.Warning);
             return;
         }
 
@@ -1011,7 +1011,7 @@ else
             }
             catch (Exception ex)
             {
-                _snackBar.Add("Failed to remove improvement: " + ex.Message, Severity.Error);
+                _snackBar.Add(L["Failed to remove improvement: "] + ex.Message, Severity.Error);
                 return;
             }
 
@@ -1176,7 +1176,7 @@ else
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Failed to save improvement: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Failed to save improvement: "] + ex.Message, Severity.Error);
             return;
         }
 
@@ -1275,7 +1275,7 @@ else
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Failed to refresh settlement PPB: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Failed to refresh settlement PPB: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -1380,7 +1380,7 @@ else
                 }
                 catch (Exception ex)
                 {
-                    _snackBar.Add("Failed to clear improvement: " + ex.Message, Severity.Error);
+                    _snackBar.Add(L["Failed to clear improvement: "] + ex.Message, Severity.Error);
                 }
             }
 
@@ -1423,7 +1423,7 @@ else
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Failed to save terrain tile: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Failed to save terrain tile: "] + ex.Message, Severity.Error);
         }
     }
 

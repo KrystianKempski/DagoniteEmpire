@@ -134,7 +134,7 @@
         {
             if (string.IsNullOrWhiteSpace(_name))
             {
-                _snackBar.Add("Building name is required.", Severity.Warning);
+                _snackBar.Add(L["Building name is required."], Severity.Warning);
                 return;
             }
 
@@ -144,14 +144,14 @@
         {
             if (_selectedTemplateId is null or <= 0)
             {
-                _snackBar.Add("Please select a building from the catalog.", Severity.Warning);
+                _snackBar.Add(L["Please select a building from the catalog."], Severity.Warning);
                 return;
             }
 
             var template = Catalog.FirstOrDefault(t => t.Id == _selectedTemplateId);
             if (template is null)
             {
-                _snackBar.Add("Selected catalog entry was not found.", Severity.Warning);
+                _snackBar.Add(L["Selected catalog entry was not found."], Severity.Warning);
                 return;
             }
 
@@ -163,13 +163,13 @@
         {
             if (string.IsNullOrWhiteSpace(_name))
             {
-                _snackBar.Add("Building name is required.", Severity.Warning);
+                _snackBar.Add(L["Building name is required."], Severity.Warning);
                 return;
             }
 
             if (NameMatchesCatalogTemplate(_name))
             {
-                _snackBar.Add("Custom building name cannot match a catalog template. Use the catalog tab or choose a different name.", Severity.Warning);
+                _snackBar.Add(L["Custom building name cannot match a catalog template. Use the catalog tab or choose a different name."], Severity.Warning);
                 return;
             }
 

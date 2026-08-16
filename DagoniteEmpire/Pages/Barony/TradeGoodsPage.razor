@@ -130,7 +130,7 @@ else
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save trade treaties: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save trade treaties: "] + ex.Message, Severity.Error);
             _treaties = await _baronyRepo.GetTradeTreaties(Barony.Id);
             await ReloadAvailabilityAsync();
         }
@@ -154,7 +154,7 @@ else
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save luxury goods access: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save luxury goods access: "] + ex.Message, Severity.Error);
             _luxuryKey = await _baronyRepo.GetLuxuryGoodsAccessKey(Barony.Id);
         }
         finally
@@ -183,7 +183,7 @@ else
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save trade good override: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save trade good override: "] + ex.Message, Severity.Error);
             await ReloadAvailabilityAsync();
         }
         finally

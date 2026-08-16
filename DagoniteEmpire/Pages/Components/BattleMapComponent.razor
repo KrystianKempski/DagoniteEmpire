@@ -596,20 +596,20 @@ else
     {
         if (Map is null || string.IsNullOrWhiteSpace(_newTokenLabel))
         {
-            SnackBar.Add("Select a participant from the list", Severity.Warning);
+            SnackBar.Add(L["Select a participant from the list"], Severity.Warning);
             return;
         }
 
         var participant = FindParticipant(_newTokenLabel);
         if (participant is null)
         {
-            SnackBar.Add("Select a participant from the list", Severity.Warning);
+            SnackBar.Add(L["Select a participant from the list"], Severity.Warning);
             return;
         }
 
         if (IsParticipantOnMap(participant.Label))
         {
-            SnackBar.Add("This participant is already on the map", Severity.Warning);
+            SnackBar.Add(L["This participant is already on the map"], Severity.Warning);
             SelectNextAvailableParticipant();
             return;
         }
@@ -631,7 +631,7 @@ else
         _selectedTokenId = token.Id;
         if (await SaveAsync())
         {
-            SnackBar.Add("Click a cell to move the selected token.", Severity.Info);
+            SnackBar.Add(L["Click a cell to move the selected token."], Severity.Info);
             SelectNextAvailableParticipant();
         }
     }
@@ -733,7 +733,7 @@ else
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error saving battle map");
-            SnackBar.Add("Failed to save map", Severity.Error);
+            SnackBar.Add(L["Failed to save map"], Severity.Error);
             return false;
         }
     }

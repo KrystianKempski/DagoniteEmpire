@@ -53,26 +53,26 @@
     {
         if (string.IsNullOrEmpty(HumanRaceBonuses.AttributeNameBonus))
         {
-            Snackbar.Add("Choose attribute bonus", Severity.Warning);
+            Snackbar.Add(L["Choose attribute bonus"], Severity.Warning);
             return;
         }
         if (string.IsNullOrEmpty(HumanRaceBonuses.FirstSkillNameBonus))
         {
-            Snackbar.Add("Choose first skill bonus", Severity.Warning);
+            Snackbar.Add(L["Choose first skill bonus"], Severity.Warning);
             return;
         }
         if (string.IsNullOrEmpty(HumanRaceBonuses.SecondSkillNameBonus))
         {
-            Snackbar.Add("Choose second skill bonus", Severity.Warning);
+            Snackbar.Add(L["Choose second skill bonus"], Severity.Warning);
             return;
         }
         if (HumanRaceBonuses.SecondSkillNameBonus == HumanRaceBonuses.FirstSkillNameBonus)
         {
-            Snackbar.Add("Base skill bonuses cannot be the same", Severity.Warning);
+            Snackbar.Add(L["Base skill bonuses cannot be the same"], Severity.Warning);
             return;
         }
         MudDialog.Close(DialogResult.Ok(HumanRaceBonuses));
 
-        Snackbar.Add("Bonuses added", Severity.Success);
+        Snackbar.Add(L["Bonuses added"], Severity.Success);
     }
 }

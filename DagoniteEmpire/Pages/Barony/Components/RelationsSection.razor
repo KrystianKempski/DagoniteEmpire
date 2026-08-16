@@ -223,7 +223,7 @@
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save relation: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save relation: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -238,7 +238,7 @@
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save marks: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save marks: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -268,12 +268,12 @@
         try
         {
             await _baronyRepo.SaveRelationNotes(item.Id, string.IsNullOrWhiteSpace(notes) ? null : notes);
-            _snackBar.Add("Notes updated.", Severity.Success);
+            _snackBar.Add(L["Notes updated."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save notes: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save notes: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -305,12 +305,12 @@
         try
         {
             await _baronyRepo.SaveRelation(draft);
-            _snackBar.Add("Modifiers updated.", Severity.Success);
+            _snackBar.Add(L["Modifiers updated."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not save modifiers: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not save modifiers: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -327,12 +327,12 @@
         try
         {
             await _baronyRepo.DeleteRelation(item.Id);
-            _snackBar.Add("Relation removed.", Severity.Success);
+            _snackBar.Add(L["Relation removed."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Could not remove relation: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Could not remove relation: "] + ex.Message, Severity.Error);
         }
     }
 

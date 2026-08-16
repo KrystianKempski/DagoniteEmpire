@@ -599,7 +599,7 @@
                     : await _characterRepository.CheckIfCharacterBelongToUser(UserInfo.UserName, Id);
                 if (!ownsCharacter)
                 {
-                    Snackbar.Add("You can only open class for your own character.", Severity.Warning);
+                    Snackbar.Add(L["You can only open class for your own character."], Severity.Warning);
                     return;
                 }
 
@@ -611,7 +611,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add("Error opening class: " + ex.Message, Severity.Warning);
+            Snackbar.Add(L["Error opening class: "] + ex.Message, Severity.Warning);
         }
     }
 
@@ -637,7 +637,7 @@
         }
         catch (Exception ex)
         {            
-            Snackbar.Add("Error initializing panel Character: " + ex.Message, Severity.Warning);
+            Snackbar.Add(L["Error initializing panel Character: "] + ex.Message, Severity.Warning);
         }
     }
 
@@ -671,7 +671,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add("Error refreshing panel: " + ex.Message, Severity.Warning);
+            Snackbar.Add(L["Error refreshing panel: "] + ex.Message, Severity.Warning);
         }
     }
 
@@ -737,7 +737,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add("Error loading Character: " + ex.Message, Severity.Warning);
+            Snackbar.Add(L["Error loading Character: "] + ex.Message, Severity.Warning);
         }
     }
 
@@ -776,7 +776,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add("Error loading Character: " + ex.Message, Severity.Warning);
+            Snackbar.Add(L["Error loading Character: "] + ex.Message, Severity.Warning);
         }
     }
 
@@ -860,7 +860,7 @@
         }
         catch(Exception ex)
         {
-            Snackbar.Add("Error loading icons: " + ex.Message, Severity.Warning);
+            Snackbar.Add(L["Error loading icons: "] + ex.Message, Severity.Warning);
         }
     }
 
@@ -910,7 +910,7 @@
         await _traitCharacterRepository.Create(StateSeeder.GetStateDTO(States.Names.FullDefence, false, 1, Id));
         await _traitCharacterRepository.Create(StateSeeder.GetStateDTO(States.Names.NoTurn, false, 1, Id));
 
-        Snackbar.Add("Full defence declared.", Severity.Success);
+        Snackbar.Add(L["Full defence declared."], Severity.Success);
         await OnFullDefenceApplied.InvokeAsync(Id);
     }
 
@@ -968,12 +968,12 @@
             if (CombatStateString.HasState(Mob.States, States.Names.HalfTurn))
             {
                 Mob.States = CombatStateString.Add(Mob.States, States.Names.NoTurn, States.Duration.SingleTurn);
-                Snackbar.Add("Turn ended — no actions left.", Severity.Success);
+                Snackbar.Add(L["Turn ended — no actions left."], Severity.Success);
             }
             else
             {
                 Mob.States = CombatStateString.Add(Mob.States, States.Names.HalfTurn, States.Duration.SingleTurn);
-                Snackbar.Add("Half action declared.", Severity.Success);
+                Snackbar.Add(L["Half action declared."], Severity.Success);
             }
 
             await _mobRepository.Update(Mob);
@@ -992,12 +992,12 @@
             await _traitCharacterRepository.Delete(halfTurn.Id);
             AllParams.TraitsTemporary.Remove(halfTurn);
             await _traitCharacterRepository.Create(StateSeeder.GetStateDTO(States.Names.NoTurn, false, 1, Id));
-            Snackbar.Add("Turn ended — no actions left.", Severity.Success);
+            Snackbar.Add(L["Turn ended — no actions left."], Severity.Success);
         }
         else
         {
             await _traitCharacterRepository.Create(StateSeeder.GetStateDTO(States.Names.HalfTurn, false, 1, Id));
-            Snackbar.Add("Half action declared.", Severity.Success);
+            Snackbar.Add(L["Half action declared."], Severity.Success);
         }
 
         await OnFullDefenceApplied.InvokeAsync(Id);

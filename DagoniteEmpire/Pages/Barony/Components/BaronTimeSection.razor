@@ -300,12 +300,12 @@
 
         if (string.IsNullOrWhiteSpace(saved.Name))
         {
-            _snackBar.Add("Action name is required.", Severity.Warning);
+            _snackBar.Add(L["Action name is required."], Severity.Warning);
             return;
         }
 
         await _baronyRepo.SaveBaronTimeAction(saved);
-        _snackBar.Add("Action saved.", Severity.Success);
+        _snackBar.Add(L["Action saved."], Severity.Success);
         await OnChanged.InvokeAsync();
     }
 
@@ -315,7 +315,7 @@
             return;
 
         await _baronyRepo.DeleteBaronTimeAction(item.Id);
-        _snackBar.Add("Action removed.", Severity.Success);
+        _snackBar.Add(L["Action removed."], Severity.Success);
         await OnChanged.InvokeAsync();
     }
 
@@ -356,12 +356,12 @@
 
         if (string.IsNullOrWhiteSpace(saved.Source))
         {
-            _snackBar.Add("Source is required.", Severity.Warning);
+            _snackBar.Add(L["Source is required."], Severity.Warning);
             return;
         }
 
         await _baronyRepo.SaveBaronTimeModifier(saved);
-        _snackBar.Add("Modifier saved.", Severity.Success);
+        _snackBar.Add(L["Modifier saved."], Severity.Success);
         await OnChanged.InvokeAsync();
     }
 
@@ -371,7 +371,7 @@
             return;
 
         await _baronyRepo.DeleteBaronTimeModifier(item.Id);
-        _snackBar.Add("Modifier removed.", Severity.Success);
+        _snackBar.Add(L["Modifier removed."], Severity.Success);
         await OnChanged.InvokeAsync();
     }
 

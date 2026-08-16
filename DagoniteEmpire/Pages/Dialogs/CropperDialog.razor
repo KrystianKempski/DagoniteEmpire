@@ -94,7 +94,7 @@
         }
         catch(Exception ex)
         {
-            Snackbar.Add("Error! " + ex.Message, Severity.Error);
+            Snackbar.Add(L["Error! "] + ex.Message, Severity.Error);
 
         }
 
@@ -162,11 +162,11 @@
             var croppedCanvas = await cropperComponent!.GetCroppedCanvasAsync(getCroppedCanvasOptions);
             var uploadedUrl = await JSRuntime.InvokeAsync<string>("uploadCroppedPortrait", croppedCanvas.JSRuntimeObjectRef, SD.Portrait);
             MudDialog.Close(DialogResult.Ok(uploadedUrl));
-            Snackbar.Add("Image added", Severity.Success);
+            Snackbar.Add(L["Image added"], Severity.Success);
         }
         catch (Exception ex)
         {
-            Snackbar.Add("Error! " + ex.Message, Severity.Error);
+            Snackbar.Add(L["Error! "] + ex.Message, Severity.Error);
         }
     }
 }

@@ -110,7 +110,7 @@ else if (Barony is not null)
             return;
 
         await _baronyRepo.SaveAdvisor(draft);
-        _snackBar.Add("Office created.", Severity.Success);
+        _snackBar.Add(L["Office created."], Severity.Success);
         await ReloadAsync();
     }
 
@@ -151,7 +151,7 @@ else if (Barony is not null)
 
         saved.BaronyId = Barony!.Id;
         await _baronyRepo.SaveAvailableAdvisor(saved);
-        _snackBar.Add("Court person saved.", Severity.Success);
+        _snackBar.Add(L["Court person saved."], Severity.Success);
         await ReloadAsync();
     }
 
@@ -159,7 +159,7 @@ else if (Barony is not null)
     {
         if (!CanManageAsMg || person.Id <= 0) return;
         await _baronyRepo.DeleteAvailableAdvisor(person.Id);
-        _snackBar.Add("Court person removed.", Severity.Success);
+        _snackBar.Add(L["Court person removed."], Severity.Success);
         await ReloadAsync();
     }
 
@@ -170,7 +170,7 @@ else if (Barony is not null)
 
         person.BaronyId = Barony!.Id;
         await _baronyRepo.SaveAvailableAdvisor(person);
-        _snackBar.Add("Court sources saved.", Severity.Success);
+        _snackBar.Add(L["Court sources saved."], Severity.Success);
         await ReloadAsync();
     }
 }
