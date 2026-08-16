@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using DA_Business.Repository.CharacterReps.IRepository;
 using DA_Business.Services.Interfaces;
+using DA_Common.Localization;
 using DA_DataAccess.Chat;
 using DA_Models.ChatModels;
 
@@ -33,7 +34,7 @@ namespace DA_Business.Services
             var posts = (await _postRepository.GetAll(chapterId)).ToList();
 
             var sb = new StringBuilder();
-            AppendChapterHeader(sb, chapter, campaign?.Name ?? "Nieznana");
+            AppendChapterHeader(sb, chapter, campaign?.Name ?? Loc.T("Unknown"));
             AppendPosts(sb, posts);
 
             return new CampaignSummaryResult
@@ -57,12 +58,12 @@ namespace DA_Business.Services
 
             var sb = new StringBuilder();
             sb.AppendLine("================================================================================");
-            sb.AppendLine($"KAMPANIA: {campaign.Name}");
+            sb.AppendLine(Loc.T("CAMPAIGN: {0}", campaign.Name));
             if (!string.IsNullOrWhiteSpace(campaign.Description))
-                sb.AppendLine($"Opis: {campaign.Description}");
-            sb.AppendLine($"Mistrz Gry: {campaign.GameMaster}");
-            sb.AppendLine($"Utworzona: {campaign.CreatedDate:dd-MM-yyyy HH:mm}");
-            sb.AppendLine($"Rozdziałów: {chapters.Count}");
+                sb.AppendLine(Loc.T("Description: {0}", campaign.Description));
+            sb.AppendLine(Loc.T("Game Master: {0}", campaign.GameMaster));
+            sb.AppendLine(Loc.T("Created: {0}", campaign.CreatedDate.ToString("dd-MM-yyyy HH:mm")));
+            sb.AppendLine(Loc.T("Chapters: {0}", chapters.Count));
             sb.AppendLine("================================================================================");
             sb.AppendLine();
 
@@ -89,14 +90,14 @@ namespace DA_Business.Services
         private static void AppendChapterHeader(StringBuilder sb, ChapterDTO chapter, string campaignName)
         {
             sb.AppendLine("================================================================================");
-            sb.AppendLine($"ROZDZIAŁ: {chapter.Name}");
-            sb.AppendLine($"Kampania: {campaignName}");
-            sb.AppendLine($"Data świata: {chapter.Date}, {chapter.DayTime}");
+            sb.AppendLine(Loc.T("CHAPTER: {0}", chapter.Name));
+            sb.AppendLine(Loc.T("Campaign: {0}", campaignName));
+            sb.AppendLine(Loc.T("World date: {0}, {1}", chapter.Date, chapter.DayTime));
             if (!string.IsNullOrWhiteSpace(chapter.Place))
-                sb.AppendLine($"Miejsce: {chapter.Place}");
+                sb.AppendLine(Loc.T("Place: {0}", chapter.Place));
             if (!string.IsNullOrWhiteSpace(chapter.Description))
-                sb.AppendLine($"Opis: {chapter.Description}");
-            sb.AppendLine($"Rozpoczęty: {chapter.CreatedDate:dd-MM-yyyy HH:mm}");
+                sb.AppendLine(Loc.T("Description: {0}", chapter.Description));
+            sb.AppendLine(Loc.T("Started: {0}", chapter.CreatedDate.ToString("dd-MM-yyyy HH:mm")));
             sb.AppendLine("================================================================================");
             sb.AppendLine();
         }
@@ -105,7 +106,7 @@ namespace DA_Business.Services
         {
             if (!posts.Any())
             {
-                sb.AppendLine("(Brak postów w tym rozdziale)");
+                sb.AppendLine(Loc.T("(No posts in this chapter)"));
                 sb.AppendLine();
                 return;
             }
@@ -123,12 +124,12 @@ namespace DA_Business.Services
             if (!string.IsNullOrWhiteSpace(post.AlternativeName))
                 return post.AlternativeName;
 
-            return post.Character?.NPCName ?? "Nieznany";
+            return post.Character?.NPCName ?? Loc.T("Unknown");
         }
 
         private static string BuildFileName(string? campaignName, string? chapterName)
         {
-            var parts = new List<string> { "podsumowanie" };
+            var parts = new List<string> { Loc.T("summary") };
             if (!string.IsNullOrWhiteSpace(campaignName))
                 parts.Add(SanitizeFileName(campaignName));
             if (!string.IsNullOrWhiteSpace(chapterName))

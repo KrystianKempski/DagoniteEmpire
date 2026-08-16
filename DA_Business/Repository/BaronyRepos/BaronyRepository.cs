@@ -2,6 +2,7 @@ using System.Text.Json;
 using DA_Business.Repository.CharacterReps.IRepository;
 using DA_Common;
 using DA_Common.Barony;
+using DA_Common.Localization;
 using DA_DataAccess.BaronyData;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Chat;
@@ -107,15 +108,15 @@ namespace DA_Business.Repository.BaronyRepos
 
                 var character = await ctx.Characters.FirstOrDefaultAsync(c => c.Id == characterId);
                 if (character is null)
-                    throw new RepositoryErrorException("Character not found.");
+                    throw new RepositoryErrorException(Loc.T("Character not found."));
                 if (character.NPCType != SD.NPCType.Duke)
-                    throw new RepositoryErrorException("Only Duke-type characters can be assigned as baron.");
+                    throw new RepositoryErrorException(Loc.T("Only Duke-type characters can be assigned as baron."));
                 if (!character.IsApproved)
-                    throw new RepositoryErrorException("Character must be approved before becoming a baron.");
+                    throw new RepositoryErrorException(Loc.T("Character must be approved before becoming a baron."));
 
                 var existing = await ctx.Baronies.FirstOrDefaultAsync(b => b.CharacterId == characterId);
                 if (existing is not null)
-                    throw new RepositoryErrorException("This character already has a barony.");
+                    throw new RepositoryErrorException(Loc.T("This character already has a barony."));
 
                 var entity = new Barony
                 {
@@ -161,7 +162,7 @@ namespace DA_Business.Repository.BaronyRepos
                 }
                 else
                 {
-                    throw new RepositoryErrorException($"Unsupported barony seed profile: {seedProfile}");
+                    throw new RepositoryErrorException(Loc.T("Unsupported barony seed profile: {0}", seedProfile ?? string.Empty));
                 }
 
                 ApplyStarterResourceStocks(added.Entity);

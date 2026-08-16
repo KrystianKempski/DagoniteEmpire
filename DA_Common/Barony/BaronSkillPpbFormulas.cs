@@ -1,3 +1,5 @@
+using DA_Common.Localization;
+
 namespace DA_Common.Barony
 {
     /// <summary>
@@ -206,15 +208,15 @@ namespace DA_Common.Barony
         };
 
         public static string CatalogDescription =>
-            "Baron influence from character skills and permanent attribute modifiers "
+            Loc.T("Baron influence from character skills and permanent attribute modifiers "
             + "(excludes wounds and temporary states; floored to whole numbers). "
-            + "Hover each PPB value for its formula.";
+            + "Hover each PPB value for its formula.");
 
         /// <summary>Domain Panel — tooltip on the baron's name in Baron and Advisors.</summary>
         public static string BaronAdvisorNameTooltip =>
-            "The baron's abilities shape nearly every parameter of the barony. "
+            Loc.T("The baron's abilities shape nearly every parameter of the barony. "
             + "Each value in this row comes from the Baron Card (From Skills). "
-            + "Hover a cell for how it maps; open Baron Card for the full skill breakdown.";
+            + "Hover a cell for how it maps; open Baron Card for the full skill breakdown.");
 
         /// <summary>
         /// Domain Panel — additive column tooltip. References Baron Card From Skills PPB labels, not raw skills.

@@ -1,4 +1,5 @@
 using System.Text;
+using DA_Common.Localization;
 using static DA_Common.Barony.BaronSkillPpbFormulas;
 
 namespace DA_Common.Barony
@@ -6,21 +7,38 @@ namespace DA_Common.Barony
     /// <summary>One Prestige / Honor / Fear reputation tier and its barony PPB + character skill bonuses.</summary>
     public sealed class ReputationTier
     {
-        public required string Name { get; init; }
+        private string _name = "";
+        private string _thresholdLabel = "";
+        private string _bonusSummary = "";
+
+        // Backing values store the English key; getters localize per current culture.
+        public required string Name
+        {
+            get => Loc.T(_name);
+            init => _name = value;
+        }
 
         /// <summary>Minimum score to reach this tier (inclusive). Highest matching tier wins.</summary>
         public int MinRequired { get; init; }
 
         /// <summary>Human-readable threshold for the table (e.g. “less than 300”, “1000”).</summary>
-        public required string ThresholdLabel { get; init; }
+        public required string ThresholdLabel
+        {
+            get => Loc.T(_thresholdLabel);
+            init => _thresholdLabel = value;
+        }
 
         public PpbVector BaronyBonus { get; init; } = new();
 
         /// <summary>Special-skill deltas applied on the baron’s character sheet (Temp column).</summary>
         public IReadOnlyList<(string Skill, int Value)> SkillBonuses { get; init; } = [];
 
-        /// <summary>Full English bonus blurb for tooltips / detail panels.</summary>
-        public required string BonusSummary { get; init; }
+        /// <summary>Localized bonus blurb for tooltips / detail panels (English key, falls back to English).</summary>
+        public required string BonusSummary
+        {
+            get => Loc.T(_bonusSummary);
+            init => _bonusSummary = value;
+        }
 
         public string? SkillBonusText
         {
@@ -353,10 +371,10 @@ namespace DA_Common.Barony
                 if (v == 0m)
                     continue;
                 var sign = v > 0 ? "+" : "";
-                parts.Add($"{sign}{v:0.##} {info.NameEn}");
+                parts.Add($"{sign}{v:0.##} {info.Name}");
             }
 
-            return parts.Count == 0 ? "No barony PPB bonuses." : string.Join(", ", parts);
+            return parts.Count == 0 ? Loc.T("No barony PPB bonuses.") : string.Join(", ", parts);
         }
 
         public static string DescribeActiveTiers(int prestige, int honor, int fear)
@@ -365,9 +383,9 @@ namespace DA_Common.Barony
             var h = ResolveHonor(honor);
             var f = ResolveFear(fear);
             var sb = new StringBuilder();
-            sb.AppendLine($"Prestige: {p.Name} (score {prestige}) — {p.BonusSummary}");
-            sb.AppendLine($"Honor: {h.Name} (score {honor}) — {h.BonusSummary}");
-            sb.Append($"Fear: {f.Name} (score {fear}) — {f.BonusSummary}");
+            sb.AppendLine(Loc.T("Prestige: {0} (score {1}) — {2}", p.Name, prestige, p.BonusSummary));
+            sb.AppendLine(Loc.T("Honor: {0} (score {1}) — {2}", h.Name, honor, h.BonusSummary));
+            sb.Append(Loc.T("Fear: {0} (score {1}) — {2}", f.Name, fear, f.BonusSummary));
             return sb.ToString();
         }
 

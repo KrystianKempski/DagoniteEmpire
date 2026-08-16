@@ -1,3 +1,5 @@
+using DA_Common.Localization;
+
 namespace DA_Common.Barony
 {
     /// <summary>
@@ -26,11 +28,11 @@ namespace DA_Common.Barony
         {
             var parts = new List<string>(3);
             if (IsProduced(key))
-                parts.Add("produced");
+                parts.Add(Loc.T("produced"));
             if (IsTreatyReceived(key))
-                parts.Add("trade");
+                parts.Add(Loc.T("trade"));
             if (IsOverride(key))
-                parts.Add("MG override");
+                parts.Add(Loc.T("MG override"));
             return parts.Count == 0 ? "—" : string.Join(" · ", parts);
         }
     }
@@ -139,7 +141,8 @@ namespace DA_Common.Barony
             return result;
         }
 
-        public const string DomainPanelRowLabel = "Trade Goods and treaties";
+        public const string DomainPanelRowLabelKey = "Trade Goods and treaties";
+        public static string DomainPanelRowLabel => Loc.T(DomainPanelRowLabelKey);
 
         /// <summary>
         /// Single Domain Panel (Decrees and Technologies) row: sum of available goods, luxury,
@@ -164,21 +167,23 @@ namespace DA_Common.Barony
                 TradeGoodsBonusAggregator.Sum(availableGoods, out var goodsAdd, out var goodsPct);
                 additive.AddInPlace(goodsAdd);
                 percent.AddInPlace(goodsPct);
-                noteParts.Add($"{availableGoods.Count} available good{(availableGoods.Count == 1 ? "" : "s")}");
+                noteParts.Add(availableGoods.Count == 1
+                    ? Loc.T("{0} available good", availableGoods.Count)
+                    : Loc.T("{0} available goods", availableGoods.Count));
             }
 
             var luxury = LuxuryGoodsAccessCatalog.Find(luxuryAccessKey);
             if (PpbCatalog.All.Any(info => luxury.BonusAdditive[info.Key] != 0m))
             {
                 additive.AddInPlace(luxury.BonusAdditive);
-                noteParts.Add($"luxury — {luxury.NameEn}");
+                noteParts.Add(Loc.T("luxury — {0}", luxury.NameEn));
             }
 
             var routeEconomy = TradeTreatyCalculator.TotalRouteEconomyBonus(treatyList);
             if (routeEconomy != 0m)
             {
                 additive[Ppb.Economy] += routeEconomy;
-                noteParts.Add($"route economy {PpbFormat.Additive(routeEconomy)}");
+                noteParts.Add(Loc.T("route economy {0}", PpbFormat.Additive(routeEconomy)));
             }
 
             // Positive outflow = gold leaving the barony → negative Treasury on Domain Panel.
@@ -186,7 +191,7 @@ namespace DA_Common.Barony
             if (goldOutflow != 0m)
             {
                 additive[Ppb.Treasury] -= goldOutflow;
-                noteParts.Add($"customs & sweeteners {PpbFormat.Additive(-goldOutflow)} Gold");
+                noteParts.Add(Loc.T("customs & sweeteners {0} Gold", PpbFormat.Additive(-goldOutflow)));
             }
 
             if (!PpbCatalog.All.Any(info => additive[info.Key] != 0m || percent[info.Key] != 0m))

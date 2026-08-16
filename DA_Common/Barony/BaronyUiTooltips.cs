@@ -1,58 +1,57 @@
+using DA_Common.Localization;
+
 namespace DA_Common.Barony
 {
     /// <summary>Hover copy for barony chrome (meta bar, resource HUD).</summary>
     public static class BaronyUiTooltips
     {
-        public const string MetaBaronyName =
-            "Formal name of your barony.";
+        public static string MetaBaronyName =>
+            Loc.T("Formal name of your barony.");
 
-        public const string MetaBaronyNameMg =
-            "Click to switch which barony you are managing.";
+        public static string MetaBaronyNameMg =>
+            Loc.T("Click to switch which barony you are managing.");
 
-        public const string MetaYear =
-            "Campaign calendar year.";
+        public static string MetaYear =>
+            Loc.T("Campaign calendar year.");
 
-        public const string MetaMonth =
-            "Current month in the barony calendar.";
+        public static string MetaMonth =>
+            Loc.T("Current month in the barony calendar.");
 
-        public const string MetaSeason =
-            "One turn equals one season (Spring → Summer → Autumn → Winter). "
-            + "Farms produce no food in Winter — the barony lives off granary stocks.";
+        public static string MetaSeason =>
+            Loc.T("One turn equals one season (Spring → Summer → Autumn → Winter). Farms produce no food in Winter — the barony lives off granary stocks.");
 
-        public const string MetaTurn =
-            "Number of seasons elapsed since the barony began.";
+        public static string MetaTurn =>
+            Loc.T("Number of seasons elapsed since the barony began.");
 
-        public const string MetaSize =
-            "Terrain tiles assigned to this barony on the map.";
+        public static string MetaSize =>
+            Loc.T("Terrain tiles assigned to this barony on the map.");
 
-        public const string MetaUnrest =
-            "Community unrest level (0–5). Feeds the Community section and penalizes Loyalty, Stability, Law, Economy, and Production. MG can click to edit.";
+        public static string MetaUnrest =>
+            Loc.T("Community unrest level (0–5). Feeds the Community section and penalizes Loyalty, Stability, Law, Economy, and Production. MG can click to edit.");
 
         public static string MetaConjuncture(int dice, int modifier)
         {
             var effective = dice + modifier;
             var modText = modifier == 0
-                ? "no MG modifier"
-                : $"MG modifier {(modifier > 0 ? "+" : "")}{modifier}";
-            return
-                $"Economic conjuncture this turn: {effective} (2d6 = {dice}, {modText}).\n"
-                + "Rolled at turn start. Feeds Community Economy: "
-                + $"(1) net Gold profit (Economy + Conjuncture) × {EconomyConjunctureFormulas.NetProfitGoldFactor:0}; "
-                + "(2) (Conjuncture − 7) in the % formula on Gold, Production, Loyalty, Stability, Magic, Culture, Science, and Defense.";
+                ? Loc.T("no MG modifier")
+                : Loc.T("MG modifier {0}", (modifier > 0 ? "+" : "") + modifier);
+            return Loc.T("Economic conjuncture this turn: {0} (2d6 = {1}, {2}).", effective, dice, modText)
+                + "\n"
+                + Loc.T("Rolled at turn start. Feeds Community Economy: (1) net Gold profit (Economy + Conjuncture) × {0}; (2) (Conjuncture − 7) in the % formula on Gold, Production, Loyalty, Stability, Magic, Culture, Science, and Defense.", EconomyConjunctureFormulas.NetProfitGoldFactor.ToString("0"));
         }
 
         public static string MetaPpbTurnTotal(Ppb key, decimal value)
         {
-            var name = PpbCatalog.NameEnglish(key);
-            var baseTip =
-                $"Domain Panel grand total for {name} this turn: {PpbFormat.Additive(value)}.\n" +
-                "Sum of additive modifiers from all sections (before percent scaling).";
+            var name = PpbCatalog.Name(key);
+            var baseTip = Loc.T("Domain Panel grand total for {0} this turn: {1}.", name, PpbFormat.Additive(value))
+                + "\n"
+                + Loc.T("Sum of additive modifiers from all sections (before percent scaling).");
 
             if (key == Ppb.Economy)
             {
-                return baseTip + "\n"
-                    + $"Community net Gold uses Final Economy (after other Community rows): "
-                    + $"(Economy + Conjuncture) × {EconomyConjunctureFormulas.NetProfitGoldFactor:0}.";
+                return baseTip + "\n" + Loc.T(
+                    "Community net Gold uses Final Economy (after other Community rows): (Economy + Conjuncture) × {0}.",
+                    EconomyConjunctureFormulas.NetProfitGoldFactor.ToString("0"));
             }
 
             return baseTip;
@@ -60,25 +59,23 @@ namespace DA_Common.Barony
 
         public static string ResourceHud(Ppb key, decimal stock, decimal delta)
         {
-            var name = PpbCatalog.NameEnglish(key);
             var deltaText = PpbFormat.Round(delta) == 0m ? "+0" : PpbFormat.Additive(delta);
             var blurb = key switch
             {
-                Ppb.Food => "Stored food supply carried between turns.",
-                Ppb.Production => "Industrial and craft output accumulated as stock.",
-                Ppb.Science => "Scientific progress accumulated between turns.",
-                Ppb.Magic => "Magical resources accumulated between turns.",
-                Ppb.Culture => "Cultural output accumulated between turns.",
-                Ppb.Intelligence => "Intelligence assets accumulated between turns.",
-                Ppb.Defense => "Defensive readiness accumulated between turns.",
-                Ppb.Treasury => "Treasury gold carried between turns.",
-                _ => "Cumulative resource stock.",
+                Ppb.Food => Loc.T("Stored food supply carried between turns."),
+                Ppb.Production => Loc.T("Industrial and craft output accumulated as stock."),
+                Ppb.Science => Loc.T("Scientific progress accumulated between turns."),
+                Ppb.Magic => Loc.T("Magical resources accumulated between turns."),
+                Ppb.Culture => Loc.T("Cultural output accumulated between turns."),
+                Ppb.Intelligence => Loc.T("Intelligence assets accumulated between turns."),
+                Ppb.Defense => Loc.T("Defensive readiness accumulated between turns."),
+                Ppb.Treasury => Loc.T("Treasury gold carried between turns."),
+                _ => Loc.T("Cumulative resource stock."),
             };
 
-            return
-                $"{blurb}\n" +
-                $"Current stock: {PpbFormat.Number(stock)}.\n" +
-                $"Expected change this turn: {deltaText} (Domain Panel grand total).";
+            return blurb
+                + "\n" + Loc.T("Current stock: {0}.", PpbFormat.Number(stock))
+                + "\n" + Loc.T("Expected change this turn: {0} (Domain Panel grand total).", deltaText);
         }
     }
 }
