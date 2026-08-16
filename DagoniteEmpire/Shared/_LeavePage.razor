@@ -3,8 +3,8 @@
         <div class="modal-content">
 
             <div class="modal-header">
-                <h5 class="modal-title" id="exampleModalLabel">Confirm  leave</h5>
-                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" @onclick="()=>OnLeaveConfirmation(false)">
+                <h5 class="modal-title" id="exampleModalLabel">@L["Confirm  leave"]</h5>
+                <button type="button" class="close" data-bs-dismiss="modal" aria-label="@(L["Close"])" @onclick="()=>OnLeaveConfirmation(false)">
                     <span aria-hidden="true">&times;</span>
                 </button>
 
@@ -17,10 +17,10 @@
             {
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" disabled @onclick="()=>OnLeaveConfirmation(false)" data-bs-dismiss="modal">
-                        Cancel
+                        @L["Cancel"]
                     </button>
                     <button type="button" class="btn btn-danger" disabled @onclick="()=>OnLeaveConfirmation(true)">
-                        Processing...
+                        @L["Processing..."]
                     </button>
                 </div>
             }
@@ -28,10 +28,10 @@
             {
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" @onclick="()=>OnLeaveConfirmation(false)" data-bs-dismiss="modal">
-                        Cancel
+                        @L["Cancel"]
                     </button>
                     <button type="button" class="btn btn-danger" @onclick="()=>OnLeaveConfirmation(true)">
-                        Leave
+                        @L["Leave"]
                     </button>
                 </div>
             }

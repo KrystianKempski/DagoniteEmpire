@@ -33,6 +33,8 @@ SKIP_DIRS = ("/obj/", "/bin/", "/wwwroot/lib/")
 
 STR_RE = re.compile(r'"((?:[^"\\]|\\.)*)"')
 TAG_WRAP_RE = re.compile(r"^<(\w+)(?:\s[^>]*)?>(.*)</\1>$")
+# Inner text of an element: the run between '>' and '<' with no markup/code chars.
+TEXT_NODE_RE = re.compile(r'>([^<>@{}"]+)<')
 # Markup / code that means a line is NOT a plain display string we can lift wholesale.
 MARKUP_RE = re.compile(r'[<>@{}="]')
 # A Polish/Latin display run: letters (incl. PL diacritics), digits, spaces and common punctuation.
@@ -84,6 +86,17 @@ def hunk_pairs(diff: str):
 
 
 def extract_from_pair(en: str, pl: str, add, review, ctx):
+    added_any = False
+    # Element-text pass: pair >TEXT< segments even amid attributes with @/{ interpolation.
+    en_nodes = TEXT_NODE_RE.findall(en)
+    pl_nodes = TEXT_NODE_RE.findall(pl)
+    if en_nodes and len(en_nodes) == len(pl_nodes):
+        for a, b in zip(en_nodes, pl_nodes):
+            a, b = a.strip(), b.strip()
+            if a and b and a != b and is_texty(a) and is_texty(b):
+                add(a, b, ctx)
+                added_any = True
+
     lm = STR_RE.findall(en)
     lp = STR_RE.findall(pl)
     if lm and len(lm) == len(lp):
@@ -103,7 +116,10 @@ def extract_from_pair(en: str, pl: str, add, review, ctx):
             return
         if any(a != b for a, b in zip(lm, lp)):
             return
+    if added_any:
+        return
     # Fallback: no matched quoted literals (e.g. Razor element text). Lift whole plain-text lines.
+
     en_s, pl_s = en.strip(), pl.strip()
     if not en_s or not pl_s or en_s == pl_s:
         return

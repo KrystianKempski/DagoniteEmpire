@@ -21,7 +21,7 @@
                     </div>
                 </ActivatorContent>
                 <ChildContent >
-                    <MudMenuItem  Disabled>Select character</MudMenuItem>
+                    <MudMenuItem  Disabled>@L["Select character"]</MudMenuItem>
                     @if (UserInfo?.HasGlobalCharacterAccess == true)
                     {
                         <MudMenuItem OnClick="@(e => SelectCharacter())">
@@ -49,7 +49,7 @@
                         </MudMenuItem>
                     }
                     <MudMenuItem Class="py-3" OnClick="@LogoutAsync">
-                        Log Out                        
+                        @L["Log Out"]                        
                     </MudMenuItem>
                 </ChildContent>
             </MudMenu>
@@ -60,13 +60,13 @@
     </Authorized>
     <NotAuthorized>
         <div class="big-screen pa-4 justify-center my-4 mud-text-align-center">
-            <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Primary" Href="Account/Register">Register</MudButton>
-            <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Secondary" Href="Account/Login">Log in</MudButton>
+            <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Primary" Href="Account/Register">@L["Register"]</MudButton>
+            <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Secondary" Href="Account/Login">@L["Log in"]</MudButton>
         </div>
         <div class="small-screen">
             <MudMenu Color="Color.Inherit" Icon="@Icons.Material.Filled.AccountCircle">
-                <MudMenuItem OnClick="@(() => GoTo("Register"))">Register</MudMenuItem>
-                <MudMenuItem OnClick="@(() => GoTo("Login"))">Log in</MudMenuItem>
+                <MudMenuItem OnClick="@(() => GoTo("Register"))">@L["Register"]</MudMenuItem>
+                <MudMenuItem OnClick="@(() => GoTo("Login"))">@L["Log in"]</MudMenuItem>
             </MudMenu>
         </div>
     </NotAuthorized>

@@ -6,7 +6,7 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inherits LayoutComponentBase
 
-<PageTitle>DagoniteEmpire</PageTitle>
+<PageTitle>@L["DagoniteEmpire"]</PageTitle>
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
 
 <MudThemeProvider/>
@@ -22,7 +22,7 @@ MaxWidth="MaxWidth.Large" />
         <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
             <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerStartToggle())" />
         </MudHidden>
-        <MudButton Class="app-bar-title p-0 m-0" Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Text" DropShadow="true" Color="Color.Primary" Href="#">Dagonite Empire</MudButton>
+        <MudButton Class="app-bar-title p-0 m-0" Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Text" DropShadow="true" Color="Color.Primary" Href="#">@L["Dagonite Empire"]</MudButton>
         @* Horizontal nav only above drawer breakpoint; on mobile/tablet use MudDrawer instead. *@
         <MudHidden Breakpoint="Breakpoint.MdAndDown">
             <div class="app-bar-nav">
@@ -35,6 +35,7 @@ MaxWidth="MaxWidth.Large" />
         </MudHidden>
 
         <MudSpacer />
+        <LanguageSwitcher />
         <LoginDisplay />
     </MudAppBar>
     <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">

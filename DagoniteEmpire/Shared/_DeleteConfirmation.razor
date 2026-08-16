@@ -3,8 +3,8 @@
     <div class="modal-content">
 
       <div class="modal-header">
-        <h5 class="modal-title" id="exampleModalLabel">Confirm Delete</h5>
-        <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close" @onclick="()=>OnDeleteConfirmation(false)">
+        <h5 class="modal-title" id="exampleModalLabel">@L["Confirm Delete"]</h5>
+        <button type="button" class="close" data-bs-dismiss="modal" aria-label="@(L["Close"])" @onclick="()=>OnDeleteConfirmation(false)">
           <span aria-hidden="true">&times;</span>
         </button>
 
@@ -16,10 +16,10 @@
             {
                 <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" disabled @onclick="()=>OnDeleteConfirmation(false)" data-bs-dismiss="modal">
-                  Cancel
+                  @L["Cancel"]
                 </button>
                 <button type="button" class="btn btn-danger" disabled @onclick="()=>OnDeleteConfirmation(true)">
-                  Processing...
+                  @L["Processing..."]
                 </button>
               </div>
             }
@@ -27,10 +27,10 @@
             {
                  <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" @onclick="()=>OnDeleteConfirmation(false)" data-bs-dismiss="modal">
-                  Cancel
+                  @L["Cancel"]
                 </button>
                 <button type="button" class="btn btn-danger" @onclick="()=>OnDeleteConfirmation(true)">
-                  Delete
+                  @L["Delete"]
                 </button>
               </div>
             }

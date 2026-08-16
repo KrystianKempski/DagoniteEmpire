@@ -1,0 +1,21 @@
+@inject NavigationManager Nav
+
+<MudButtonGroup Size="Size.Small" Variant="Variant.Text" Color="Color.Inherit">
+    <MudButton OnClick="@(() => SetCulture("pl"))"
+               Style="@(IsCurrent("pl") ? "font-weight:700;text-decoration:underline;" : "opacity:.7;")">PL</MudButton>
+    <MudButton OnClick="@(() => SetCulture("en"))"
+               Style="@(IsCurrent("en") ? "font-weight:700;text-decoration:underline;" : "opacity:.7;")">EN</MudButton>
+</MudButtonGroup>
+
+@code {
+    private bool IsCurrent(string culture) =>
+        string.Equals(System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName, culture, StringComparison.OrdinalIgnoreCase);
+
+    private void SetCulture(string culture)
+    {
+        var redirect = Nav.ToBaseRelativePath(Nav.Uri);
+        var url = $"Culture/Set?culture={Uri.EscapeDataString(culture)}&redirectUri={Uri.EscapeDataString("/" + redirect)}";
+        // Full reload required: Blazor Server cannot change the request culture mid-circuit.
+        Nav.NavigateTo(url, forceLoad: true);
+    }
+}
