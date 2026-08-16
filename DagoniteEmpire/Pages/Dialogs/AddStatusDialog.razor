@@ -24,7 +24,7 @@
                 <MudPaper Elevation="1" Class="pa-2 h-100">
 
                     @* Select Rolling character *@
-                    <MudSelect Value="@SelectedCharacterName" T="string" Required="true" ValueChanged="SelectCharacter" Label="Select Rolling character">
+                    <MudSelect Value="@SelectedCharacterName" T="string" Required="true" ValueChanged="SelectCharacter" Label="@(L["Select Rolling character"])">
                         <MudSelectItem Value="@string.Empty">@string.Empty</MudSelectItem>
                         @foreach(var attacker in CharacterAllParams)
                         {
@@ -42,7 +42,7 @@
                         }
                     </MudSelect>                
                     @* Select state  *@
-                    <MudSelect  T="TraitDTO" Required="true" @bind-Value="@SelectedTrait" Label="Select state">
+                    <MudSelect  T="TraitDTO" Required="true" @bind-Value="@SelectedTrait" Label="@(L["Select state"])">
                         @if (Traits is not null && Traits.Count() > 0)
                         {
                             @foreach (TraitDTO trait in Traits)
@@ -52,14 +52,14 @@
                         }
 
                     </MudSelect>
-                    <MudNumericField Label="Duration" @bind-Value="StateDuration"> @StateDuration</MudNumericField>
+                    <MudNumericField Label="@(L["Duration"])" @bind-Value="StateDuration"> @StateDuration</MudNumericField>
                    </MudPaper>
             </MudItem>
         </MudGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Exit</MudButton>
-        <MudButton Color="Color.Error" OnClick="AddStateAndExit">Save</MudButton>
+        <MudButton OnClick="Cancel">@L["Exit"]</MudButton>
+        <MudButton Color="Color.Error" OnClick="AddStateAndExit">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>
 

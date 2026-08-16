@@ -14,7 +14,7 @@
                 No contacts in this section.
                 @if (CanManage)
                 {
-                    <text> Add one below.</text>
+                    <text> @L["Add one below."]</text>
                 }
             </MudText>
         }
@@ -34,14 +34,14 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th class="relations-col-group">Group</th>
-                            <th class="relations-col-name">Name</th>
-                            <th class="relations-col-title">Title</th>
-                            <th class="relations-col-age">Age</th>
-                            <th class="relations-col-desc">Description</th>
-                            <th class="relations-col-troops">Troops</th>
-                            <th class="relations-col-attitude">Attitude</th>
-                            <th class="relations-col-mods">Modifiers</th>
+                            <th class="relations-col-group">@L["Group"]</th>
+                            <th class="relations-col-name">@L["Name"]</th>
+                            <th class="relations-col-title">@L["Title"]</th>
+                            <th class="relations-col-age">@L["Age"]</th>
+                            <th class="relations-col-desc">@L["Description"]</th>
+                            <th class="relations-col-troops">@L["Troops"]</th>
+                            <th class="relations-col-attitude">@L["Attitude"]</th>
+                            <th class="relations-col-mods">@L["Modifiers"]</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -77,7 +77,7 @@
                                                 }
                                                 else if (!string.IsNullOrWhiteSpace(item.Notes))
                                                 {
-                                                    <BaronyTooltip Title="Notes" Text="@item.Notes">
+                                                    <BaronyTooltip Title="@(L["Notes"])" Text="@item.Notes">
                                                         <MudIcon Icon="@Icons.Material.Filled.EditNote"
                                                                  Size="Size.Small"
                                                                  Class="known-lords-notes-icon known-lords-notes-icon--filled" />
@@ -85,12 +85,12 @@
                                                 }
                                                 @if (CanManage)
                                                 {
-                                                    <BaronyTooltip Text="Edit relation">
+                                                    <BaronyTooltip Text="@(L["Edit relation"])">
                                                         <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                                        Size="Size.Small"
                                                                        OnClick="@(() => EditAsync(item))" />
                                                     </BaronyTooltip>
-                                                    <BaronyTooltip Text="Remove relation">
+                                                    <BaronyTooltip Text="@(L["Remove relation"])">
                                                         <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                                        Size="Size.Small"
                                                                        Color="Color.Error"
@@ -105,7 +105,7 @@
                                     <td class="relations-col-desc">
                                         @if (!string.IsNullOrWhiteSpace(item.Description))
                                         {
-                                            <BaronyTooltip Title="Description" Text="@item.Description">
+                                            <BaronyTooltip Title="@(L["Description"])" Text="@item.Description">
                                                 <span class="known-lords-desc-text">@item.Description</span>
                                             </BaronyTooltip>
                                         }
@@ -116,7 +116,7 @@
                                     </td>
                                     <td class="relations-col-troops">@item.TroopCount</td>
                                     <td class="relations-col-attitude">
-                                        <BaronyTooltip Title="Attitude" Text="@ModifiersTooltip(item)">
+                                        <BaronyTooltip Title="@(L["Attitude"])" Text="@ModifiersTooltip(item)">
                                             <span class="@AttitudeClass(item.Attitude)">
                                                 <span class="relations-attitude-score">@FormatAttitude(item.Attitude)</span>
                                                 <span class="relations-attitude-label">@item.AttitudeLabel</span>
@@ -125,12 +125,12 @@
                                     </td>
                                     <td class="relations-col-mods">
                                         <div class="relations-mods-cell">
-                                            <BaronyTooltip Title="Modifiers" Text="@ModifiersTooltip(item)">
+                                            <BaronyTooltip Title="@(L["Modifiers"])" Text="@ModifiersTooltip(item)">
                                                 <span class="relations-mods-count">@item.Modifiers.Count</span>
                                             </BaronyTooltip>
                                             @if (CanManage)
                                             {
-                                                <BaronyTooltip Text="Edit modifiers">
+                                                <BaronyTooltip Text="@(L["Edit modifiers"])">
                                                     <MudIconButton Icon="@Icons.Material.Filled.Tune"
                                                                    Size="Size.Small"
                                                                    OnClick="@(() => EditModifiersAsync(item))" />
@@ -152,7 +152,7 @@
                 <MudButton Variant="Variant.Outlined"
                            StartIcon="@Icons.Material.Filled.Add"
                            OnClick="AddAsync">
-                    Add…
+                    @L["Add…"]
                 </MudButton>
             </div>
         }

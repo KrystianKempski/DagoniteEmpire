@@ -15,19 +15,19 @@
                       Breakpoint="Breakpoint.None"
                       Class="battle-xp-summary-dialog__table">
                 <HeaderContent>
-                    <MudTh class="battle-xp-summary-dialog__unit-col">Unit</MudTh>
-                    <MudTh class="battle-xp-summary-dialog__num-col">Dmg<br />dealt</MudTh>
-                    <MudTh class="battle-xp-summary-dialog__num-col">Dmg<br />taken</MudTh>
-                    <MudTh class="battle-xp-summary-dialog__num-col">Engaged<br />rounds</MudTh>
-                    <MudTh class="battle-xp-summary-dialog__num-col">Kills</MudTh>
-                    <MudTh class="battle-xp-summary-dialog__num-col">Fled</MudTh>
-                    <MudTh class="battle-xp-summary-dialog__num-col">Base<br />XP</MudTh>
+                    <MudTh class="battle-xp-summary-dialog__unit-col">@L["Unit"]</MudTh>
+                    <MudTh class="battle-xp-summary-dialog__num-col">@L["Dmg"]<br />dealt</MudTh>
+                    <MudTh class="battle-xp-summary-dialog__num-col">@L["Dmg"]<br />taken</MudTh>
+                    <MudTh class="battle-xp-summary-dialog__num-col">@L["Engaged"]<br />rounds</MudTh>
+                    <MudTh class="battle-xp-summary-dialog__num-col">@L["Kills"]</MudTh>
+                    <MudTh class="battle-xp-summary-dialog__num-col">@L["Fled"]</MudTh>
+                    <MudTh class="battle-xp-summary-dialog__num-col">@L["Base"]<br />XP</MudTh>
                     @if (CanAdjust)
                     {
-                        <MudTh class="battle-xp-summary-dialog__bonus-col">MG<br />bonus</MudTh>
-                        <MudTh class="battle-xp-summary-dialog__note-col">MG note</MudTh>
+                        <MudTh class="battle-xp-summary-dialog__bonus-col">@L["MG"]<br />bonus</MudTh>
+                        <MudTh class="battle-xp-summary-dialog__note-col">@L["MG note"]</MudTh>
                     }
-                    <MudTh class="battle-xp-summary-dialog__num-col">Final<br />XP</MudTh>
+                    <MudTh class="battle-xp-summary-dialog__num-col">@L["Final"]<br />XP</MudTh>
                 </HeaderContent>
                 <RowTemplate>
                     <MudTd DataLabel="Unit" class="battle-xp-summary-dialog__unit-col">@context.UnitName</MudTd>
@@ -58,7 +58,7 @@
                                           Immediate="true"
                                           Variant="Variant.Outlined"
                                           Margin="Margin.Dense"
-                                          Placeholder="Note…"
+                                          Placeholder="@(L["Note…"])"
                                           Class="battle-xp-summary-dialog__note-input" />
                         </MudTd>
                     }
@@ -72,11 +72,11 @@
     <DialogActions>
         @if (CanAdjust)
         {
-            <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
             <MudButton Class="baron-influence-save-btn"
                        Variant="Variant.Filled"
                        OnClick="Confirm">
-                Confirm XP
+                @L["Confirm XP"]
             </MudButton>
         }
         else

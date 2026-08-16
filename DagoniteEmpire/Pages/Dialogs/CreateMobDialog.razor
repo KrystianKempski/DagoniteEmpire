@@ -26,10 +26,10 @@
             </MudPaper>
 
             <MudStack Row="true">
-                <MudTextField Required="true" @bind-Value="@NewMob.Name" Label="Name"  />
-                <MudTextField Required="true" @bind-Value="@NewMob.RaceName" Label="Race"  />
-                <MudTextField Required="true" @bind-Value="@NewMob.ProfessionName" Label="Class" />
-                 <MudSelect Required="true" @bind-Value="@NewMob.Relation" Label="Relation">
+                <MudTextField Required="true" @bind-Value="@NewMob.Name" Label="@(L["Name"])"  />
+                <MudTextField Required="true" @bind-Value="@NewMob.RaceName" Label="@(L["Race"])"  />
+                <MudTextField Required="true" @bind-Value="@NewMob.ProfessionName" Label="@(L["Class"])" />
+                 <MudSelect Required="true" @bind-Value="@NewMob.Relation" Label="@(L["Relation"])">
                     <MudSelectItem Value="Relation.Ally">@Relation.Ally.ToString()</MudSelectItem>
                     <MudSelectItem Value="Relation.Neutral">@Relation.Neutral.ToString()</MudSelectItem>
                     <MudSelectItem Value="Relation.Enemy">@Relation.Enemy.ToString()</MudSelectItem>
@@ -37,49 +37,49 @@
                 </MudSelect> 
             </MudStack>
 
-            <MudTextField Required="true" @bind-Value="@NewMob.Description" Label="Description" Lines="3" />
-            <MudTextField @bind-Value="@NewMob.Notes" Label="Notes" Lines="3" />
+            <MudTextField Required="true" @bind-Value="@NewMob.Description" Label="@(L["Description"])" Lines="3" />
+            <MudTextField @bind-Value="@NewMob.Notes" Label="@(L["Notes"])" Lines="3" />
             <MudGrid>
                 <MudItem xs="3">
-                    <MudNumericField Required="true" @bind-Value="@NewMob.AttackSkillValue" Label="Attack skill" />
+                    <MudNumericField Required="true" @bind-Value="@NewMob.AttackSkillValue" Label="@(L["Attack skill"])" />
                 </MudItem>
                 <MudItem xs="3">
-                    <MudNumericField Required="true" @bind-Value="@NewMob.ShieldSkillValue" Label="Shield skill" />
+                    <MudNumericField Required="true" @bind-Value="@NewMob.ShieldSkillValue" Label="@(L["Shield skill"])" />
                 </MudItem>
                 <MudItem xs="3">
-                    <MudNumericField Required="true" @bind-Value="@NewMob.DodgeSkillValue" Label="Dodge skill" />
+                    <MudNumericField Required="true" @bind-Value="@NewMob.DodgeSkillValue" Label="@(L["Dodge skill"])" />
                 </MudItem>
                 <MudItem xs="3">
-                    <MudNumericField Required="true" @bind-Value="@NewMob.ArmorSkillValue" Label="Armor skill" />
+                    <MudNumericField Required="true" @bind-Value="@NewMob.ArmorSkillValue" Label="@(L["Armor skill"])" />
                 </MudItem>
                 <MudItem xs="3">
-                    <MudNumericField Required="true" @bind-Value="@NewMob.ParrySkillValue" Label="Parry skill" />
+                    <MudNumericField Required="true" @bind-Value="@NewMob.ParrySkillValue" Label="@(L["Parry skill"])" />
                 </MudItem>
                 <MudItem xs="3">
-                    <MudNumericField Required="true" @bind-Value="@NewMob.LiftingSkillValue" Label="Lifting skill" />
+                    <MudNumericField Required="true" @bind-Value="@NewMob.LiftingSkillValue" Label="@(L["Lifting skill"])" />
                 </MudItem>
                 <MudItem xs="3">
-                    <MudNumericField Required="true" @bind-Value="@NewMob.PainResSkillValue" Label="Pain resistance" />
+                    <MudNumericField Required="true" @bind-Value="@NewMob.PainResSkillValue" Label="@(L["Pain resistance"])" />
                 </MudItem>
                 <MudItem xs="3">
-                    <MudNumericField Required="true" @bind-Value="@NewMob.WrestlingSkillValue" Label="Wrestling" />
+                    <MudNumericField Required="true" @bind-Value="@NewMob.WrestlingSkillValue" Label="@(L["Wrestling"])" />
                 </MudItem>
                 <MudItem xs="3">
-                    <MudNumericField Required="true" @bind-Value="@NewMob.PerceptionSkillValue" Label="Perception" />
+                    <MudNumericField Required="true" @bind-Value="@NewMob.PerceptionSkillValue" Label="@(L["Perception"])" />
                 </MudItem>
                 <MudItem xs="3">
-                    <MudNumericField Required="true" @bind-Value="@NewMob.WillpowerSkillValue" Label="Willpower" />
+                    <MudNumericField Required="true" @bind-Value="@NewMob.WillpowerSkillValue" Label="@(L["Willpower"])" />
                 </MudItem>
                 <MudItem xs="3">
-                    <MudNumericField Required="true" @bind-Value="@NewMob.CharismaSkillValue" Label="Charisma" />
+                    <MudNumericField Required="true" @bind-Value="@NewMob.CharismaSkillValue" Label="@(L["Charisma"])" />
                 </MudItem>
 
             </MudGrid>
 
              <MudGrid>
                 <MudItem xs="6">
-                    <MudSelect Required="true" ShrinkLabel="true" @bind-Value="@NewMob.MainWeaponName" Label="Main weapon">
-                        <MudSelectItem Value="string.Empty">None</MudSelectItem>
+                    <MudSelect Required="true" ShrinkLabel="true" @bind-Value="@NewMob.MainWeaponName" Label="@(L["Main weapon"])">
+                        <MudSelectItem Value="string.Empty">@L["None"]</MudSelectItem>
                         @foreach (string weapon in SD.BasicWeaponsMelee.All)
                         {
                             <MudSelectItem Value="@weapon">@weapon</MudSelectItem>
@@ -91,8 +91,8 @@
                     </MudSelect>
                 </MudItem>
                     <MudItem xs="6">
-                    <MudSelect ShrinkLabel="true" @bind-Value="@NewMob.OffWeaponName" Label="Second weapon">
-                        <MudSelectItem Value="string.Empty">None</MudSelectItem>
+                    <MudSelect ShrinkLabel="true" @bind-Value="@NewMob.OffWeaponName" Label="@(L["Second weapon"])">
+                        <MudSelectItem Value="string.Empty">@L["None"]</MudSelectItem>
                         @foreach (string weapon in SD.BasicWeaponsMelee.All)
                         {
                             <MudSelectItem Value="@weapon">@weapon</MudSelectItem>
@@ -104,8 +104,8 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="6">
-                    <MudSelect ShrinkLabel="true"  @bind-Value="@NewMob.ShieldWeaponName" Label="Shield">
-                        <MudSelectItem Value="string.Empty">None</MudSelectItem>
+                    <MudSelect ShrinkLabel="true"  @bind-Value="@NewMob.ShieldWeaponName" Label="@(L["Shield"])">
+                        <MudSelectItem Value="string.Empty">@L["None"]</MudSelectItem>
                         @foreach (string shield in SD.BasicShields.All)
                         {
                             <MudSelectItem Value="@shield">@shield</MudSelectItem>
@@ -113,8 +113,8 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="6">
-                    <MudSelect ShrinkLabel="true"  @bind-Value="@NewMob.ArmorName" Label="Armor">
-                        <MudSelectItem Value="string.Empty">None</MudSelectItem>
+                    <MudSelect ShrinkLabel="true"  @bind-Value="@NewMob.ArmorName" Label="@(L["Armor"])">
+                        <MudSelectItem Value="string.Empty">@L["None"]</MudSelectItem>
                         @foreach (string armor in SD.BasicArmors.All)
                         {
                             <MudSelectItem Value="@armor">@armor</MudSelectItem>
@@ -124,32 +124,32 @@
             </MudGrid>
             <MudPaper Class="py-2" Elevation="0">
                 <MudStack Row="true" Justify="Justify.SpaceBetween">
-                    <MudNumericField Required="true" @bind-Value="@NewMob.MaxWounds" Label="Maximum wounds" />
-                    <MudNumericField @bind-Value="@NewMob.CurrentWounds" Label="Current wounds" />
-                    <MudNumericField Required="true" Min="0" @bind-Value="@NewMob.Speed" Label="Speed (cells)" />
+                    <MudNumericField Required="true" @bind-Value="@NewMob.MaxWounds" Label="@(L["Maximum wounds"])" />
+                    <MudNumericField @bind-Value="@NewMob.CurrentWounds" Label="@(L["Current wounds"])" />
+                    <MudNumericField Required="true" Min="0" @bind-Value="@NewMob.Speed" Label="@(L["Speed (cells)"])" />
                 </MudStack>
 
                 <MudText>Current status: @NewMob.States</MudText>
                 <MudStack Row="true" Justify="Justify.SpaceBetween">
-                    <MudButton OnClick="ClearStates">Clear states</MudButton>
-                    <MudSelect Value="SelectedState" T="string" ValueChanged="AddState" Label="AddState" AnchorOrigin="Origin.BottomCenter">
+                    <MudButton OnClick="ClearStates">@L["Clear states"]</MudButton>
+                    <MudSelect Value="SelectedState" T="string" ValueChanged="AddState" Label="@(L["AddState"])" AnchorOrigin="Origin.BottomCenter">
                         @foreach (string state in States.Names.All)
                         {
                             <MudSelectItem Value="@state">@state</MudSelectItem>
                         }
                     </MudSelect>
-                    <MudNumericField @bind-Value="@StateDuration" Label="Duration" />
+                    <MudNumericField @bind-Value="@StateDuration" Label="@(L["Duration"])" />
                 </MudStack>
          
             </MudPaper>
             <MudStack Row="true" Justify="Justify.SpaceBetween">
-                <MudSelect Value="@NewMob.Campaign" T="CampaignDTO" ValueChanged="SelectCampaign" Label="Select Campaign" Placeholder="Select campagin" AnchorOrigin="Origin.BottomCenter">
+                <MudSelect Value="@NewMob.Campaign" T="CampaignDTO" ValueChanged="SelectCampaign" Label="@(L["Select Campaign"])" Placeholder="@(L["Select campagin"])" AnchorOrigin="Origin.BottomCenter">
                     @foreach (var campaign in Campaigns)
                     {
                         <MudSelectItem Value="@campaign">@campaign.Name</MudSelectItem>
                     }
                 </MudSelect>
-                <MudSelect ReadOnly="IsCampaignSelected" Value="NewMob.Chapter" T="ChapterDTO" ValueChanged="SelectCharacter" Label="Select character" AnchorOrigin="Origin.BottomCenter">
+                <MudSelect ReadOnly="IsCampaignSelected" Value="NewMob.Chapter" T="ChapterDTO" ValueChanged="SelectCharacter" Label="@(L["Select character"])" AnchorOrigin="Origin.BottomCenter">
                     @foreach (var chapter in Chapters)
                     {
                         <MudSelectItem Value="@chapter">@chapter.Name</MudSelectItem>
@@ -160,7 +160,7 @@
         </MudForm>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
         <MudButton Color="Color.Error" Disabled="@(!success)" OnClick="SaveMobBtn">@Title</MudButton>
     </DialogActions>
 </MudDialog>

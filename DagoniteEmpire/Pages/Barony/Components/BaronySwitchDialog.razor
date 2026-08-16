@@ -6,10 +6,10 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudText Typo="Typo.caption" Class="mb-3 d-block" Style="color:var(--barony-muted);">
-                Choose which barony to manage.
+                @L["Choose which barony to manage."]
             </MudText>
             <MudSelect T="BaronyListItemDTO?"
-                       Label="Barony"
+                       Label="@(L["Barony"])"
                        Value="@_selected"
                        ValueChanged="OnSelectedChanged"
                        Variant="Variant.Outlined"
@@ -19,7 +19,7 @@
                        Disabled="@(Baronies.Count == 0)">
                 @if (Baronies.Count == 0)
                 {
-                    <MudSelectItem Value="@((BaronyListItemDTO?)null)">No baronies — create in Panel MG</MudSelectItem>
+                    <MudSelectItem Value="@((BaronyListItemDTO?)null)">@L["No baronies — create in Panel MG"]</MudSelectItem>
                 }
                 else
                 {
@@ -32,12 +32,12 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
         <MudButton Class="baron-influence-save-btn"
                    Variant="Variant.Filled"
                    Disabled="@(!CanApply)"
                    OnClick="Apply">
-            Switch
+            @L["Switch"]
         </MudButton>
     </DialogActions>
 </MudDialog>

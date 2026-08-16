@@ -4,23 +4,23 @@
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
-            Choose human attribute and skills bonus
+            @L["Choose human attribute and skills bonus"]
         </MudText>
     </TitleContent>
     <DialogContent>
-        <MudSelect @bind-Value="HumanRaceBonuses.AttributeNameBonus" Margin="Margin.Dense" T="string" Label="Attribute" Variant="Variant.Filled">
+        <MudSelect @bind-Value="HumanRaceBonuses.AttributeNameBonus" Margin="Margin.Dense" T="string" Label="@(L["Attribute"])" Variant="Variant.Filled">
             @foreach (var attr in SD.Attributes.All)
             {
                 <MudSelectItem Value="@(attr)" />
             }
         </MudSelect>
-        <MudSelect @bind-Value="HumanRaceBonuses.FirstSkillNameBonus" Margin="Margin.Dense" T="string" Label="Base skill 1" Variant="Variant.Filled">
+        <MudSelect @bind-Value="HumanRaceBonuses.FirstSkillNameBonus" Margin="Margin.Dense" T="string" Label="@(L["Base skill 1"])" Variant="Variant.Filled">
             @foreach (var bs in SD.BaseSkills.All)
             {
                 <MudSelectItem Value="@(bs)" />
             }
         </MudSelect>
-        <MudSelect @bind-Value="HumanRaceBonuses.SecondSkillNameBonus" Margin="Margin.Dense" T="string" Label="Base skill 2" Variant="Variant.Filled">
+        <MudSelect @bind-Value="HumanRaceBonuses.SecondSkillNameBonus" Margin="Margin.Dense" T="string" Label="@(L["Base skill 2"])" Variant="Variant.Filled">
             @foreach (var bs in SD.BaseSkills.All)
             {
                 <MudSelectItem Value="@(bs)" />
@@ -28,8 +28,8 @@
         </MudSelect>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Error" OnClick="ChooseBonuses">Choose</MudButton>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Error" OnClick="ChooseBonuses">@L["Choose"]</MudButton>
     </DialogActions>
 </MudDialog>
 

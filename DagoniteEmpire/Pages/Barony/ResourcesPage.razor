@@ -10,7 +10,7 @@
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>@L["Loading..."]</span>
 }
 else if (LoadError is not null)
 {
@@ -18,9 +18,9 @@ else if (LoadError is not null)
 }
 else if (_overview is not null)
 {
-    <BaronyPageHeader Title="Resources" HelpKey="resources" />
+    <BaronyPageHeader Title="@(L["Resources"])" HelpKey="resources" />
 
-    <BaronySection Title="Current Resource Stocks">
+    <BaronySection Title="@(L["Current Resource Stocks"])">
         <Summary>
             <PpbSummaryChips Vector="@_stocksGlance" Columns="@ResourceCatalog.All" />
         </Summary>
@@ -29,7 +29,7 @@ else if (_overview is not null)
         </ChildContent>
     </BaronySection>
 
-    <BaronySection Title="Expected Income This Turn">
+    <BaronySection Title="@(L["Expected Income This Turn"])">
         <Summary>
             <PpbSummaryChips Vector="@_expectedGlance" Columns="@ResourceCatalog.All" />
         </Summary>
@@ -45,7 +45,7 @@ else if (_overview is not null)
         </ChildContent>
     </BaronySection>
 
-    <BaronySection Title="Resource Balance">
+    <BaronySection Title="@(L["Resource Balance"])">
         <Summary>
             <PpbSummaryChips Vector="@_balanceSum" Columns="@ResourceCatalog.All" />
         </Summary>
@@ -70,7 +70,7 @@ else if (_overview is not null)
                     <MudButton Variant="Variant.Outlined"
                                StartIcon="@Icons.Material.Filled.Add"
                                OnClick="AddSourceAsync">
-                        Add Source
+                        @L["Add Source"]
                     </MudButton>
                 </div>
             }

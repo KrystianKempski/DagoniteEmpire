@@ -1,6 +1,6 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
-<BaronySection Title="Army">
+<BaronySection Title="@(L["Army"])">
     <Summary>
         <PpbSummaryChips Vector="@Glance" />
     </Summary>
@@ -8,13 +8,13 @@
         @if (RowList.Count == 0)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                No active units. Training units do not count toward upkeep until graduation.
+                @L["No active units. Training units do not count toward upkeep until graduation."]
             </MudText>
         }
         else
         {
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Per-turn upkeep of Active units: wage (Gold), food, and defense.
+                @L["Per-turn upkeep of Active units: wage (Gold), food, and defense."]
             </MudText>
             <div style="overflow-x:auto;">
                 <table class="ppb-table ppb-table--advisors ppb-table--community ppb-table--lined">
@@ -28,7 +28,7 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th rowspan="2" class="ppb-row-label community-col-source">Unit</th>
+                            <th rowspan="2" class="ppb-row-label community-col-source">@L["Unit"]</th>
                             @foreach (var info in PpbCatalog.All)
                             {
                                 <th colspan="2"><BaronyTooltip Text="@info.NameEn">@PpbShort(info.Key)</BaronyTooltip></th>
@@ -68,7 +68,7 @@
                             </tr>
                         }
                         <tr class="ppb-summary-row">
-                            <td class="ppb-row-label community-col-source">Σ section</td>
+                            <td class="ppb-row-label community-col-source">@L["Σ section"]</td>
                             @foreach (var info in PpbCatalog.All)
                             {
                                 <td class="@PpbCellStyle.ValueClass(info.Key, AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>

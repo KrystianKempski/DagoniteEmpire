@@ -45,7 +45,7 @@
             <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
 
             <div class="save-btn down">
-                 <button @onclick="OnSaveChangesBtnClick" class="btn btn-primary">Save</button>
+                 <button @onclick="OnSaveChangesBtnClick" class="btn btn-primary">@L["Save"]</button>
             </div>
             </MudHidden>
         }
@@ -54,7 +54,7 @@
         <div class="wide-screen-table">
             <div class="w-100 prof-header-row">
                 <div class="d-flex flex-column px-1 prof-name-cell">
-                    <label class="class-section py-1">Class name</label>
+                    <label class="class-section py-1">@L["Class name"]</label>
                     <div class="prof-name-field-wrap">
                         @if (CanEditClassMetadata)
                         {
@@ -67,39 +67,39 @@
                     </div>
                 </div>
                 <div class="d-flex flex-column px-1 prof-header-fixed">
-                    <label class="class-section py-1">Related attribute</label>
+                    <label class="class-section py-1">@L["Related attribute"]</label>
                     <label class="prof-variables" style="width: 150px;">@ProfessionDTO.RelatedAttributeName</label>
                 </div>
                 @if (UserInfo?.IsAdminOrMG == true)
                 {
                     <div class="d-flex flex-column px-1 prof-header-fixed">
-                        <label class="column-section py-1">Class Level</label>
+                        <label class="column-section py-1">@L["Class Level"]</label>
                         <input type="number" class="prof-variables" @bind="ProfessionDTO.ClassLevel" @bind:event="oninput" @bind:after="ChangeProfLevel" />
                     </div>
                 }
                 else
                 {
                     <div class="d-flex flex-column px-1 prof-header-fixed">
-                        <label class="column-section py-1">Class Level</label>
+                        <label class="column-section py-1">@L["Class Level"]</label>
                         <label class="prof-variables">@ProfessionDTO.ClassLevel</label>
                     </div>
                 }
 
                 <div class="d-flex flex-column px-1 prof-header-fixed">
-                    <label class="column-section py-1">Skill roll</label>
+                    <label class="column-section py-1">@L["Skill roll"]</label>
                     <label class="prof-variables">@ProfessionDTO.ProfessionSkillRoll</label>
                 </div>
                 <div class="d-flex flex-column px-1 prof-header-fixed">
-                    <label class="column-section py-1">Focus points</label>
+                    <label class="column-section py-1">@L["Focus points"]</label>
                         <label class="prof-variables">@ProfessionDTO.CurrentFocusPoints</label>
                 </div>
 
                 <div class="d-flex flex-column px-1 prof-action-buttons prof-header-fixed">
                     <div class="prof-action-buttons-row gap-2">
-                        <button class="btn btn-secondary" @onclick="Rest">Rest</button>
+                        <button class="btn btn-secondary" @onclick="Rest">@L["Rest"]</button>
                         @if (IsLeaveAllowed == false)
                         {
-                            <button @onclick="OnSaveChangesBtnClick" class="btn btn-primary">Save</button>
+                            <button @onclick="OnSaveChangesBtnClick" class="btn btn-primary">@L["Save"]</button>
                         }
                     </div>
                 </div>
@@ -109,7 +109,7 @@
             <div class="d-flex flex-column ">
                 <div class="d-flex w-100">
                     <div class="d-flex flex-column px-1 prof-name-cell w-100">
-                        <label class="class-section py-1">Class name</label>
+                        <label class="class-section py-1">@L["Class name"]</label>
                         <div class="prof-name-field-wrap">
                             @if (CanEditClassMetadata)
                             {
@@ -124,7 +124,7 @@
                    @*  @if (UserInfo?.IsAdminOrMG == true)
                     {
                         <div class="d-flex flex-column px-1">
-                            <label class="class-section py-1">Approve</label>
+                            <label class="class-section py-1">@L["Approve"]</label>
                             <div class="justify-content-center mx-auto my-auto">
                                 <MudCheckBox T="bool" @bind-Value="ProfessionDTO.IsApproved"></MudCheckBox>
                             </div>
@@ -132,31 +132,31 @@
                     } *@
                 </div>
                 <div class="d-flex flex-column px-1">
-                    <label class="class-section py-1">Related attribute</label>
+                    <label class="class-section py-1">@L["Related attribute"]</label>
                     <label class="prof-variables">@ProfessionDTO.RelatedAttributeName</label>
                 </div>
                 <div class="d-flex">
                     @if (UserInfo?.IsAdminOrMG == true)
                     {
                         <div class="d-flex flex-column px-1 variables">
-                            <label class="column-section py-1">Class Level</label>
+                            <label class="column-section py-1">@L["Class Level"]</label>
                             <input type="number" class="prof-variables" @bind="ProfessionDTO.ClassLevel" @bind:event="oninput" @bind:after="ChangeProfLevel" />
                         </div>
                     }
                     else
                     {
                         <div class="d-flex flex-column px-1 variables">
-                            <label class="column-section py-1">Class Level</label>
+                            <label class="column-section py-1">@L["Class Level"]</label>
                             <label class="prof-variables">@ProfessionDTO.ClassLevel</label>
                         </div>
                     }
 
                     <div class="d-flex flex-column px-1 variables">
-                        <label class="column-section py-1">Skill roll</label>
+                        <label class="column-section py-1">@L["Skill roll"]</label>
                         <label class="prof-variables">@ProfessionDTO.ProfessionSkillRoll</label>
                     </div>
                     <div class="d-flex flex-column px-1 variables">
-                        <label class="column-section py-1">Focus points</label>
+                        <label class="column-section py-1">@L["Focus points"]</label>
                             <label class="prof-variables">@ProfessionDTO.CurrentFocusPoints</label>
                     </div>
                 </div>
@@ -165,7 +165,7 @@
 
         </div>
         <div class="d-flex flex-column flex-grow-1 mx-1">
-            <label class="class-section">Class description</label>
+            <label class="class-section">@L["Class description"]</label>
             <BlazoredTextEditor @ref="DescrEdit">
                 <ToolbarContent>
                     <span class="ql-formats">
@@ -183,21 +183,21 @@
         </div>
 
         <MudTabs Elevation="0" Rounded="true" ApplyEffectsToContainer="true" PanelClass="px-2">
-            <MudTabPanel Text="Active class skills" Style="font-weight: bold;">
+            <MudTabPanel Text="@(L["Active class skills"])" Style="font-weight: bold;">
                 @*  ACTIVE SKILLS  *@
                 <div class="wide-screen-table mx-1">
 
                     <table class="table align-middle">
                         <thead>
                             <tr>
-                                <th scope="col" class="level-row text-center">Level</th>
-                                <th scope="col" class="name-row text-center">Name</th>
-                                <th scope="col" class="descr-row text-center">Description</th>
+                                <th scope="col" class="level-row text-center">@L["Level"]</th>
+                                <th scope="col" class="name-row text-center">@L["Name"]</th>
+                                <th scope="col" class="descr-row text-center">@L["Description"]</th>
                                 <th scope="col" class="number-row text-center">DC</th>
-                                <th scope="col" class="number-row text-center">Cost</th>
-                                <th scope="col" class="number-row text-center">Range</th>
-                                <th scope="col" class="number-row text-center">Uses</th>
-                                <th scope="col" class="number-row text-center">Actions</th>
+                                <th scope="col" class="number-row text-center">@L["Cost"]</th>
+                                <th scope="col" class="number-row text-center">@L["Range"]</th>
+                                <th scope="col" class="number-row text-center">@L["Uses"]</th>
+                                <th scope="col" class="number-row text-center">@L["Actions"]</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -244,13 +244,13 @@
                     <table class="table align-middle">
                         <thead>
                             <tr>
-                                <th scope="col" class="level-row text-center">Level</th>
-                                <th scope="col" class="name-row text-center">Name</th>
+                                <th scope="col" class="level-row text-center">@L["Level"]</th>
+                                <th scope="col" class="name-row text-center">@L["Name"]</th>
                                 <th scope="col" class="number-row text-center">DC</th>
-                                <th scope="col" class="number-row text-center">Cost</th>
-                                <th scope="col" class="number-row text-center"> Range</th>
-                                <th scope="col" class="number-row text-center">Uses</th>
-                                <th scope="col" class="number-row text-center">Actions</th>
+                                <th scope="col" class="number-row text-center">@L["Cost"]</th>
+                                <th scope="col" class="number-row text-center"> @L["Range"]</th>
+                                <th scope="col" class="number-row text-center">@L["Uses"]</th>
+                                <th scope="col" class="number-row text-center">@L["Actions"]</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -296,7 +296,7 @@
                 </div>
 
             </MudTabPanel>
-            <MudTabPanel Text="Passive class skills" Style="font-weight: bold;">
+            <MudTabPanel Text="@(L["Passive class skills"])" Style="font-weight: bold;">
                 @*  PASSIVE SKILLS  *@
 
                 <div class="wide-screen-table mx-1">
@@ -304,10 +304,10 @@
                     <table class="table align-middle">
                         <thead>
                             <tr>
-                                <th scope="col" class="level-row text-center">Level</th>
-                                <th scope="col" class="name-row text-center">Name</th>
-                                <th scope="col" class="descr-row text-center">Description</th>
-                                <th scope="col" class="number-row text-center">Actions</th>
+                                <th scope="col" class="level-row text-center">@L["Level"]</th>
+                                <th scope="col" class="name-row text-center">@L["Name"]</th>
+                                <th scope="col" class="descr-row text-center">@L["Description"]</th>
+                                <th scope="col" class="number-row text-center">@L["Actions"]</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -328,9 +328,9 @@
                     <table class="table align-middle">
                         <thead>
                             <tr>
-                                <th scope="col" class="number-row text-center">Level</th>
-                                <th scope="col" class="name-row-short text-center">Name</th>
-                                <th scope="col" class="number-row text-center">Actions</th>
+                                <th scope="col" class="number-row text-center">@L["Level"]</th>
+                                <th scope="col" class="name-row-short text-center">@L["Name"]</th>
+                                <th scope="col" class="number-row text-center">@L["Actions"]</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -352,16 +352,16 @@
             </MudTabPanel>
             @if(ProfessionDTO.CasterType != SpellcasterType.None)
             {
-            <MudTabPanel Text="Spells" Disabled="false" Style="font-weight: bold;">
+            <MudTabPanel Text="@(L["Spells"])" Disabled="false" Style="font-weight: bold;">
                 @*  SPELLS  *@
 
                  <div class="wide-screen-table">
                     <MudTable RowClass="cell-small" T="SpellCircleDTO" Items="@SpellCircles" Breakpoint="Breakpoint.None" @ref="CircleTable">
                         <HeaderContent>
-                            <MudTh Style="text-align:center; width: 60px; padding: 4px; font-size:13px; font-weight:bold;">Level</MudTh>
-                            <MudTh Style="text-align:center; width: 60px; padding: 4px; font-size:13px; font-weight:bold;">Known</MudTh>
-                            <MudTh Style="text-align:center; width: 60px; padding: 4px; font-size:13px; font-weight:bold;">Today</MudTh>
-                            <MudTh Style="text-align:center; padding: 4px;  font-size:13px; font-weight:bold;">Spell slots</MudTh>
+                            <MudTh Style="text-align:center; width: 60px; padding: 4px; font-size:13px; font-weight:bold;">@L["Level"]</MudTh>
+                            <MudTh Style="text-align:center; width: 60px; padding: 4px; font-size:13px; font-weight:bold;">@L["Known"]</MudTh>
+                            <MudTh Style="text-align:center; width: 60px; padding: 4px; font-size:13px; font-weight:bold;">@L["Today"]</MudTh>
+                            <MudTh Style="text-align:center; padding: 4px;  font-size:13px; font-weight:bold;">@L["Spell slots"]</MudTh>
                         </HeaderContent>
                         <RowTemplate>
                             <MudTd Style="text-align:center; width: 60px; padding: 4px; font-size:26px; font-weight:bold" DataLabel="Level">@context.Level</MudTd>
@@ -387,7 +387,7 @@
                                         }
                                         else
                                         {
-                                            <MudTd Style="padding: 4px;" DataLabel="Prepared">Select Spell</MudTd>
+                                            <MudTd Style="padding: 4px;" DataLabel="Prepared">@L["Select Spell"]</MudTd>
                                         }
                                         <MudTd Style="width: 60px; padding: 4px;" DataLabel="ready">
                                         
@@ -398,10 +398,10 @@
                                         <MudTd Style="width: 60px; padding: 4px;" DataLabel="actions">
                                             <div class="d-flex px-0">
                                                 @if(slotContext.Spell is not null && string.IsNullOrEmpty(slotContext.Spell.Name) == false){
-                                                    <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,true))" Icon="@Icons.Material.Filled.Edit" aria-label="Change spell"></MudIconButton>
-                                                    <MudIconButton Style="width:30px; height: 30px; padding:1px;"  OnClick="@(()=>DeleteSpell(slotContext))" Icon="@Icons.Material.Filled.Delete" aria-label="Delete spell"></MudIconButton>
+                                                    <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,true))" Icon="@Icons.Material.Filled.Edit" aria-label="@(L["Change spell"])"></MudIconButton>
+                                                    <MudIconButton Style="width:30px; height: 30px; padding:1px;"  OnClick="@(()=>DeleteSpell(slotContext))" Icon="@Icons.Material.Filled.Delete" aria-label="@(L["Delete spell"])"></MudIconButton>
                                                 }else{
-                                                    <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,false))" Icon="@Icons.Material.Filled.Add" aria-label="Add new spell"></MudIconButton>
+                                                    <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,false))" Icon="@Icons.Material.Filled.Add" aria-label="@(L["Add new spell"])"></MudIconButton>
                                                 }
                                             </div>
                                         </MudTd>
@@ -418,9 +418,9 @@
                             <MudSimpleTable Elevation="1" Style="margin-bottom:2px;">
                                 <thead>
                                     <tr>
-                                        <th style="text-align:center; padding: 4px; font-size:13px; font-weight:bold;">Level</th>
-                                        <th style="text-align:center; padding: 4px; font-size:13px; font-weight:bold;">Known</th>
-                                        <th style="text-align:center; padding: 4px; font-size:13px; font-weight:bold;">Today</th>
+                                        <th style="text-align:center; padding: 4px; font-size:13px; font-weight:bold;">@L["Level"]</th>
+                                        <th style="text-align:center; padding: 4px; font-size:13px; font-weight:bold;">@L["Known"]</th>
+                                        <th style="text-align:center; padding: 4px; font-size:13px; font-weight:bold;">@L["Today"]</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -451,7 +451,7 @@
                                     }
                                     else
                                     {
-                                        <MudTd Style="padding: 4px;" DataLabel="Prepared">Select Spell</MudTd>
+                                        <MudTd Style="padding: 4px;" DataLabel="Prepared">@L["Select Spell"]</MudTd>
                                     }
                                     <MudTd Style="width: 60px; padding: 4px;" DataLabel="ready">
 
@@ -463,12 +463,12 @@
                                         <div class="d-flex px-0">
                                             @if (slotContext.Spell is not null && string.IsNullOrEmpty(slotContext.Spell.Name) == false)
                                             {
-                                                <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,true))" Icon="@Icons.Material.Filled.Edit" aria-label="Change spell"></MudIconButton>
-                                                <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>DeleteSpell(slotContext))" Icon="@Icons.Material.Filled.Delete" aria-label="Delete spell"></MudIconButton>
+                                                <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,true))" Icon="@Icons.Material.Filled.Edit" aria-label="@(L["Change spell"])"></MudIconButton>
+                                                <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>DeleteSpell(slotContext))" Icon="@Icons.Material.Filled.Delete" aria-label="@(L["Delete spell"])"></MudIconButton>
                                             }
                                             else
                                             {
-                                                <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,false))" Icon="@Icons.Material.Filled.Add" aria-label="Add new spell"></MudIconButton>
+                                                <MudIconButton Style="width:30px; height: 30px; padding:1px;" OnClick="@(()=>SaveSpell(slotContext,false))" Icon="@Icons.Material.Filled.Add" aria-label="@(L["Add new spell"])"></MudIconButton>
                                             }
                                         </div>
                                     </MudTd>

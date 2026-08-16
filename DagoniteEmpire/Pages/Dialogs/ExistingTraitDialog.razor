@@ -18,19 +18,19 @@
                          Hideable="false" SortMode="@SortMode.None" Groupable="false" Elevation="2" ColumnResizeMode="ResizeMode.None" SelectOnRowClick="false" SelectedItemsChanged="@SelectedItemsChanged">
                 <Columns>
                     <SelectColumn  T="TraitDTO" />
-                    <PropertyColumn CellStyle="max-width:80px;" Editable="false" Property="x => x.Name" Title="Name" />
-                    <PropertyColumn Editable="false" Property="x => x.SummaryDescr" Title="Description" />
+                    <PropertyColumn CellStyle="max-width:80px;" Editable="false" Property="x => x.Name" Title="@(L["Name"])" />
+                    <PropertyColumn Editable="false" Property="x => x.SummaryDescr" Title="@(L["Description"])" />
                     @if (TraitType == SD.TraitType_Temporary)
                     {
-                        <PropertyColumn CellStyle="max-width:40px;" Editable="true" Property="x => x.TraitValue" Title="Duration" />
+                        <PropertyColumn CellStyle="max-width:40px;" Editable="true" Property="x => x.TraitValue" Title="@(L["Duration"])" />
                     }
                 </Columns>
             </MudDataGrid>
         </div>
     </DialogContent>
         <DialogActions>
-            <MudButton OnClick="OnCancelBtnClick">Cancel</MudButton>
-            <MudButton Color="Color.Error" OnClick="OnSaveTraitBtnClick">Save</MudButton>
+            <MudButton OnClick="OnCancelBtnClick">@L["Cancel"]</MudButton>
+            <MudButton Color="Color.Error" OnClick="OnSaveTraitBtnClick">@L["Save"]</MudButton>
         </DialogActions>
     </MudDialog>
 

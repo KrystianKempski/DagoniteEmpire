@@ -9,28 +9,28 @@
         </MudText>
     </TitleContent>
     <DialogContent >
-        <MudSelect Required="true" @bind-Value="@NewWound.Location" Label="Location" Placeholder="Select location">
+        <MudSelect Required="true" @bind-Value="@NewWound.Location" Label="@(L["Location"])" Placeholder="@(L["Select location"])">
             @foreach(var loc in Wounds.Location.All)
             {
                 <MudSelectItem Value="@loc">@loc</MudSelectItem>
             }
         </MudSelect>
-        <MudSelect Required="true" @bind-Value="@SeverityName" Label="Severity" Placeholder="Select Severity">
+        <MudSelect Required="true" @bind-Value="@SeverityName" Label="@(L["Severity"])" Placeholder="@(L["Select Severity"])">
             @foreach (var loc in Wounds.Severity.All)
             {
                 <MudSelectItem Value="@loc">@loc</MudSelectItem>
             }
         </MudSelect>
-        <MudTextField Required="true" @bind-Value="@NewWound.Description" Label="Description" Lines="3" />
+        <MudTextField Required="true" @bind-Value="@NewWound.Description" Label="@(L["Description"])" Lines="3" />
         <DateComponent Editable="true" Date="CurrentDate"></DateComponent>
 
-        <MudCheckBox @bind-Value="@NewWound.IsIgnored" Label="Ignored"></MudCheckBox>
-        <MudCheckBox @bind-Value="@NewWound.IsTended" Label="Tended"></MudCheckBox>
-        <MudCheckBox @bind-Value="@NewWound.IsMagicHealed" Label="Magic healed"></MudCheckBox>
+        <MudCheckBox @bind-Value="@NewWound.IsIgnored" Label="@(L["Ignored"])"></MudCheckBox>
+        <MudCheckBox @bind-Value="@NewWound.IsTended" Label="@(L["Tended"])"></MudCheckBox>
+        <MudCheckBox @bind-Value="@NewWound.IsMagicHealed" Label="@(L["Magic healed"])"></MudCheckBox>
 
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
         <MudButton Color="Color.Error" OnClick="CreateWound">@Title</MudButton>
     </DialogActions>
 </MudDialog>

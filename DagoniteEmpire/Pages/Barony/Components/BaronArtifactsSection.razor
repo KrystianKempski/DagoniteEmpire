@@ -1,7 +1,7 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @inject IDialogService _dialogService
 
-<BaronySection Title="Trophies, Treasures &amp; Artifacts">
+<BaronySection Title="@(L["Trophies, Treasures &amp; Artifacts"])">
     <Summary>
         <div class="baron-php-summary">
             <span class="baron-php-chip baron-php-chip--neutral">Items @_artifacts.Count</span>
@@ -14,7 +14,7 @@
         @if (_artifacts.Count == 0)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                No trophies, treasures or artifacts yet. Place items in Lord's Seat chambers to apply the room prestige multiplier (capacity: Small 3, Medium 6, Large 12, Huge unlimited).
+                @L["No trophies, treasures or artifacts yet. Place items in Lord's Seat chambers to apply the room prestige multiplier (capacity: Small 3, Medium 6, Large 12, Huge unlimited)."]
             </MudText>
         }
         else
@@ -33,9 +33,9 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th class="ppb-row-label artifact-col-name">Name</th>
-                            <th class="artifact-col-type">Type</th>
-                            <th class="artifact-col-origin">Source</th>
+                            <th class="ppb-row-label artifact-col-name">@L["Name"]</th>
+                            <th class="artifact-col-type">@L["Type"]</th>
+                            <th class="artifact-col-origin">@L["Source"]</th>
                             <th class="php-col php-col--prestige artifact-col-php">
                                 <PhpMetricIcon Metric="PhpMetric.Prestige" />
                             </th>
@@ -46,9 +46,9 @@
                                 <PhpMetricIcon Metric="PhpMetric.Fear" />
                             </th>
                             <th class="artifact-col-location">
-                                <BaronyTooltip Text="Lord's Seat chamber and its prestige multiplier">Location</BaronyTooltip>
+                                <BaronyTooltip Text="@(L["Lord's Seat chamber and its prestige multiplier"])">@L["Location"]</BaronyTooltip>
                             </th>
-                            <th class="artifact-col-desc">Description</th>
+                            <th class="artifact-col-desc">@L["Description"]</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -86,7 +86,7 @@
                                     </BaronyTooltip>
                                 </td>
                                 <td class="artifact-col-location">
-                                    <BaronyTooltip Title="Location" Text="@BaronyCalc.ArtifactLocationTooltip(item, Seat)">
+                                    <BaronyTooltip Title="@(L["Location"])" Text="@BaronyCalc.ArtifactLocationTooltip(item, Seat)">
                                         <span>@BaronyCalc.ArtifactLocationLabel(item, Seat)</span>
                                     </BaronyTooltip>
                                 </td>
@@ -101,7 +101,7 @@
         @if (CanEdit)
         {
             <MudButton Variant="Variant.Outlined" Class="mt-3" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync">
-                Add Item
+                @L["Add Item"]
             </MudButton>
         }
     </ChildContent>

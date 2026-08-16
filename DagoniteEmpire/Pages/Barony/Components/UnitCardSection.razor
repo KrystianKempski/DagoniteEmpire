@@ -23,14 +23,14 @@
                            Class="barony-turn-btn barony-turn-btn--solid"
                            Disabled="@_busy"
                            OnClick="SaveXpDraftAsync">
-                    Save
+                    @L["Save"]
                 </MudButton>
                 <MudButton Size="Size.Small"
                            Variant="Variant.Outlined"
                            Class="barony-turn-btn barony-turn-btn--ghost"
                            Disabled="@_busy"
                            OnClick="UndoXpDraft">
-                    Undo
+                    @L["Undo"]
                 </MudButton>
             </div>
         </div>
@@ -50,7 +50,7 @@
                 <span class="unit-draft-card__title-status">
                     @if (ProjectStatus.IsResourceAllocation(Unit.OpenProjectStatus))
                     {
-                        <text>awaiting resources</text>
+                        <text>@L["awaiting resources"]</text>
                     }
                     else
                     {
@@ -68,7 +68,7 @@
                                Class="barony-turn-btn barony-turn-btn--solid"
                                Disabled="@_busy"
                                OnClick="ActivateUnitAsync">
-                        Make active
+                        @L["Make active"]
                     </MudButton>
                 }
             }
@@ -95,17 +95,17 @@
                                Class="barony-turn-btn barony-turn-btn--solid"
                                Disabled="@_busy"
                                OnClick="OpenReinforceAsync">
-                        Reinforce
+                        @L["Reinforce"]
                     </MudButton>
                 }
                 @if (CanChangeEquipment)
                 {
-                    <BaronyTooltip Title="Change unit equipment"
-                                   Text="Start a Resource allocation project to re-equip this unit (Craft / Buy / Defense), same as the unit generator Gear row.">
+                    <BaronyTooltip Title="@(L["Change unit equipment"])"
+                                   Text="@(L["Start a Resource allocation project to re-equip this unit (Craft / Buy / Defense), same as the unit generator Gear row."])">
                         <button type="button"
                                 class="unit-draft-card__icon-btn"
                                 disabled="@_busy"
-                                aria-label="Change unit equipment"
+                                aria-label="@(L["Change unit equipment"])"
                                 @onclick="OpenChangeEquipmentAsync">
                             <img src="/icons/armor-vest.svg"
                                  alt=""
@@ -123,7 +123,7 @@
                     <button type="button"
                             class="unit-draft-card__icon-btn @(Unit.CaptainAvailableAdvisorId is > 0 ? "unit-draft-card__icon-btn--captain" : null)"
                             disabled="@_busy"
-                            aria-label="Assign captain"
+                            aria-label="@(L["Assign captain"])"
                             @onclick="OpenCaptainPickerAsync">
                         <img src="/icons/black-knight-helm.svg"
                              alt=""
@@ -133,7 +133,7 @@
                     </button>
                 </BaronyTooltip>
             }
-            <BaronyTooltip Text="Show unit history">
+            <BaronyTooltip Text="@(L["Show unit history"])">
                 <MudIconButton Icon="@Icons.Material.Filled.History"
                                Size="Size.Small"
                                Disabled="@_busy"
@@ -141,7 +141,7 @@
             </BaronyTooltip>
             @if (CanManageAsMg)
             {
-                <BaronyTooltip Text="Remove unit">
+                <BaronyTooltip Text="@(L["Remove unit"])">
                     <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                    Size="Size.Small"
                                    Color="Color.Error"

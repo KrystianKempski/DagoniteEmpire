@@ -10,13 +10,13 @@
 @inject IBaronyBattleMapRepository _battleMapRepo
 
 <nav class="barony-tabbar"
-     aria-label="Barony tabs"
+     aria-label="@(L["Barony tabs"])"
      @ondragover="OnNavDragOver"
      @ondragover:preventDefault>
     @foreach (var tab in _orderedTabs)
     {
         var key = tab.Key;
-        <BaronyTooltip Text="Hold and drag to reorder">
+        <BaronyTooltip Text="@(L["Hold and drag to reorder"])">
         <div role="link"
              tabindex="0"
              draggable="true"

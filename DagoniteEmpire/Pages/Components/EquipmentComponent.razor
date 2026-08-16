@@ -6,16 +6,16 @@
 @inject NavigationManager _navigationManager
 @inject ISnackbar Snackbar
 <div class="equipment">
-    <h3 class="my-3 ml-3 text-center">EQUIPMENT</h3>
+    <h3 class="my-3 ml-3 text-center">@L["EQUIPMENT"]</h3>
     <div class="table-container" >
         <table class="table align-middle" >
             <thead>
                 <tr>
-                    <th scope="col" class="name-row">Name</th>
-                    <th scope="col" class="value-row text-center">Count</th>
-                    <th scope="col" class="value-row text-center">Price</th>
-                    <th scope="col" class="value-row text-center">Weight</th>
-                    <th scope="col" class="action-row text-center">Actions</th>
+                    <th scope="col" class="name-row">@L["Name"]</th>
+                    <th scope="col" class="value-row text-center">@L["Count"]</th>
+                    <th scope="col" class="value-row text-center">@L["Price"]</th>
+                    <th scope="col" class="value-row text-center">@L["Weight"]</th>
+                    <th scope="col" class="action-row text-center">@L["Actions"]</th>
                 </tr>
             </thead>
             <tbody>
@@ -64,7 +64,7 @@
                 }
                 <tr>
                     <td class="">
-                        <label class="name-label">All equipment: </label>
+                        <label class="name-label">@L["All equipment:"] </label>
                     </td>
                     <td >
                     </td>
@@ -87,11 +87,11 @@
               Class="equipment-actions"
               Style="width:100%; flex-wrap:nowrap !important;">
         <MudStack Row="true" Spacing="1" Style="flex-wrap:nowrap !important; flex-shrink:1; min-width:0;">
-            <button @onclick="@(()=>AddCustomEquipment())" class="add-trait equipment-action-btn">Add new</button>
-            <button @onclick="@(()=>AddExistingEquipment())" class="add-trait equipment-action-btn">Existing items</button>
+            <button @onclick="@(()=>AddCustomEquipment())" class="add-trait equipment-action-btn">@L["Add new"]</button>
+            <button @onclick="@(()=>AddExistingEquipment())" class="add-trait equipment-action-btn">@L["Existing items"]</button>
             @if (AllParams.Character.IsApproved == true && PageMode == false)
             {
-                <button @onclick="@(()=>GoToItemPage())" class="add-trait equipment-action-btn">Details</button>
+                <button @onclick="@(()=>GoToItemPage())" class="add-trait equipment-action-btn">@L["Details"]</button>
             }
         </MudStack>
         @if (AllParams?.Character is not null && AllParams?.Character.Id > 0)
@@ -101,7 +101,7 @@
                     <img src="@MyIcon.Imperial" width="22" height="22" alt="" />
                     <span>@Gold.ToString("F4")</span>
                 </MudStack>
-                <button @onclick="GoToRecords" class="add-trait equipment-action-btn">Purse</button>
+                <button @onclick="GoToRecords" class="add-trait equipment-action-btn">@L["Purse"]</button>
             </MudStack>
         }
     </MudStack>

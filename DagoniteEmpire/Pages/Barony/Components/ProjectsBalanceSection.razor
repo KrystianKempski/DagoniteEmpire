@@ -1,7 +1,7 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @inject IJSRuntime Js
 
-<BaronySection Title="Project Summary">
+<BaronySection Title="@(L["Project Summary"])">
     <Summary>
         <span class="projects-summary">
             <span class="projects-summary__item">@_rows.Count project@(_rows.Count == 1 ? "" : "s")</span>
@@ -9,12 +9,12 @@
     </Summary>
     <ChildContent>
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
-            Overview of open projects. Click a project name to jump to its card below.
+            @L["Overview of open projects. Click a project name to jump to its card below."]
         </MudText>
 
         @if (_rows.Count == 0 && !HasAudienceRow && !HasAdventureRow)
         {
-            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No projects to show.</MudText>
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">@L["No projects to show."]</MudText>
         }
         else
         {
@@ -34,9 +34,9 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th rowspan="3" class="ppb-row-label projects-balance-col-name">Project</th>
-                            <th colspan="@_costColumns.Count" class="project-card__panel-title projects-balance-zone-title">Cost</th>
-                            <th colspan="@(PpbCatalog.All.Count * 2)" class="project-card__panel-title projects-balance-zone-title projects-balance-split-start">Expected Output</th>
+                            <th rowspan="3" class="ppb-row-label projects-balance-col-name">@L["Project"]</th>
+                            <th colspan="@_costColumns.Count" class="project-card__panel-title projects-balance-zone-title">@L["Cost"]</th>
+                            <th colspan="@(PpbCatalog.All.Count * 2)" class="project-card__panel-title projects-balance-zone-title projects-balance-split-start">@L["Expected Output"]</th>
                         </tr>
                         <tr>
                             @foreach (var info in _costColumns)

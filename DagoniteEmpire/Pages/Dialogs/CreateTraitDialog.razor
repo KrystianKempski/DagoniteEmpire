@@ -17,16 +17,16 @@
                 <div class="d-flex ">
                     <div class="d-flex flex-column flex-grow-1">
                         <label class="fw-bold py-1">@NewTrait.TraitLabel name</label>
-                        <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Placeholder="Insert trait name" @bind-Value="@NewTrait.Name"></MudTextField>
+                        <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Placeholder="@(L["Insert trait name"])" @bind-Value="@NewTrait.Name"></MudTextField>
                     </div>
                     @if (NewTrait.TraitType == SD.TraitType_Character || NewTrait.TraitType == SD.TraitType_Temporary)
                     {
                         <div class="d-flex flex-column px-1">
                             @if (NewTrait.TraitType == SD.TraitType_Temporary)
                             {
-                                <label class="fw-bold py-1">Duration</label>
+                                <label class="fw-bold py-1">@L["Duration"]</label>
                             }else{
-                                <label class="fw-bold py-1">Trait value</label>
+                                <label class="fw-bold py-1">@L["Trait value"]</label>
                             }
                             <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Style="width:100px" T="int" @bind-Value="@NewTrait.TraitValue"></MudNumericField>
                         </div>
@@ -40,7 +40,7 @@
                    @*      @if (UserInfo?.IsAdminOrMG == true)
                         {
                         <div class="d-flex flex-column px-1">
-                            <label class="fw-bold py-1">Approve</label>
+                            <label class="fw-bold py-1">@L["Approve"]</label>
                             <div class="justify-content-center mx-auto my-auto">
                                     <MudCheckBox T="bool" @bind-Value="NewTrait.TraitApproved"></MudCheckBox>
                             </div>
@@ -52,12 +52,12 @@
                 </div>
                 <div class="align-items-start">
                     <div class="col-12 bonus-name py-0">
-                        <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Lines="3" Placeholder="Insert general description" @bind-Value="@NewTrait.Descr"></MudTextField>
+                        <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Lines="3" Placeholder="@(L["Insert general description"])" @bind-Value="@NewTrait.Descr"></MudTextField>
                     </div>
                 </div>
                         
             }
-            <label class="fw-bold pt-4">Bonuses and penalties</label>
+            <label class="fw-bold pt-4">@L["Bonuses and penalties"]</label>
             @if (NewTrait.Bonuses != null)
             {
                 @foreach (var obj in NewTrait.Bonuses)
@@ -67,7 +67,7 @@
                         @if (IsWeaponQualityMode == false)
                         {
                             <div class="bonus-cell">
-                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select a feature type" @bind-Value="@obj.FeatureType" Variant="Variant.Outlined" Margin="Margin.Dense" PopoverClass="trait-dialog-select-popover">
+                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="@(L["Select a feature type"])" @bind-Value="@obj.FeatureType" Variant="Variant.Outlined" Margin="Margin.Dense" PopoverClass="trait-dialog-select-popover">
                                     @foreach (var __ft in FeatureData) { <MudSelectItem Value="@__ft">@__ft</MudSelectItem> }
                                 </MudSelect>
                             </div>
@@ -99,7 +99,7 @@
                         else if (obj.FeatureType == SD.FeatureWeaponQuality)
                         {
                             <div class="bonus-cell">
-                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select weapon quality" Value="obj.FeatureName" ValueChanged="@(v => OnWeaponQualityChanged(obj, v))" Variant="Variant.Outlined" Margin="Margin.Dense" PopoverClass="trait-dialog-select-popover">
+                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="@(L["Select weapon quality"])" Value="obj.FeatureName" ValueChanged="@(v => OnWeaponQualityChanged(obj, v))" Variant="Variant.Outlined" Margin="Margin.Dense" PopoverClass="trait-dialog-select-popover">
                                     @foreach (var __w in WeaponQualityList) { <MudSelectItem Value="@__w">@__w</MudSelectItem> }
                                 </MudSelect>
                             </div>
@@ -113,7 +113,7 @@
                         else if(obj.FeatureType == SD.FeatureOther)
                         {
                             <div class="bonus-double-cell">
-                                <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Lines="3" Placeholder="Insert bonus description" @bind-Value="@obj.Description"></MudTextField>
+                                <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Lines="3" Placeholder="@(L["Insert bonus description"])" @bind-Value="@obj.Description"></MudTextField>
 
                             </div>
                         }
@@ -138,8 +138,8 @@
         </div> 
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="OnCancelBtnClick">Cancel</MudButton>
-        <MudButton Color="Color.Error" OnClick="OnSaveTraitBtnClick">Save</MudButton>
+        <MudButton OnClick="OnCancelBtnClick">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Error" OnClick="OnSaveTraitBtnClick">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>
 

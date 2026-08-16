@@ -28,7 +28,7 @@
         {
             <div class="camp">
                 <MudPaper Height="100px" Width="100%" Class="pa-3 mb-3 justify-content-center align-content-center" Style="cursor: pointer;" @onclick="CreateCampaign">
-                    <MudText Typo="Typo.h5" Align="Align.Center"> Add new Campaign...</MudText>
+                    <MudText Typo="Typo.h5" Align="Align.Center"> @L["Add new Campaign..."]</MudText>
                 </MudPaper>
             </div>
         }
@@ -67,14 +67,14 @@
                                                Variant="Variant.Text"
                                                OnClick="@(() => GoToLastPost(camp))"
                                                OnClickStopPropagation="true"
-                                               aria-label="last post"
-                                               Title="Last post">
-                                        <img src="@MyIcon.ScrollWhite" alt="Last post" width="20" height="20" />
+                                               aria-label="@(L["last post"])"
+                                               Title="@(L["Last post"])">
+                                        <img src="@MyIcon.ScrollWhite" alt="@(L["Last post"])" width="20" height="20" />
                                     </MudButton>
                                     @if (UserInfo?.HasGlobalCharacterAccess == true)
                                     {
-                                        <MudIconButton Class="pa-1" Style="color: white;" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditCampaign(camp))" OnClickStopPropagation="true"></MudIconButton>
-                                        <MudIconButton Class="pa-1" Style="color: white;" Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="@(()=>DeleteCampaign(camp.Id))" OnClickStopPropagation="true"></MudIconButton>
+                                        <MudIconButton Class="pa-1" Style="color: white;" Icon="@Icons.Material.Filled.Edit" aria-label="@(L["edit"])" OnClick="@(()=>EditCampaign(camp))" OnClickStopPropagation="true"></MudIconButton>
+                                        <MudIconButton Class="pa-1" Style="color: white;" Icon="@Icons.Material.Filled.Delete" aria-label="@(L["delete"])" OnClick="@(()=>DeleteCampaign(camp.Id))" OnClickStopPropagation="true"></MudIconButton>
                                     }
                                 </MudStack>
                                 <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.8);">@camp.CreatedDate.ToString("dd-MM-yyyy")</MudText>
@@ -92,7 +92,7 @@
             }
             else
             {
-                <MudText Class="pt-3" Typo="Typo.h5">Not signed into any adventures yet</MudText>
+                <MudText Class="pt-3" Typo="Typo.h5">@L["Not signed into any adventures yet"]</MudText>
             }
         </MudStack>
     }

@@ -3,7 +3,7 @@
 @inject ISnackbar _snackBar
 @inject IDialogService _dialogService
 
-<BaronySection Title="Decrees and Technologies">
+<BaronySection Title="@(L["Decrees and Technologies"])">
     <Summary>
         <PpbSummaryChips Vector="@Glance" />
     </Summary>
@@ -14,7 +14,7 @@
                 No decrees, technologies, or trade-good bonuses yet.
                 @if (CanManage)
                 {
-                    <text> Add a decree below.</text>
+                    <text> @L["Add a decree below."]</text>
                 }
             </MudText>
         }
@@ -33,9 +33,9 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th rowspan="2" class="ppb-row-label city-building-col-name">Name</th>
+                            <th rowspan="2" class="ppb-row-label city-building-col-name">@L["Name"]</th>
                             <th rowspan="2" class="decree-col-active">
-                                <BaronyTooltip Title="Active" Text="When checked, this row’s PPB is included in totals">Active</BaronyTooltip>
+                                <BaronyTooltip Title="@(L["Active"])" Text="@(L["When checked, this row’s PPB is included in totals"])">@L["Active"]</BaronyTooltip>
                             </th>
                             @foreach (var info in PpbCatalog.All)
                             {
@@ -57,18 +57,18 @@
                             <tr class="@(inactive ? "decree-row--inactive" : null)">
                                 <td class="city-building-col-name">
                                     <div class="city-building-name-cell">
-                                        <BaronyTooltip Title="Description" Text="@NameTooltip(item)">
+                                        <BaronyTooltip Title="@(L["Description"])" Text="@NameTooltip(item)">
                                             <span class="city-building-name-text">@item.Name</span>
                                         </BaronyTooltip>
                                         @if (CanManage)
                                         {
                                             <span class="city-building-name-actions">
-                                                <BaronyTooltip Text="Edit decree">
+                                                <BaronyTooltip Text="@(L["Edit decree"])">
                                                     <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                                    Size="Size.Small"
                                                                    OnClick="@(() => EditAsync(item))" />
                                                 </BaronyTooltip>
-                                                <BaronyTooltip Text="Remove decree">
+                                                <BaronyTooltip Text="@(L["Remove decree"])">
                                                     <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                                    Size="Size.Small"
                                                                    Color="Color.Error"
@@ -110,7 +110,7 @@
                                 </td>
                                 <td class="decree-col-active">
                                     <div class="decree-active-cell">
-                                        <BaronyTooltip Text="Always active">
+                                        <BaronyTooltip Text="@(L["Always active"])">
                                             <MudCheckBox T="bool"
                                                          Value="true"
                                                          Disabled="true"
@@ -131,7 +131,7 @@
                         }
 
                         <tr class="ppb-summary-row">
-                            <td class="ppb-row-label city-building-col-name">Σ section</td>
+                            <td class="ppb-row-label city-building-col-name">@L["Σ section"]</td>
                             <td class="decree-col-active decree-col-active--summary"></td>
                             @foreach (var info in PpbCatalog.All)
                             {
@@ -150,7 +150,7 @@
                 <MudButton Variant="Variant.Outlined"
                            StartIcon="@Icons.Material.Filled.Add"
                            OnClick="AddAsync">
-                    Add Decree / Technology
+                    @L["Add Decree / Technology"]
                 </MudButton>
             </div>
         }

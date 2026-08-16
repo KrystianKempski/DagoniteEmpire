@@ -11,7 +11,7 @@
                 Payment method: <strong>@CostModeLabel(Project.EffectiveCostMode)</strong>.
                 @if (Project.IsCombinedCost)
                 {
-                    <text> Gold, Production and Materials (e.g. Defense) are all required — fund every row.</text>
+                    <text> @L["Gold, Production and Materials (e.g. Defense) are all required — fund every row."]</text>
                 }
                 Allocated resources leave your current stocks immediately.
             </MudText>
@@ -19,7 +19,7 @@
             @if (_rows.Count == 0)
             {
                 <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                    This project has no remaining resource costs.
+                    @L["This project has no remaining resource costs."]
                 </MudText>
             }
             else
@@ -28,12 +28,12 @@
                     <table class="ppb-table ppb-table--resources ppb-table--project-allocate ppb-table--lined">
                         <thead>
                             <tr>
-                                <th class="resource-col-name">Resource</th>
-                                <th>Required</th>
-                                <th>Allocated</th>
-                                <th>Remaining</th>
-                                <th>In stock</th>
-                                <th>Add now</th>
+                                <th class="resource-col-name">@L["Resource"]</th>
+                                <th>@L["Required"]</th>
+                                <th>@L["Allocated"]</th>
+                                <th>@L["Remaining"]</th>
+                                <th>@L["In stock"]</th>
+                                <th>@L["Add now"]</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -63,7 +63,7 @@
                                                        Size="Size.Small"
                                                        Class="project-allocate-dialog__fill"
                                                        OnClick="@(() => FillRow(row.Key))">
-                                                Max
+                                                @L["Max"]
                                             </MudButton>
                                         }
                                     </td>
@@ -77,24 +77,24 @@
                     <MudButton Variant="Variant.Text"
                                Size="Size.Small"
                                OnClick="FillAll">
-                        Fill all (up to stock &amp; remaining)
+                        @L["Fill all (up to stock &amp; remaining)"]
                     </MudButton>
                     <MudButton Variant="Variant.Text"
                                Size="Size.Small"
                                OnClick="ClearAll">
-                        Clear
+                        @L["Clear"]
                     </MudButton>
                 </div>
             }
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
         <MudButton Class="baron-influence-save-btn"
                    Variant="Variant.Filled"
                    Disabled="@(_rows.Count == 0)"
                    OnClick="Save">
-            Allocate
+            @L["Allocate"]
         </MudButton>
     </DialogActions>
 </MudDialog>

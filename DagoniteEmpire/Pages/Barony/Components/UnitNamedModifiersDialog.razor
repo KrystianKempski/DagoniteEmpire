@@ -16,7 +16,7 @@
 
             @if (_rows.Count == 0)
             {
-                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">No sources yet.</MudText>
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">@L["No sources yet."]</MudText>
             }
             else
             {
@@ -25,17 +25,17 @@
                     var index = i;
                     <div class="relation-modifiers__row">
                         <MudTextField @bind-Value="_rows[index].Label"
-                                      Label="Source"
+                                      Label="@(L["Source"])"
                                       Variant="Variant.Outlined"
                                       Margin="Margin.Dense"
                                       Class="baron-influence-field relation-modifiers__desc" />
                         <MudNumericField T="int"
                                          @bind-Value="_rows[index].Value"
-                                         Label="Value"
+                                         Label="@(L["Value"])"
                                          Variant="Variant.Outlined"
                                          Margin="Margin.Dense"
                                          Class="baron-influence-field relation-modifiers__value" />
-                        <BaronyTooltip Text="Remove">
+                        <BaronyTooltip Text="@(L["Remove"])">
                             <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                            Size="Size.Small"
                                            Color="Color.Error"
@@ -50,13 +50,13 @@
                        StartIcon="@Icons.Material.Filled.Add"
                        Class="mt-1"
                        OnClick="AddRow">
-                Add source
+                @L["Add source"]
             </MudButton>
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>
 

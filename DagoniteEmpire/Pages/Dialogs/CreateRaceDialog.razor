@@ -16,13 +16,13 @@
 
             <div class="d-flex ">
                 <div class="d-flex flex-column flex-grow-1">
-                    <label class="fw-bold py-1">Race name</label>
-                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Insert race name" @bind-Value="@NewRace.Name"></MudTextField>
+                    <label class="fw-bold py-1">@L["Race name"]</label>
+                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="@(L["Insert race name"])" @bind-Value="@NewRace.Name"></MudTextField>
                 </div>
                 @if (UserInfo?.IsAdminOrMG == true)
                 {
                     <div class="d-flex flex-column px-1">
-                        <label class="fw-bold py-1">Approve</label>
+                        <label class="fw-bold py-1">@L["Approve"]</label>
                         <div class="justify-content-center mx-auto my-auto">
                             <MudCheckBox T="bool" @bind-Value="NewRace.RaceApproved"></MudCheckBox>
                         </div>
@@ -30,12 +30,12 @@
                 }
             </div>
             <div class="d-flex flex-column flex-grow-1">
-                <label class="fw-bold  p-1">Race description</label>
+                <label class="fw-bold  p-1">@L["Race description"]</label>
                  <MudTextField @bind-Value="@NewRace.Description" Lines="8"></MudTextField>
             </div>
 
 
-            <label class="fw-bold pt-4">Bonuses and penalties</label>
+            <label class="fw-bold pt-4">@L["Bonuses and penalties"]</label>
             @if (NewRace.Traits != null)
             {
                 <div class="traits">
@@ -51,8 +51,8 @@
 
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Error" OnClick="OnSaveRaceBtnClick">Save</MudButton>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Error" OnClick="OnSaveRaceBtnClick">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>
 

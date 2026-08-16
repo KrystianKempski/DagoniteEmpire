@@ -25,7 +25,7 @@
                     <div class="city-building-name-cell">
                         @if (!string.IsNullOrWhiteSpace(row.Description))
                         {
-                            <BaronyTooltip Title="Description" Text="@row.Description">
+                            <BaronyTooltip Title="@(L["Description"])" Text="@row.Description">
                                 <span class="city-building-name-text">@row.Label</span>
                             </BaronyTooltip>
                         }
@@ -38,7 +38,7 @@
                             <span class="city-building-name-actions">
                                 @if (row.CanEdit)
                                 {
-                                    <BaronyTooltip Text="Edit">
+                                    <BaronyTooltip Text="@(L["Edit"])">
                                         <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                        Size="Size.Small"
                                                        OnClick="@(() => OnEdit.InvokeAsync(row))" />
@@ -46,7 +46,7 @@
                                 }
                                 @if (row.CanDelete)
                                 {
-                                    <BaronyTooltip Text="Remove">
+                                    <BaronyTooltip Text="@(L["Remove"])">
                                         <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                        Size="Size.Small"
                                                        Color="Color.Error"

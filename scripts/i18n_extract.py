@@ -34,7 +34,8 @@ SKIP_DIRS = ("/obj/", "/bin/", "/wwwroot/lib/")
 STR_RE = re.compile(r'"((?:[^"\\]|\\.)*)"')
 TAG_WRAP_RE = re.compile(r"^<(\w+)(?:\s[^>]*)?>(.*)</\1>$")
 # Inner text of an element: the run between '>' and '<' with no markup/code chars.
-TEXT_NODE_RE = re.compile(r'>([^<>@{}"]+)<')
+# Lookbehind excludes '=>' (lambda) and comparison operators; lookahead requires a real tag.
+TEXT_NODE_RE = re.compile(r'(?<![=!<>/-])>([^<>@{}"]+)<(?=[/\w])')
 # Markup / code that means a line is NOT a plain display string we can lift wholesale.
 MARKUP_RE = re.compile(r'[<>@{}="]')
 # A Polish/Latin display run: letters (incl. PL diacritics), digits, spaces and common punctuation.
@@ -93,6 +94,8 @@ def extract_from_pair(en: str, pl: str, add, review, ctx):
     if en_nodes and len(en_nodes) == len(pl_nodes):
         for a, b in zip(en_nodes, pl_nodes):
             a, b = a.strip(), b.strip()
+            if a.count("(") != a.count(")") or "=>" in a:
+                continue  # code artifact, not display text
             if a and b and a != b and is_texty(a) and is_texty(b):
                 add(a, b, ctx)
                 added_any = True

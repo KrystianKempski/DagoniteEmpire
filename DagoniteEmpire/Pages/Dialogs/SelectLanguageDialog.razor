@@ -2,9 +2,9 @@
 
 <MudDialog ContentClass="p-1 m-0" Class="language-select-dialog h-100 w-100 p-0 m-0">
     <TitleContent>
-        <MudText Typo="Typo.h6">Select language</MudText>
+        <MudText Typo="Typo.h6">@L["Select language"]</MudText>
         <MudSpacer />
-        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+        <MudTextField @bind-Value="_searchString" Placeholder="@(L["Search"])" Adornment="Adornment.Start" Immediate="true"
                       AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0" />
     </TitleContent>
     <DialogContent>
@@ -12,15 +12,15 @@
                      FilterCaseSensitivity="DataGridFilterCaseSensitivity.CaseInsensitive"
                      SortMode="SortMode.None" Elevation="0" Class="language-dialog-grid p-1 m-0" RowClick="@OnRowClick">
             <Columns>
-                <PropertyColumn Property="x => x.Name" Title="Language" />
-                <PropertyColumn Property="x => x.Category" Title="Category" />
-                <PropertyColumn Property="x => x.Script" Title="Script" />
-                <PropertyColumn Property="x => x.Description" Title="Typical speakers" />
+                <PropertyColumn Property="x => x.Name" Title="@(L["Language"])" />
+                <PropertyColumn Property="x => x.Category" Title="@(L["Category"])" />
+                <PropertyColumn Property="x => x.Script" Title="@(L["Script"])" />
+                <PropertyColumn Property="x => x.Description" Title="@(L["Typical speakers"])" />
             </Columns>
         </MudDataGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
     </DialogActions>
 </MudDialog>
 

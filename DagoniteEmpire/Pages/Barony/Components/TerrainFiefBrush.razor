@@ -2,7 +2,7 @@
 
 <div class="terrain-brush">
     <MudText Typo="Typo.caption" Class="terrain-brush__hint">
-        Select a fief, then paint only within its senior domain. Fief overlay uses 50% opacity.
+        @L["Select a fief, then paint only within its senior domain. Fief overlay uses 50% opacity."]
     </MudText>
     <div class="terrain-brush__body">
         <div class="terrain-brush__options">
@@ -27,21 +27,21 @@
                             </span>
                         </button>
                     </BaronyTooltip>
-                    <BaronyTooltip Text="Change fief color">
+                    <BaronyTooltip Text="@(L["Change fief color"])">
                         <input type="color"
                                class="terrain-domain-chip__color-input"
                                value="@f.ColorHex"
                                aria-label="@($"Change color for {title}")"
                                @onchange="e => OnFiefColorInputChangedAsync(f.Id, e)" />
                     </BaronyTooltip>
-                    <BaronyTooltip Text="Edit fief">
+                    <BaronyTooltip Text="@(L["Edit fief"])">
                         <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                        Size="Size.Small"
                                        OnClick="@(() => OnEditFiefAsync(f.Id))" />
                     </BaronyTooltip>
                     @if (!TerrainMapVisuals.IsProtectedDefaultFief(f))
                     {
-                        <BaronyTooltip Text="Delete fief">
+                        <BaronyTooltip Text="@(L["Delete fief"])">
                             <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                            Size="Size.Small"
                                            Color="Color.Error"
@@ -54,7 +54,7 @@
                        Size="Size.Small"
                        StartIcon="@Icons.Material.Filled.Add"
                        OnClick="OnAddFiefAsync">
-                Add fief
+                @L["Add fief"]
             </MudButton>
         </div>
     </div>

@@ -11,10 +11,10 @@
         <table class="table align-middle languages-table">
             <thead>
                 <tr>
-                    <th scope="col" class="name-row">Name</th>
-                    <th scope="col">Category</th>
-                    <th scope="col">Script</th>
-                    <th scope="col">Typical speakers</th>
+                    <th scope="col" class="name-row">@L["Name"]</th>
+                    <th scope="col">@L["Category"]</th>
+                    <th scope="col">@L["Script"]</th>
+                    <th scope="col">@L["Typical speakers"]</th>
                     @if (CanDelete)
                     {
                         <th scope="col" class="languages-actions-col"></th>
@@ -25,7 +25,7 @@
                 @if (AllParams.Languages.Any() == false)
                 {
                     <tr>
-                        <td colspan="@(CanDelete ? 5 : 4)" class="text-center languages-empty">No languages selected.</td>
+                        <td colspan="@(CanDelete ? 5 : 4)" class="text-center languages-empty">@L["No languages selected."]</td>
                     </tr>
                 }
                 else
@@ -37,7 +37,7 @@
                                 <label class="name-label">@language.Name</label>
                                 @if (SD.Languages.IsCommon(language.Name))
                                 {
-                                    <span class="language-free-badge">free</span>
+                                    <span class="language-free-badge">@L["free"]</span>
                                 }
                             </td>
                             <td><label class="name-label">@language.Category</label></td>
@@ -63,7 +63,7 @@
     @if (CanAdd && CanAddMore)
     {
         <div class="buttons-row">
-            <button @onclick="OpenAddLanguageDialog" class="add-trait">Add language</button>
+            <button @onclick="OpenAddLanguageDialog" class="add-trait">@L["Add language"]</button>
         </div>
     }
 </div>

@@ -1,13 +1,13 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
-<BaronySection Title="Community Penalties and Bonuses">
+<BaronySection Title="@(L["Community Penalties and Bonuses"])">
     <Summary>
         <PpbSummaryChips Vector="@Glance" />
     </Summary>
     <ChildContent>
         @if (RowList.Count == 0)
         {
-            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No entries in this section.</MudText>
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">@L["No entries in this section."]</MudText>
         }
         else
         {
@@ -23,7 +23,7 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th rowspan="2" class="ppb-row-label community-col-source">Source</th>
+                            <th rowspan="2" class="ppb-row-label community-col-source">@L["Source"]</th>
                             @foreach (var info in PpbCatalog.All)
                             {
                                 <th colspan="2"><BaronyTooltip Text="@info.NameEn">@PpbShort(info.Key)</BaronyTooltip></th>
@@ -86,7 +86,7 @@
                             </tr>
                         }
                         <tr class="ppb-summary-row">
-                            <td class="ppb-row-label community-col-source">Σ section</td>
+                            <td class="ppb-row-label community-col-source">@L["Σ section"]</td>
                             @foreach (var info in PpbCatalog.All)
                             {
                                 <td class="@PpbCellStyle.ValueClass(info.Key, AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>

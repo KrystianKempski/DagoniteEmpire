@@ -32,12 +32,12 @@ else
                 <MudStack Row="true" Spacing="2" Class="mb-2">
                     @if (UserInfo?.IsDemoSession != true && (Characters.Count() < 6 || UserInfo?.HasGlobalCharacterAccess == true))
                     {
-                        <MudButton Class="pa-2 justify-content-start w-auto" StartIcon="@Icons.Material.Filled.Add" ButtonType="MudBlazor.ButtonType.Button" Disabled="false" OnClick="@(() => _navigationManager.NavigateTo("/character/create/"))">Add Character</MudButton>
+                        <MudButton Class="pa-2 justify-content-start w-auto" StartIcon="@Icons.Material.Filled.Add" ButtonType="MudBlazor.ButtonType.Button" Disabled="false" OnClick="@(() => _navigationManager.NavigateTo("/character/create/"))">@L["Add Character"]</MudButton>
                     }
                     else
                     {
-                        <MudTooltip Text="Maximum 6 characters allowed">
-                            <MudButton Class="pa-2 justify-content-start w-auto" StartIcon="@Icons.Material.Filled.Add" ButtonType="MudBlazor.ButtonType.Button" Disabled="true">Add Character</MudButton>
+                        <MudTooltip Text="@(L["Maximum 6 characters allowed"])">
+                            <MudButton Class="pa-2 justify-content-start w-auto" StartIcon="@Icons.Material.Filled.Add" ButtonType="MudBlazor.ButtonType.Button" Disabled="true">@L["Add Character"]</MudButton>
                         </MudTooltip>
                     }
                 </MudStack>

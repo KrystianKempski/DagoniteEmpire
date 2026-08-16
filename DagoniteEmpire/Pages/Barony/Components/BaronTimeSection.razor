@@ -1,7 +1,7 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @inject IDialogService _dialogService
 
-<BaronySection Title="Baron's Time">
+<BaronySection Title="@(L["Baron's Time"])">
     <Summary>
         <div class="baron-php-summary">
             <span class="baron-php-chip">Pool @_budget.TotalJc BT</span>
@@ -14,7 +14,7 @@
     <ChildContent>
         <div class="baron-time-budget">
             <div class="baron-time-budget__formula">
-                <BaronyTooltip Title="BT pool"
+                <BaronyTooltip Title="@(L["BT pool"])"
                                Text="@PoolTooltip()">
                     <span>
                         (Endurance @_budget.Endurance + Willpower @_budget.Willpower) × @BaronTimeRules.AttributeFactor
@@ -34,7 +34,7 @@
             <div class="baron-time-bars">
                 <div class="baron-time-bar">
                     <div class="baron-time-bar__label">
-                        <span>Turn allocation</span>
+                        <span>@L["Turn allocation"]</span>
                         <span>@_budget.SpentJc / @_budget.TotalJc BT</span>
                     </div>
                     <div class="baron-time-bar__track">
@@ -44,7 +44,7 @@
                 </div>
                 <div class="baron-time-bar">
                     <div class="baron-time-bar__label">
-                        <span>Barony management</span>
+                        <span>@L["Barony management"]</span>
                         <span>@_budget.ManagementJc / @BaronTimeRules.RequiredManagementJc BT</span>
                     </div>
                     <div class="baron-time-bar__track">
@@ -87,7 +87,7 @@
         </div>
 
         <div class="baron-time-block">
-            <div class="baron-time-block__title">Actions this turn</div>
+            <div class="baron-time-block__title">@L["Actions this turn"]</div>
             <div style="overflow-x:auto;">
                 <table class="ppb-table ppb-table--source ppb-table--lined baron-time-table">
                     <colgroup>
@@ -98,10 +98,10 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th class="ppb-row-label source-col">Action</th>
-                            <th class="baron-time-col-kind">Type</th>
-                            <th class="baron-time-col-cost">Cost</th>
-                            <th class="baron-time-col-desc">Description</th>
+                            <th class="ppb-row-label source-col">@L["Action"]</th>
+                            <th class="baron-time-col-kind">@L["Type"]</th>
+                            <th class="baron-time-col-cost">@L["Cost"]</th>
+                            <th class="baron-time-col-desc">@L["Description"]</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -129,7 +129,7 @@
                             </tr>
                         }
                         <tr class="ppb-summary-row">
-                            <td class="ppb-row-label" colspan="2">Σ spent</td>
+                            <td class="ppb-row-label" colspan="2">@L["Σ spent"]</td>
                             <td class="baron-time-cost"><b>@_budget.SpentJc BT</b></td>
                             <td class="baron-time-col-desc"></td>
                         </tr>
@@ -139,17 +139,17 @@
             @if (CanEdit)
             {
                 <MudButton Variant="Variant.Outlined" Class="mt-2" StartIcon="@Icons.Material.Filled.Add" OnClick="AddActionAsync">
-                    Add Action
+                    @L["Add Action"]
                 </MudButton>
             }
         </div>
 
         <div class="baron-time-block">
-            <div class="baron-time-block__title">Pool modifiers (%)</div>
+            <div class="baron-time-block__title">@L["Pool modifiers (%)"]</div>
             @if (_modifiers.Count == 0)
             {
                 <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                    No modifiers. Effects that raise or lower available time (illness, blessings, events) go here.
+                    @L["No modifiers. Effects that raise or lower available time (illness, blessings, events) go here."]
                 </MudText>
             }
             else
@@ -163,9 +163,9 @@
                         </colgroup>
                         <thead>
                             <tr>
-                                <th class="ppb-row-label source-col">Source</th>
+                                <th class="ppb-row-label source-col">@L["Source"]</th>
                                 <th class="baron-time-col-cost">%</th>
-                                <th class="baron-time-col-desc">Description</th>
+                                <th class="baron-time-col-desc">@L["Description"]</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -189,7 +189,7 @@
                                 </tr>
                             }
                             <tr class="ppb-summary-row">
-                                <td class="ppb-row-label">Σ modifiers</td>
+                                <td class="ppb-row-label">@L["Σ modifiers"]</td>
                                 <td class="@PercentClass(_budget.ModifierPercent)"><b>@BaronyCalc.FormatPercent(_budget.ModifierPercent)</b></td>
                                 <td class="baron-time-col-desc"></td>
                             </tr>
@@ -200,7 +200,7 @@
             @if (CanEdit)
             {
                 <MudButton Variant="Variant.Outlined" Class="mt-2" StartIcon="@Icons.Material.Filled.Add" OnClick="AddModifierAsync">
-                    Add Modifier
+                    @L["Add Modifier"]
                 </MudButton>
             }
         </div>

@@ -2,23 +2,23 @@
 @inject IJSRuntime _jsruntime
 @inject IUserService _userService
 <MudDialog>
-    <TitleContent>Specify class</TitleContent>
+    <TitleContent>@L["Specify class"]</TitleContent>
         <DialogContent>
                  <div class="main-table">                    
                         <label class="warnign-message">@ErrorMessage</label>
                         <div class="wide-screen-table">
                             <div class="d-flex ">
                                 <div class="d-flex flex-column px-1 flex-grow-1">
-                                    <label class="class-section py-1">Class name</label>
-                                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Insert class name" @bind-Value="@ProfessionDTO.Name"></MudTextField>
+                                    <label class="class-section py-1">@L["Class name"]</label>
+                                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="@(L["Insert class name"])" @bind-Value="@ProfessionDTO.Name"></MudTextField>
                                 </div>
                                 <div class="d-flex flex-column px-1">
-                                    <label class="class-section py-1">Related attribute</label>
+                                    <label class="class-section py-1">@L["Related attribute"]</label>
                                     <InputSelect style="width: 150px;height: 32px;border: 1px solid RGB(206 212 218); border-radius: 4px; padding: 0px 4px 0px 4px;"
                                                  ValueExpression="@(()=>ProfessionDTO.RelatedAttributeName)"
                                                  Value="@ProfessionDTO.RelatedAttributeName"
                                                  ValueChanged="@((string value) => ChangeRelatedAttribute(value))">
-                                        <option value="0" selected disabled>--Select--</option>
+                                        <option value="0" selected disabled>@L["--Select--"]</option>
                                         @foreach(var attr in SD.Attributes.All)
                                         {
                                             <option value="@attr"> @attr</option>
@@ -28,30 +28,30 @@
                                 @if (UserInfo?.IsAdminOrMG == true)
                                 {
                                     <div class="d-flex flex-column px-1">
-                                        <label class="column-section py-1">Class Level</label>
+                                        <label class="column-section py-1">@L["Class Level"]</label>
                                         <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" Style="width:100px"  HideSpinButtons="true" @bind-Value="@ProfessionDTO.ClassLevel" @bind-Value:after="ChangeProfLevel"></MudNumericField>
                                     </div>
                                 }
                                 else
                                 {
                                     <div class="d-flex flex-column px-1">
-                                        <label class="column-section py-1">Class Level</label>
+                                        <label class="column-section py-1">@L["Class Level"]</label>
                                         <label class="prof-variables">@ProfessionDTO.ClassLevel</label>
                                     </div>
                                 }
 
                                 <div class="d-flex flex-column px-1">
-                                    <label class="column-section py-1">Skill roll</label>
+                                    <label class="column-section py-1">@L["Skill roll"]</label>
                                     <label class="prof-variables">@ProfessionDTO.ProfessionSkillRoll</label>
                                 </div>
                                 <div class="d-flex flex-column px-1">
-                                    <label class="column-section py-1">Focus points</label>
+                                    <label class="column-section py-1">@L["Focus points"]</label>
                                      <label class="prof-variables">@ProfessionDTO.MaxFocusPoints</label>
                                 </div>
                                 @if (UserInfo?.IsAdminOrMG == true)
                                 {
                                     <div class="d-flex flex-column px-1">
-                                        <label class="class-section py-1">Approve</label>
+                                        <label class="class-section py-1">@L["Approve"]</label>
                                         <div class="justify-content-center mx-auto my-auto">
                                             <MudCheckBox T="bool" @bind-Value="ProfessionDTO.IsApproved"></MudCheckBox>
                                         </div>
@@ -63,13 +63,13 @@
                             <div class="d-flex flex-column ">
                                 <div class="d-flex" >
                                     <div class="d-flex flex-column px-1 flex-grow-1">
-                                        <label class="class-section py-1">Class name</label>
-                                        <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Insert class name" @bind-Value="@ProfessionDTO.Name"></MudTextField>
+                                        <label class="class-section py-1">@L["Class name"]</label>
+                                        <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="@(L["Insert class name"])" @bind-Value="@ProfessionDTO.Name"></MudTextField>
                                     </div>
                                     @if (UserInfo?.IsAdminOrMG == true)
                                     {
                                         <div class="d-flex flex-column px-1">
-                                            <label class="class-section py-1">Approve</label>
+                                            <label class="class-section py-1">@L["Approve"]</label>
                                             <div class="justify-content-center mx-auto my-auto">
                                                 <MudCheckBox T="bool" @bind-Value="ProfessionDTO.IsApproved"></MudCheckBox>
                                             </div>
@@ -77,13 +77,13 @@
                                     }
                                 </div>
                                 <div class="d-flex flex-column px-1">
-                                    <label class="class-section py-1">Related attribute</label>
+                                    <label class="class-section py-1">@L["Related attribute"]</label>
                                     <InputSelect style="height: 32px;border: 1px solid RGB(206 212 218); border-radius: 4px; padding: 0px 4px 0px 4px;"
                                                  ValueExpression="@(()=>ProfessionDTO.RelatedAttributeName)"
                                                  Value="@ProfessionDTO.RelatedAttributeName"
                                                  ValueChanged="@((string value) => ChangeRelatedAttribute(value))">
                                         
-                                        <option value="0" selected disabled>--Select--</option>
+                                        <option value="0" selected disabled>@L["--Select--"]</option>
                                         @foreach (var attr in SD.Attributes.All)
                                         {
                                             <option value="@attr"> @attr</option>
@@ -94,24 +94,24 @@
                                     @if (UserInfo?.IsAdminOrMG == true)
                                     {
                                         <div class="d-flex flex-column px-1 variables">
-                                            <label class="column-section py-1">Class Level</label>
+                                            <label class="column-section py-1">@L["Class Level"]</label>
                                             <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense"  HideSpinButtons="true" @bind-Value="@ProfessionDTO.ClassLevel" @bind-Value:after="ChangeProfLevel"></MudNumericField>
                                         </div>
                                     }
                                     else
                                     {
                                         <div class="d-flex flex-column px-1 variables">
-                                            <label class="column-section py-1">Class Level</label>
+                                            <label class="column-section py-1">@L["Class Level"]</label>
                                             <label class="prof-variables">@ProfessionDTO.ClassLevel</label>
                                         </div>
                                     }
 
                                     <div class="d-flex flex-column px-1 variables">
-                                        <label class="column-section py-1">Skill roll</label>
+                                        <label class="column-section py-1">@L["Skill roll"]</label>
                                         <label class="prof-variables">@ProfessionDTO.ProfessionSkillRoll</label>
                                     </div>
                                     <div class="d-flex flex-column px-1 variables">
-                                        <label class="column-section py-1">Focus points</label>
+                                        <label class="column-section py-1">@L["Focus points"]</label>
                                         <label class="prof-variables">@ProfessionDTO.MaxFocusPoints</label>
                                     </div>
                                  </div>
@@ -120,23 +120,23 @@
 
                         </div>
                         <div class="d-flex flex-column flex-grow-1">
-                            <label class="class-section">Class description</label>
-                            <MudTextField T="string" Variant="Variant.Outlined" Lines="5" @bind-Value="@ProfessionDTO.Description" Placeholder="Enter class description"></MudTextField>
+                            <label class="class-section">@L["Class description"]</label>
+                            <MudTextField T="string" Variant="Variant.Outlined" Lines="5" @bind-Value="@ProfessionDTO.Description" Placeholder="@(L["Enter class description"])"></MudTextField>
                         </div>
                         @*  ACTIVE SKILLS  *@
-                        <label class="class-section">Active class skills</label>
+                        <label class="class-section">@L["Active class skills"]</label>
 
                         <div class="wide-screen-table">
 
                             <table class="table align-middle">
                                 <thead>
                                     <tr>
-                                        <th scope="col" class="level-row text-center">Level</th>
-                                        <th scope="col" class="name-row text-center">Name</th>
-                                        <th scope="col" class="descr-row text-center">Description</th>
+                                        <th scope="col" class="level-row text-center">@L["Level"]</th>
+                                        <th scope="col" class="name-row text-center">@L["Name"]</th>
+                                        <th scope="col" class="descr-row text-center">@L["Description"]</th>
                                         <th scope="col" class="number-row text-center">DC</th>
-                                        <th scope="col" class="number-row text-center">Cost</th>
-                                        <th scope="col" class="number-row text-center"> Range</th>
+                                        <th scope="col" class="number-row text-center">@L["Cost"]</th>
+                                        <th scope="col" class="number-row text-center"> @L["Range"]</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -146,10 +146,10 @@
                                         @if (skill.Index%2==0){
                                             <td rowspan="2"> <label class="short-row">@skill.Level</label> </td>
                                         }
-                                        <td> <div class="name-cell"> <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Insert skill name" @bind-Value="@skill.Name"></MudTextField> </div> </td>
+                                        <td> <div class="name-cell"> <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="@(L["Insert skill name"])" @bind-Value="@skill.Name"></MudTextField> </div> </td>
                                         <td>
                                             <div class="bonus-double-cell">
-                                                <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" id="@skill.Index.ToString()" @bind-Value:after="@(()=>ChangeDescription(skill.Index))" Lines="3" Placeholder="Insert skill description" @bind-Value="@skill.Descr">
+                                                <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" id="@skill.Index.ToString()" @bind-Value:after="@(()=>ChangeDescription(skill.Index))" Lines="3" Placeholder="@(L["Insert skill description"])" @bind-Value="@skill.Descr">
                                                 </MudTextField>
                                             </div>
                                         </td>
@@ -166,11 +166,11 @@
                             <table class="table align-middle">
                                 <thead>
                                     <tr>
-                                        <th scope="col" class="level-row text-center">Level</th>
-                                        <th scope="col" class="name-row-short text-center">Name</th>
+                                        <th scope="col" class="level-row text-center">@L["Level"]</th>
+                                        <th scope="col" class="name-row-short text-center">@L["Name"]</th>
                                         <th scope="col" class="number-row text-center">DC</th>
-                                        <th scope="col" class="number-row text-center">Cost</th>
-                                        <th scope="col" class="number-row text-center"> Range</th>
+                                        <th scope="col" class="number-row text-center">@L["Cost"]</th>
+                                        <th scope="col" class="number-row text-center"> @L["Range"]</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -181,7 +181,7 @@
                                             {
                                                 <td rowspan="4"> <label class="short-row">@skill.Level</label> </td>
                                             }
-                                            <td> <div class="name-cell"> <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Insert skill name" @bind-Value="@skill.Name"></MudTextField> </div> </td>
+                                            <td> <div class="name-cell"> <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="@(L["Insert skill name"])" @bind-Value="@skill.Name"></MudTextField> </div> </td>
                                            
                                             <td><div class="short-row"><MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" @bind-Value="@skill.DC"></MudNumericField></div></td>
                                             <td><div class="short-row"><MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" HideSpinButtons="true" @bind-Value="@skill.Cost"></MudNumericField></div></td>
@@ -189,7 +189,7 @@
                                         </tr>
                                         <tr>
                                             <td colspan="4">
-                                                <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" id="@skill.Index.ToString()" @bind-Value:after="@(()=>ChangeDescription(skill.Index))" Lines="3" Placeholder="Insert skill description" @bind-Value="@skill.Descr">
+                                                <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" id="@skill.Index.ToString()" @bind-Value:after="@(()=>ChangeDescription(skill.Index))" Lines="3" Placeholder="@(L["Insert skill description"])" @bind-Value="@skill.Descr">
                                                 </MudTextField>
                                             </td>
                                         </tr>
@@ -198,16 +198,16 @@
                             </table>
                         </div>
                        @*  PASSIVE SKILLS  *@
-                        <label class="class-section">Passive class skills</label>
+                        <label class="class-section">@L["Passive class skills"]</label>
 
                         <div class="wide-screen-table">
 
                             <table class="table align-middle">
                                 <thead>
                                     <tr>
-                                        <th scope="col" class="level-row text-center">Level</th>
-                                        <th scope="col" class="name-row text-center">Name</th>
-                                        <th scope="col" class="descr-row text-center">Description</th>
+                                        <th scope="col" class="level-row text-center">@L["Level"]</th>
+                                        <th scope="col" class="name-row text-center">@L["Name"]</th>
+                                        <th scope="col" class="descr-row text-center">@L["Description"]</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -215,10 +215,10 @@
                                     {
                                         <tr>
                                             <td> <label class="short-row">@skill.Level</label> </td>
-                                            <td> <div class="name-cell"> <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Insert skill name" @bind-Value="@skill.Name"></MudTextField> </div> </td>
+                                            <td> <div class="name-cell"> <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="@(L["Insert skill name"])" @bind-Value="@skill.Name"></MudTextField> </div> </td>
                                             <td>
                                                 <div class="bonus-double-cell">
-                                                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" id="@skill.Index.ToString()" @bind-Value:after="@(()=>ChangeDescription(skill.Index))" Lines="3" Placeholder="Insert skill description" @bind-Value="@skill.Descr">
+                                                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" id="@skill.Index.ToString()" @bind-Value:after="@(()=>ChangeDescription(skill.Index))" Lines="3" Placeholder="@(L["Insert skill description"])" @bind-Value="@skill.Descr">
                                                     </MudTextField>
                                                 </div>
                                             </td>
@@ -232,8 +232,8 @@
                             <table class="table align-middle">
                                 <thead>
                                     <tr>
-                                        <th scope="col" class="number-row text-center">Level</th>
-                                        <th scope="col" class="name-row-short text-center">Name</th>
+                                        <th scope="col" class="number-row text-center">@L["Level"]</th>
+                                        <th scope="col" class="name-row-short text-center">@L["Name"]</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -241,11 +241,11 @@
                                     {
                                         <tr>
                                             <td rowspan="2"> <label class="short-row">@skill.Level</label> </td>
-                                            <td> <div class="name-cell"> <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="Insert skill name" @bind-Value="@skill.Name"></MudTextField> </div> </td>
+                                            <td> <div class="name-cell"> <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" Placeholder="@(L["Insert skill name"])" @bind-Value="@skill.Name"></MudTextField> </div> </td>
                                         </tr>
                                         <tr>
                                             <td colspan="2">
-                                                <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" id="@skill.Index.ToString()" @bind-Value:after="@(()=>ChangeDescription(skill.Index))" Lines="3" Placeholder="Insert skill description" @bind-Value="@skill.Descr">
+                                                <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" id="@skill.Index.ToString()" @bind-Value:after="@(()=>ChangeDescription(skill.Index))" Lines="3" Placeholder="@(L["Insert skill description"])" @bind-Value="@skill.Descr">
                                                 </MudTextField>
                                             </td>
                                         </tr>
@@ -259,8 +259,8 @@
                 
         </DialogContent>
         <DialogActions>
-            <MudButton OnClick="OnCancelBtnClick">Cancel</MudButton>
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="OnSaveProfBtnClick">Save</MudButton>
+            <MudButton OnClick="OnCancelBtnClick">@L["Cancel"]</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="OnSaveProfBtnClick">@L["Save"]</MudButton>
         </DialogActions>
 </MudDialog>
 

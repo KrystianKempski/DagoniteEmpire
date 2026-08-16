@@ -12,7 +12,7 @@
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading audiences...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>@L["Loading audiences..."]</span>
 }
 else if (LoadError is not null)
 {
@@ -20,7 +20,7 @@ else if (LoadError is not null)
 }
 else if (Barony is not null)
 {
-    <BaronyPageHeader Title="Audiences" HelpKey="audiences">
+    <BaronyPageHeader Title="@(L["Audiences"])" HelpKey="audiences">
         <Summary>
             <span class="projects-summary">
                 <span class="projects-summary__item">@CurrentTurnActive.Count this turn</span>
@@ -30,7 +30,7 @@ else if (Barony is not null)
         </Summary>
     </BaronyPageHeader>
 
-    <BaronySection Title="Audience summary">
+    <BaronySection Title="@(L["Audience summary"])">
             <Summary>
                 <div class="baron-audience__summary-chips">
                     <PpbSummaryChips Vector="@SummaryAdditive" />
@@ -59,7 +59,7 @@ else if (Barony is not null)
                 </MudText>
                 @if (AudienceSummaryRows.Count == 0 && CouncilSummary is null)
                 {
-                    <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No audience grants this turn yet.</MudText>
+                    <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">@L["No audience grants this turn yet."]</MudText>
                 }
                 else
                 {
@@ -77,7 +77,7 @@ else if (Barony is not null)
                             </colgroup>
                             <thead>
                                 <tr>
-                                    <th class="ppb-row-label city-building-col-name">Audience</th>
+                                    <th class="ppb-row-label city-building-col-name">@L["Audience"]</th>
                                     @foreach (var info in PpbCatalog.All)
                                     {
                                         <th>
@@ -136,7 +136,7 @@ else if (Barony is not null)
                                     </tr>
                                 }
                                 <tr class="ppb-summary-row">
-                                    <td class="ppb-row-label city-building-col-name">Σ audiences</td>
+                                    <td class="ppb-row-label city-building-col-name">@L["Σ audiences"]</td>
                                     @foreach (var info in PpbCatalog.All)
                                     {
                                         <td class="@PpbCellStyle.ValueClass(info.Key, SummaryAdditive[info.Key])"><b>@FmtAdd(SummaryAdditive[info.Key])</b></td>
@@ -152,7 +152,7 @@ else if (Barony is not null)
             </ChildContent>
         </BaronySection>
 
-        <BaronySection Title="Council">
+        <BaronySection Title="@(L["Council"])">
             <Summary>
                 <span class="projects-summary">
                     <span class="projects-summary__item">@CurrentCouncilTopics.Count open</span>
@@ -168,7 +168,7 @@ else if (Barony is not null)
                 @if (CurrentCouncilTopics.Count == 0)
                 {
                     <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                        No open Council topics this turn.
+                        @L["No open Council topics this turn."]
                     </MudText>
                 }
                 else
@@ -194,7 +194,7 @@ else if (Barony is not null)
 
                 @if (CouncilArchive.Count > 0)
                 {
-                    <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Previous Council topics</MudText>
+                    <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">@L["Previous Council topics"]</MudText>
                     <div class="project-card-grid">
                         @foreach (var a in CouncilArchive)
                         {
@@ -213,7 +213,7 @@ else if (Barony is not null)
             </ChildContent>
         </BaronySection>
 
-        <BaronySection Title="Audiences">
+        <BaronySection Title="@(L["Audiences"])">
             <Summary>
                 <span class="projects-summary">
                     <span class="projects-summary__item">@CurrentTurnActive.Count open</span>
@@ -226,7 +226,7 @@ else if (Barony is not null)
             </Summary>
             <ChildContent>
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
-                    Click an audience card header to expand or collapse the dialogue.
+                    @L["Click an audience card header to expand or collapse the dialogue."]
                 </MudText>
 
                 @if (CanWriteAsGm)
@@ -236,7 +236,7 @@ else if (Barony is not null)
                                    StartIcon="@Icons.Material.Filled.Add"
                                    OnClick="CreateAudienceAsync"
                                    Disabled="_busy">
-                            New audience
+                            @L["New audience"]
                         </MudButton>
                     </div>
                 }
@@ -247,7 +247,7 @@ else if (Barony is not null)
                         No open audiences this turn.
                         @if (CanWriteAsGm)
                         {
-                            <text> Add one above.</text>
+                            <text> @L["Add one above."]</text>
                         }
                     </MudText>
                 }
@@ -274,7 +274,7 @@ else if (Barony is not null)
 
                 @if (DeferredWaiting.Count > 0)
                 {
-                    <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">Deferred — continue next turn</MudText>
+                    <MudText Typo="Typo.subtitle2" Class="mt-4 mb-2">@L["Deferred — continue next turn"]</MudText>
                     <div class="project-card-grid">
                         @foreach (var a in DeferredWaiting)
                         {
@@ -291,7 +291,7 @@ else if (Barony is not null)
             </ChildContent>
         </BaronySection>
 
-        <BaronySection Title="Archive" DefaultOpen="false">
+        <BaronySection Title="@(L["Archive"])" DefaultOpen="false">
             <Summary>
                 <span class="projects-summary">
                     <span class="projects-summary__item">@AudienceOnly.Count(IsArchiveEntry) archived</span>
@@ -300,7 +300,7 @@ else if (Barony is not null)
             <ChildContent>
                 @if (ArchiveFolders.Count == 0)
                 {
-                    <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No archived audiences yet.</MudText>
+                    <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">@L["No archived audiences yet."]</MudText>
                 }
                 else
                 {

@@ -1,6 +1,6 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
-<BaronySection Title="Treaty trade bonuses" DefaultOpen="true">
+<BaronySection Title="@(L["Treaty trade bonuses"])" DefaultOpen="true">
     <Summary>
         <span class="projects-summary__item">@_receivedCount good@(_receivedCount == 1 ? "" : "s") from treaties</span>
     </Summary>
@@ -8,7 +8,7 @@
         @if (_receivedCount == 0 && !_hasTreatyPpb)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                No treaty goods, route economy, or gold flows yet.
+                @L["No treaty goods, route economy, or gold flows yet."]
             </MudText>
         }
         else
@@ -18,8 +18,8 @@
                     <thead>
                         <tr>
                             <th>PPB</th>
-                            <th>Additive</th>
-                            <th>Percent</th>
+                            <th>@L["Additive"]</th>
+                            <th>@L["Percent"]</th>
                         </tr>
                     </thead>
                     <tbody>

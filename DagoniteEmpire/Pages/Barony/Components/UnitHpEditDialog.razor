@@ -5,7 +5,7 @@
            ContentClass="baron-influence-dialog-content"
            ActionsClass="baron-influence-dialog-actions">
     <TitleContent>
-        <MudText Typo="Typo.h6">Hit points</MudText>
+        <MudText Typo="Typo.h6">@L["Hit points"]</MudText>
     </TitleContent>
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
@@ -21,7 +21,7 @@
             </MudText>
             <MudNumericField T="int"
                              @bind-Value="_value"
-                             Label="Current HP"
+                             Label="@(L["Current HP"])"
                              HelperText="@($"Max {_max}")"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
@@ -31,8 +31,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>
 

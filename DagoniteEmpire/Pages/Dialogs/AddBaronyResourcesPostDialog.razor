@@ -2,13 +2,13 @@
     <DialogContent>
         <MudStack Spacing="2">
             <MudText Typo="Typo.body2">
-                Add barony resources as a separate chapter post.
+                @L["Add barony resources as a separate chapter post."]
             </MudText>
 
             <PpbVectorEditor @bind-Value="_ppbDelta" Title="Resources (Food, Loyalty, Production, ...)" UseEnglishLabels="true" />
 
             <MudNumericField T="int"
-                             Label="Prestige"
+                             Label="@(L["Prestige"])"
                              @bind-Value="_prestigeDelta"
                              Immediate="true"
                              Variant="Variant.Outlined" />
@@ -18,16 +18,16 @@
                              Immediate="true"
                              Variant="Variant.Outlined" />
             <MudNumericField T="int"
-                             Label="Fear"
+                             Label="@(L["Fear"])"
                              @bind-Value="_fearDelta"
                              Immediate="true"
                              Variant="Variant.Outlined" />
         </MudStack>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Text" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Text" OnClick="Cancel">@L["Cancel"]</MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Accept" Disabled="@(!CanAccept)">
-            Confirm
+            @L["Confirm"]
         </MudButton>
     </DialogActions>
 </MudDialog>

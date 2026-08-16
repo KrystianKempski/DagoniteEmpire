@@ -9,7 +9,7 @@
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading building catalog...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>@L["Loading building catalog..."]</span>
 }
 else if (LoadError is not null)
 {
@@ -18,7 +18,7 @@ else if (LoadError is not null)
 else
 {
     <div class="buildings-page">
-        <BaronyPageHeader Title="Buildings" HelpKey="buildings" ShowSectionToggle="false">
+        <BaronyPageHeader Title="@(L["Buildings"])" HelpKey="buildings" ShowSectionToggle="false">
             <Summary>
                 <span class="buildings-catalog-count">@FilteredCount of @_templates.Count entries</span>
             </Summary>
@@ -28,7 +28,7 @@ else
             Catalog of buildings and terrain improvements. PPB columns use separate additive (+) and percent (%) subcolumns. Click headers to sort.
             @if (CanEdit)
             {
-                <text> Use the hammer on a city building to start a construction project (adds to Domain Panel when finished).</text>
+                <text> @L["Use the hammer on a city building to start a construction project (adds to Domain Panel when finished)."]</text>
             }
         </MudText>
 
@@ -38,14 +38,14 @@ else
                 The building catalog is empty.
                 @if (CanManageAsMg)
                 {
-                    <text> Use <strong>Add building</strong> below to create the first template.</text>
+                    <text> @L["Use"] <strong>@L["Add building"]</strong> @L["below to create the first template."]</text>
                 }
             </MudAlert>
         }
 
         <div class="buildings-catalog-filters">
                 <MudTextField @bind-Value="_nameFilter"
-                              Placeholder="Filter by name…"
+                              Placeholder="@(L["Filter by name…"])"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Immediate="true"
@@ -55,7 +55,7 @@ else
                               Class="buildings-catalog-filters__name"
                               Disabled="@(_templates.Count == 0)" />
                 <MudSelect T="string"
-                           Label="Type"
+                           Label="@(L["Type"])"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Clearable="true"
@@ -63,8 +63,8 @@ else
                            Class="buildings-catalog-filters__kind"
                            @bind-Value="_kindFilter"
                            Disabled="@(_templates.Count == 0)">
-                    <MudSelectItem Value="@BuildingKind.Building">Building</MudSelectItem>
-                    <MudSelectItem Value="@BuildingKind.Improvement">Improvement</MudSelectItem>
+                    <MudSelectItem Value="@BuildingKind.Building">@L["Building"]</MudSelectItem>
+                    <MudSelectItem Value="@BuildingKind.Improvement">@L["Improvement"]</MudSelectItem>
                 </MudSelect>
                 @if (CanManageAsMg)
                 {
@@ -72,7 +72,7 @@ else
                                Class="barony-turn-btn barony-turn-btn--solid buildings-catalog-filters__add"
                                StartIcon="@Icons.Material.Filled.Add"
                                OnClick="OpenCreateTemplateDialogAsync">
-                        Add building
+                        @L["Add building"]
                     </MudButton>
                 }
         </div>
@@ -82,7 +82,7 @@ else
             @if (FilteredCount == 0)
             {
                 <MudAlert Severity="Severity.Info" Dense="true" Class="mt-2">
-                    No buildings match the current filters.
+                    @L["No buildings match the current filters."]
                 </MudAlert>
             }
             else

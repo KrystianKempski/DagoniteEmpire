@@ -3,7 +3,7 @@
 <table class="ppb-table ppb-table--source ppb-table--lined">
     <thead>
         <tr>
-            <th class="ppb-row-label source-col">Source</th>
+            <th class="ppb-row-label source-col">@L["Source"]</th>
             @foreach (var info in SkillColumns)
             {
                 <th><BaronyTooltip Text="@info.NameEn">@PpbShort(info.Key)</BaronyTooltip></th>
@@ -18,7 +18,7 @@
                     <div class="source-cell">
                         @if (!string.IsNullOrWhiteSpace(row.Description))
                         {
-                            <BaronyTooltip Title="Description" Text="@row.Description">
+                            <BaronyTooltip Title="@(L["Description"])" Text="@row.Description">
                                 <span class="source-cell__name">@row.Source</span>
                             </BaronyTooltip>
                         }

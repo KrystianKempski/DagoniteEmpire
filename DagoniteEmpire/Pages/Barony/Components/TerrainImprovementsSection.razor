@@ -3,14 +3,14 @@
 @inject ISnackbar _snackBar
 @inject IDialogService _dialogService
 
-<BaronySection Title="Terrain Improvements">
+<BaronySection Title="@(L["Terrain Improvements"])">
     <Summary>
         <PpbSummaryChips Vector="@Glance" />
     </Summary>
     <ChildContent>
         @if (VisibleImprovements.Count == 0)
         {
-            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No terrain improvements in your domain yet. Place them on tiles belonging to the baron’s primary domain.</MudText>
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">@L["No terrain improvements in your domain yet. Place them on tiles belonging to the baron’s primary domain."]</MudText>
         }
         else
         {
@@ -28,12 +28,12 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th rowspan="2" class="ppb-row-label city-building-col-name">Name</th>
+                            <th rowspan="2" class="ppb-row-label city-building-col-name">@L["Name"]</th>
                             <th rowspan="2" class="city-building-col-owner">
-                                <BaronyTooltip Text="Land ownership">Owner</BaronyTooltip>
+                                <BaronyTooltip Text="@(L["Land ownership"])">@L["Owner"]</BaronyTooltip>
                             </th>
                             <th class="city-building-col-pop">
-                                <BaronyTooltip Text="Population (additive)">Pop</BaronyTooltip>
+                                <BaronyTooltip Text="@(L["Population (additive)"])">@L["Pop"]</BaronyTooltip>
                             </th>
                             @foreach (var info in PpbCatalog.All)
                             {
@@ -57,13 +57,13 @@
                             <tr class="@(inactive ? "terrain-improvement-row--inactive" : null)">
                                 <td class="city-building-col-name">
                                     <div class="city-building-name-cell">
-                                        <BaronyTooltip Title="Description" Text="@NameTooltip(item)">
+                                        <BaronyTooltip Title="@(L["Description"])" Text="@NameTooltip(item)">
                                             <span class="city-building-name-text">@DisplayLabel(item)</span>
                                         </BaronyTooltip>
                                         @if (CanManage)
                                         {
                                             <span class="city-building-name-actions">
-                                                <BaronyTooltip Text="Edit improvement">
+                                                <BaronyTooltip Text="@(L["Edit improvement"])">
                                                     <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                                    Size="Size.Small"
                                                                    OnClick="@(() => EditAsync(item))" />
@@ -83,7 +83,7 @@
                                         else
                                         {
                                             <img src="/icons/jewel-crown.svg"
-                                                 alt="Demesne"
+                                                 alt="@(L["Demesne"])"
                                                  width="20"
                                                  height="20"
                                                  class="terrain-improvement-owner__crown" />
@@ -94,7 +94,7 @@
                                     @onclick="@(() => EditPopulationAsync(item))">
                                     @if (BaronyCalc.IsVillage(item))
                                     {
-                                        <BaronyTooltip Text="Population — input for village PPB formulas.">
+                                        <BaronyTooltip Text="@(L["Population — input for village PPB formulas."])">
                                             <span>@FmtAdd(item.Population)</span>
                                         </BaronyTooltip>
                                     }
@@ -127,7 +127,7 @@
                         }
 
                         <tr class="ppb-summary-row">
-                            <td class="ppb-row-label city-building-col-name">Σ section</td>
+                            <td class="ppb-row-label city-building-col-name">@L["Σ section"]</td>
                             <td class="city-building-col-owner"></td>
                             <td class="@PopulationCellClass(PopulationSum, inactive: false)"><b>@FmtAdd(PopulationSum)</b></td>
                             @foreach (var info in PpbCatalog.All)

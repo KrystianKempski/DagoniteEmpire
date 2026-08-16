@@ -8,7 +8,7 @@
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading offices...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>@L["Loading offices..."]</span>
 }
 else if (LoadError is not null)
 {
@@ -16,11 +16,11 @@ else if (LoadError is not null)
 }
 else if (Barony is not null)
 {
-    <BaronyPageHeader Title="Court" HelpKey="offices">
+    <BaronyPageHeader Title="@(L["Court"])" HelpKey="offices">
         <Summary>
-            <BaronyTooltip Text="Combined upkeep of all offices per turn">
+            <BaronyTooltip Text="@(L["Combined upkeep of all offices per turn"])">
                 <div class="offices-cost-total">
-                    <span class="offices-cost-total__label">Σ advisor upkeep</span>
+                    <span class="offices-cost-total__label">@L["Σ advisor upkeep"]</span>
                     <span class="offices-cost-total__value">@FmtUpkeep(_totalUpkeep)</span>
                 </div>
             </BaronyTooltip>
@@ -52,7 +52,7 @@ else if (Barony is not null)
                    Class="mt-2"
                    StartIcon="@Icons.Material.Filled.Add"
                    OnClick="AddOfficeAsync">
-            Add Office
+            @L["Add Office"]
         </MudButton>
     }
 }

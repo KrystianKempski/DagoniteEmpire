@@ -21,7 +21,7 @@
                 </MudText>
                 @if (CanEdit)
                 {
-                    <BaronyTooltip Text="Edit advisor profile">
+                    <BaronyTooltip Text="@(L["Edit advisor profile"])">
                         <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                        Size="Size.Small"
                                        OnClick="EditProfileAsync" />
@@ -50,7 +50,7 @@
             else if (!BaronyCalc.IsOfficeAssigned(Advisor))
             {
                 <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                    No advisor assigned — no skill influence.
+                    @L["No advisor assigned — no skill influence."]
                 </MudText>
             }
         </div>
@@ -59,7 +59,7 @@
         {
             <div class="d-flex flex-wrap gap-2 mt-3">
                 <MudButton Variant="Variant.Outlined" StartIcon="@Icons.Material.Filled.Add" OnClick="AddRowAsync">
-                    Add Bonus Source
+                    @L["Add Bonus Source"]
                 </MudButton>
                 @if (!BaronyCalc.IsCoreOffice(Advisor))
                 {
@@ -67,7 +67,7 @@
                                Color="Color.Error"
                                StartIcon="@Icons.Material.Filled.Delete"
                                OnClick="DeleteOfficeAsync">
-                        Remove Office
+                        @L["Remove Office"]
                     </MudButton>
                 }
             </div>

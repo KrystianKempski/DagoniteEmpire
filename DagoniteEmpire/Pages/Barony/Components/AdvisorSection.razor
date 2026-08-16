@@ -1,13 +1,13 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
-<BaronySection Title="Baron and Advisors">
+<BaronySection Title="@(L["Baron and Advisors"])">
     <Summary>
         <PpbSummaryChips Vector="@Glance" />
     </Summary>
     <ChildContent>
         @if (AdvisorList.Count == 0)
         {
-            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No baron or advisors assigned yet.</MudText>
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">@L["No baron or advisors assigned yet."]</MudText>
         }
         else
         {
@@ -24,8 +24,8 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th rowspan="2" class="ppb-row-label advisor-col-role">Role</th>
-                            <th rowspan="2" class="ppb-row-label advisor-col-name">Name</th>
+                            <th rowspan="2" class="ppb-row-label advisor-col-role">@L["Role"]</th>
+                            <th rowspan="2" class="ppb-row-label advisor-col-name">@L["Name"]</th>
                             @foreach (var info in PpbCatalog.All)
                             {
                                 <th colspan="2"><BaronyTooltip Text="@info.NameEn">@PpbShort(info.Key)</BaronyTooltip></th>
@@ -137,7 +137,7 @@
                             </tr>
                         }
                         <tr class="ppb-summary-row">
-                            <td class="ppb-row-label" colspan="2">Σ section</td>
+                            <td class="ppb-row-label" colspan="2">@L["Σ section"]</td>
                             @foreach (var info in PpbCatalog.All)
                             {
                                 <td class="@PpbCellStyle.ValueClass(info.Key, AdditiveSum[info.Key])"><b>@FmtAdd(AdditiveSum[info.Key])</b></td>

@@ -7,7 +7,7 @@
         <div class="barony-dialog-theme baron-influence-edit-dialog relation-edit-dialog relation-modifiers-dialog">
             <MudText Typo="Typo.subtitle2" Class="mb-1">@PersonName</MudText>
             <div class="relation-modifiers__header mb-2">
-                <span class="relation-modifiers__title">Attitude modifiers</span>
+                <span class="relation-modifiers__title">@L["Attitude modifiers"]</span>
                 <span class="relation-modifiers__sum @AttitudeSumClass">
                     Sum: @FormatAttitude(AttitudeSum) (@RelationCategory.AttitudeLabel(AttitudeSum))
                 </span>
@@ -15,7 +15,7 @@
 
             @if (_modifiers.Count == 0)
             {
-                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">No modifiers yet.</MudText>
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">@L["No modifiers yet."]</MudText>
             }
             else
             {
@@ -24,17 +24,17 @@
                     var index = i;
                     <div class="relation-modifiers__row">
                         <MudTextField @bind-Value="_modifiers[index].Description"
-                                      Label="Description"
+                                      Label="@(L["Description"])"
                                       Variant="Variant.Outlined"
                                       Margin="Margin.Dense"
                                       Class="baron-influence-field relation-modifiers__desc" />
                         <MudNumericField T="int"
                                          @bind-Value="_modifiers[index].Value"
-                                         Label="Value"
+                                         Label="@(L["Value"])"
                                          Variant="Variant.Outlined"
                                          Margin="Margin.Dense"
                                          Class="baron-influence-field relation-modifiers__value" />
-                        <BaronyTooltip Text="Remove modifier">
+                        <BaronyTooltip Text="@(L["Remove modifier"])">
                             <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                            Size="Size.Small"
                                            Color="Color.Error"
@@ -49,13 +49,13 @@
                        StartIcon="@Icons.Material.Filled.Add"
                        Class="mt-1"
                        OnClick="AddModifier">
-                Add modifier
+                @L["Add modifier"]
             </MudButton>
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>
 

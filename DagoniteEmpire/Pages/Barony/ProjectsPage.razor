@@ -7,7 +7,7 @@
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading projects...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>@L["Loading projects..."]</span>
 }
 else if (LoadError is not null)
 {
@@ -15,7 +15,7 @@ else if (LoadError is not null)
 }
 else if (_overview is not null)
 {
-    <BaronyPageHeader Title="Projects" HelpKey="projects">
+    <BaronyPageHeader Title="@(L["Projects"])" HelpKey="projects">
         <Summary>
             <span class="projects-summary">
                 @if (_allocatingCount > 0)

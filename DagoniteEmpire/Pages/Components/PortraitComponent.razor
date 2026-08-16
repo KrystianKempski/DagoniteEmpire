@@ -7,7 +7,7 @@
 <div class="portrait">
     <MudPaper Class="w-100 h-100 pa-2">
         <div class="portrait-relative">
-    <h3 class="my-3 ml-3 text-center">PORTRAIT</h3>
+    <h3 class="my-3 ml-3 text-center">@L["PORTRAIT"]</h3>
     <div class="portrait-imageframe">
         <img src="@AllParams.Character.ImageUrl" class="portrait-image" />
             @if (!HasPortrait)
@@ -21,18 +21,18 @@
             <InputFile accept=".jpeg,.jpg,.png" id="input" OnChange="HandleImageUpload" class="sr-only"></InputFile>
             @if (HasPortrait)
             {
-                <button type="button" class="make-icon-btn" @onclick="OpenIconCropper">Make an Icon</button>
+                <button type="button" class="make-icon-btn" @onclick="OpenIconCropper">@L["Make an Icon"]</button>
                 @if (HasIcon)
                 {
                     <div class="icon-preview" title="Current character icon">
-                        <img src="@AllParams.Character.IconUrl" alt="Character icon" />
+                        <img src="@AllParams.Character.IconUrl" alt="@(L["Character icon"])" />
                     </div>
                 }
             }
     </div>
 
     <div class="points-control">
-        <label class="points-label">Avalible experience points:</label>
+        <label class="points-label">@L["Avalible experience points:"]</label>
         @if (UserInfo?.IsAdminOrMG == true)
         {
             <span class="points-indicator ml-auto"><MudNumericField Margin="0" Class="dense-numeric-field" Min="0" @bind-Value="AllParams.Character.CurrentExpPoints" @bind-Value:after="ChangeParams"></MudNumericField></span>
@@ -45,7 +45,7 @@
     <div class="points-control">
         @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
         {
-            <label class="points-label">Avalible attribute points:</label>
+            <label class="points-label">@L["Avalible attribute points:"]</label>
             <span class="points-indicator ml-auto">@AllParams.Character.AttributePoints</span>
         }
     </div>

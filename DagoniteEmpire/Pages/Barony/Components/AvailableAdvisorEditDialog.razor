@@ -5,21 +5,21 @@
     <DialogContent>
         <div class="barony-dialog-theme">
         <MudTextField @bind-Value="_name"
-                      Label="Name"
+                      Label="@(L["Name"])"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense"
                       Required="true"
                       Class="mb-2" />
         <MudTextField @bind-Value="_description"
-                      Label="Description"
+                      Label="@(L["Description"])"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense"
                       Lines="2"
                       Class="mb-3" />
 
-        <MudText Typo="Typo.subtitle2" Class="mb-1">Main skills</MudText>
+        <MudText Typo="Typo.subtitle2" Class="mb-1">@L["Main skills"]</MudText>
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-            Range 3–10 (Magic 0–10). Defaults start at 3 / Magic 0.
+            @L["Range 3–10 (Magic 0–10). Defaults start at 3 / Magic 0."]
         </MudText>
         <div class="court-skill-table-wrap mb-3">
             <table class="ppb-table ppb-table--lined court-skill-table court-skill-table--edit court-skill-table--main-row">
@@ -57,17 +57,17 @@
         </div>
 
         <div class="d-flex align-center justify-space-between mb-1">
-            <MudText Typo="Typo.subtitle2">Secondary skills</MudText>
+            <MudText Typo="Typo.subtitle2">@L["Secondary skills"]</MudText>
             <MudButton Variant="Variant.Outlined"
                        Size="Size.Small"
                        StartIcon="@Icons.Material.Filled.Add"
                        Disabled="@(_addKey is not null || UnusedSecondaries.Count == 0)"
                        OnClick="BeginAddSecondary">
-                Add secondary skill
+                @L["Add secondary skill"]
             </MudButton>
         </div>
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-            Optional — typically 2–3. Range 0–6.
+            @L["Optional — typically 2–3. Range 0–6."]
         </MudText>
 
         <div class="court-secondary-list">
@@ -87,7 +87,7 @@
                                      Margin="Margin.Dense"
                                      HideSpinButtons="false"
                                      Class="court-skill-num court-skill-num--bare" />
-                    <BaronyTooltip Text="Remove">
+                    <BaronyTooltip Text="@(L["Remove"])">
                         <MudIconButton Icon="@Icons.Material.Filled.Close"
                                        Size="Size.Small"
                                        Color="Color.Error"
@@ -119,13 +119,13 @@
                                     Margin="Margin.Dense"
                                     HideSpinButtons="false"
                                     Class="court-skill-num court-skill-num--bare" />
-                    <BaronyTooltip Text="Confirm">
+                    <BaronyTooltip Text="@(L["Confirm"])">
                         <MudIconButton Icon="@Icons.Material.Filled.Check"
                                        Color="Color.Primary"
                                        Size="Size.Small"
                                        OnClick="ConfirmAddSecondary" />
                     </BaronyTooltip>
-                    <BaronyTooltip Text="Cancel">
+                    <BaronyTooltip Text="@(L["Cancel"])">
                         <MudIconButton Icon="@Icons.Material.Filled.Close"
                                        Size="Size.Small"
                                        OnClick="CancelAddSecondary" />
@@ -134,17 +134,17 @@
             }
             else if (_secondary.Count == 0)
             {
-                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">No secondary skills yet.</MudText>
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">@L["No secondary skills yet."]</MudText>
             }
         </div>
 
-        <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Computed Domain Skills</MudText>
+        <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">@L["Computed Domain Skills"]</MudText>
         <PpbSummaryChips Vector="@PreviewPpb" HideZero="false" ExcludeTreasury="true" />
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Variant="Variant.Filled" Class="baron-influence-save-btn" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Variant="Variant.Filled" Class="baron-influence-save-btn" OnClick="Save">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>
 

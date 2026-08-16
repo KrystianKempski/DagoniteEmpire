@@ -5,7 +5,7 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudTextField @bind-Value="_title"
-                          Label="Thread title"
+                          Label="@(L["Thread title"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field"
@@ -15,12 +15,12 @@
                        Value="_recipientKey"
                        ValueChanged="OnRecipientChanged"
                        Label="@(IsInbound ? "Sender" : "Recipient")"
-                       HelperText="Pick from Relations or Lords, or choose Other to type a name and title"
+                       HelperText="@(L["Pick from Relations or Lords, or choose Other to type a name and title"])"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Dense="true"
                        Class="baron-influence-field">
-                <MudSelectItem Value="@OtherRecipientKey">Other</MudSelectItem>
+                <MudSelectItem Value="@OtherRecipientKey">@L["Other"]</MudSelectItem>
                 @foreach (var option in _recipientOptions)
                 {
                     <MudSelectItem Value="@option.Key">@option.Label</MudSelectItem>
@@ -36,7 +36,7 @@
                           Required="true" />
 
             <MudTextField @bind-Value="_correspondentTitle"
-                          Label="Title"
+                          Label="@(L["Title"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field"
@@ -44,7 +44,7 @@
 
             <MudSelect T="string"
                        @bind-Value="_replyRegion"
-                       Label="Correspondent region"
+                       Label="@(L["Correspondent region"])"
                        HelperText="@RegionHelperText"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
@@ -58,9 +58,9 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
         <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="CreateAsync" Disabled="@_busy">
-            Create thread
+            @L["Create thread"]
         </MudButton>
     </DialogActions>
 </MudDialog>

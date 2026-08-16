@@ -23,18 +23,18 @@
                 </colgroup>
                 <thead>
                     <tr>
-                        <th class="trade-goods-col-check">Available</th>
-                        <th class="trade-goods-col-name">Good</th>
-                        <th class="trade-goods-col-source">Source</th>
-                        <th class="trade-goods-col-desc">Description</th>
-                        <th class="trade-goods-col-bonus">PPB bonus</th>
-                        <th class="trade-goods-col-unlock">Unlocks</th>
-                        <th class="trade-goods-col-building">Production building</th>
-                        <th class="trade-goods-col-req">Requires</th>
+                        <th class="trade-goods-col-check">@L["Available"]</th>
+                        <th class="trade-goods-col-name">@L["Good"]</th>
+                        <th class="trade-goods-col-source">@L["Source"]</th>
+                        <th class="trade-goods-col-desc">@L["Description"]</th>
+                        <th class="trade-goods-col-bonus">@L["PPB bonus"]</th>
+                        <th class="trade-goods-col-unlock">@L["Unlocks"]</th>
+                        <th class="trade-goods-col-building">@L["Production building"]</th>
+                        <th class="trade-goods-col-req">@L["Requires"]</th>
                         @if (CanOverride)
                         {
                             <th class="trade-goods-col-override">
-                                <BaronyTooltip Text="MG can force a good available without production or treaty">MG override</BaronyTooltip>
+                                <BaronyTooltip Text="@(L["MG can force a good available without production or treaty"])">@L["MG override"]</BaronyTooltip>
                             </th>
                         }
                     </tr>
@@ -59,7 +59,7 @@
                                 </span>
                                 @if (available && !grantable)
                                 {
-                                    <div class="trade-goods-source-hint">Trade only — cannot re-export</div>
+                                    <div class="trade-goods-source-hint">@L["Trade only — cannot re-export"]</div>
                                 }
                             </td>
                             <td class="trade-goods-col-source">
@@ -74,7 +74,7 @@
                             <td class="trade-goods-col-unlock">
                                 @if (!string.IsNullOrWhiteSpace(item.Unlocks))
                                 {
-                                    <BaronyTooltip Title="Unlocks" Text="@item.Unlocks">
+                                    <BaronyTooltip Title="@(L["Unlocks"])" Text="@item.Unlocks">
                                         <span class="relations-ellipsis">@item.Unlocks</span>
                                     </BaronyTooltip>
                                 }
@@ -87,7 +87,7 @@
                             <td class="trade-goods-col-req">
                                 @if (!string.IsNullOrWhiteSpace(item.Requirements))
                                 {
-                                    <BaronyTooltip Title="Requires" Text="@item.Requirements">
+                                    <BaronyTooltip Title="@(L["Requires"])" Text="@item.Requirements">
                                         <span class="relations-ellipsis">@item.Requirements</span>
                                     </BaronyTooltip>
                                 }

@@ -13,7 +13,7 @@
     <DialogContent>
         @if (ShowHistory && _battles.Count > 0)
         {
-            <MudSelect T="int" Label="Battle" Value="_selectedPhaseId" ValueChanged="OnBattleChanged"
+            <MudSelect T="int" Label="@(L["Battle"])" Value="_selectedPhaseId" ValueChanged="OnBattleChanged"
                        Dense="true" Variant="Variant.Outlined" Class="mb-3">
                 @foreach (var b in _battles)
                 {
@@ -30,11 +30,11 @@
         }
         else if (ShowHistory && _battles.Count == 0)
         {
-            <MudText Class="pa-2">No battles have been recorded in this chapter yet.</MudText>
+            <MudText Class="pa-2">@L["No battles have been recorded in this chapter yet."]</MudText>
         }
         else if (_eventsByTurn.Count == 0)
         {
-            <MudText Class="pa-2">No events have been recorded in this battle.</MudText>
+            <MudText Class="pa-2">@L["No events have been recorded in this battle."]</MudText>
         }
         else
         {
@@ -56,7 +56,7 @@
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Close">Close</MudButton>
+        <MudButton OnClick="Close">@L["Close"]</MudButton>
     </DialogActions>
 </MudDialog>
 

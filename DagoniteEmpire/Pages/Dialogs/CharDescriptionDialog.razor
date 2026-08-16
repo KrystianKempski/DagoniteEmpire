@@ -5,18 +5,18 @@
     <div class="sheet-img">
         @* <img src="../images/old_paper2.png" class="stretch" /> *@
     </div>
-    <h3 class="my-3 ml-3 text-center">DESCRIPTION</h3>
+    <h3 class="my-3 ml-3 text-center">@L["DESCRIPTION"]</h3>
     <div class="descr-container">
         <div class="ql-snow ql-content description-richtext" style="border-width:0">
             <div class="ql-editor description-preview-editor">
                 @((MarkupString)(SavedDescription ?? "<p>Here write a description of your character</p>"))
             </div>
         </div>
-        <button class="add-trait" @onclick="OnStartDescriptionDialog">Description</button>
+        <button class="add-trait" @onclick="OnStartDescriptionDialog">@L["Description"]</button>
     </div>
 
     <MudDialog @bind-Visible="@IsDescrDialVisible" Options="@(new DialogOptions { FullWidth = true, MaxWidth = MaxWidth.Large })">
-        <TitleContent>Write character description</TitleContent>
+        <TitleContent>@L["Write character description"]</TitleContent>
         <DialogContent>
             <div class="character-description-editor">
             <BlazoredTextEditor @ref="@DescrEditor">
@@ -52,8 +52,8 @@
             </div>
         </DialogContent>
         <DialogActions>
-            <MudButton OnClick="@OnCancelBtnClick">Cancel</MudButton>
-            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@OnSaveDescrBtnClick">Save</MudButton>
+            <MudButton OnClick="@OnCancelBtnClick">@L["Cancel"]</MudButton>
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="@OnSaveDescrBtnClick">@L["Save"]</MudButton>
         </DialogActions>
     </MudDialog>
 </div>

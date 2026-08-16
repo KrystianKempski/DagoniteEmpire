@@ -13,7 +13,7 @@
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>@L["Loading..."]</span>
 }
 else if (LoadError is not null)
 {
@@ -22,7 +22,7 @@ else if (LoadError is not null)
 else if (Barony is not null)
 {
     <div class="barony-notes__page">
-        <BaronyPageHeader Title="Notes" HelpKey="notes" ShowSectionToggle="false" />
+        <BaronyPageHeader Title="@(L["Notes"])" HelpKey="notes" ShowSectionToggle="false" />
 
         <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
             @(IsGmScope
@@ -37,15 +37,15 @@ else if (Barony is not null)
                  @bind-ActivePanelIndex="_activeTab"
                  Class="terrain-brush-tabs barony-notes__tabs"
                  PanelClass="pt-3">
-            <MudTabPanel Text="Journal">
+            <MudTabPanel Text="@(L["Journal"])">
             <div class="barony-notes__journal">
                 <div class="barony-notes__layout">
                     <aside class="barony-notes__threads">
                         <div class="barony-notes__threads-head">
-                            <span>Threads</span>
+                            <span>@L["Threads"]</span>
                             <MudIconButton Icon="@Icons.Material.Filled.Add"
                                            Size="Size.Small"
-                                           aria-label="New note"
+                                           aria-label="@(L["New note"])"
                                            OnClick="NewThreadAsync" />
                         </div>
                         <ul class="barony-notes__thread-list">
@@ -66,14 +66,14 @@ else if (Barony is not null)
                             <div class="barony-notes__placeholder">
                                 <MudIcon Icon="@Icons.Material.Filled.NoteAdd" Size="Size.Large" />
                                 <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                                    No notes yet. Create your first thread.
+                                    @L["No notes yet. Create your first thread."]
                                 </MudText>
                                 <MudButton Variant="Variant.Filled"
                                            Class="barony-turn-btn barony-turn-btn--solid"
                                            Size="Size.Small"
                                            StartIcon="@Icons.Material.Filled.Add"
                                            OnClick="NewThreadAsync">
-                                    New thread
+                                    @L["New thread"]
                                 </MudButton>
                             </div>
                         }
@@ -85,7 +85,7 @@ else if (Barony is not null)
                                               Margin="Margin.Dense"
                                               Immediate="false"
                                               OnBlur="SaveTitleAsync"
-                                              Placeholder="Untitled note"
+                                              Placeholder="@(L["Untitled note"])"
                                               Class="barony-notes__title-field" />
                                 <MudTooltip Text="@(_isDirty ? "Unsaved changes" : "Saved")">
                                     <MudIcon Icon="@(_isDirty ? Icons.Material.Filled.Sync : Icons.Material.Filled.CloudDone)"
@@ -94,13 +94,13 @@ else if (Barony is not null)
                                 </MudTooltip>
                                 <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
                                                Size="Size.Small"
-                                               aria-label="Delete note"
+                                               aria-label="@(L["Delete note"])"
                                                Class="barony-notes__delete-btn"
                                                OnClick="() => DeleteThreadAsync(_selected)" />
                             </div>
 
                             <div class="barony-notes__editor">
-                                <BlazoredTextEditor @ref="_editor" @key="_editorEpoch" Placeholder="Write your plans, ideas, reminders…">
+                                <BlazoredTextEditor @ref="_editor" @key="_editorEpoch" Placeholder="@(L["Write your plans, ideas, reminders…"])">
                                     <ToolbarContent>@JournalToolbar()</ToolbarContent>
                                     <EditorContent></EditorContent>
                                 </BlazoredTextEditor>
@@ -111,7 +111,7 @@ else if (Barony is not null)
             </div>
         </MudTabPanel>
 
-        <MudTabPanel Text="Sticky notes">
+        <MudTabPanel Text="@(L["Sticky notes"])">
             <div class="barony-notes__sticky">
                 <div class="barony-notes__sticky-toolbar">
                     <MudButton Variant="Variant.Filled"
@@ -119,10 +119,10 @@ else if (Barony is not null)
                                Size="Size.Small"
                                StartIcon="@Icons.Material.Filled.Add"
                                OnClick="AddStickyAsync">
-                        Add sticky
+                        @L["Add sticky"]
                     </MudButton>
                     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                        Drag cards to reorder. Changes save automatically.
+                        @L["Drag cards to reorder. Changes save automatically."]
                     </MudText>
                 </div>
 
@@ -131,7 +131,7 @@ else if (Barony is not null)
                     <div class="barony-notes__placeholder">
                         <MudIcon Icon="@Icons.Material.Filled.StickyNote2" Size="Size.Large" />
                         <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                            No sticky notes yet. Add your first idea, plan or reminder.
+                            @L["No sticky notes yet. Add your first idea, plan or reminder."]
                         </MudText>
                     </div>
                 }
@@ -164,7 +164,7 @@ else if (Barony is not null)
                                     </div>
                                     <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
                                                    Size="Size.Small"
-                                                   aria-label="Delete sticky"
+                                                   aria-label="@(L["Delete sticky"])"
                                                    OnClick="() => DeleteStickyAsync(s)" />
                                 </div>
                                 <input class="barony-notes__sticky-title"
@@ -184,7 +184,7 @@ else if (Barony is not null)
             </div>
         </MudTabPanel>
 
-        <MudTabPanel Text="Reminders">
+        <MudTabPanel Text="@(L["Reminders"])">
             <div class="barony-notes__reminders">
                 <div class="barony-notes__reminder-add">
                     <input class="barony-notes__reminder-text"
@@ -193,7 +193,7 @@ else if (Barony is not null)
                            @bind:event="oninput"
                            @onkeydown="OnReminderKeyDown" />
                     <div class="barony-notes__reminder-in">
-                        <span>in</span>
+                        <span>@L["in"]</span>
                         <input type="number" min="1" max="999"
                                class="barony-notes__reminder-turns"
                                @bind="_newReminderTurns" />
@@ -205,7 +205,7 @@ else if (Barony is not null)
                                StartIcon="@Icons.Material.Filled.AddAlarm"
                                Disabled="@string.IsNullOrWhiteSpace(_newReminderText)"
                                OnClick="AddReminderAsync">
-                        Add reminder
+                        @L["Add reminder"]
                     </MudButton>
                 </div>
 
@@ -218,7 +218,7 @@ else if (Barony is not null)
                     <div class="barony-notes__placeholder">
                         <MudIcon Icon="@Icons.Material.Filled.NotificationsActive" Size="Size.Large" />
                         <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                            No reminders yet. Add one above to be nudged in a few turns.
+                            @L["No reminders yet. Add one above to be nudged in a few turns."]
                         </MudText>
                     </div>
                 }
@@ -231,7 +231,7 @@ else if (Barony is not null)
                             <div class="barony-notes__reminder-card @(r.IsDone ? "barony-notes__reminder-card--done" : "") @(isDue ? "barony-notes__reminder-card--due" : "")">
                                 <MudIconButton Icon="@(r.IsDone ? Icons.Material.Filled.CheckCircle : (isDue ? Icons.Material.Filled.NotificationsActive : Icons.Material.Outlined.Notifications))"
                                                Size="Size.Small"
-                                               aria-label="Toggle done"
+                                               aria-label="@(L["Toggle done"])"
                                                Class="barony-notes__reminder-toggle"
                                                OnClick="() => ToggleReminderDoneAsync(r)" />
                                 <div class="barony-notes__reminder-main">
@@ -240,7 +240,7 @@ else if (Barony is not null)
                                 </div>
                                 <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
                                                Size="Size.Small"
-                                               aria-label="Delete reminder"
+                                               aria-label="@(L["Delete reminder"])"
                                                OnClick="() => DeleteReminderAsync(r)" />
                             </div>
                         }

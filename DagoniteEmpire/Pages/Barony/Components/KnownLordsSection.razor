@@ -10,7 +10,7 @@
     <ChildContent>
         <div class="known-lords-filters">
             <MudTextField @bind-Value="_filter"
-                          Placeholder="Filter by name, house, title, holdings…"
+                          Placeholder="@(L["Filter by name, house, title, holdings…"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Immediate="true"
@@ -19,7 +19,7 @@
                           AdornmentIcon="@Icons.Material.Filled.Search"
                           Class="known-lords-filters__search" />
             <div class="known-lords-mark-filters">
-                <span class="known-lords-mark-filters__label">Mark</span>
+                <span class="known-lords-mark-filters__label">@L["Mark"]</span>
                 <div class="known-lords-mark-filters__icons">
                     @foreach (var icon in BaronyCharacterMarkCatalog.Icons)
                     {
@@ -32,7 +32,7 @@
                         </BaronyTooltip>
                     }
                 </div>
-                <span class="known-lords-mark-filters__label">Color</span>
+                <span class="known-lords-mark-filters__label">@L["Color"]</span>
                 <div class="known-lords-mark-filters__colors">
                     @foreach (var color in BaronyCharacterMarkCatalog.Colors)
                     {
@@ -50,7 +50,7 @@
                                Variant="Variant.Text"
                                Class="known-lords-mark-filters__clear"
                                OnClick="ClearMarkFilters">
-                        Clear marks
+                        @L["Clear marks"]
                     </MudButton>
                 }
             </div>
@@ -59,7 +59,7 @@
         @if (Filtered.Count == 0)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                No lords match the current filter.
+                @L["No lords match the current filter."]
             </MudText>
         }
         else
@@ -77,13 +77,13 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th class="known-lords-col-name">Name</th>
-                            <th class="known-lords-col-house">House</th>
-                            <th class="known-lords-col-title">Title</th>
-                            <th class="known-lords-col-holdings">Holdings</th>
-                            <th class="known-lords-col-wealth">Wealth</th>
-                            <th class="known-lords-col-desc">Description</th>
-                            <th class="known-lords-col-goods">Available goods</th>
+                            <th class="known-lords-col-name">@L["Name"]</th>
+                            <th class="known-lords-col-house">@L["House"]</th>
+                            <th class="known-lords-col-title">@L["Title"]</th>
+                            <th class="known-lords-col-holdings">@L["Holdings"]</th>
+                            <th class="known-lords-col-wealth">@L["Wealth"]</th>
+                            <th class="known-lords-col-desc">@L["Description"]</th>
+                            <th class="known-lords-col-goods">@L["Available goods"]</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -114,7 +114,7 @@
                                         else if (!string.IsNullOrWhiteSpace(notes))
                                         {
                                             <span class="city-building-name-actions">
-                                                <BaronyTooltip Title="Notes" Text="@notes">
+                                                <BaronyTooltip Title="@(L["Notes"])" Text="@notes">
                                                     <MudIcon Icon="@Icons.Material.Filled.EditNote"
                                                              Size="Size.Small"
                                                              Class="known-lords-notes-icon known-lords-notes-icon--filled" />
@@ -130,7 +130,7 @@
                                 <td class="known-lords-col-desc">
                                     @if (!string.IsNullOrWhiteSpace(lord.Description))
                                     {
-                                        <BaronyTooltip Title="Description" Text="@lord.Description">
+                                        <BaronyTooltip Title="@(L["Description"])" Text="@lord.Description">
                                             <span class="known-lords-desc-text">@lord.Description</span>
                                         </BaronyTooltip>
                                     }

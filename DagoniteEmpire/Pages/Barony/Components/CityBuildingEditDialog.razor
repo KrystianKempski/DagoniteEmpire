@@ -9,21 +9,21 @@
             @if (IsCoreBuilding)
             {
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                    Fixed city building. Changes apply only to this barony. Use Reset to restore the default.
+                    @L["Fixed city building. Changes apply only to this barony. Use Reset to restore the default."]
                 </MudText>
             }
             else
             {
                 <MudTabs @bind-ActivePanelIndex="_tabIndex" Class="mb-3">
-                    <MudTabPanel Text="From catalog">
+                    <MudTabPanel Text="@(L["From catalog"])">
                         <MudSelect T="int?"
-                                   Label="Building template"
+                                   Label="@(L["Building template"])"
                                    Value="@_selectedTemplateId"
                                    ValueChanged="OnTemplateSelected"
                                    Variant="Variant.Outlined"
                                    Margin="Margin.Dense"
                                    Clearable="true"
-                                   Placeholder="Choose a building…"
+                                   Placeholder="@(L["Choose a building…"])"
                                    Class="baron-influence-field">
                             @foreach (var template in Catalog)
                             {
@@ -31,12 +31,12 @@
                             }
                         </MudSelect>
                         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                            Pick a catalog entry below. To change values, switch to the Custom tab.
+                            @L["Pick a catalog entry below. To change values, switch to the Custom tab."]
                         </MudText>
                     </MudTabPanel>
-                    <MudTabPanel Text="Custom">
+                    <MudTabPanel Text="@(L["Custom"])">
                         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                            Edit name, description, and PPB freely. The name must not match any catalog template.
+                            @L["Edit name, description, and PPB freely. The name must not match any catalog template."]
                         </MudText>
                     </MudTabPanel>
                 </MudTabs>
@@ -44,32 +44,32 @@
 
             <div class="@(!IsCoreBuilding && IsCatalogTab ? "city-building-fields--readonly" : "")">
                 <MudTextField @bind-Value="_name"
-                              Label="Name"
+                              Label="@(L["Name"])"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Required="true"
                               Disabled="@(!IsCoreBuilding && IsCatalogTab)"
                               Class="baron-influence-field" />
                 <MudTextField @bind-Value="_description"
-                              Label="Description"
-                              HelperText="Shown as a tooltip in the building list."
+                              Label="@(L["Description"])"
+                              HelperText="@(L["Shown as a tooltip in the building list."])"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Lines="3"
                               Disabled="@(!IsCoreBuilding && IsCatalogTab)"
                               Class="baron-influence-field" />
-                <PpbVectorEditor @bind-Value="_additive" Title="PPB additive (+)" Compact="true" ReadOnly="@(!IsCoreBuilding && IsCatalogTab)" />
-                <PpbVectorEditor @bind-Value="_percent" Title="PPB percent (%)" Compact="true" Percent="true" ReadOnly="@(!IsCoreBuilding && IsCatalogTab)" />
+                <PpbVectorEditor @bind-Value="_additive" Title="@(L["PPB additive (+)"])" Compact="true" ReadOnly="@(!IsCoreBuilding && IsCatalogTab)" />
+                <PpbVectorEditor @bind-Value="_percent" Title="@(L["PPB percent (%)"])" Compact="true" Percent="true" ReadOnly="@(!IsCoreBuilding && IsCatalogTab)" />
             </div>
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
         @if (IsCoreBuilding && Building.Id > 0 && OnReset.HasDelegate)
         {
-            <MudButton Variant="Variant.Outlined" Color="Color.Warning" OnClick="ResetAsync">Reset to default</MudButton>
+            <MudButton Variant="Variant.Outlined" Color="Color.Warning" OnClick="ResetAsync">@L["Reset to default"]</MudButton>
         }
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>
 

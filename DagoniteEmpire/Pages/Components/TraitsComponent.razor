@@ -7,19 +7,19 @@
     <table class="table align-middle">
         <thead>
             <tr>
-                <th scope="col" class="name-row">Name</th>
-                <th scope="col" class="description-row">Description</th>
+                <th scope="col" class="name-row">@L["Name"]</th>
+                <th scope="col" class="description-row">@L["Description"]</th>
                 @if (TraitType == SD.TraitType_Character)
                 {
-                    <th scope="col" class="trait-value-row text-center">Value</th>
+                    <th scope="col" class="trait-value-row text-center">@L["Value"]</th>
                 }
                 @if (TraitType == SD.TraitType_Temporary)
                 {
-                    <th scope="col" class="trait-value-row text-center">Duration</th>
+                    <th scope="col" class="trait-value-row text-center">@L["Duration"]</th>
                 }
                 @if (IsInfoMode == false)
                 {                      
-                    <th scope="col" class="action-row text-center">Actions</th>
+                    <th scope="col" class="action-row text-center">@L["Actions"]</th>
                 }
             </tr>
         </thead>
@@ -75,12 +75,12 @@
                 <div class="buttons-row">
                     @if (ShowFromTemplate)
                     {
-                        <button @onclick="OnFromTemplateClick" class="add-trait">From Template</button>
+                        <button @onclick="OnFromTemplateClick" class="add-trait">@L["From Template"]</button>
                     }
                     <button @onclick="@(()=>AddCustomTrait())" class="add-trait">Add @TraitName</button>
                     @if (TraitType == SD.TraitType_Gear && WeaponQualityAvalible)
                     {
-                        <button @onclick="@(()=>AddWeaponQualities())" class="add-trait">Add weapon qualities</button>
+                        <button @onclick="@(()=>AddWeaponQualities())" class="add-trait">@L["Add weapon qualities"]</button>
                     }
                     @if (TraitType != SD.TraitType_Gear)
                     {                    

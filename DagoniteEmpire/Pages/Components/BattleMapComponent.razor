@@ -17,19 +17,19 @@ else
             <MudPaper Class="battle-map-toolbar pa-2 mb-2" Elevation="1">
                 <MudStack Spacing="2">
                     <MudToggleGroup T="string" @bind-Value="_tool" @bind-Value:after="OnToolChanged" Color="Color.Primary" Size="Size.Small" SelectionMode="SelectionMode.SingleSelection" CheckMark="false">
-                        <MudToggleItem Value="@("tiles")" Text="Tiles" />
-                        <MudToggleItem Value="@("text")" Text="Text" />
-                        <MudToggleItem Value="@("token")" Text="Token" />
-                        <MudToggleItem Value="@("erase")" Text="Eraser" />
+                        <MudToggleItem Value="@("tiles")" Text="@(L["Tiles"])" />
+                        <MudToggleItem Value="@("text")" Text="@(L["Text"])" />
+                        <MudToggleItem Value="@("token")" Text="@(L["Token"])" />
+                        <MudToggleItem Value="@("erase")" Text="@(L["Eraser"])" />
                     </MudToggleGroup>
 
                     @if (_tool == "tiles")
                     {
                         <MudToggleGroup T="string" @bind-Value="_tileBrush" Color="Color.Primary" Size="Size.Small" SelectionMode="SelectionMode.SingleSelection" CheckMark="false">
-                            <MudToggleItem Value="@("color")" Text="Color" />
-                            <MudToggleItem Value="@("difficult")" Text="Difficult" />
-                            <MudToggleItem Value="@("impassable")" Text="Impassable" />
-                            <MudToggleItem Value="@("normal")" Text="Clear terrain" />
+                            <MudToggleItem Value="@("color")" Text="@(L["Color"])" />
+                            <MudToggleItem Value="@("difficult")" Text="@(L["Difficult"])" />
+                            <MudToggleItem Value="@("impassable")" Text="@(L["Impassable"])" />
+                            <MudToggleItem Value="@("normal")" Text="@(L["Clear terrain"])" />
                         </MudToggleGroup>
 
                         @if (_tileBrush == "color")
@@ -70,7 +70,7 @@ else
                         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="flex-wrap">
                             @if (AvailableParticipants.Any())
                             {
-                                <MudSelect T="string" @bind-Value="_newTokenLabel" Label="Participant" Dense="true" Style="max-width:260px" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                <MudSelect T="string" @bind-Value="_newTokenLabel" Label="@(L["Participant"])" Dense="true" Style="max-width:260px" Variant="Variant.Outlined" Margin="Margin.Dense">
                                     @foreach (var participant in AvailableParticipants)
                                     {
                                         <MudSelectItem Value="@participant.Label">
@@ -91,21 +91,21 @@ else
                             }
                             else
                             {
-                                <MudText Typo="Typo.caption">All participants are on the map.</MudText>
+                                <MudText Typo="Typo.caption">@L["All participants are on the map."]</MudText>
                             }
                             <MudButton Variant="Variant.Filled"
                                        Color="Color.Primary"
                                        Size="Size.Small"
                                        StartIcon="@Icons.Material.Filled.AddCircle"
                                        Disabled="@(AvailableParticipants.Any() == false)"
-                                       OnClick="AddToken">Add token</MudButton>
+                                       OnClick="AddToken">@L["Add token"]</MudButton>
                             @if (_selectedTokenId is not null)
                             {
-                                <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" StartIcon="@Icons.Material.Filled.Delete" OnClick="RemoveSelectedToken">Remove token</MudButton>
+                                <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" StartIcon="@Icons.Material.Filled.Delete" OnClick="RemoveSelectedToken">@L["Remove token"]</MudButton>
                             }
                         </MudStack>
                         <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="1" Class="flex-wrap">
-                            <MudText Typo="Typo.caption">Size:</MudText>
+                            <MudText Typo="Typo.caption">@L["Size:"]</MudText>
                             <MudToggleGroup T="int" Value="_newTokenSize" ValueChanged="OnTokenSizeChanged" Color="Color.Primary" Size="Size.Small" SelectionMode="SelectionMode.SingleSelection" CheckMark="false">
                                 <MudToggleItem Value="1" Text="1×1" />
                                 <MudToggleItem Value="2" Text="2×2" />
@@ -113,7 +113,7 @@ else
                             </MudToggleGroup>
                             @if (_selectedTokenId is null)
                             {
-                                <MudText Typo="Typo.caption" Class="mud-text-secondary">for new tokens</MudText>
+                                <MudText Typo="Typo.caption" Class="mud-text-secondary">@L["for new tokens"]</MudText>
                             }
                         </MudStack>
                     }
@@ -127,7 +127,7 @@ else
                             <MudText Typo="Typo.caption">Height: @Map.Height</MudText>
                             <MudSlider T="int" Min="5" Max="20" Step="1" Value="Map.Height" ValueChanged="@(v => OnSizeChanged(Map.Width, v))" />
                         </div>
-                        <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" StartIcon="@Icons.Material.Filled.Clear" OnClick="ClearMap">Clear map</MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Error" Size="Size.Small" StartIcon="@Icons.Material.Filled.Clear" OnClick="ClearMap">@L["Clear map"]</MudButton>
                     </MudStack>
                 </MudStack>
             </MudPaper>
@@ -249,7 +249,7 @@ else
         <div class="battle-map-legend">
             <span class="battle-map-legend-item">
                 <span class="battle-map-legend-range"></span>
-                Movement range
+                @L["Movement range"]
             </span>
             <span class="battle-map-legend-item">
                 <MudIcon Icon="@Icons.Material.Filled.Terrain" Class="battle-map-legend-icon difficult" />

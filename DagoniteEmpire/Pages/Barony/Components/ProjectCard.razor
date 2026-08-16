@@ -5,7 +5,7 @@
         <div class="project-card__title-row" @onclick="Toggle" role="button" aria-expanded="@_isOpen">
             @if (HasNotes)
             {
-                <BaronyTooltip Title="Notes" Text="@NotesTooltip">
+                <BaronyTooltip Title="@(L["Notes"])" Text="@NotesTooltip">
                     <h3 class="project-card__title">@Project.Name</h3>
                 </BaronyTooltip>
             }
@@ -30,7 +30,7 @@
             {
                 @if (HasNotes)
                 {
-                    <BaronyTooltip Title="Notes" Text="@NotesTooltip">
+                    <BaronyTooltip Title="@(L["Notes"])" Text="@NotesTooltip">
                         <p class="project-card__description">@Project.Description</p>
                     </BaronyTooltip>
                 }
@@ -55,7 +55,7 @@
                                Class="baron-influence-save-btn"
                                StartIcon="@Icons.Material.Filled.Savings"
                                OnClick="OnAllocate">
-                        Allocate resources
+                        @L["Allocate resources"]
                     </MudButton>
                 }
                 @if (CanEdit && Project.CanClearAllocation)
@@ -64,17 +64,17 @@
                                Size="Size.Small"
                                StartIcon="@Icons.Material.Filled.Undo"
                                OnClick="OnClearAllocation">
-                        Clear allocation
+                        @L["Clear allocation"]
                     </MudButton>
                 }
                 @if (CanManage)
                 {
-                    <BaronyTooltip Text="Edit project">
+                    <BaronyTooltip Text="@(L["Edit project"])">
                         <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                        Size="Size.Small"
                                        OnClick="OnEdit" />
                     </BaronyTooltip>
-                    <BaronyTooltip Text="Remove project">
+                    <BaronyTooltip Text="@(L["Remove project"])">
                         <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                        Size="Size.Small"
                                        Color="Color.Error"
@@ -90,17 +90,17 @@
     <div class="project-card__panels">
         <section class="project-card__panel project-card__panel--cost">
             <div class="project-card__panel-head">
-                <h4 class="project-card__panel-title">Cost</h4>
+                <h4 class="project-card__panel-title">@L["Cost"]</h4>
                 @if (_selectableModes.Count > 1)
                 {
-                    <div class="project-cost-mode-switch" role="group" aria-label="Payment method">
+                    <div class="project-cost-mode-switch" role="group" aria-label="@(L["Payment method"])">
                         @foreach (var mode in _selectableModes)
                         {
                             var isActive = Project.EffectiveCostMode == mode;
                             var isLocked = !isActive && (!CanEdit || !Project.CanSwitchCostMode);
                             @if (isLocked)
                             {
-                                <BaronyTooltip Text="Locked after first allocation">
+                                <BaronyTooltip Text="@(L["Locked after first allocation"])">
                                     <button type="button"
                                             class="project-cost-mode-switch__btn"
                                             disabled="true"
@@ -143,10 +143,10 @@
                         </colgroup>
                         <thead>
                             <tr>
-                                <th class="resource-col-name">Resource</th>
-                                <th>Required</th>
-                                <th>Allocated</th>
-                                <th>Remaining</th>
+                                <th class="resource-col-name">@L["Resource"]</th>
+                                <th>@L["Required"]</th>
+                                <th>@L["Allocated"]</th>
+                                <th>@L["Remaining"]</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -166,16 +166,16 @@
         </section>
 
         <section class="project-card__panel project-card__panel--output">
-            <h4 class="project-card__panel-title">Expected Output</h4>
+            <h4 class="project-card__panel-title">@L["Expected Output"]</h4>
             @if (HideResult)
             {
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                    Result hidden until the project is completed.
+                    @L["Result hidden until the project is completed."]
                 </MudText>
             }
             else if (!HasOutput)
             {
-                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">No PPB output defined.</MudText>
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">@L["No PPB output defined."]</MudText>
             }
             else
             {

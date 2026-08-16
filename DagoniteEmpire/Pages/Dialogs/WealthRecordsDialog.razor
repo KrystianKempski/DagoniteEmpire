@@ -21,9 +21,9 @@
                     <PropertyColumn Property="x => x.Talars" />
                     <PropertyColumn Property="x => x.Hellers" />
                     <PropertyColumn Property="x => x.Coppers" />
-                    <PropertyColumn Property="x => x.CurrentDate" Title="Date" />
+                    <PropertyColumn Property="x => x.CurrentDate" Title="@(L["Date"])" />
 
-                    <TemplateColumn Title="Actions" Groupable="false">
+                    <TemplateColumn Title="@(L["Actions"])" Groupable="false">
                             <CellTemplate>
                                 <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => EditRecord(@context.Item))" />
                                 <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => DeleteRecord(@context.Item))" />
@@ -36,19 +36,19 @@
             <MudPaper>
                 <MudGrid Spacing="0" Class="pa-1 ma-0">
                     <MudItem xs="12" sm="8" md="4" lg="4">                    
-                        <MudTextField Style="height:100%;" Label="Description" @bind-Value="@NewDescription"></MudTextField>
+                        <MudTextField Style="height:100%;" Label="@(L["Description"])" @bind-Value="@NewDescription"></MudTextField>
                     </MudItem>
                     <MudItem xs="3" sm="1" md="1" lg="1">
-                        <MudNumericField Class="align-right" Label="Imperials" @bind-Value="@Imperials"> <img src="@MyIcon.Imperial" width="30" height="30" /></MudNumericField>
+                        <MudNumericField Class="align-right" Label="@(L["Imperials"])" @bind-Value="@Imperials"> <img src="@MyIcon.Imperial" width="30" height="30" /></MudNumericField>
                     </MudItem>
                     <MudItem xs="3" sm="1" md="1" lg="1">
-                        <MudNumericField Class="align-right" Label="Talars" @bind-Value="@Talars"></MudNumericField>
+                        <MudNumericField Class="align-right" Label="@(L["Talars"])" @bind-Value="@Talars"></MudNumericField>
                     </MudItem>
                     <MudItem xs="3" sm="1" md="1" lg="1">
-                        <MudNumericField Class="align-right" Label="Hellers" @bind-Value="@Hellers"></MudNumericField>
+                        <MudNumericField Class="align-right" Label="@(L["Hellers"])" @bind-Value="@Hellers"></MudNumericField>
                     </MudItem>
                     <MudItem xs="3" sm="1" md="1" lg="1">
-                        <MudNumericField Class="align-right" Label="Coppers" @bind-Value="@Coppers"></MudNumericField>
+                        <MudNumericField Class="align-right" Label="@(L["Coppers"])" @bind-Value="@Coppers"></MudNumericField>
                     </MudItem>
                     <MudItem xs="8" sm="8" md="3" lg="3" >
                         <div class="ps-5">
@@ -67,8 +67,8 @@
         </MudStack>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="OnCancelBtnClick">Cancel</MudButton>
-        <MudButton Color="Color.Error" OnClick="OnSaveTraitBtnClick">Save</MudButton>
+        <MudButton OnClick="OnCancelBtnClick">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Error" OnClick="OnSaveTraitBtnClick">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>
 

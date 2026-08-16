@@ -20,16 +20,16 @@
             }
 
             <MudTextField @bind-Value="_name"
-                          Label="Project name"
+                          Label="@(L["Project name"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Required="true"
                           Class="baron-influence-field" />
 
-            <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Cost (forced)</MudText>
+            <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">@L["Cost (forced)"]</MudText>
             <div class="terrain-build-project-cost">
-                <span>Gold: <b>@Fmt(Template.GoldCost)</b></span>
-                <span>Production: <b>@Fmt(Template.ProductionCost)</b></span>
+                <span>@L["Gold:"] <b>@Fmt(Template.GoldCost)</b></span>
+                <span>@L["Production:"] <b>@Fmt(Template.ProductionCost)</b></span>
             </div>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-1">
                 Output type: @ProjectOutputKind.Building · Payment: Gold &amp; Production only
@@ -37,11 +37,11 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Close</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Close"]</MudButton>
         <MudButton Class="baron-influence-save-btn"
                    Variant="Variant.Filled"
                    OnClick="MakeProject">
-            Make project
+            @L["Make project"]
         </MudButton>
     </DialogActions>
 </MudDialog>

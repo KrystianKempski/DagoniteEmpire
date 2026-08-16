@@ -7,25 +7,25 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudTextField @bind-Value="_title"
-                          Label="Office title"
+                          Label="@(L["Office title"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field"
                           Required="true" />
             <MudTextField @bind-Value="_personName"
-                          Label="Advisor name"
+                          Label="@(L["Advisor name"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field" />
             <MudTextField @bind-Value="_description"
-                          Label="Office description"
+                          Label="@(L["Office description"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="3"
                           Class="baron-influence-field" />
             <MudNumericField T="decimal"
                              @bind-Value="_upkeepGold"
-                             Label="Upkeep cost (gold / turn)"
+                             Label="@(L["Upkeep cost (gold / turn)"])"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="0"
@@ -34,8 +34,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>
 

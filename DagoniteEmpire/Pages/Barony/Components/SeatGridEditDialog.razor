@@ -7,7 +7,7 @@
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudNumericField T="int"
                              @bind-Value="_width"
-                             Label="Grid width (columns)"
+                             Label="@(L["Grid width (columns)"])"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="4"
@@ -15,7 +15,7 @@
                              Class="baron-influence-field" />
             <MudNumericField T="int"
                              @bind-Value="_height"
-                             Label="Grid height (rows)"
+                             Label="@(L["Grid height (rows)"])"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="4"
@@ -24,8 +24,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="baron-influence-save-btn" OnClick="Save">Save</MudButton>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="baron-influence-save-btn" OnClick="Save">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>
 

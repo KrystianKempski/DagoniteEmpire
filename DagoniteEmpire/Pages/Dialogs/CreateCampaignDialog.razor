@@ -10,9 +10,9 @@
     </TitleContent>
     <DialogContent>        
         <MudForm @bind-IsValid="@success">
-        <MudTextField Required @bind-Value="@NewCampaign.Name" Label="Campaign name" />
-        <MudTextField Required @bind-Value="@NewCampaign.Description" Label="Description" Lines="5" />
-        <MudText Typo="Typo.caption">Choose player characters for campaign</MudText>
+        <MudTextField Required @bind-Value="@NewCampaign.Name" Label="@(L["Campaign name"])" />
+        <MudTextField Required @bind-Value="@NewCampaign.Description" Label="@(L["Description"])" Lines="5" />
+        <MudText Typo="Typo.caption">@L["Choose player characters for campaign"]</MudText>
         <MudChipSet T="CharacterDTO" @bind-SelectedValues="SelectedCharacters" CheckMark SelectionMode="MudBlazor.SelectionMode.MultiSelection">
             @if(true)
             {
@@ -27,7 +27,7 @@
         </MudForm>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
         <MudButton Color="Color.Error" Disabled="@(!success)" OnClick="CreateCampaign">@Title</MudButton>
     </DialogActions>
 </MudDialog>

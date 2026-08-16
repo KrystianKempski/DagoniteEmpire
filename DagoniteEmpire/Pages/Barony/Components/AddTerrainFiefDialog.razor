@@ -10,7 +10,7 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudTextField @bind-Value="_lordName"
-                          Label="Lord name"
+                          Label="@(L["Lord name"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field"
@@ -18,7 +18,7 @@
 
             <MudSelect T="int?"
                        @bind-Value="_seniorDomainId"
-                       Label="Senior domain"
+                       Label="@(L["Senior domain"])"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Class="baron-influence-field">
@@ -28,7 +28,7 @@
                 }
             </MudSelect>
 
-            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">Fief color</MudText>
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">@L["Fief color"]</MudText>
             <div class="terrain-domain-color-row">
                 @foreach (var swatch in Swatches)
                 {
@@ -40,7 +40,7 @@
                                 @onclick="() => _colorHex = swatch"></button>
                     </BaronyTooltip>
                 }
-                <BaronyTooltip Text="Custom color">
+                <BaronyTooltip Text="@(L["Custom color"])">
                     <label class="terrain-domain-custom-color">
                         <input type="color"
                                class="terrain-domain-color-input"
@@ -52,7 +52,7 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
         <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@(IsEdit ? "Save" : "Add")</MudButton>
     </DialogActions>
 </MudDialog>

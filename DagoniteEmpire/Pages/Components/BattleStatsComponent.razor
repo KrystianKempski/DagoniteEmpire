@@ -13,10 +13,10 @@
         <div class="row w-100 border m-1 p-1">
             <div class="set-label">
                 <input class="px-1" type="checkbox" checked="@WeaponSet1" @onchange="WeaponSetChanged">
-                <label>Weapon set 1</label>
+                <label>@L["Weapon set 1"]</label>
             </div>
             <div class="col-6 p-1">
-                <label>Main hand</label>
+                <label>@L["Main hand"]</label>
                 <div class="weapon main1">
                         <EquipItemComponent @ref="EquipItemComp[EquippedItems.WeaponMain1]" OnGearChange="GearChange" SlotType="@SD.SlotType.WeaponMain1"> </EquipItemComponent>
                 </div>
@@ -34,7 +34,7 @@
                         {
                             <div class="d-flex">
                                 <div class="flex-grow-1 weapon-prop-label">
-                                    <label>Two handed weapon</label>
+                                    <label>@L["Two handed weapon"]</label>
                                 </div>
                             </div>
                         }
@@ -60,7 +60,7 @@
             </div>
 
             <div class="col-6 p-1">
-                <label>Off hand</label>
+                <label>@L["Off hand"]</label>
                 <div class="weapon off1">
                         <EquipItemComponent Disabled="CheckIfTwoHanded(EquippedItems.WeaponMain1)" @ref="EquipItemComp[EquippedItems.WeaponOff1]" OnGearChange="GearChange" SlotType="@SD.SlotType.WeaponOff1"> </EquipItemComponent>
                 </div>
@@ -101,11 +101,11 @@
         <div class="row w-100 border m-1 p-1">
             <div class="set-label">
                 <input class="px-1" type="checkbox" checked="@WeaponSet2" @onchange="WeaponSetChanged">
-                <label>Weapon set 2</label>
+                <label>@L["Weapon set 2"]</label>
 
             </div>
             <div class="col-6 p-1">
-                <label>Main hand</label>
+                <label>@L["Main hand"]</label>
                 <div class="weapon main2">
                     <EquipItemComponent  @ref="EquipItemComp[EquippedItems.WeaponMain2]" OnGearChange="GearChange" SlotType="@SD.SlotType.WeaponMain2"> </EquipItemComponent>
                 </div>
@@ -123,7 +123,7 @@
                         {
                             <div class="d-flex">
                                 <div class="flex-grow-1 weapon-prop-label">
-                                    <label>Two handed weapon</label>
+                                    <label>@L["Two handed weapon"]</label>
                                 </div>
                             </div>
                         }
@@ -150,7 +150,7 @@
             </div>
 
             <div class="col-6 p-1">
-                <label>Off hand</label>
+                <label>@L["Off hand"]</label>
                 <div class="weapon off2">
                     <EquipItemComponent Disabled="CheckIfTwoHanded(EquippedItems.WeaponMain2)" @ref="EquipItemComp[EquippedItems.WeaponOff2]" OnGearChange="GearChange" SlotType="@SD.SlotType.WeaponOff2"> </EquipItemComponent>
                 </div>
@@ -191,13 +191,13 @@
         <div class="d-flex w-100 p-0 my-1">
             <div class="d-flex flex-column border w-100">
                 <div class="set-label">
-                    <label>Equipped armor</label>
+                    <label>@L["Equipped armor"]</label>
                 </div>
                 <div class="d-flex flex-row">
                     <div class="col-6 p-2">
                         <div class="d-flex">
                             <div class="flex-grow-1 weapon-prop-label">
-                                <label>Armor skill: </label>
+                                <label>@L["Armor skill:"] </label>
                             </div>
                             <div class="weapon-prop-value">
                                 @AllParams.SpecialSkills.Get(SD.SpecialSkills.Athletics.Armor).SumBonus
@@ -205,7 +205,7 @@
                         </div>
                         <div class="d-flex">
                             <div class="flex-grow-1 weapon-prop-label">
-                                <label>Armor defence bonus: </label>
+                                <label>@L["Armor defence bonus:"] </label>
                             </div>
                             <div class="weapon-prop-value">
                                 @ArmorDefenceBonus
@@ -215,7 +215,7 @@
                     <div class="col-6 p-2">
                         <div class="d-flex">
                             <div class="flex-grow-1 weapon-prop-label">
-                                <label>Armor damage reduction: </label>
+                                <label>@L["Armor damage reduction:"] </label>
                             </div>
                             <div class="weapon-prop-value">
                                 @ArmorValue
@@ -223,7 +223,7 @@
                         </div>
                         <div class="d-flex">
                             <div class="flex-grow-1 weapon-prop-label">
-                                <label>Armor penalty: </label>
+                                <label>@L["Armor penalty:"] </label>
                             </div>
                             <div class="weapon-prop-value">
                                 @ArmorPenalty
@@ -236,45 +236,45 @@
         }
         <div class="row w-100 border m-1 p-0"> 
                 <div class="set-label">
-                    <label>Summary</label>
+                    <label>@L["Summary"]</label>
                 </div>
             <div class="col-6 pt-2 pb-2 ps-2 pe-1">
                 <div class="border">
                     <div class="set-label">
-                        <label>Attack</label>
+                        <label>@L["Attack"]</label>
                     </div>
                     <div class="d-flex px-2">
-                        <label class="flex-grow-1">Base: </label>
+                        <label class="flex-grow-1">@L["Base:"] </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.AttackBase).SumBonus
                         </div>
                     </div>
                     <div class="d-flex ps-4 pe-2">
-                        <label class="flex-grow-1">vs Dodge: </label>
+                        <label class="flex-grow-1">@L["vs Dodge:"] </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.AttackDodge).SumBonus
                         </div>
                     </div>
                      <div class="d-flex ps-4 pe-2">
-                        <label class="flex-grow-1">vs Armor: </label>
+                        <label class="flex-grow-1">@L["vs Armor:"] </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.AttackArmor).SumBonus
                         </div>
                     </div>
                         <div class="d-flex ps-4 pe-2">
-                         <label class="flex-grow-1">vs Shield: </label>
+                         <label class="flex-grow-1">@L["vs Shield:"] </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.AttackShield).SumBonus
                         </div>
                     </div>
                         <div class="d-flex ps-4 pe-2">
-                        <label class="flex-grow-1">vs Parry: </label>
+                        <label class="flex-grow-1">@L["vs Parry:"] </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.AttackParry).SumBonus
                         </div>
                     </div>
                     <div class="d-flex px-2">
-                        <label class="flex-grow-1">Bonus damage: </label>
+                        <label class="flex-grow-1">@L["Bonus damage:"] </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.DamageBonus).SumBonus
                         </div>
@@ -284,40 +284,40 @@
             <div class="col-6  pt-2 pb-2 ps-1 pe-2">
                 <div class="border">
                     <div class="set-label">
-                        <label>Defence</label>
+                        <label>@L["Defence"]</label>
                     </div>
                     <div class="d-flex px-2">
-                        <label class="flex-grow-1">Armor penalty: </label>
+                        <label class="flex-grow-1">@L["Armor penalty:"] </label>
                         <div class="">
                                 @AllParams.BattleProperties.Get(SD.WeaponQuality.ArmorPenalty).SumBonus
                         </div>
                     </div>
                     <div class="d-flex px-2">
-                        <label class="flex-grow-1">Dodge: </label>
+                        <label class="flex-grow-1">@L["Dodge:"] </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.DefenceDodge).SumBonus
                         </div>
                     </div>
                     <div class="d-flex px-2">
-                        <label class="flex-grow-1">Armor: </label>
+                        <label class="flex-grow-1">@L["Armor:"] </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.DefenceArmor).SumBonus
                         </div>
                     </div>
                     <div class="d-flex px-2">
-                        <label class="flex-grow-1">Shield: </label>
+                        <label class="flex-grow-1">@L["Shield:"] </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.DefenceShield).SumBonus
                         </div>
                     </div>
                     <div class="d-flex px-2">
-                        <label class="flex-grow-1">Parry: </label>
+                        <label class="flex-grow-1">@L["Parry:"] </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.DefenceParry).SumBonus
                         </div>
                     </div>
                     <div class="d-flex px-2">
-                        <label class="flex-grow-1">Damage Reduction: </label>
+                        <label class="flex-grow-1">@L["Damage Reduction:"] </label>
                         <div class="">
                             @AllParams.BattleProperties.Get(SD.BattleProperty.ArmorClass).SumBonus
                         </div>

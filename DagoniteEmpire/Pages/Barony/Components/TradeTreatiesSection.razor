@@ -2,7 +2,7 @@
 @inject ISnackbar _snackBar
 @inject NavigationManager _nav
 
-<BaronySection Title="Trade treaties" DefaultOpen="true">
+<BaronySection Title="@(L["Trade treaties"])" DefaultOpen="true">
     <Summary>
         <span class="projects-summary">
             <span class="projects-summary__item">@Treaties.Count treaty@(Treaties.Count == 1 ? "" : "ies")</span>
@@ -38,7 +38,7 @@
             Treaties are designed on the March map.
             @if (!CanManageAsMg)
             {
-                <text> New and edited treaties require MG approval before trade bonuses and goods apply.</text>
+                <text> @L["New and edited treaties require MG approval before trade bonuses and goods apply."]</text>
             }
         </MudText>
 
@@ -48,7 +48,7 @@
                 <MudButton Variant="Variant.Outlined"
                            StartIcon="@Icons.Material.Filled.Add"
                            OnClick="CreateAsync">
-                    New trade treaty
+                    @L["New trade treaty"]
                 </MudButton>
             </div>
         }
@@ -59,7 +59,7 @@
                 No trade treaties yet.
                 @if (CanEdit)
                 {
-                    <text> Design a route on the March map to open shared goods and route bonuses.</text>
+                    <text> @L["Design a route on the March map to open shared goods and route bonuses."]</text>
                 }
             </MudText>
         }
@@ -85,7 +85,7 @@
                                 <MudText Typo="Typo.subtitle1">@title</MudText>
                                 @if (pending)
                                 {
-                                    <MudChip T="string" Size="Size.Small" Class="trade-treaty-pending-chip">Awaiting MG approval</MudChip>
+                                    <MudChip T="string" Size="Size.Small" Class="trade-treaty-pending-chip">@L["Awaiting MG approval"]</MudChip>
                                 }
                             </div>
                             <div class="d-flex gap-2 flex-wrap">
@@ -95,13 +95,13 @@
                                                Variant="Variant.Filled"
                                                Class="baron-influence-save-btn"
                                                OnClick="() => ApproveAsync(treaty)">
-                                        Approve
+                                        @L["Approve"]
                                     </MudButton>
                                 }
                                 @if (CanEdit)
                                 {
-                                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => EditAsync(treaty)">Edit route</MudButton>
-                                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteAsync(treaty)">Delete</MudButton>
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="() => EditAsync(treaty)">@L["Edit route"]</MudButton>
+                                    <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Error" OnClick="() => DeleteAsync(treaty)">@L["Delete"]</MudButton>
                                 }
                             </div>
                         </div>
@@ -112,7 +112,7 @@
                             </MudText>
                         }
                         <MudText Typo="Typo.body2" Class="mt-2">
-                            <strong>Route economy:</strong>
+                            <strong>@L["Route economy:"]</strong>
                             @if (pending)
                             {
                                 <text> +@TradeTreatyCalculator.RouteEconomyBonus(treaty).ToString("0.##") after approval</text>
@@ -126,11 +126,11 @@
                         @if (previewReceived.Count > 0)
                         {
                             <MudText Typo="Typo.body2" Class="mt-1">
-                                <strong>Goods received:</strong>
+                                <strong>@L["Goods received:"]</strong>
                                 @string.Join(", ", previewReceived.Select(g => g.Name))
                                 @if (pending)
                                 {
-                                    <span style="color:var(--barony-muted);"> (after approval)</span>
+                                    <span style="color:var(--barony-muted);"> @L["(after approval)"]</span>
                                 }
                             </MudText>
                         }

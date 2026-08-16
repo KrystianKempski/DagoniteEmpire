@@ -18,7 +18,7 @@
             <MudNumericField T="int"
                              @bind-Value="_troopCount"
                              @bind-Value:after="Recalc"
-                             Label="Troops to add"
+                             Label="@(L["Troops to add"])"
                              HelperText="@($"Missing {_missing}. Current {Unit.TroopCount}/{UnitRules.DefaultTroopCount}.")"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
@@ -26,7 +26,7 @@
                              Max="@Math.Max(1, _missing)"
                              Class="baron-influence-field mb-3" />
 
-            <MudText Typo="Typo.subtitle2" Class="mb-1">Gear acquire</MudText>
+            <MudText Typo="Typo.subtitle2" Class="mb-1">@L["Gear acquire"]</MudText>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
                 Craft · Buy (Mkt) · Defense (2×Mkt) — same as the unit generator. Costs below already include salvage + troop scale.
             </MudText>
@@ -38,30 +38,30 @@
                 @PayRow("Mount", _mount?.Name, _mount?.ProductionCost, _mount?.GoldCost, _mount?.MarketGold, _payMount, v => { _payMount = v; Recalc(); }, required: false)
             </div>
 
-            <MudText Typo="Typo.subtitle2" Class="mb-1">Project cost</MudText>
+            <MudText Typo="Typo.subtitle2" Class="mb-1">@L["Project cost"]</MudText>
             <div class="d-flex flex-wrap gap-3 mb-1">
                 <span>
-                    Gold <b>@_costs.GoldTotal</b>
+                    @L["Gold"] <b>@_costs.GoldTotal</b>
                     <span style="color:var(--barony-muted);">(people @_costs.GoldPeople · gear @_costs.GoldGear)</span>
                 </span>
                 <span>
                     Prod <b>@_costs.Production</b>
                 </span>
                 <span>
-                    Defense <b>@_costs.DefenseTotal</b>
+                    @L["Defense"] <b>@_costs.DefenseTotal</b>
                     <span style="color:var(--barony-muted);">(people @_costs.DefensePeople · gear @_costs.DefenseGear)</span>
                 </span>
-                <span>Turns <b>@_costs.Turns</b></span>
+                <span>@L["Turns"] <b>@_costs.Turns</b></span>
             </div>
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
         <MudButton Class="baron-influence-save-btn"
                    Variant="Variant.Filled"
                    Disabled="@(_costs.TroopCount <= 0 || _missing <= 0)"
                    OnClick="Confirm">
-            Create project
+            @L["Create project"]
         </MudButton>
     </DialogActions>
 </MudDialog>

@@ -15,14 +15,14 @@
         <div class="main-table">
             <div class="d-flex ">
                 <div class="d-flex flex-column flex-grow-1">
-                <label class="fw-bold py-1">Profession skill name</label>
-                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Placeholder="Talent name" @bind-Value="@NewTrait.Name"></MudTextField>
+                <label class="fw-bold py-1">@L["Profession skill name"]</label>
+                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Placeholder="@(L["Talent name"])" @bind-Value="@NewTrait.Name"></MudTextField>
                 </div>
 
                 @if (UserInfo?.IsAdminOrMG == true)
                 {
                 <div class="d-flex flex-column px-1">
-                    <label class="fw-bold py-1">Approve</label>
+                    <label class="fw-bold py-1">@L["Approve"]</label>
                     <div class="justify-content-center mx-auto my-auto">
                     <MudCheckBox T="bool"  @bind-Value="NewTrait.TraitApproved"></MudCheckBox>
                     </div>
@@ -30,16 +30,16 @@
                 }
             </div>
             <div class="align-items-start bonus-name py-0">
-                <label class="fw-bold  py-1">Profession skill description</label>
+                <label class="fw-bold  py-1">@L["Profession skill description"]</label>
             </div>
             <div class="align-items-start">
                 <div class="col-12 bonus-name py-0">
-                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Lines="3" Placeholder="Insert general trait description" @bind-Value="@NewTrait.Descr"></MudTextField>
+                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Lines="3" Placeholder="@(L["Insert general trait description"])" @bind-Value="@NewTrait.Descr"></MudTextField>
                 </div>
             </div>
            
                         
-            <label class="fw-bold pt-4">Bonuses and penalties</label>
+            <label class="fw-bold pt-4">@L["Bonuses and penalties"]</label>
 
             @if (NewTrait.Bonuses != null)
             {
@@ -48,7 +48,7 @@
                     <label class="bonus-cell">Bonus @obj.Index</label>
                     <div class="bonuses-columns">
                             <div class="bonus-cell">
-                            <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select a feature type" @bind-Value="@obj.FeatureType" Variant="Variant.Outlined" Margin="Margin.Dense">
+                            <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="@(L["Select a feature type"])" @bind-Value="@obj.FeatureType" Variant="Variant.Outlined" Margin="Margin.Dense">
                                 @foreach (var __ft in FeatureData) { <MudSelectItem Value="@__ft">@__ft</MudSelectItem> }
                             </MudSelect>
                             </div>
@@ -79,7 +79,7 @@
                         else if (obj.FeatureType == SD.FeatureWeaponQuality)
                         {
                             <div class="bonus-cell">
-                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select weapon quality" @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense">
+                                <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="@(L["Select weapon quality"])" @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense">
                                     @foreach (var __w in WeaponQualityList) { <MudSelectItem Value="@__w">@__w</MudSelectItem> }
                                 </MudSelect>
                             </div>
@@ -87,7 +87,7 @@
                         else if(obj.FeatureType == SD.FeatureOther)
                         {
                             <div class="bonus-double-cell">
-                                <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Lines="3" Placeholder="Insert bonus description" @bind-Value="@obj.Description"></MudTextField>
+                                <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Lines="3" Placeholder="@(L["Insert bonus description"])" @bind-Value="@obj.Description"></MudTextField>
 
                             </div>
                         }
@@ -130,28 +130,28 @@
                     <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Placeholder="DC" @bind-Value="@NewTrait.DC"></MudNumericField>
                 </div>
                 <div class="d-flex flex-column me-4">
-                    <label class="fw-bold py-1">Cost</label>
-                    <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Placeholder="Cost" @bind-Value="@NewTrait.Cost"></MudNumericField>
+                    <label class="fw-bold py-1">@L["Cost"]</label>
+                    <MudNumericField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Placeholder="@(L["Cost"])" @bind-Value="@NewTrait.Cost"></MudNumericField>
                 </div>
                 <div class="d-flex flex-column me-4">
-                    <label class="fw-bold py-1">Range</label>
-                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Placeholder="Range" @bind-Value="@NewTrait.Range"></MudTextField>
+                    <label class="fw-bold py-1">@L["Range"]</label>
+                    <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Placeholder="@(L["Range"])" @bind-Value="@NewTrait.Range"></MudTextField>
                 </div>
             </div>
         }
         else
         {           
             <div class="d-flex py-2">
-                <MudButton Class="me-4" Variant="Variant.Filled" OnClick="SelectExistingSkill">Select existing talent</MudButton>
-                <MudButton Variant="Variant.Filled" OnClick="ClearSkill">Clear skill</MudButton>
+                <MudButton Class="me-4" Variant="Variant.Filled" OnClick="SelectExistingSkill">@L["Select existing talent"]</MudButton>
+                <MudButton Variant="Variant.Filled" OnClick="ClearSkill">@L["Clear skill"]</MudButton>
             </div>
         }
 
     </DialogContent>
     <DialogActions>
 
-        <MudButton OnClick="OnCancelBtnClick">Cancel</MudButton>
-        <MudButton Color="Color.Error" OnClick="OnSaveTraitBtnClick">Save</MudButton>
+        <MudButton OnClick="OnCancelBtnClick">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Error" OnClick="OnSaveTraitBtnClick">@L["Save"]</MudButton>
 
     </DialogActions>
 </MudDialog>

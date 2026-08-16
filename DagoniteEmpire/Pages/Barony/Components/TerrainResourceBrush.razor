@@ -2,17 +2,17 @@
 
 <div class="terrain-brush">
     <MudText Typo="Typo.caption" Class="terrain-brush__hint">
-        Paint a deposit onto tiles (bottom-right). Select None to erase. Clear layer removes all resources.
+        @L["Paint a deposit onto tiles (bottom-right). Select None to erase. Clear layer removes all resources."]
     </MudText>
     <div class="terrain-brush__body">
         <div class="terrain-brush__options">
-            <BaronyTooltip Text="Clear resource">
+            <BaronyTooltip Text="@(L["Clear resource"])">
                 <button type="button"
                         class="terrain-type-option terrain-resource-option @(string.IsNullOrEmpty(Value) ? "terrain-type-option--selected" : "")"
-                        aria-label="Clear resource"
+                        aria-label="@(L["Clear resource"])"
                         @onclick="() => SelectAsync(null)">
                     <MudIcon Icon="@Icons.Material.Filled.Block" Size="Size.Small" />
-                    <span class="terrain-resource-option__label">None</span>
+                    <span class="terrain-resource-option__label">@L["None"]</span>
                 </button>
             </BaronyTooltip>
             @foreach (var resource in TerrainResource.All)

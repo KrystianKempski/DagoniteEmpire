@@ -6,19 +6,19 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudTextField Value="@Relation.Group"
-                          Label="Group"
+                          Label="@(L["Group"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Disabled="true"
                           Class="baron-influence-field" />
 
             <MudSwitch @bind-Value="_isActive"
-                       Label="Active in barony"
+                       Label="@(L["Active in barony"])"
                        Color="Color.Primary"
                        Class="baron-influence-field" />
 
             <MudNumericField @bind-Value="_influencePercent"
-                             Label="Influence (%)"
+                             Label="@(L["Influence (%)"])"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="0"
@@ -26,7 +26,7 @@
                              Class="baron-influence-field" />
 
             <MudNumericField @bind-Value="_taxPercent"
-                             Label="Tax (%)"
+                             Label="@(L["Tax (%)"])"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="0"
@@ -34,7 +34,7 @@
                              Class="baron-influence-field" />
 
             <MudNumericField @bind-Value="RelationScore"
-                             Label="Relation score"
+                             Label="@(L["Relation score"])"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="-100"
@@ -48,7 +48,7 @@
             @if (_previewEffects.Count > 0)
             {
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                    PPB effects (computed from relation):
+                    @L["PPB effects (computed from relation):"]
                 </MudText>
                 <MudText Typo="Typo.caption" Class="mb-2">
                     @string.Join(" · ", _previewEffects)
@@ -57,14 +57,14 @@
             else
             {
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                    No PPB effects for this group at the current relation.
+                    @L["No PPB effects for this group at the current relation."]
                 </MudText>
             }
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>
 

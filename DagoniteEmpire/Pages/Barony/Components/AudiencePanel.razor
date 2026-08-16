@@ -33,7 +33,7 @@
             <div class="project-card__badges">
                 @if (IsCouncil)
                 {
-                    <span class="project-output-badge">Council</span>
+                    <span class="project-output-badge">@L["Council"]</span>
                 }
                 @if (!IsCouncil
                     || !string.Equals(Audience.PetitionerName, BaronCouncilSession.PetitionerLabel, StringComparison.OrdinalIgnoreCase))
@@ -43,8 +43,8 @@
                 <span class="baron-audience__status baron-audience__status--@StatusCss">@Audience.StatusDisplay</span>
                 @if (Audience.ContinuedFromAudienceId is not null)
                 {
-                    <BaronyTooltip Text="Continued from a deferred audience">
-                        <span class="baron-audience__continued">continued</span>
+                    <BaronyTooltip Text="@(L["Continued from a deferred audience"])">
+                        <span class="baron-audience__continued">@L["continued"]</span>
                     </BaronyTooltip>
                 }
             </div>
@@ -74,7 +74,7 @@
                             @if (TryGetChapterLink(x, out var chapterId, out var chapterLabel))
                             {
                                 <span>@chapterLabel </span>
-                                <a href="/chapter/@chapterId">Open chapter</a>
+                                <a href="/chapter/@chapterId">@L["Open chapter"]</a>
                             }
                             else
                             {
@@ -126,11 +126,11 @@
                 <div class="baron-audience__summary">
                     @if (!string.IsNullOrWhiteSpace(Audience.GmSummary))
                     {
-                        <div><span class="baron-audience__summary-label">Summary</span> @Audience.GmSummary</div>
+                        <div><span class="baron-audience__summary-label">@L["Summary"]</span> @Audience.GmSummary</div>
                     }
                     @if (!string.IsNullOrWhiteSpace(Audience.OutcomeNotes))
                     {
-                        <div><span class="baron-audience__summary-label">Outcomes</span> @Audience.OutcomeNotes</div>
+                        <div><span class="baron-audience__summary-label">@L["Outcomes"]</span> @Audience.OutcomeNotes</div>
                     }
                 </div>
             }
@@ -143,7 +143,7 @@
                         <div class="baron-audience__speaker-row">
                             <MudSelect T="string"
                                        @bind-Value="_speakerMode"
-                                       Label="Speak as"
+                                       Label="@(L["Speak as"])"
                                        Variant="Variant.Outlined"
                                        Margin="Margin.Dense"
                                        Dense="true"
@@ -155,19 +155,19 @@
                                         <MudSelectItem Value="@name">@name</MudSelectItem>
                                     }
                                     <MudSelectItem Value="@BaronCouncilSession.GameMasterSpeaker">@BaronCouncilSession.GameMasterSpeaker</MudSelectItem>
-                                    <MudSelectItem Value="@SpeakerModeOther">Other character</MudSelectItem>
+                                    <MudSelectItem Value="@SpeakerModeOther">@L["Other character"]</MudSelectItem>
                                 }
                                 else
                                 {
                                     <MudSelectItem Value="@SpeakerModePetitioner">@Audience.PetitionerName (petitioner)</MudSelectItem>
                                     <MudSelectItem Value="@BaronCouncilSession.GameMasterSpeaker">@BaronCouncilSession.GameMasterSpeaker</MudSelectItem>
-                                    <MudSelectItem Value="@SpeakerModeOther">Other character</MudSelectItem>
+                                    <MudSelectItem Value="@SpeakerModeOther">@L["Other character"]</MudSelectItem>
                                 }
                             </MudSelect>
                             @if (_speakerMode == SpeakerModeOther)
                             {
                                 <MudTextField @bind-Value="_otherSpeaker"
-                                              Label="Character name"
+                                              Label="@(L["Character name"])"
                                               Variant="Variant.Outlined"
                                               Margin="Margin.Dense"
                                               Immediate="true"
@@ -180,7 +180,7 @@
                         <div class="baron-audience__speaker-row">
                             <MudSelect T="string"
                                        @bind-Value="_baronSpeakerMode"
-                                       Label="Speak as"
+                                       Label="@(L["Speak as"])"
                                        Variant="Variant.Outlined"
                                        Margin="Margin.Dense"
                                        Dense="true"
@@ -203,7 +203,7 @@
                                    Class="barony-turn-btn barony-turn-btn--solid"
                                    Disabled="@(Busy || !CanSpeak)"
                                    OnClick="SpeakAsync">
-                            Speak
+                            @L["Speak"]
                         </MudButton>
                         @if (CanWriteAsGm)
                         {
@@ -212,40 +212,40 @@
                                        Class="barony-turn-btn barony-turn-btn--ghost"
                                        Disabled="Busy"
                                        OnClick="() => OnAddResources.InvokeAsync()">
-                                Add resources
+                                @L["Add resources"]
                             </MudButton>
                             <MudButton Size="Size.Small"
                                        Variant="Variant.Outlined"
                                        Class="barony-turn-btn barony-turn-btn--ghost"
                                        Disabled="Busy"
                                        OnClick="() => OnCreateProject.InvokeAsync()">
-                                Add project
+                                @L["Add project"]
                             </MudButton>
                             <MudButton Size="Size.Small"
                                        Variant="Variant.Outlined"
                                        Class="barony-turn-btn barony-turn-btn--ghost"
                                        Disabled="Busy"
                                        OnClick="() => OnMakeChapter.InvokeAsync()">
-                                Make chapter
+                                @L["Make chapter"]
                             </MudButton>
                             <MudButton Size="Size.Small"
                                        Variant="Variant.Outlined"
                                        Class="barony-turn-btn barony-turn-btn--ghost"
                                        Disabled="Busy"
-                                       OnClick="() => OnResolve.InvokeAsync()">Resolve</MudButton>
+                                       OnClick="() => OnResolve.InvokeAsync()">@L["Resolve"]</MudButton>
                             @if (!IsCouncil)
                             {
                                 <MudButton Size="Size.Small"
                                            Variant="Variant.Outlined"
                                            Class="barony-turn-btn barony-turn-btn--ghost"
                                            Disabled="Busy"
-                                           OnClick="() => OnDefer.InvokeAsync()">Defer to next turn</MudButton>
+                                           OnClick="() => OnDefer.InvokeAsync()">@L["Defer to next turn"]</MudButton>
                             }
                             <MudButton Size="Size.Small"
                                        Variant="Variant.Outlined"
                                        Class="barony-turn-btn barony-turn-btn--ghost"
                                        Disabled="Busy"
-                                       OnClick="() => OnDismiss.InvokeAsync()">Dismiss</MudButton>
+                                       OnClick="() => OnDismiss.InvokeAsync()">@L["Dismiss"]</MudButton>
                         }
                         else if (CanWriteAsBaron)
                         {
@@ -253,7 +253,7 @@
                                        Variant="Variant.Outlined"
                                        Class="barony-turn-btn barony-turn-btn--ghost"
                                        Disabled="Busy"
-                                       OnClick="() => OnDismiss.InvokeAsync()">Dismiss</MudButton>
+                                       OnClick="() => OnDismiss.InvokeAsync()">@L["Dismiss"]</MudButton>
                         }
                     </div>
                 </div>
@@ -268,10 +268,10 @@
                                Class="barony-turn-btn barony-turn-btn--ghost"
                                Disabled="Busy"
                                OnClick="() => OnMakeChapter.InvokeAsync()">
-                        Make chapter
+                        @L["Make chapter"]
                     </MudButton>
                 </div>
-                <MudText Typo="Typo.caption">Deferred — will open again next turn with the last exchange.</MudText>
+                <MudText Typo="Typo.caption">@L["Deferred — will open again next turn with the last exchange."]</MudText>
             }
             else if (CanWriteAsGm && ReadOnly)
             {
@@ -281,7 +281,7 @@
                                Class="barony-turn-btn barony-turn-btn--ghost"
                                Disabled="Busy"
                                OnClick="() => OnMakeChapter.InvokeAsync()">
-                        Make chapter
+                        @L["Make chapter"]
                     </MudButton>
                 </div>
             }

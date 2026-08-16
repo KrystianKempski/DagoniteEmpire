@@ -21,7 +21,7 @@
                 <div class="march-map-media" @ref="_mediaRef">
                 <img class="march-map-image"
                      src="@Document.ImageUrl"
-                     alt="Eastern March map"
+                     alt="@(L["Eastern March map"])"
                      draggable="false"
                      @onerror="OnImageError" />
                 <svg class="march-map-overlay"
@@ -154,7 +154,7 @@
                                                    width="@Fmt(lockCss)"
                                                    height="@Fmt(lockCss)"
                                                    class="march-map-marker__lock-fo">
-                                        <BaronyTooltip Text="Trade blocked — no trade routes with this barony">
+                                        <BaronyTooltip Text="@(L["Trade blocked — no trade routes with this barony"])">
                                             <div class="march-map-marker__lock" xmlns="http://www.w3.org/1999/xhtml">
                                                 <MudIcon Icon="@Icons.Material.Filled.Lock"
                                                          Class="march-map-marker__lock-icon" />
@@ -196,13 +196,13 @@
                 </MudText>
             }
             <MudTextField @bind-Value="_selectedNode.Label"
-                          Label="Name"
+                          Label="@(L["Name"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="mb-2"
                           @bind-Value:after="OnNodeLabelChangedAsync" />
             <MudSelect T="string"
-                       Label="Place type"
+                       Label="@(L["Place type"])"
                        Value="@MarchMapNodeKind.Normalize(_selectedNode.Kind)"
                        ValueChanged="OnPlaceKindChanged"
                        Variant="Variant.Outlined"
@@ -214,14 +214,14 @@
                 }
             </MudSelect>
             <MudSelect T="string"
-                       Label="Linked lord"
+                       Label="@(L["Linked lord"])"
                        Value="_selectedNode.LordKey ?? string.Empty"
                        ValueChanged="OnLordKeyChanged"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Class="mb-2"
                        Clearable="true">
-                <MudSelectItem Value="@string.Empty">Auto (from place name)</MudSelectItem>
+                <MudSelectItem Value="@string.Empty">@L["Auto (from place name)"]</MudSelectItem>
                 @foreach (var lord in KnownLordsCatalog.EasternMarch.OrderBy(l => l.Name))
                 {
                     <MudSelectItem Value="@KnownLordsCatalog.LordKey(lord)">@KnownLordsCatalog.DisplayName(lord)</MudSelectItem>
@@ -230,7 +230,7 @@
             @if (CanManageTrade)
             {
                 <MudNumericField T="decimal?"
-                                 Label="Default toll (gold/turn)"
+                                 Label="@(L["Default toll (gold/turn)"])"
                                  Value="_selectedNode.DefaultCustomsGoldPerTurn"
                                  ValueChanged="OnDefaultCustomsChanged"
                                  Variant="Variant.Outlined"
@@ -245,11 +245,11 @@
                                Value="@IsBlocked(_selectedNode)"
                                ValueChanged="OnBlockedToggled"
                                Color="Color.Warning"
-                               Label="Block trade with this barony"
+                               Label="@(L["Block trade with this barony"])"
                                Class="mb-2" />
                 }
             }
-            <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text" OnClick="DeleteSelectedNode">Remove place</MudButton>
+            <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text" OnClick="DeleteSelectedNode">@L["Remove place"]</MudButton>
         </div>
     }
 
@@ -267,7 +267,7 @@
                 </MudText>
             }
             <MudNumericField T="decimal?"
-                             Label="Default toll (gold/turn)"
+                             Label="@(L["Default toll (gold/turn)"])"
                              Value="_selectedNode.DefaultCustomsGoldPerTurn"
                              ValueChanged="OnDefaultCustomsChanged"
                              Variant="Variant.Outlined"
@@ -282,7 +282,7 @@
                            Value="@IsBlocked(_selectedNode)"
                            ValueChanged="OnBlockedToggled"
                            Color="Color.Warning"
-                           Label="Block trade with this barony" />
+                           Label="@(L["Block trade with this barony"])" />
             }
         </div>
     }
@@ -290,19 +290,19 @@
     @if (CanEdit && _selectedRoute is not null)
     {
         <div class="march-map-inspector barony-panel">
-            <MudText Typo="Typo.subtitle2" Class="mb-2">Trade link</MudText>
+            <MudText Typo="Typo.subtitle2" Class="mb-2">@L["Trade link"]</MudText>
             <MudText Typo="Typo.body2" Class="mb-3">@RouteLabel(_selectedRoute)</MudText>
-            <MudText Typo="Typo.caption" Class="mb-1">Route type</MudText>
+            <MudText Typo="Typo.caption" Class="mb-1">@L["Route type"]</MudText>
             <MudButtonGroup Variant="Variant.Outlined" Class="mb-3 march-map-route-type-buttons march-map-link-kind-group">
                 <MudButton Class="@RouteTypeButtonClass(MarchRouteKind.Road)"
-                           OnClick="() => SetRouteKind(MarchRouteKind.Road)">Road</MudButton>
+                           OnClick="() => SetRouteKind(MarchRouteKind.Road)">@L["Road"]</MudButton>
                 <MudButton Class="@RouteTypeButtonClass(MarchRouteKind.River)"
-                           OnClick="() => SetRouteKind(MarchRouteKind.River)">River</MudButton>
+                           OnClick="() => SetRouteKind(MarchRouteKind.River)">@L["River"]</MudButton>
             </MudButtonGroup>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                Tip: use <strong>Edit links</strong> and click a line, or pick type before <strong>Connect</strong>.
+                Tip: use <strong>@L["Edit links"]</strong> @L["and click a line, or pick type before"] <strong>@L["Connect"]</strong>.
             </MudText>
-            <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text" Class="mt-2" OnClick="DeleteSelectedRoute">Remove link</MudButton>
+            <MudButton Size="Size.Small" Color="Color.Error" Variant="Variant.Text" Class="mt-2" OnClick="DeleteSelectedRoute">@L["Remove link"]</MudButton>
         </div>
     }
 </div>

@@ -7,7 +7,7 @@
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading trade...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>@L["Loading trade..."]</span>
 }
 else if (LoadError is not null)
 {
@@ -15,7 +15,7 @@ else if (LoadError is not null)
 }
 else
 {
-    <BaronyPageHeader Title="Trade" HelpKey="trade-goods">
+    <BaronyPageHeader Title="@(L["Trade"])" HelpKey="trade-goods">
         <Summary>
             <span class="projects-summary">
                 <span class="projects-summary__item">@_availability.AvailableKeys.Count / @TradeGoodsCatalog.All.Count available</span>

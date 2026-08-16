@@ -7,21 +7,21 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog project-edit-dialog">
             <MudTextField @bind-Value="_name"
-                          Label="Name"
+                          Label="@(L["Name"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Required="true"
                           Class="baron-influence-field" />
             <MudTextField @bind-Value="_description"
-                          Label="Description"
-                          HelperText="Shown under the project name."
+                          Label="@(L["Description"])"
+                          HelperText="@(L["Shown under the project name."])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="3"
                           Class="baron-influence-field" />
             <MudSelect @bind-Value="_outputKind"
-                       Label="Output type"
-                       HelperText="What this project becomes when completed."
+                       Label="@(L["Output type"])"
+                       HelperText="@(L["What this project becomes when completed."])"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Class="baron-influence-field">
@@ -31,8 +31,8 @@
                 }
             </MudSelect>
             <MudTextField @bind-Value="_resultDescription"
-                          Label="Output summary"
-                          HelperText="Short description of the expected result (decree, event, building, etc.)."
+                          Label="@(L["Output summary"])"
+                          HelperText="@(L["Short description of the expected result (decree, event, building, etc.)."])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="2"
@@ -41,12 +41,12 @@
             @if (CanManage)
             {
                 <MudCheckBox @bind-Value="_hideResultFromBaron"
-                             Label="Hide result for baron"
+                             Label="@(L["Hide result for baron"])"
                              Color="Color.Primary"
                              Dense="true"
                              Class="baron-influence-field" />
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted); margin-top:-0.5rem; margin-bottom:0.75rem;">
-                    Baron still sees the project description, but result resources and output summary stay hidden until the project is completed.
+                    @L["Baron still sees the project description, but result resources and output summary stay hidden until the project is completed."]
                 </MudText>
                 <MudSelect @bind-Value="_status"
                            Label="Status"
@@ -59,20 +59,20 @@
                     }
                 </MudSelect>
                 <MudNumericField @bind-Value="_turnsRemaining"
-                                 Label="Turns remaining"
+                                 Label="@(L["Turns remaining"])"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Min="0"
                                  Class="baron-influence-field" />
                 <MudTextField @bind-Value="_notes"
-                              Label="Notes"
+                              Label="@(L["Notes"])"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Lines="2"
                               Class="baron-influence-field" />
                 <MudSelect @bind-Value="_allowedCostModes"
-                           Label="Payment options"
-                           HelperText="Which ways players can cover this project's cost."
+                           Label="@(L["Payment options"])"
+                           HelperText="@(L["Which ways players can cover this project's cost."])"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Class="baron-influence-field">
@@ -82,27 +82,27 @@
                     }
                 </MudSelect>
                 <PpbVectorEditor @bind-Value="_costGoldProduction"
-                                 Title="Cost — Gold & Production"
+                                 Title="@(L["Cost — Gold & Production"])"
                                  Compact="true"
                                  Columns="@ProjectCostCatalog.GoldProduction" />
                 <PpbVectorEditor @bind-Value="_costMaterials"
-                                 Title="Cost — Materials"
+                                 Title="@(L["Cost — Materials"])"
                                  Compact="true"
                                  Columns="@ProjectCostCatalog.Materials" />
                 @if (_outputKind == ProjectOutputKind.OneTimeResources)
                 {
                     <PpbVectorEditor @bind-Value="_resultAdditive"
-                                     Title="Resources granted on completion (added to stocks)"
+                                     Title="@(L["Resources granted on completion (added to stocks)"])"
                                      Compact="true"
                                      Columns="@ResourceCatalog.All" />
                 }
                 else
                 {
                     <PpbVectorEditor @bind-Value="_resultAdditive"
-                                     Title="Expected output — additive (+)"
+                                     Title="@(L["Expected output — additive (+)"])"
                                      Compact="true" />
                     <PpbVectorEditor @bind-Value="_resultPercent"
-                                     Title="Expected output — percent (%)"
+                                     Title="@(L["Expected output — percent (%)"])"
                                      Compact="true"
                                      Percent="true" />
                 }
@@ -110,14 +110,14 @@
             else
             {
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                    New projects are saved as Draft. The game master sets costs, PPB output, and status.
+                    @L["New projects are saved as Draft. The game master sets costs, PPB output, and status."]
                 </MudText>
             }
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>
 

@@ -3,7 +3,7 @@
 @inject ISnackbar _snackBar
 @inject IDialogService _dialogService
 
-<BaronySection Title="Events">
+<BaronySection Title="@(L["Events"])">
     <Summary>
         <PpbSummaryChips Vector="@Glance" />
     </Summary>
@@ -14,7 +14,7 @@
                 No events yet.
                 @if (CanManage)
                 {
-                    <text> Add one below.</text>
+                    <text> @L["Add one below."]</text>
                 }
             </MudText>
         }
@@ -33,9 +33,9 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th rowspan="2" class="ppb-row-label city-building-col-name">Name</th>
+                            <th rowspan="2" class="ppb-row-label city-building-col-name">@L["Name"]</th>
                             <th rowspan="2" class="event-col-turns">
-                                <BaronyTooltip Title="Turns" Text="Active from turn – to turn (∞ = ongoing)">Turns</BaronyTooltip>
+                                <BaronyTooltip Title="@(L["Turns"])" Text="Active from turn – to turn (∞ = ongoing)">@L["Turns"]</BaronyTooltip>
                             </th>
                             @foreach (var info in PpbCatalog.All)
                             {
@@ -57,18 +57,18 @@
                             <tr class="@(inactive ? "event-row--inactive" : null)">
                                 <td class="city-building-col-name">
                                     <div class="city-building-name-cell">
-                                        <BaronyTooltip Title="Description" Text="@NameTooltip(item)">
+                                        <BaronyTooltip Title="@(L["Description"])" Text="@NameTooltip(item)">
                                             <span class="city-building-name-text">@item.Name</span>
                                         </BaronyTooltip>
                                         @if (CanManage)
                                         {
                                             <span class="city-building-name-actions">
-                                                <BaronyTooltip Text="Edit event">
+                                                <BaronyTooltip Text="@(L["Edit event"])">
                                                     <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                                    Size="Size.Small"
                                                                    OnClick="@(() => EditAsync(item))" />
                                                 </BaronyTooltip>
-                                                <BaronyTooltip Text="Remove event">
+                                                <BaronyTooltip Text="@(L["Remove event"])">
                                                     <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                                    Size="Size.Small"
                                                                    Color="Color.Error"
@@ -79,7 +79,7 @@
                                     </div>
                                 </td>
                                 <td class="event-col-turns">
-                                    <BaronyTooltip Title="Turn range" Text="@TurnTooltip(item)">
+                                    <BaronyTooltip Title="@(L["Turn range"])" Text="@TurnTooltip(item)">
                                         <span>@item.TurnRangeLabel</span>
                                     </BaronyTooltip>
                                 </td>
@@ -98,7 +98,7 @@
                                     <span class="city-building-name-text">@BaronAudiencePpb.SummaryRowName</span>
                                 </td>
                                 <td class="event-col-turns">
-                                    <BaronyTooltip Title="Turn range"
+                                    <BaronyTooltip Title="@(L["Turn range"])"
                                                    Text="@($"Turns {CurrentTurn}–{CurrentTurn}. Audience grants apply only on the turn they were granted.")">
                                         <span>@(CurrentTurn)–@(CurrentTurn)</span>
                                     </BaronyTooltip>
@@ -118,7 +118,7 @@
                                     <span class="city-building-name-text">@BaronAdventurePpb.SummaryRowName</span>
                                 </td>
                                 <td class="event-col-turns">
-                                    <BaronyTooltip Title="Turn range"
+                                    <BaronyTooltip Title="@(L["Turn range"])"
                                                    Text="@($"Turns {CurrentTurn}–{CurrentTurn}. Adventure grants apply only on the turn they were granted.")">
                                         <span>@(CurrentTurn)–@(CurrentTurn)</span>
                                     </BaronyTooltip>
@@ -132,7 +132,7 @@
                         }
 
                         <tr class="ppb-summary-row">
-                            <td class="ppb-row-label city-building-col-name">Σ section</td>
+                            <td class="ppb-row-label city-building-col-name">@L["Σ section"]</td>
                             <td class="event-col-turns"></td>
                             @foreach (var info in PpbCatalog.All)
                             {
@@ -151,7 +151,7 @@
                 <MudButton Variant="Variant.Outlined"
                            StartIcon="@Icons.Material.Filled.Add"
                            OnClick="AddAsync">
-                    Add Event
+                    @L["Add Event"]
                 </MudButton>
             </div>
         }

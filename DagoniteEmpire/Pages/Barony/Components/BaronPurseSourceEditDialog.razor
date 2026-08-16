@@ -7,21 +7,21 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog">
             <MudTextField @bind-Value="_name"
-                          Label="Name"
+                          Label="@(L["Name"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Required="true"
                           Class="baron-influence-field" />
             <MudTextField @bind-Value="_description"
-                          Label="Description"
-                          HelperText="Optional description shown on name hover."
+                          Label="@(L["Description"])"
+                          HelperText="@(L["Optional description shown on name hover."])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="2"
                           Class="baron-influence-field" />
             <MudNumericField T="decimal"
                              @bind-Value="_amount"
-                             Label="Gold amount"
+                             Label="@(L["Gold amount"])"
                              HelperText="Positive = income, negative = expense."
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
@@ -31,8 +31,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>
 

@@ -9,7 +9,7 @@
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading army...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>@L["Loading army..."]</span>
 }
 else if (LoadError is not null)
 {
@@ -17,7 +17,7 @@ else if (LoadError is not null)
 }
 else if (Barony is not null)
 {
-    <BaronyPageHeader Title="Army" HelpKey="army">
+    <BaronyPageHeader Title="@(L["Army"])" HelpKey="army">
         <Summary>
             <span class="projects-summary">
                 <span class="projects-summary__item">@_units.Count unit@(_units.Count == 1 ? "" : "s")</span>
@@ -30,56 +30,56 @@ else if (Barony is not null)
     @if (_battleInProgress)
     {
         <MudAlert Severity="Severity.Warning" Class="my-2" Dense="true">
-            A battle is in progress. Unit cards are locked — HP and roster updates apply when the Game Master presses <b>End battle</b> on the Battle Map.
+            A battle is in progress. Unit cards are locked — HP and roster updates apply when the Game Master presses <b>@L["End battle"]</b> on the Battle Map.
         </MudAlert>
     }
 
-    <BaronySection Title="Units">
+    <BaronySection Title="@(L["Units"])">
         <Summary>
             <span class="projects-summary__item">Two cards per row · same layout as the generator preview</span>
         </Summary>
         <ChildContent>
             <div class="army-roster-summary">
-                <div class="army-roster-summary__title">Army totals</div>
+                <div class="army-roster-summary__title">@L["Army totals"]</div>
                 <div class="army-roster-summary__grid">
-                    <BaronyTooltip Title="Units"
-                                   Text="Number of units in the roster (training + active).">
+                    <BaronyTooltip Title="@(L["Units"])"
+                                   Text="@(L["Number of units in the roster (training + active)."])">
                         <div class="army-roster-summary__item">
-                            <span class="army-roster-summary__label">Units</span>
+                            <span class="army-roster-summary__label">@L["Units"]</span>
                             <span class="army-roster-summary__value">@_rosterUnits</span>
                         </div>
                     </BaronyTooltip>
-                    <BaronyTooltip Title="Troops"
-                                   Text="Sum of troop counts across all units.">
+                    <BaronyTooltip Title="@(L["Troops"])"
+                                   Text="@(L["Sum of troop counts across all units."])">
                         <div class="army-roster-summary__item">
-                            <span class="army-roster-summary__label">Troops</span>
+                            <span class="army-roster-summary__label">@L["Troops"]</span>
                             <span class="army-roster-summary__value">@_rosterTroops</span>
                         </div>
                     </BaronyTooltip>
-                    <BaronyTooltip Title="Wage / turn"
-                                   Text="Sum of wages for Active units (paid each turn once graduated). Training units are excluded until Active.">
+                    <BaronyTooltip Title="@(L["Wage / turn"])"
+                                   Text="@(L["Sum of wages for Active units (paid each turn once graduated). Training units are excluded until Active."])">
                         <div class="army-roster-summary__item">
-                            <span class="army-roster-summary__label">Gold / turn</span>
+                            <span class="army-roster-summary__label">@L["Gold / turn"]</span>
                             <span class="army-roster-summary__value army-roster-summary__value--gold">
                                 @_rosterWage
                                 <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
                             </span>
                         </div>
                     </BaronyTooltip>
-                    <BaronyTooltip Title="Food upkeep / turn"
-                                   Text="Sum of food upkeep for Active units each turn.">
+                    <BaronyTooltip Title="@(L["Food upkeep / turn"])"
+                                   Text="@(L["Sum of food upkeep for Active units each turn."])">
                         <div class="army-roster-summary__item">
-                            <span class="army-roster-summary__label">Food / turn</span>
+                            <span class="army-roster-summary__label">@L["Food / turn"]</span>
                             <span class="army-roster-summary__value army-roster-summary__value--food">
                                 @_rosterFood.ToString("0.#")
                                 <BaronyResourceIcon Resource="Ppb.Food" Size="xs" />
                             </span>
                         </div>
                     </BaronyTooltip>
-                    <BaronyTooltip Title="Defense upkeep / turn"
-                                   Text="Sum of Defense upkeep for Active units each turn.">
+                    <BaronyTooltip Title="@(L["Defense upkeep / turn"])"
+                                   Text="@(L["Sum of Defense upkeep for Active units each turn."])">
                         <div class="army-roster-summary__item">
-                            <span class="army-roster-summary__label">Defense / turn</span>
+                            <span class="army-roster-summary__label">@L["Defense / turn"]</span>
                             <span class="army-roster-summary__value army-roster-summary__value--defense">
                                 @_rosterDefense
                                 <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" />
@@ -98,7 +98,7 @@ else if (Barony is not null)
 
             @if (_units.Count == 0)
             {
-                <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No units yet. Use the generator below.</MudText>
+                <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">@L["No units yet. Use the generator below."]</MudText>
             }
             else
             {

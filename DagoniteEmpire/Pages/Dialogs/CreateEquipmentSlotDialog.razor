@@ -20,8 +20,8 @@
                 <div class="wide-screen-table">
                     <div class="d-flex ">
                         <div class="d-flex flex-column flex-grow-1 pe-1">
-                            <label class="fw-bold py-1">Item name</label>
-                        <MudTextField ReadOnly="IsInfoMode" Placeholder="Insert item name" @bind-Value="@NewSlot.Equipment.Name"></MudTextField>
+                            <label class="fw-bold py-1">@L["Item name"]</label>
+                        <MudTextField ReadOnly="IsInfoMode" Placeholder="@(L["Insert item name"])" @bind-Value="@NewSlot.Equipment.Name"></MudTextField>
                         </div>
                         <div class="d-flex flex-column px-1">
                             <label class="fw-bold py-1">Weight [St]</label>
@@ -32,7 +32,7 @@
                         <MudNumericField ReadOnly="IsInfoMode" Min=0 T="decimal" Format="F4" HideSpinButtons="true" @bind-Value="@NewSlot.Equipment.Price"></MudNumericField>
                         </div>
                         <div class="d-flex flex-column flex-grow-1 px-1">
-                            <label class="fw-bold py-1">Type</label>
+                            <label class="fw-bold py-1">@L["Type"]</label>
                             <InputSelect disabled="@IsInfoMode" @bind-Value="NewSlot.Equipment.EquipmentType" class="form-select p-1">
                             @foreach (var eq in SD.EquipmentType.All)
                             {
@@ -44,7 +44,7 @@
                         @if (NewSlot.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee)
                         {
                             <div class="d-flex flex-column flex-grow-1 px-1">
-                                <label class="fw-bold py-1">Weapon Type</label>
+                                <label class="fw-bold py-1">@L["Weapon Type"]</label>
                                 <InputSelect disabled="@IsInfoMode" @bind-Value="NewSlot.Equipment.RelatedSkill" class="form-select p-1">
                                     @foreach (var eq in MeleeSkills)
                                     {
@@ -53,7 +53,7 @@
                                 </InputSelect>
                             </div>
                             <div class="d-flex flex-column px-1">
-                            <label class="fw-bold py-1">Two-handed</label>
+                            <label class="fw-bold py-1">@L["Two-handed"]</label>
                                 <div class="justify-content-center mx-auto my-auto">
                                 <MudCheckBox T="bool" Disabled="IsInfoMode" @bind-Value="NewSlot.Equipment.IsTwoHanded"></MudCheckBox>
                                 </div>
@@ -62,7 +62,7 @@
                         else if (NewSlot.Equipment.EquipmentType == SD.EquipmentType.WeaponRanged)
                         {
                             <div class="d-flex flex-column flex-grow-1 px-1">
-                                <label class="fw-bold py-1">Weapon Type</label>
+                                <label class="fw-bold py-1">@L["Weapon Type"]</label>
                                 <InputSelect disabled="@IsInfoMode" @bind-Value="NewSlot.Equipment.RelatedSkill" class="form-select p-1">
                                     @foreach (var eq in ShootingSkills)
                                     {
@@ -71,7 +71,7 @@
                                 </InputSelect>
                             </div>
                             <div class="d-flex flex-column px-1">
-                            <label class="fw-bold py-1">Two-handed</label>
+                            <label class="fw-bold py-1">@L["Two-handed"]</label>
                                 <div class="justify-content-center mx-auto my-auto">
                                 <MudCheckBox T="bool" Disabled="IsInfoMode" @bind-Value="NewSlot.Equipment.IsTwoHanded"></MudCheckBox>
                                 </div>
@@ -81,7 +81,7 @@
                         @if (userInfo?.IsAdminOrMG == true && IsInfoMode == false)
                         {
                             <div class="d-flex flex-column px-1">
-                                <label class="fw-bold py-1">Approve</label>
+                                <label class="fw-bold py-1">@L["Approve"]</label>
                                 <div class="justify-content-center mx-auto my-auto">
                                     <MudCheckBox T="bool" @bind-Value="NewSlot.Equipment.IsApproved"></MudCheckBox>
                                 </div>
@@ -93,8 +93,8 @@
 
                     <div class="d-flex ">
                         <div class="d-flex flex-column flex-grow-1 pe-1">
-                            <label class="fw-bold py-1">Item name</label>
-                        <MudTextField ReadOnly="IsInfoMode" Placeholder="Insert item name" @bind-Value="@NewSlot.Equipment.Name"></MudTextField>
+                            <label class="fw-bold py-1">@L["Item name"]</label>
+                        <MudTextField ReadOnly="IsInfoMode" Placeholder="@(L["Insert item name"])" @bind-Value="@NewSlot.Equipment.Name"></MudTextField>
                         </div>
                     </div>
                     <div class="d-flex ">
@@ -107,7 +107,7 @@
                         <MudNumericField ReadOnly="IsInfoMode" Min=0 T="decimal" Format="F4" HideSpinButtons="true" @bind-Value="@NewSlot.Equipment.Price"></MudNumericField>
                         </div>
                         <div class="d-flex flex-column flex-grow-1 px-1">
-                            <label class="fw-bold py-1">Type</label>
+                            <label class="fw-bold py-1">@L["Type"]</label>
                             <InputSelect disabled="@IsInfoMode" @bind-Value="NewSlot.Equipment.EquipmentType" class="form-select p-1">
                                 @foreach (var eq in SD.EquipmentType.All)
                                 {
@@ -118,7 +118,7 @@
                         @if (NewSlot.Equipment.EquipmentType == SD.EquipmentType.WeaponMelee)
                         {
                             <div class="d-flex flex-column flex-grow-1 px-1">
-                                <label class="fw-bold py-1">Weapon Type</label>
+                                <label class="fw-bold py-1">@L["Weapon Type"]</label>
                                 <InputSelect disabled="@IsInfoMode" @bind-Value="NewSlot.Equipment.RelatedSkill" class="form-select p-1">
                                 @foreach (string eq in SD.SpecialSkills.Melee.All)
                                 {
@@ -127,7 +127,7 @@
                                 </InputSelect>
                             </div>
                             <div class="d-flex flex-column px-1">
-                            <label class="fw-bold py-1">Two-handed</label>
+                            <label class="fw-bold py-1">@L["Two-handed"]</label>
                                 <div class="justify-content-center mx-auto my-auto">
                                 <MudCheckBox T="bool" Disabled="IsInfoMode" @bind-Value="NewSlot.Equipment.IsTwoHanded"></MudCheckBox>
                                 </div>
@@ -136,7 +136,7 @@
                         else if (NewSlot.Equipment.EquipmentType == SD.EquipmentType.WeaponRanged)
                         {
                             <div class="d-flex flex-column flex-grow-1 px-1">
-                                <label class="fw-bold py-1">Weapon Type</label>
+                                <label class="fw-bold py-1">@L["Weapon Type"]</label>
                                 <InputSelect disabled="@IsInfoMode" @bind-Value="NewSlot.Equipment.RelatedSkill" class="form-select p-1">
                                     @foreach (string eq in SD.SpecialSkills.Shooting.All)
                                     {
@@ -154,7 +154,7 @@
                         @if (userInfo?.IsAdminOrMG == true && IsInfoMode == false)
                         {
                             <div class="d-flex flex-column px-1">
-                                <label class="fw-bold py-1">Approve</label>
+                                <label class="fw-bold py-1">@L["Approve"]</label>
                                 <div class="justify-content-center mx-auto my-auto">
                                     <MudCheckBox T="bool" Disabled="IsInfoMode" @bind-Value="NewSlot.Equipment.IsApproved"></MudCheckBox>
                                 </div>
@@ -163,12 +163,12 @@
                     </div>
                 </div>
                 <div class="d-flex flex-column flex-grow-1">
-                    <label class="fw-bold  p-1">Item description</label>
+                    <label class="fw-bold  p-1">@L["Item description"]</label>
                     <MudTextField ReadOnly="IsInfoMode" Class="" Variant="Variant.Outlined" Typo="Typo.body2" @bind-Value="@NewSlot.Equipment.Description" Lines="12"></MudTextField>
        
                 </div>
 
-                <label class="fw-bold pt-4">Item traits</label>
+                <label class="fw-bold pt-4">@L["Item traits"]</label>
                 @if (NewSlot.Equipment.Traits != null)
                 {
                     <div class="traits">
@@ -183,8 +183,8 @@
     <DialogActions>
         @if (IsInfoMode == false)
          {
-            <MudButton OnClick="OnCancelBtnClick">Cancel</MudButton>
-            <MudButton Color="Color.Error" OnClick="OnSaveBtnClick">Save</MudButton>
+            <MudButton OnClick="OnCancelBtnClick">@L["Cancel"]</MudButton>
+            <MudButton Color="Color.Error" OnClick="OnSaveBtnClick">@L["Save"]</MudButton>
         }
         else
         {

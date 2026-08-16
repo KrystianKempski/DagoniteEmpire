@@ -2,17 +2,17 @@
 
 <div class="terrain-brush">
     <MudText Typo="Typo.caption" Class="terrain-brush__hint">
-        Paint an improvement onto the center of a tile. Select None to erase. Clear layer removes all improvements.
+        @L["Paint an improvement onto the center of a tile. Select None to erase. Clear layer removes all improvements."]
     </MudText>
     <div class="terrain-brush__body">
         <div class="terrain-brush__options">
-            <BaronyTooltip Text="Clear improvement">
+            <BaronyTooltip Text="@(L["Clear improvement"])">
                 <button type="button"
                         class="terrain-type-option @(string.IsNullOrEmpty(Value) ? "terrain-type-option--selected" : "")"
-                        aria-label="Clear improvement"
+                        aria-label="@(L["Clear improvement"])"
                         @onclick="() => SelectAsync(null)">
                     <MudIcon Icon="@Icons.Material.Filled.Block" Size="Size.Small" />
-                    <span>None</span>
+                    <span>@L["None"]</span>
                 </button>
             </BaronyTooltip>
             @foreach (var improvement in MapImprovement.All)

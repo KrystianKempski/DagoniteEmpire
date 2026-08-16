@@ -28,10 +28,10 @@
         <div class="unit-draft-skill-tile unit-draft-skill-tile--solo">
             <div class="unit-draft-skill-tile__cols unit-draft-skill-tile__cols--head">
                 <span class="unit-draft-skill-tile__name-row">
-                    <BaronyTooltip Title="Discipline"
-                                   Text="Unit discipline (1–18). Starting value from training. Raising costs XP equal to the current level."
+                    <BaronyTooltip Title="@(L["Discipline"])"
+                                   Text="@(L["Unit discipline (1–18). Starting value from training. Raising costs XP equal to the current level."])"
                                    Placement="Placement.Right">
-                        <span class="unit-draft-skill-tile__name">Discipline</span>
+                        <span class="unit-draft-skill-tile__name">@L["Discipline"]</span>
                     </BaronyTooltip>
                     @XpPlusDiscipline()
                 </span>
@@ -60,8 +60,8 @@
                          Min="0"
                          Class="baron-influence-field unit-skill-edit__field" />
         <MudButton Size="Size.Small" Variant="Variant.Filled" Class="barony-turn-btn barony-turn-btn--solid"
-                   OnClick="ApplyEditAsync">Save</MudButton>
-        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="CancelEdit">Cancel</MudButton>
+                   OnClick="ApplyEditAsync">@L["Save"]</MudButton>
+        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="CancelEdit">@L["Cancel"]</MudButton>
     </div>
 }
 

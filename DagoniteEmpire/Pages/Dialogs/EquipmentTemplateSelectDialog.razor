@@ -7,7 +7,7 @@
             Select base item template
         </MudText>
         <MudSpacer />
-        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+        <MudTextField @bind-Value="_searchString" Placeholder="@(L["Search"])" Adornment="Adornment.Start" Immediate="true"
                       AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
     </TitleContent>
     <DialogContent>
@@ -28,15 +28,15 @@
                                  Size="Size.Medium" />
                     </CellTemplate>
                 </TemplateColumn>
-                <PropertyColumn Filterable="false" Property="x => x.Name" Title="Name" />
-                <PropertyColumn Property="x => x.EquipmentType" Title="Type">
+                <PropertyColumn Filterable="false" Property="x => x.Name" Title="@(L["Name"])" />
+                <PropertyColumn Property="x => x.EquipmentType" Title="@(L["Type"])">
                     <FilterTemplate>
                         <MudIconButton OnClick="@OpenFilter" Icon="@_icon" Size="@Size.Small" />
                         <MudOverlay Visible="@_filterOpen" OnClick="@(() => _filterOpen = false)" />
                         <MudPopover Open="@_filterOpen" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopCenter"
                                     Style="width:180px">
                             <MudStack Spacing="0">
-                                <MudCheckBox T="bool" Label="Select all" Size="@Size.Small" Value="@_selectAll" ValueChanged="@SelectAll" />
+                                <MudCheckBox T="bool" Label="@(L["Select all"])" Size="@Size.Small" Value="@_selectAll" ValueChanged="@SelectAll" />
                                 <MudStack Spacing="0" Style="overflow-y:auto;max-height:250px">
                                     @foreach (var itemType in SD.BasicEquipment.TemplateTypes)
                                     {
@@ -46,20 +46,20 @@
                                     }
                                 </MudStack>
                                 <MudStack Row="true">
-                                    <MudButton OnClick="@(() => ClearFilterAsync(context))">Clear</MudButton>
-                                    <MudButton Color="@Color.Primary" OnClick="@(() => ApplyFilterAsync(context))">Filter</MudButton>
+                                    <MudButton OnClick="@(() => ClearFilterAsync(context))">@L["Clear"]</MudButton>
+                                    <MudButton Color="@Color.Primary" OnClick="@(() => ApplyFilterAsync(context))">@L["Filter"]</MudButton>
                                 </MudStack>
                             </MudStack>
                         </MudPopover>
                     </FilterTemplate>
                 </PropertyColumn>
-                <PropertyColumn Filterable="false" Property="x => x.Description" Title="Description" />
+                <PropertyColumn Filterable="false" Property="x => x.Description" Title="@(L["Description"])" />
             </Columns>
         </MudDataGrid>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="OnCancelBtnClick">Cancel</MudButton>
-        <MudButton Color="Color.Error" Disabled="@(SelectedItem is null)" OnClick="OnSelectBtnClick">Select</MudButton>
+        <MudButton OnClick="OnCancelBtnClick">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Error" Disabled="@(SelectedItem is null)" OnClick="OnSelectBtnClick">@L["Select"]</MudButton>
     </DialogActions>
 </MudDialog>
 

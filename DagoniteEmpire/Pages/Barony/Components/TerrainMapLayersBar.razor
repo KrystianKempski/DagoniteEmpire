@@ -1,7 +1,7 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
 <div class="terrain-page__layers">
-    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">Layers:</MudText>
+    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">@L["Layers:"]</MudText>
     @foreach (var layer in AllLayers)
     {
         var on = IsVisible(layer);
@@ -21,7 +21,7 @@
                    Class="barony-turn-btn barony-turn-btn--ghost"
                    StartIcon="@Icons.Material.Filled.DeleteSweep"
                    OnClick="OnClearLayer">
-            Clear current layer
+            @L["Clear current layer"]
         </MudButton>
     }
 </div>

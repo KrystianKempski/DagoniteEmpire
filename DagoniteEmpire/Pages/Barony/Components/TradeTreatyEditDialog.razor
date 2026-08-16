@@ -7,13 +7,13 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog trade-treaty-edit-dialog">
             <MudTextField @bind-Value="_title"
-                          Label="Title (optional)"
+                          Label="@(L["Title (optional)"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field mb-2"
-                          HelperText="Shown on the Trade Goods list. Leave blank for an auto name." />
+                          HelperText="@(L["Shown on the Trade Goods list. Leave blank for an auto name."])" />
 
-            <MudText Typo="Typo.subtitle2" Class="mb-1">Trade partner</MudText>
+            <MudText Typo="Typo.subtitle2" Class="mb-1">@L["Trade partner"]</MudText>
             <MudText Typo="Typo.body2" Class="mb-3" Style="color:var(--barony-muted);">
                 @(Counterparty is null
                     ? "—"
@@ -22,24 +22,24 @@
 
             @if (LockRoute)
             {
-                <MudText Typo="Typo.subtitle2" Class="mb-1">Route</MudText>
+                <MudText Typo="Typo.subtitle2" Class="mb-1">@L["Route"]</MudText>
                 <MudText Typo="Typo.caption" Class="mb-2 d-block" Style="color:var(--barony-muted);">
-                    Seats below follow the path from the March map. To change who is on the route, redesign it there.
+                    @L["Seats below follow the path from the March map. To change who is on the route, redesign it there."]
                 </MudText>
                 <MudButton Variant="Variant.Outlined"
                            Size="Size.Small"
                            Class="mb-3"
                            OnClick="RequestManualRouteDesign">
-                    Redesign route manually
+                    @L["Redesign route manually"]
                 </MudButton>
             }
 
-            <MudText Typo="Typo.subtitle2" Class="mb-1">Seats on the route</MudText>
+            <MudText Typo="Typo.subtitle2" Class="mb-1">@L["Seats on the route"]</MudText>
             <MudText Typo="Typo.caption" Class="mb-2 d-block" Style="color:var(--barony-muted);">
                 For each seat you may swap goods and add a gold sweetener. Destination needs at least one exchanged good.
                 @if (!AutoApprovesOnSave)
                 {
-                    <text> Bonuses apply only after the Game Master approves this treaty.</text>
+                    <text> @L["Bonuses apply only after the Game Master approves this treaty."]</text>
                 }
             </MudText>
 
@@ -61,11 +61,11 @@
                     <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
                         @if (paragraph.IsDestination)
                         {
-                            <text>End of the route — your main trade partner.</text>
+                            <text>@L["End of the route — your main trade partner."]</text>
                         }
                         else
                         {
-                            <text>Passage seat — toll applies; optional side deal with this lord.</text>
+                            <text>@L["Passage seat — toll applies; optional side deal with this lord."]</text>
                         }
                     </MudText>
 
@@ -73,12 +73,12 @@
                     {
                         <MudText Typo="Typo.body2" Class="mb-2">
                             Toll: <strong>@paragraph.CustomsGoldPerTurn.ToString("0.##")</strong> gold/turn
-                            <span style="color:var(--barony-muted);"> (set on the map)</span>
+                            <span style="color:var(--barony-muted);"> @L["(set on the map)"]</span>
                         </MudText>
                     }
 
                     <MudNumericField T="decimal"
-                                     Label="Gold sweetener / turn"
+                                     Label="@(L["Gold sweetener / turn"])"
                                      Value="paragraph.SweetenerGoldPerTurn"
                                      ValueChanged="v => SetSweetener(index, v)"
                                      Variant="Variant.Outlined"
@@ -121,7 +121,7 @@
             }
 
             <MudDivider Class="my-3" />
-            <MudText Typo="Typo.subtitle2" Class="mb-2">Totals</MudText>
+            <MudText Typo="Typo.subtitle2" Class="mb-2">@L["Totals"]</MudText>
             <div class="trade-treaty-validation-slot mb-2" aria-live="polite">
                 @if (_validationErrors.Count > 0)
                 {
@@ -140,7 +140,7 @@
                 @( _previewReceived.Count == 0 ? "—" : string.Join(", ", _previewReceived.Select(g => g.Name)) )
                 @if (!AutoApprovesOnSave)
                 {
-                    <span style="color:var(--barony-muted);"> (after MG approval)</span>
+                    <span style="color:var(--barony-muted);"> @L["(after MG approval)"]</span>
                 }
             </MudText>
             <MudText Typo="Typo.body2" Class="mt-1">
@@ -167,12 +167,12 @@
             @if (_previewReceived.Count > 0)
             {
                 <div class="trade-goods-ppb-summary mt-2">
-                    <MudText Typo="Typo.caption" Class="mb-1">PPB bonuses (goods + route economy)</MudText>
+                    <MudText Typo="Typo.caption" Class="mb-1">@L["PPB bonuses (goods + route economy)"]</MudText>
                     <table class="ppb-table ppb-table--lined trade-goods-ppb-table">
                         <thead>
                             <tr>
                                 <th>PPB</th>
-                                <th>Additive</th>
+                                <th>@L["Additive"]</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -190,8 +190,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save treaty</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@L["Save treaty"]</MudButton>
     </DialogActions>
 </MudDialog>
 

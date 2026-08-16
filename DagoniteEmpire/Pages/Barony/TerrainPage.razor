@@ -9,7 +9,7 @@
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading terrain map...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>@L["Loading terrain map..."]</span>
 }
 else if (LoadError is not null)
 {
@@ -18,7 +18,7 @@ else if (LoadError is not null)
 else
 {
     <div class="terrain-page">
-        <BaronyPageHeader Title="Terrain" HelpKey="terrain" ShowSectionToggle="false">
+        <BaronyPageHeader Title="@(L["Terrain"])" HelpKey="terrain" ShowSectionToggle="false">
             <Summary>
                 <span class="terrain-page__summary">@_tileIndex.Count / @TotalCells tiles defined</span>
             </Summary>
@@ -26,7 +26,7 @@ else
 
         @if (CanManageAsMg)
         {
-            <BaronySection Title="Brushes & layers" DefaultOpen="false">
+            <BaronySection Title="@(L["Brushes & layers"])" DefaultOpen="false">
                 <ChildContent>
                     <div class="terrain-page__mg-editor">
                         <div class="terrain-page__brushes">
@@ -36,19 +36,19 @@ else
                                      Border="false"
                                      ApplyEffectsToContainer="false"
                                      Class="terrain-brush-tabs">
-                                <MudTabPanel Text="Off">
+                                <MudTabPanel Text="@(L["Off"])">
                                     <div class="terrain-brush">
                                         <MudText Typo="Typo.caption" Class="terrain-brush__hint">
-                                            No brush selected. Hover tiles to inspect the map.
+                                            @L["No brush selected. Hover tiles to inspect the map."]
                                         </MudText>
                                         <div class="terrain-brush__body"></div>
                                     </div>
                                 </MudTabPanel>
-                                <MudTabPanel Text="Fertility">
+                                <MudTabPanel Text="@(L["Fertility"])">
                                     <TerrainFertilityBrush Value="@_brushFertility"
                                                            ValueChanged="v => _brushFertility = v" />
                                 </MudTabPanel>
-                                <MudTabPanel Text="Terrain type">
+                                <MudTabPanel Text="@(L["Terrain type"])">
                                     <TerrainTypeBrush SubMode="@_terrainTypeSubMode"
                                                       SubModeChanged="v => _terrainTypeSubMode = v"
                                                       BaseTypeValue="@_brushBaseType"
@@ -56,7 +56,7 @@ else
                                                       FeatureValue="@_brushFeature"
                                                       FeatureValueChanged="v => _brushFeature = v" />
                                 </MudTabPanel>
-                                <MudTabPanel Text="Domain">
+                                <MudTabPanel Text="@(L["Domain"])">
                                     <TerrainDomainBrush Domains="@_mapDomains"
                                                         TileCountsByDomainId="@DomainTileCounts"
                                                         SelectedDomainId="@_selectedDomainId"
@@ -66,7 +66,7 @@ else
                                                         OnEditDomain="OpenEditDomainDialogAsync"
                                                         OnDeleteDomain="DeleteDomainAsync" />
                                 </MudTabPanel>
-                                <MudTabPanel Text="Fief">
+                                <MudTabPanel Text="@(L["Fief"])">
                                     <TerrainFiefBrush Fiefs="@_fiefs"
                                                       DomainsById="@_domainsById"
                                                       TileCountsByFiefId="@FiefTileCounts"
@@ -77,15 +77,15 @@ else
                                                       OnEditFief="OpenEditFiefDialogAsync"
                                                       OnDeleteFief="DeleteFiefAsync" />
                                 </MudTabPanel>
-                                <MudTabPanel Text="Resources">
+                                <MudTabPanel Text="@(L["Resources"])">
                                     <TerrainResourceBrush Value="@_brushResource"
                                                           ValueChanged="v => _brushResource = v" />
                                 </MudTabPanel>
-                                <MudTabPanel Text="Improvements">
+                                <MudTabPanel Text="@(L["Improvements"])">
                                     <TerrainImprovementBrush Value="@_brushImprovement"
                                                              ValueChanged="OnBrushImprovementChanged" />
                                 </MudTabPanel>
-                                <MudTabPanel Text="Map Size">
+                                <MudTabPanel Text="@(L["Map Size"])">
                                     <TerrainMapSizePanel Width="@GridWidth"
                                                          Height="@GridHeight"
                                                          OnResize="ResizeMapAsync" />

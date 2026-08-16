@@ -10,14 +10,14 @@
     <MudDataGrid Items="Mobs" ReadOnly="true" Filterable="false" Class="px-2 py-2"
                  Hideable="false" SortMode="@SortMode.None" Groupable="false" Elevation="2" ColumnResizeMode="ResizeMode.None">
         <ToolBarContent>
-            <MudButton Class="pa-2 justify-content-start w-auto" OnClick="@(() => AddMob())" StartIcon="@Icons.Material.Outlined.Add" ButtonType="MudBlazor.ButtonType.Button">Add mob</MudButton>
+            <MudButton Class="pa-2 justify-content-start w-auto" OnClick="@(() => AddMob())" StartIcon="@Icons.Material.Outlined.Add" ButtonType="MudBlazor.ButtonType.Button">@L["Add mob"]</MudButton>
         </ToolBarContent>
         <Columns>
-            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;" Property="x => x.Campaign.Name" Title="Campaign name" />
+            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;" Property="x => x.Campaign.Name" Title="@(L["Campaign name"])" />
             <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px;padding:4px 4px 4px 12px;;" Property="x => x.Name" />
-            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;; " Property="x => x.RaceName" Title="Race" />
-            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;; " Property="x => x.ProfessionName" Title="Class" />
-            <TemplateColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="width:80px; padding:4px 4px 4px 12px;" Title="Actions">
+            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;; " Property="x => x.RaceName" Title="@(L["Race"])" />
+            <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;; " Property="x => x.ProfessionName" Title="@(L["Class"])" />
+            <TemplateColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="width:80px; padding:4px 4px 4px 12px;" Title="@(L["Actions"])">
                 <CellTemplate>
                     <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Edit" OnClick="@(() => EditMob(@context.Item))" />
                     <MudIconButton Size="@Size.Small" Icon="@Icons.Material.Outlined.Delete" OnClick="@(() => DeleteMob(@context.Item))" />

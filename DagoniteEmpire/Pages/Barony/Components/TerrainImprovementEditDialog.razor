@@ -7,15 +7,15 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog">
             <MudTextField @bind-Value="_displayName"
-                          Label="Name"
+                          Label="@(L["Name"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Required="true"
                           HelperText="@(IsVillage ? "Village place name shown on Domain Panel." : null)"
                           Class="baron-influence-field" />
             <MudTextField @bind-Value="_notes"
-                          Label="Notes"
-                          HelperText="Optional notes / formula text."
+                          Label="@(L["Notes"])"
+                          HelperText="@(L["Optional notes / formula text."])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="2"
@@ -23,7 +23,7 @@
 
             @if (IsCustom)
             {
-                <MudText Typo="Typo.caption" Class="mb-1" Style="color:var(--barony-muted);">Icon</MudText>
+                <MudText Typo="Typo.caption" Class="mb-1" Style="color:var(--barony-muted);">@L["Icon"]</MudText>
                 <div class="custom-improvement-icon-picker">
                     @foreach (var icon in MapImprovement.IconChoices)
                     {
@@ -43,7 +43,7 @@
 
             <MudCheckBox T="bool"
                          @bind-Value="_isInactive"
-                         Label="Inactive"
+                         Label="@(L["Inactive"])"
                          Color="Color.Primary"
                          Dense="true"
                          Class="baron-influence-field" />
@@ -51,21 +51,21 @@
             @if (_isInactive)
             {
                 <MudTextField @bind-Value="_inactiveReason"
-                              Label="Why inactive"
-                              HelperText="Shown when hovering the improvement name on Domain Panel."
+                              Label="@(L["Why inactive"])"
+                              HelperText="@(L["Shown when hovering the improvement name on Domain Panel."])"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Lines="2"
                               Class="baron-influence-field" />
             }
 
-            <PpbVectorEditor @bind-Value="_additive" Title="PPB additive (+)" Compact="true" />
-            <PpbVectorEditor @bind-Value="_percent" Title="PPB percent (%)" Compact="true" Percent="true" />
+            <PpbVectorEditor @bind-Value="_additive" Title="@(L["PPB additive (+)"])" Compact="true" />
+            <PpbVectorEditor @bind-Value="_percent" Title="@(L["PPB percent (%)"])" Compact="true" Percent="true" />
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>
 

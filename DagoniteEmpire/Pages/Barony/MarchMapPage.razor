@@ -12,7 +12,7 @@
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading march map...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>@L["Loading march map..."]</span>
 }
 else if (LoadError is not null)
 {
@@ -28,19 +28,19 @@ else
                         <MudIconButton Icon="@Icons.Material.Filled.HelpOutline"
                                        Size="Size.Small"
                                        Class="barony-page-header__help-btn"
-                                       aria-label="Help: March map"
+                                       aria-label="@(L["Help: March map"])"
                                        OnClick="OpenMarchHelpAsync" />
                     </div>
                     <span class="march-map-legend">
-                        <span class="march-map-legend__item"><i class="march-map-legend__swatch march-map-legend__swatch--road"></i> Road</span>
-                        <span class="march-map-legend__item"><i class="march-map-legend__swatch march-map-legend__swatch--river"></i> River</span>
-                        <span class="march-map-legend__item"><i class="march-map-legend__dot march-map-legend__dot--capital"></i> Capital</span>
-                        <span class="march-map-legend__item"><i class="march-map-legend__dot march-map-legend__dot--large-city"></i> Large city</span>
-                        <span class="march-map-legend__item"><i class="march-map-legend__dot march-map-legend__dot--city"></i> City</span>
-                        <span class="march-map-legend__item"><i class="march-map-legend__dot march-map-legend__dot--village"></i> Village</span>
+                        <span class="march-map-legend__item"><i class="march-map-legend__swatch march-map-legend__swatch--road"></i> @L["Road"]</span>
+                        <span class="march-map-legend__item"><i class="march-map-legend__swatch march-map-legend__swatch--river"></i> @L["River"]</span>
+                        <span class="march-map-legend__item"><i class="march-map-legend__dot march-map-legend__dot--capital"></i> @L["Capital"]</span>
+                        <span class="march-map-legend__item"><i class="march-map-legend__dot march-map-legend__dot--large-city"></i> @L["Large city"]</span>
+                        <span class="march-map-legend__item"><i class="march-map-legend__dot march-map-legend__dot--city"></i> @L["City"]</span>
+                        <span class="march-map-legend__item"><i class="march-map-legend__dot march-map-legend__dot--village"></i> @L["Village"]</span>
                         @if (_playerBarony is not null)
                         {
-                            <span class="march-map-legend__item"><i class="march-map-legend__dot march-map-legend__dot--player-seat"></i> Your seat</span>
+                            <span class="march-map-legend__item"><i class="march-map-legend__dot march-map-legend__dot--player-seat"></i> @L["Your seat"]</span>
                         }
                         <span class="march-map-legend__item">
                             <MudIcon Icon="@Icons.Material.Filled.Lock" Class="march-map-legend__lock-icon" /> Blocked
@@ -49,7 +49,7 @@ else
                     <span class="march-map-legend march-map-legend--toggles">
                         <label class="march-map-legend__toggle">
                             <input type="checkbox" checked="@_showProducedGoods" @onchange="OnShowProducedGoodsChanged" />
-                            <span>Show goods</span>
+                            <span>@L["Show goods"]</span>
                         </label>
                     </span>
                     @if (_tradeRouteOverlays.Count > 0)
@@ -77,7 +77,7 @@ else
                                        Size="Size.Small"
                                        Class="@(_tool == MarchMapCanvas.MarchMapTool.DesignRoute ? "baron-influence-save-btn" : "march-map-toolbar__btn")"
                                        OnClick="ToggleDesignRoute">
-                                Design route
+                                @L["Design route"]
                             </MudButton>
                         }
 
@@ -97,7 +97,7 @@ else
                         <div class="march-map-edit-panel__body">
                             @if (_playerSeatNodeId is null)
                             {
-                                <MudText Typo="Typo.body2">Your barony seat is not on the map — trade routes cannot be designed.</MudText>
+                                <MudText Typo="Typo.body2">@L["Your barony seat is not on the map — trade routes cannot be designed."]</MudText>
                             }
                             else if (_designPath is null)
                             {
@@ -108,16 +108,16 @@ else
                                         click a highlighted neighbor, then the next, until you reach the partner.
                                     </MudText>
                                     <div class="d-flex flex-wrap gap-2 mb-2">
-                                        <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="UndoManualRouteStep" Disabled="@(_manualPathNodeIds.Count <= 1)">Undo</MudButton>
-                                        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="CancelManualRouteDesign">Cancel</MudButton>
+                                        <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="UndoManualRouteStep" Disabled="@(_manualPathNodeIds.Count <= 1)">@L["Undo"]</MudButton>
+                                        <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="CancelManualRouteDesign">@L["Cancel"]</MudButton>
                                     </div>
                                 }
                                 else
                                 {
                                     <MudText Typo="Typo.body2" Class="mb-2">
-                                        Click a city for the shortest route, or design the path seat by seat.
+                                        @L["Click a city for the shortest route, or design the path seat by seat."]
                                     </MudText>
-                                    <MudButton Variant="Variant.Outlined" Size="Size.Small" Class="mb-2" OnClick="StartManualRouteDesign">Manual design</MudButton>
+                                    <MudButton Variant="Variant.Outlined" Size="Size.Small" Class="mb-2" OnClick="StartManualRouteDesign">@L["Manual design"]</MudButton>
                                 }
                             }
                             else
@@ -135,9 +135,9 @@ else
                                                Size="Size.Small"
                                                Class="baron-influence-save-btn"
                                                OnClick="ConfirmDesignRouteAsync">
-                                        Continue to treaty
+                                        @L["Continue to treaty"]
                                     </MudButton>
-                                    <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="ClearDesignPath">Clear</MudButton>
+                                    <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="ClearDesignPath">@L["Clear"]</MudButton>
                                 </div>
                             }
                         </div>
@@ -146,22 +146,22 @@ else
                     {
                         <div class="march-map-edit-panel__body march-map-edit-panel__tools">
                             <MudToggleGroup T="MarchMapCanvas.MarchMapTool" Value="_tool" ValueChanged="OnToolChanged" Size="Size.Small" Class="march-map-tool-toggle" SelectionMode="SelectionMode.SingleSelection" CheckMark="false">
-                                <MudToggleItem Value="MarchMapCanvas.MarchMapTool.Move">Move</MudToggleItem>
-                                <MudToggleItem Value="MarchMapCanvas.MarchMapTool.Connect">Connect</MudToggleItem>
-                                <MudToggleItem Value="MarchMapCanvas.MarchMapTool.EditLinks">Edit links</MudToggleItem>
-                                <MudToggleItem Value="MarchMapCanvas.MarchMapTool.AddPlace">Add place</MudToggleItem>
+                                <MudToggleItem Value="MarchMapCanvas.MarchMapTool.Move">@L["Move"]</MudToggleItem>
+                                <MudToggleItem Value="MarchMapCanvas.MarchMapTool.Connect">@L["Connect"]</MudToggleItem>
+                                <MudToggleItem Value="MarchMapCanvas.MarchMapTool.EditLinks">@L["Edit links"]</MudToggleItem>
+                                <MudToggleItem Value="MarchMapCanvas.MarchMapTool.AddPlace">@L["Add place"]</MudToggleItem>
                             </MudToggleGroup>
                             <span class="march-map-toolbar__link-kind">
-                                <MudText Typo="Typo.caption">New link:</MudText>
+                                <MudText Typo="Typo.caption">@L["New link:"]</MudText>
                                 <MudButtonGroup Variant="Variant.Outlined" Size="Size.Small" Class="march-map-link-kind-group">
-                                    <MudButton Class="@LinkKindClass(MarchRouteKind.Road)" OnClick="() => SetLinkKind(MarchRouteKind.Road)">Road</MudButton>
-                                    <MudButton Class="@LinkKindClass(MarchRouteKind.River)" OnClick="() => SetLinkKind(MarchRouteKind.River)">River</MudButton>
+                                    <MudButton Class="@LinkKindClass(MarchRouteKind.Road)" OnClick="() => SetLinkKind(MarchRouteKind.Road)">@L["Road"]</MudButton>
+                                    <MudButton Class="@LinkKindClass(MarchRouteKind.River)" OnClick="() => SetLinkKind(MarchRouteKind.River)">@L["River"]</MudButton>
                                 </MudButtonGroup>
                             </span>
                             @if (_tool == MarchMapCanvas.MarchMapTool.AddPlace)
                             {
                                 <MudSelect T="string"
-                                           Label="New place type"
+                                           Label="@(L["New place type"])"
                                            @bind-Value="_newPlaceKind"
                                            Variant="Variant.Outlined"
                                            Margin="Margin.Dense"
@@ -173,12 +173,12 @@ else
                                 </MudSelect>
                             }
                             <MudTextField @bind-Value="_document.ImageUrl"
-                                          Label="Image URL"
+                                          Label="@(L["Image URL"])"
                                           Variant="Variant.Outlined"
                                           Margin="Margin.Dense"
                                           FullWidth="true"
                                           @bind-Value:after="SaveMapAsync" />
-                            <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="ResetSeedAsync">Reset layout</MudButton>
+                            <MudButton Variant="Variant.Text" Size="Size.Small" OnClick="ResetSeedAsync">@L["Reset layout"]</MudButton>
                         </div>
                     }
                 </aside>

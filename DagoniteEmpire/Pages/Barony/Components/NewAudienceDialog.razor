@@ -2,37 +2,37 @@
 
 <MudDialog Class="barony-dialog">
     <TitleContent>
-        <MudText Typo="Typo.h6">New audience</MudText>
+        <MudText Typo="Typo.h6">@L["New audience"]</MudText>
     </TitleContent>
     <DialogContent>
         <div class="barony-dialog-theme">
         <MudTextField @bind-Value="_petitionerName"
-                      Label="Petitioner"
+                      Label="@(L["Petitioner"])"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense"
                       Immediate="true"
-                      HelperText="Name of the person seeking audience"
+                      HelperText="@(L["Name of the person seeking audience"])"
                       Class="mb-2" />
         <MudTextField @bind-Value="_title"
-                      Label="Audience title"
+                      Label="@(L["Audience title"])"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense"
                       Immediate="true"
-                      HelperText="e.g. Plea for harvest help"
+                      HelperText="@(L["e.g. Plea for harvest help"])"
                       Class="mb-2" />
         <MudTextField @bind-Value="_opening"
-                      Label="Opening words"
+                      Label="@(L["Opening words"])"
                       Variant="Variant.Outlined"
                       Margin="Margin.Dense"
                       Lines="5"
                       Immediate="true"
-                      HelperText="What the petitioner says first" />
+                      HelperText="@(L["What the petitioner says first"])" />
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
         <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Submit" Disabled="_busy || !CanSubmit">
-            Grant audience
+            @L["Grant audience"]
         </MudButton>
     </DialogActions>
 </MudDialog>

@@ -7,7 +7,7 @@
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading known lords...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>@L["Loading known lords..."]</span>
 }
 else if (LoadError is not null)
 {
@@ -15,7 +15,7 @@ else if (LoadError is not null)
 }
 else
 {
-    <BaronyPageHeader Title="Lords" HelpKey="known-lords">
+    <BaronyPageHeader Title="@(L["Lords"])" HelpKey="known-lords">
         <Summary>
             <span class="projects-summary">
                 <span class="projects-summary__item">@_lords.Count lord@(_lords.Count == 1 ? "" : "s")</span>
@@ -24,7 +24,7 @@ else
     </BaronyPageHeader>
 
     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-        Shared roster for every barony — lords of the Eastern March, their holdings, and trade goods.
+        @L["Shared roster for every barony — lords of the Eastern March, their holdings, and trade goods."]
     </MudText>
 
     <KnownLordsSection BaronyId="@Barony!.Id"

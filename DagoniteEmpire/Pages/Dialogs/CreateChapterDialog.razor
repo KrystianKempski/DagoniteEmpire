@@ -11,14 +11,14 @@
     <DialogContent>
         <MudForm @bind-IsValid="@success">
 
-            <MudTextField Required @bind-Value="@NewChapter.Name" Label="Chapter name" />
-            <MudTextField Required @bind-Value="@NewChapter.Description" Label="Description" Lines="3" />
+            <MudTextField Required @bind-Value="@NewChapter.Name" Label="@(L["Chapter name"])" />
+            <MudTextField Required @bind-Value="@NewChapter.Description" Label="@(L["Description"])" Lines="3" />
             <MudStack Spacing="1" Row>
-                <MudTextField Required @bind-Value="@NewChapter.DayTime" Label="Daytime" />
+                <MudTextField Required @bind-Value="@NewChapter.DayTime" Label="@(L["Daytime"])" />
                 <DateComponent Date="Date" Editable="true"></DateComponent>
             </MudStack>
-            <MudTextField Required @bind-Value="@NewChapter.Place" Label="Location" />
-            <MudText Typo="Typo.caption">Choose player characters for chapter</MudText>
+            <MudTextField Required @bind-Value="@NewChapter.Place" Label="@(L["Location"])" />
+            <MudText Typo="Typo.caption">@L["Choose player characters for chapter"]</MudText>
             <MudChipSet T="CharacterDTO" @bind-SelectedValues="SelectedCharacters" CheckMark SelectionMode="MudBlazor.SelectionMode.MultiSelection">
                 @if (true)
                 {
@@ -34,8 +34,8 @@
         </MudForm>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Error" Disabled="@(!success)" OnClick="CreateChapter">SAVE</MudButton>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Error" Disabled="@(!success)" OnClick="CreateChapter">@L["SAVE"]</MudButton>
     </DialogActions>
 </MudDialog>
 

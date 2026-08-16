@@ -5,39 +5,39 @@
 
 <div class="barony-scope">
     <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="px-0">
-        <h1 class="barony-page-title">Barony Style Lab</h1>
+        <h1 class="barony-page-title">@L["Barony Style Lab"]</h1>
         <MudText Class="mb-4" Style="color:var(--barony-muted);">
-            PPB table variants and a generic Barony Card. After selection, one variant can be set as default.
+            @L["PPB table variants and a generic Barony Card. After selection, one variant can be set as default."]
         </MudText>
 
         <MudGrid>
             <MudItem xs="12">
                 <div class="barony-card mb-4">
-                    <div class="barony-card__title">Variant A - zebra</div>
+                    <div class="barony-card__title">@L["Variant A - zebra"]</div>
                     <PpbTable Rows="@_rows" Summary="@_summary" TableClass="ppb-table--zebra" />
                 </div>
             </MudItem>
 
             <MudItem xs="12">
                 <div class="barony-card mb-4">
-                    <div class="barony-card__title">Variant B - lines + hover</div>
+                    <div class="barony-card__title">@L["Variant B - lines + hover"]</div>
                     <PpbTable Rows="@_rows" Summary="@_summary" TableClass="ppb-table--lined" />
                 </div>
             </MudItem>
 
             <MudItem xs="12">
                 <div class="barony-card mb-4">
-                    <div class="barony-card__title">Variant C - compact</div>
+                    <div class="barony-card__title">@L["Variant C - compact"]</div>
                     <PpbTable Rows="@_rows" Summary="@_summary" TableClass="ppb-table--compact" />
                 </div>
             </MudItem>
 
             <MudItem xs="12" md="6">
                 <div class="barony-card mb-4">
-                    <div class="barony-card__title">Collapsible Section (preview)</div>
+                    <div class="barony-card__title">@L["Collapsible Section (preview)"]</div>
                     <CascadingValue Value="@_viewOptions">
-                        <MudSwitch T="bool" @bind-Value="_defaultExpanded" Color="Color.Default" Label="Expanded by default" Class="mb-2" />
-                        <BaronySection Title="City and Buildings">
+                        <MudSwitch T="bool" @bind-Value="_defaultExpanded" Color="Color.Default" Label="@(L["Expanded by default"])" Class="mb-2" />
+                        <BaronySection Title="@(L["City and Buildings"])">
                             <Summary>
                                 <PpbSummaryChips Vector="@_summary" />
                             </Summary>
@@ -51,13 +51,13 @@
 
             <MudItem xs="12" md="6">
                 <div class="barony-card mb-4">
-                    <div class="barony-card__title">Barony Card - example</div>
-                    <div class="barony-stat"><span class="barony-stat__label">Year / Season</span><span class="barony-stat__value">627 / Summer</span></div>
-                    <div class="barony-stat"><span class="barony-stat__label">Turn</span><span class="barony-stat__value">7</span></div>
-                    <div class="barony-stat"><span class="barony-stat__label">Treasury Gold</span><span class="barony-stat__value">1 240</span></div>
-                    <div class="barony-stat"><span class="barony-stat__label">Unrest</span><span class="barony-stat__value">3</span></div>
-                    <div class="barony-stat"><span class="barony-stat__label">Barony Size</span><span class="barony-stat__value">18 tiles</span></div>
-                    <div class="barony-stat"><span class="barony-stat__label">Food Growth</span><span class="barony-stat__value">+12</span></div>
+                    <div class="barony-card__title">@L["Barony Card - example"]</div>
+                    <div class="barony-stat"><span class="barony-stat__label">@L["Year / Season"]</span><span class="barony-stat__value">@L["627 / Summer"]</span></div>
+                    <div class="barony-stat"><span class="barony-stat__label">@L["Turn"]</span><span class="barony-stat__value">7</span></div>
+                    <div class="barony-stat"><span class="barony-stat__label">@L["Treasury Gold"]</span><span class="barony-stat__value">1 240</span></div>
+                    <div class="barony-stat"><span class="barony-stat__label">@L["Unrest"]</span><span class="barony-stat__value">3</span></div>
+                    <div class="barony-stat"><span class="barony-stat__label">@L["Barony Size"]</span><span class="barony-stat__value">@L["18 tiles"]</span></div>
+                    <div class="barony-stat"><span class="barony-stat__label">@L["Food Growth"]</span><span class="barony-stat__value">+12</span></div>
                 </div>
             </MudItem>
         </MudGrid>

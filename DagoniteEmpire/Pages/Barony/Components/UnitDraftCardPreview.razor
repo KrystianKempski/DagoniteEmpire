@@ -15,7 +15,7 @@
             <b>@(string.IsNullOrWhiteSpace(Unit.Name) || Unit.Name == "Forming unit" ? "(name)" : Unit.Name)</b>
             @if (!string.IsNullOrWhiteSpace(Unit.CaptainName))
             {
-                <BaronyTooltip Title="Captain"
+                <BaronyTooltip Title="@(L["Captain"])"
                                Text="@(string.IsNullOrWhiteSpace(CaptainTooltip) ? Unit.CaptainName : CaptainTooltip)"
                                Placement="Placement.Bottom"
                                Class="unit-draft-card__captain-tip">
@@ -36,16 +36,16 @@
     {
     <div class="unit-draft-card__body">
     <div class="unit-draft-card__meta">
-        <BaronyTooltip Title="Wage / turn" Text="@_upkeepExplain" Placement="Placement.Bottom">
+        <BaronyTooltip Title="@(L["Wage / turn"])" Text="@_upkeepExplain" Placement="Placement.Bottom">
             <span class="unit-draft-card__meta-item">
-                <em>Wage</em>
+                <em>@L["Wage"]</em>
                 <b class="unit-draft-card__meta-val unit-draft-card__meta-val--gold">
                     @_upkeep.Gold
                     <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
                 </b>
             </span>
         </BaronyTooltip>
-        <BaronyTooltip Title="Food upkeep" Text="@_upkeepExplain" Placement="Placement.Bottom">
+        <BaronyTooltip Title="@(L["Food upkeep"])" Text="@_upkeepExplain" Placement="Placement.Bottom">
             <span class="unit-draft-card__meta-item">
                 <em>Food</em>
                 <b class="unit-draft-card__meta-val unit-draft-card__meta-val--food">
@@ -54,7 +54,7 @@
                 </b>
             </span>
         </BaronyTooltip>
-        <BaronyTooltip Title="Defense upkeep" Text="@_upkeepExplain" Placement="Placement.Bottom">
+        <BaronyTooltip Title="@(L["Defense upkeep"])" Text="@_upkeepExplain" Placement="Placement.Bottom">
             <span class="unit-draft-card__meta-item">
                 <em>Def/t</em>
                 <b class="unit-draft-card__meta-val unit-draft-card__meta-val--defense">
@@ -63,14 +63,14 @@
                 </b>
             </span>
         </BaronyTooltip>
-        <BaronyTooltip Title="Experience points"
+        <BaronyTooltip Title="@(L["Experience points"])"
                        Text="Experience points (XP) left to spend after training. Attribute = target × 10; base skill = level × 3; specialization = level × 1 (≤ parent); discipline = current level."
                        Placement="Placement.Bottom">
             <span class="unit-draft-card__meta-item"><em>XP</em> <b>@Unit.RemainingPd</b></span>
         </BaronyTooltip>
-        <BaronyTooltip Title="Troops" Text="@TroopTip" Placement="Placement.Bottom">
+        <BaronyTooltip Title="@(L["Troops"])" Text="@TroopTip" Placement="Placement.Bottom">
             <span class="unit-draft-card__meta-item">
-                <em>Troops</em>
+                <em>@L["Troops"]</em>
                 @if (CanManageAsMg)
                 {
                     <button type="button"
@@ -87,12 +87,12 @@
                 }
             </span>
         </BaronyTooltip>
-        <BaronyTooltip Title="Race" Text="@_race.Description" Placement="Placement.Bottom">
-            <span class="unit-draft-card__meta-item"><em>Race</em> <b>@_race.Name</b></span>
+        <BaronyTooltip Title="@(L["Race"])" Text="@_race.Description" Placement="Placement.Bottom">
+            <span class="unit-draft-card__meta-item"><em>@L["Race"]</em> <b>@_race.Name</b></span>
         </BaronyTooltip>
         @if (ShowCurrentHp)
         {
-            <BaronyTooltip Title="Hit points" Text="@HpTip" Placement="Placement.Bottom">
+            <BaronyTooltip Title="@(L["Hit points"])" Text="@HpTip" Placement="Placement.Bottom">
                 <span class="unit-draft-card__meta-item">
                     <em>HP</em>
                     @if (CanManageAsMg)
@@ -124,10 +124,10 @@
 
     <div class="unit-draft-card__section">
         <div class="unit-draft-card__section-title">
-            <BaronyTooltip Title="Attributes"
+            <BaronyTooltip Title="@(L["Attributes"])"
                            Text="Build = strength/endurance/size · Agility = dexterity/mobility · Will = courage/mental grit · Perception = senses/intuition. Raise cost = target level × 10 XP."
                            Placement="Placement.Right">
-                <span>Attributes</span>
+                <span>@L["Attributes"]</span>
             </BaronyTooltip>
             @if (CanSpendPd && Unit.FreeAttributePoints > 0)
             {
@@ -135,7 +135,7 @@
             }
             else if (CanManageAsMg)
             {
-                <span class="unit-draft-card__section-hint">click value for Other (MG)</span>
+                <span class="unit-draft-card__section-hint">@L["click value for Other (MG)"]</span>
             }
         </div>
         <div class="unit-card__attrs unit-card__attrs--compact">
@@ -157,10 +157,10 @@
 
     <div class="unit-draft-card__section">
         <div class="unit-draft-card__section-title">
-            <BaronyTooltip Title="Skills"
+            <BaronyTooltip Title="@(L["Skills"])"
                            Text="Base skills: Total = Base + Other (no attribute). Specializations: Total = parent + linked attr + Base + Other. Base skill XP = level × 3; specialization = level × 1 (cannot exceed parent)."
                            Placement="Placement.Right">
-                <span>Skills</span>
+                <span>@L["Skills"]</span>
             </BaronyTooltip>
             <span class="unit-draft-card__section-hint">
                 base Total = Base+Other · special Total = parent+From+Base+Other
@@ -176,33 +176,33 @@
     </div>
 
     <div class="unit-draft-card__section">
-        <div class="unit-draft-card__section-title">Equipment</div>
+        <div class="unit-draft-card__section-title">@L["Equipment"]</div>
         <table class="unit-draft-equip unit-draft-equip--cols">
             <thead>
                 <tr>
                     <th>
-                        <BaronyTooltip Title="Weapon 1" Text="Primary weapon. Quality adjusts Atk and Dmg (Good +1 / Poor −1)." Placement="Placement.Top">
-                            <span>Weapon 1</span>
+                        <BaronyTooltip Title="@(L["Weapon 1"])" Text="Primary weapon. Quality adjusts Atk and Dmg (Good +1 / Poor −1)." Placement="Placement.Top">
+                            <span>@L["Weapon 1"]</span>
                         </BaronyTooltip>
                     </th>
                     <th>
-                        <BaronyTooltip Title="Weapon 2" Text="Secondary weapon (optional)." Placement="Placement.Top">
-                            <span>Weapon 2</span>
+                        <BaronyTooltip Title="@(L["Weapon 2"])" Text="@(L["Secondary weapon (optional)."])" Placement="Placement.Top">
+                            <span>@L["Weapon 2"]</span>
                         </BaronyTooltip>
                     </th>
                     <th>
-                        <BaronyTooltip Title="Armor" Text="Body armor: Def defense, Arm armor value, Pen agility penalty, Mov move penalty." Placement="Placement.Top">
-                            <span>Armor</span>
+                        <BaronyTooltip Title="@(L["Armor"])" Text="@(L["Body armor: Def defense, Arm armor value, Pen agility penalty, Mov move penalty."])" Placement="Placement.Top">
+                            <span>@L["Armor"]</span>
                         </BaronyTooltip>
                     </th>
                     <th>
-                        <BaronyTooltip Title="Shield" Text="Shield: Def defense, Mov move penalty. Shields do not add Armor." Placement="Placement.Top">
-                            <span>Shield</span>
+                        <BaronyTooltip Title="@(L["Shield"])" Text="@(L["Shield: Def defense, Mov move penalty. Shields do not add Armor."])" Placement="Placement.Top">
+                            <span>@L["Shield"]</span>
                         </BaronyTooltip>
                     </th>
                     <th>
-                        <BaronyTooltip Title="Mount" Text="Optional horses / war horses: Atk, Def, Dmg, Mov bonuses. Requires Riding and trade access." Placement="Placement.Top">
-                            <span>Mount</span>
+                        <BaronyTooltip Title="@(L["Mount"])" Text="@(L["Optional horses / war horses: Atk, Def, Dmg, Mov bonuses. Requires Riding and trade access."])" Placement="Placement.Top">
+                            <span>@L["Mount"]</span>
                         </BaronyTooltip>
                     </th>
                 </tr>
@@ -265,8 +265,8 @@
     </div>
 
     <div class="unit-draft-card__section unit-draft-card__section--tight unit-draft-card__footer">
-        <BaronyTooltip Title="Defense skill"
-                       Text="Uses the highest eligible skill: Dodges always; Shields only with a shield equipped; Armor only with armor equipped."
+        <BaronyTooltip Title="@(L["Defense skill"])"
+                       Text="@(L["Uses the highest eligible skill: Dodges always; Shields only with a shield equipped; Armor only with armor equipped."])"
                        Placement="Placement.Top">
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
                 Def skill <b>@(UnitSkillTree.Find(_combat.DefenseSkillKeyUsed)?.Name ?? _combat.DefenseSkillKeyUsed ?? "—")</b>
@@ -275,11 +275,11 @@
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
             @if (Unit.IsTraining && Unit.MaxBaseSkillAtGraduation > 0)
             {
-                <text>Max skill <b>@Unit.MaxBaseSkillAtGraduation</b> (until graduation)</text>
+                <text>@L["Max skill"] <b>@Unit.MaxBaseSkillAtGraduation</b> @L["(until graduation)"]</text>
             }
             else if (Unit.IsActive)
             {
-                <text>Base skill cap lifted</text>
+                <text>@L["Base skill cap lifted"]</text>
             }
             @if (Unit.FreeAttributePoints > 0)
             {

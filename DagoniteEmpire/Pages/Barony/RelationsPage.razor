@@ -7,7 +7,7 @@
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading relations...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>@L["Loading relations..."]</span>
 }
 else if (LoadError is not null)
 {
@@ -15,7 +15,7 @@ else if (LoadError is not null)
 }
 else if (_overview is not null)
 {
-    <BaronyPageHeader Title="Relations" HelpKey="relations">
+    <BaronyPageHeader Title="@(L["Relations"])" HelpKey="relations">
         <Summary>
             <span class="projects-summary">
                 <span class="projects-summary__item">@_relations.Count contact@(_relations.Count == 1 ? "" : "s")</span>

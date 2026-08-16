@@ -50,14 +50,14 @@ else
                     StartIcon="@Icons.Material.Filled.MenuBook"
                     Size="Size.Large"
                     OnClick="OpenBattleLog"
-                    Title="Battle log"
-                    aria-label="Open battle log" />
+                    Title="@(L["Battle log"])"
+                    aria-label="@(L["Open battle log"])" />
             <MudFab Color="Color.Error"
                     StartIcon="@Icons.Material.Filled.GridOn"
                     Size="Size.Large"
                     OnClick="OpenBattleMap"
-                    Title="Tactical map"
-                    aria-label="Open tactical map" />
+                    Title="@(L["Tactical map"])"
+                    aria-label="@(L["Open tactical map"])" />
         </div>
     }
 
@@ -69,7 +69,7 @@ else
                            OnClick="ToggleDrawer"
                            Variant="Variant.Filled"
                            Color="Color.Surface">
-                    Characters
+                    @L["Characters"]
                 </MudButton>
             </div>
         </MudHidden>
@@ -88,14 +88,14 @@ else
                         <MudGrid Justify="Justify.Center" Spacing="1">
                             @if (OngoingBattle)
                             {
-                                <MudItem xs="12"><MudButton FullWidth OnClick="NextTurn">Next turn</MudButton></MudItem>
+                                <MudItem xs="12"><MudButton FullWidth OnClick="NextTurn">@L["Next turn"]</MudButton></MudItem>
                                 <MudItem xs="12"><MudButton FullWidth Variant="Variant.Filled" Color="Color.Error" OnClick="SwichBattlePhase">@BattleButton</MudButton></MudItem>
                                 <MudItem xs="12"><MudText Align="Align.Center">Turn: @BattlePhase?.CurrentTurn</MudText></MudItem>
                                 <MudItem xs="6">
                                     <MudButton FullWidth OnClick="GenerateFightSequence">
                                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
                                             <img src="@MyIcon.Attack" width="22" height="22" alt="" />
-                                            <span>Fight</span>
+                                            <span>@L["Fight"]</span>
                                         </MudStack>
                                     </MudButton>
                                 </MudItem>
@@ -103,7 +103,7 @@ else
                                     <MudButton FullWidth OnClick="MakeSkillRoll">
                                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
                                             <img src="@MyIcon.Dice" width="22" height="22" alt="" />
-                                            <span>Make a roll</span>
+                                            <span>@L["Make a roll"]</span>
                                         </MudStack>
                                     </MudButton>
                                 </MudItem>
@@ -115,7 +115,7 @@ else
                                     <MudButton FullWidth OnClick="MakeSkillRoll">
                                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
                                             <img src="@MyIcon.Dice" width="22" height="22" alt="" />
-                                            <span>Make a roll</span>
+                                            <span>@L["Make a roll"]</span>
                                         </MudStack>
                                     </MudButton>
                                 </MudItem>
@@ -124,14 +124,14 @@ else
                                 <MudButton FullWidth OnClick="AddExistingMob">
                                     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
                                         <img src="@MyIcon.Goblin" width="22" height="22" alt="" />
-                                        <span>Existing mobs</span>
+                                        <span>@L["Existing mobs"]</span>
                                     </MudStack>
                                 </MudButton>
                             </MudItem>
-                            <MudItem xs="6"><MudButton FullWidth OnClick="AddTemporaryStatus">Add status</MudButton></MudItem>
+                            <MudItem xs="6"><MudButton FullWidth OnClick="AddTemporaryStatus">@L["Add status"]</MudButton></MudItem>
                             @if (ShowBaronyResourcesButton)
                             {
-                                <MudItem xs="12"><MudButton FullWidth OnClick="AddBaronyResourcesPost">Barony resources</MudButton></MudItem>
+                                <MudItem xs="12"><MudButton FullWidth OnClick="AddBaronyResourcesPost">@L["Barony resources"]</MudButton></MudItem>
                             }
                         </MudGrid>
                     }
@@ -184,14 +184,14 @@ else
                         <MudGrid Justify="Justify.Center" Spacing="1">
                             @if (OngoingBattle)
                             {
-                                <MudItem xs="12"><MudButton FullWidth OnClick="NextTurn">Next turn</MudButton></MudItem>
+                                <MudItem xs="12"><MudButton FullWidth OnClick="NextTurn">@L["Next turn"]</MudButton></MudItem>
                                 <MudItem xs="12"><MudButton FullWidth Variant="Variant.Filled" Color="Color.Error" OnClick="SwichBattlePhase">@BattleButton</MudButton></MudItem>
                                 <MudItem xs="12"><MudText Align="Align.Center">Turn: @BattlePhase?.CurrentTurn</MudText></MudItem>
                                 <MudItem xs="6">
                                     <MudButton FullWidth OnClick="GenerateFightSequence">
                                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
                                             <img src="@MyIcon.Attack" width="22" height="22" alt="" />
-                                            <span>Fight</span>
+                                            <span>@L["Fight"]</span>
                                         </MudStack>
                                     </MudButton>
                                 </MudItem>
@@ -199,7 +199,7 @@ else
                                     <MudButton FullWidth OnClick="MakeSkillRoll">
                                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
                                             <img src="@MyIcon.Dice" width="22" height="22" alt="" />
-                                            <span>Make a roll</span>
+                                            <span>@L["Make a roll"]</span>
                                         </MudStack>
                                     </MudButton>
                                 </MudItem>
@@ -211,7 +211,7 @@ else
                                     <MudButton FullWidth OnClick="MakeSkillRoll">
                                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
                                             <img src="@MyIcon.Dice" width="22" height="22" alt="" />
-                                            <span>Make a roll</span>
+                                            <span>@L["Make a roll"]</span>
                                         </MudStack>
                                     </MudButton>
                                 </MudItem>
@@ -220,14 +220,14 @@ else
                                 <MudButton FullWidth OnClick="AddExistingMob">
                                     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
                                         <img src="@MyIcon.Goblin" width="22" height="22" alt="" />
-                                        <span>Existing mobs</span>
+                                        <span>@L["Existing mobs"]</span>
                                     </MudStack>
                                 </MudButton>
                             </MudItem>
-                            <MudItem xs="6"><MudButton FullWidth OnClick="AddTemporaryStatus">Add status</MudButton></MudItem>
+                            <MudItem xs="6"><MudButton FullWidth OnClick="AddTemporaryStatus">@L["Add status"]</MudButton></MudItem>
                             @if (ShowBaronyResourcesButton)
                             {
-                                <MudItem xs="12"><MudButton FullWidth OnClick="AddBaronyResourcesPost">Barony resources</MudButton></MudItem>
+                                <MudItem xs="12"><MudButton FullWidth OnClick="AddBaronyResourcesPost">@L["Barony resources"]</MudButton></MudItem>
                             }
                         </MudGrid>
                     }
@@ -266,7 +266,7 @@ else
         @if (OngoingBattle)
         {
             <MudAlert Elevation="12" Severity="Severity.Error" Variant="Variant.Filled" Class="mb-2">
-                Battle in progress!
+                @L["Battle in progress!"]
             </MudAlert>
         }
 
@@ -290,7 +290,7 @@ else
                                EndIcon="@Icons.Material.Filled.KeyboardArrowDown"
                                OnClick="ScrollToLatest"
                                Class="back-to-latest-btn">
-                        Go back
+                        @L["Go back"]
                     </MudButton>
                 </div>
             }
@@ -318,12 +318,12 @@ else
                                             <MudText Typo="Typo.h6" Class="battle-summary-title flex-grow-1 mb-0">@GetBattleSummaryHeader(post)</MudText>
                                             @if (IsBattleEndedPost(post) && TryGetBattlePhaseIdFromPost(post, out var _))
                                             {
-                                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.MenuBook" aria-label="battle log" Title="Open battle log" OnClick="@(() => OpenBattleLogForPost(post))" />
+                                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.MenuBook" aria-label="@(L["battle log"])" Title="@(L["Open battle log"])" OnClick="@(() => OpenBattleLogForPost(post))" />
                                             }
                                             @if (CanEditBattleSummaryPost(post))
                                             {
-                                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit turn summary" OnClick="@(() => EditPost(post))" />
-                                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="delete turn summary" OnClick="@(() => DeletePost(post))" />
+                                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="@(L["edit turn summary"])" OnClick="@(() => EditPost(post))" />
+                                                <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="@(L["delete turn summary"])" OnClick="@(() => DeletePost(post))" />
                                             }
                                         </MudStack>
                                         <div class="ql-snow ql-content" style="border-width:0">
@@ -352,8 +352,8 @@ else
                                                 <MudText Class="flex-grow-1" Typo="Typo.caption">Posted at: @post.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
                                                 @if (UserInfo?.SelectedCharacter is not null && (post.CharacterId == UserInfo.SelectedCharacter.Id || UserInfo.CharacterMG == true))
                                                 {
-                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
-                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="@(()=>DeletePost(post))"></MudIconButton>
+                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="@(L["edit"])" OnClick="@(()=>EditPost(post))"></MudIconButton>
+                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="@(L["delete"])" OnClick="@(()=>DeletePost(post))"></MudIconButton>
                                                 }
                                             </MudStack>
                                             <div class="ql-snow ql-content" style="border-width:0">
@@ -369,7 +369,7 @@ else
                     }
                     else
                     {
-                        <MudText>No posts yet</MudText>
+                        <MudText>@L["No posts yet"]</MudText>
                     }
                 </MudStack>
             </MudHidden>
@@ -390,12 +390,12 @@ else
                                                 <MudText Typo="Typo.h6" Class="battle-summary-title flex-grow-1 mb-0">@GetBattleSummaryHeader(post)</MudText>
                                                 @if (IsBattleEndedPost(post) && TryGetBattlePhaseIdFromPost(post, out var _))
                                                 {
-                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.MenuBook" aria-label="battle log" Title="Open battle log" OnClick="@(() => OpenBattleLogForPost(post))" />
+                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.MenuBook" aria-label="@(L["battle log"])" Title="@(L["Open battle log"])" OnClick="@(() => OpenBattleLogForPost(post))" />
                                                 }
                                                 @if (CanEditBattleSummaryPost(post))
                                                 {
-                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit turn summary" OnClick="@(() => EditPost(post))" />
-                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="delete turn summary" OnClick="@(() => DeletePost(post))" />
+                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="@(L["edit turn summary"])" OnClick="@(() => EditPost(post))" />
+                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Delete" aria-label="@(L["delete turn summary"])" OnClick="@(() => DeletePost(post))" />
                                                 }
                                             </MudStack>
                                             <div class="ql-snow ql-content" style="border-width:0">
@@ -418,7 +418,7 @@ else
                                                 <MudText Class="flex-grow-1 pl-1" Align="Align.Left" Typo="Typo.h6">@(post.AlternativeName ?? post.Character.NPCName)</MudText>
                                                 @if (UserInfo?.SelectedCharacter is not null && (post.CharacterId == UserInfo.SelectedCharacter.Id || UserInfo.CharacterMG == true))
                                                 {
-                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditPost(post))"></MudIconButton>
+                                                    <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="@(L["edit"])" OnClick="@(()=>EditPost(post))"></MudIconButton>
                                                 }
                                             </MudStack>
                                             <div class="ql-snow ql-content" style="border-width:0">
@@ -434,7 +434,7 @@ else
                         }
                         else
                         {
-                            <MudText>No posts yet</MudText>
+                            <MudText>@L["No posts yet"]</MudText>
                         }
                     </MudStack>
                 </div>
@@ -507,8 +507,8 @@ else
                         }
                         @if (UserInfo?.IsAdminOrMG == true)
                         {
-                            <MudSelect @bind-Value="GmAsMob" T="MobDTO" Label="Select Mob" Class="post-dock__mob-select">
-                                <MudSelectItem Value="GmMobOption">GM</MudSelectItem>
+                            <MudSelect @bind-Value="GmAsMob" T="MobDTO" Label="@(L["Select Mob"])" Class="post-dock__mob-select">
+                                <MudSelectItem Value="GmMobOption">@L["GM"]</MudSelectItem>
                                 @foreach (var mob in Mobs)
                                 {
                                     <MudSelectItem Value="mob">@mob.Name</MudSelectItem>

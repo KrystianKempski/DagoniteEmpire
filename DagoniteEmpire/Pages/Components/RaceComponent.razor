@@ -6,19 +6,19 @@
     <div class="sheet-img">
         @* <img src="../images/old_paper2.png" class="stretch" /> *@
     </div>
-    <h3 class="my-3 ml-3 text-center">RACE</h3>
+    <h3 class="my-3 ml-3 text-center">@L["RACE"]</h3>
     @if(AllParams.Character.IsApproved == false )
     {
         <InputSelect style="width: 100%; padding: 2px 0px 2px 0px; background-color: transparent; border: 1px solid RGB(206 212 218); border-radius: 4px;"
                          ValueExpression="@(()=>SelectedRace)"
                          Value="@SelectedRace"
                          ValueChanged="@((string value) => ChangeRace(value))">
-            <option value="0" selected disabled>--Select Race--</option>
+            <option value="0" selected disabled>@L["--Select Race--"]</option>
             @foreach (var race in AllParams.Races)
             {
                 <option value="@race.Name">@race.Name</option>
             }
-            <option value="Custom race">Custom race</option>
+            <option value="Custom race">@L["Custom race"]</option>
         </InputSelect>
         @if (ShowNameLabel)
         {
@@ -28,19 +28,19 @@
         <InputText readonly style="width: 100%;padding: 2px 2px 2px 2px; margin: 6px 0px 4px 0px;; background-color: transparent; border: 1px solid RGB(206 212 218); border-radius: 4px; background-color:transparent;" @bind-Value="@AllParams.CurrentRace.Name"></InputText>
     }
     
-    <label class="race-descr-label">Description</label>
+    <label class="race-descr-label">@L["Description"]</label>
     <div class="ql-snow ql-content richtext-conteiner" style="border-width:0">
         <div class="ql-editor" style="height:100%; overflow:auto;">
             @((MarkupString)(AllParams.CurrentRace?.Description ?? string.Empty))
         </div>
     </div>
-    <label class="race-traits-label">Traits</label>
+    <label class="race-traits-label">@L["Traits"]</label>
     <div class="flex-conteiner">
         <table class="table align-middle">
             <thead>
                 <tr>
-                    <th scope="col" class="name-row">Name</th>
-                    <th scope="col" class="description-row">Description</th>
+                    <th scope="col" class="name-row">@L["Name"]</th>
+                    <th scope="col" class="description-row">@L["Description"]</th>
                 </tr>
             </thead>
             <tbody>
@@ -59,7 +59,7 @@
         </table>
         @if (ShowNameLabel && AllParams.Character.IsApproved == false)
         {
-          <div class="d-flex justify-content-center"> <button @onclick="@(()=>EditCustomRace())" class="add-trait">Edit race</button></div>
+          <div class="d-flex justify-content-center"> <button @onclick="@(()=>EditCustomRace())" class="add-trait">@L["Edit race"]</button></div>
         }
     </div>
     </MudPaper>

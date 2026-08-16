@@ -44,8 +44,8 @@
                                     </ChildContent>
                                     <TooltipContent>
                                         <span class="character-status-tooltip-text">
-                                            <span class="character-status-tooltip-name">No turn</span>
-                                            <span class="character-status-tooltip-duration">No actions</span>
+                                            <span class="character-status-tooltip-name">@L["No turn"]</span>
+                                            <span class="character-status-tooltip-duration">@L["No actions"]</span>
                                         </span>
                                     </TooltipContent>
                                 </MudTooltip> 
@@ -82,7 +82,7 @@
             @if (IsExpanded && (ShowActionsPanel || ShowMobTurnPanel || ShowClassButton || ShowGrantExtraActionButton))
             {
                 <MudPaper Elevation="1" Class="pa-1 mx-1 character-actions-panel">
-                    <MudText Class="p-1" Typo="Typo.button">ACTIONS</MudText>
+                    <MudText Class="p-1" Typo="Typo.button">@L["ACTIONS"]</MudText>
                     @if (ShowActionsPanel)
                     {
                     <MudTooltip Placement="Placement.Right" TooltipClass="character-action-tooltip">
@@ -92,7 +92,7 @@
                                            Color="@(CanDeclareFullDefence ? Color.Info : Color.Default)"
                                            Disabled="!CanDeclareFullDefence"
                                            Size="Size.Small"
-                                           aria-label="Declare full defence"
+                                           aria-label="@(L["Declare full defence"])"
                                            OnClick="ConfirmFullDefenceAsync" />
                         </span>
                         </ChildContent>
@@ -111,7 +111,7 @@
                         <span class="@GetActionWrapperClass(CanDeclareHalfAction)">
                             <MudIconButton Disabled="!CanDeclareHalfAction"
                                            Size="Size.Small"
-                                           aria-label="Do half action"
+                                           aria-label="@(L["Do half action"])"
                                            OnClick="ConfirmHalfActionAsync">
                                 <img src="@MyIcon.HalfAction" class="character-action-icon" width="22" height="22" alt="" />
                             </MudIconButton>
@@ -133,7 +133,7 @@
                             <MudIconButton Disabled="!CanGrantExtraAction"
                                            Color="@(HasUsedAtLeastOneAction ? Color.Info : Color.Default)"
                                            Size="Size.Small"
-                                           aria-label="Grant extra action"
+                                           aria-label="@(L["Grant extra action"])"
                                            OnClick="GrantExtraActionAsync">
                                 <img src="@MyIcon.NoTurn" class="character-action-icon" width="22" height="22" alt="" />
                             </MudIconButton>
@@ -152,14 +152,14 @@
                     <MudTooltip Placement="Placement.Right" TooltipClass="character-action-tooltip">
                         <ChildContent>
                             <MudIconButton Size="Size.Small"
-                                           aria-label="Open class"
+                                           aria-label="@(L["Open class"])"
                                            OnClick="OpenClassAsync">
                                 <img src="@MyIcon.Anvil" class="character-action-icon" width="22" height="22" alt="" />
                             </MudIconButton>
                         </ChildContent>
                         <TooltipContent>
                             <span class="character-status-tooltip-text">
-                                <span class="character-status-tooltip-name">Open class</span>
+                                <span class="character-status-tooltip-name">@L["Open class"]</span>
                                 <span class="character-status-tooltip-duration">@ProfessionName</span>
                             </span>
                         </TooltipContent>
@@ -219,7 +219,7 @@
                             {
                                 <div class="d-flex">
                                     <div class="flex-grow-1 weapon-prop-label">
-                                        <label>Two handed weapon</label>
+                                        <label>@L["Two handed weapon"]</label>
                                     </div>
                                 </div>
                             }
@@ -260,7 +260,7 @@
                             {
                                 <div class="d-flex">
                                     <div class="flex-grow-1 weapon-prop-label">
-                                        <label>Two handed weapon</label>
+                                        <label>@L["Two handed weapon"]</label>
                                     </div>
                                 </div>
                             }
@@ -360,7 +360,7 @@
                             <MudPaper Class="p-1 w-100 h-100" Elevation="1">
                             <div class="d-flex">
                                 <div class="flex-grow-1 weapon-prop-label">
-                                        <MudText Typo="Typo.button">Temporary states</MudText>
+                                        <MudText Typo="Typo.button">@L["Temporary states"]</MudText>
                                 </div>
                             </div>
                             @foreach (var icon in Icons)
@@ -385,7 +385,7 @@
                             <MudPaper Class="p-1 w-100 h-100" Elevation="1">
                                 <div class="d-flex">
                                     <div class="flex-grow-1 weapon-prop-label">
-                                        <MudText Typo="Typo.button">Wounds</MudText>
+                                        <MudText Typo="Typo.button">@L["Wounds"]</MudText>
                                     </div>
                                 </div>
                                 @foreach (var wound in AllParams?.Health.GetAll())

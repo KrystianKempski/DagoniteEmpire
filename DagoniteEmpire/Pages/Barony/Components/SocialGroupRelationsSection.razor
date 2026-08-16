@@ -3,7 +3,7 @@
 @inject ISnackbar _snackBar
 @inject IDialogService _dialogService
 
-<BaronySection Title="Social Group Relations">
+<BaronySection Title="@(L["Social Group Relations"])">
     <Summary>
         <PpbSummaryChips Vector="@Glance" />
     </Summary>
@@ -23,18 +23,18 @@
                 </colgroup>
                 <thead>
                     <tr>
-                        <th rowspan="2" class="ppb-row-label social-group-col-name">Group</th>
+                        <th rowspan="2" class="ppb-row-label social-group-col-name">@L["Group"]</th>
                         <th rowspan="2" class="social-group-col-influence">
-                            <BaronyTooltip Text="Share of society">
-                                <span>Infl.</span>
+                            <BaronyTooltip Text="@(L["Share of society"])">
+                                <span>@L["Infl."]</span>
                             </BaronyTooltip>
                         </th>
                         <th rowspan="2" class="social-group-col-tax">
-                            <BaronyTooltip Text="Tax rate">
-                                <span>Tax</span>
+                            <BaronyTooltip Text="@(L["Tax rate"])">
+                                <span>@L["Tax"]</span>
                             </BaronyTooltip>
                         </th>
-                        <th rowspan="2" class="social-group-col-relation">Relation</th>
+                        <th rowspan="2" class="social-group-col-relation">@L["Relation"]</th>
                         @foreach (var info in PpbCatalog.All)
                         {
                             <th colspan="2">
@@ -62,7 +62,7 @@
                                     @if (CanManage)
                                     {
                                         <span class="city-building-name-actions">
-                                            <BaronyTooltip Text="Edit social group">
+                                            <BaronyTooltip Text="@(L["Edit social group"])">
                                                 <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                                Size="Size.Small"
                                                                OnClick="@(() => EditGroupAsync(row))" />
@@ -86,7 +86,7 @@
                     }
 
                     <tr class="ppb-summary-row">
-                        <td class="ppb-row-label social-group-col-name">Σ section</td>
+                        <td class="ppb-row-label social-group-col-name">@L["Σ section"]</td>
                         <td class="social-group-col-influence"><b>@FmtPctValue(InfluenceSum)</b></td>
                         <td class="social-group-col-tax"></td>
                         <td class="social-group-col-relation"></td>

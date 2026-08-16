@@ -6,7 +6,7 @@
            ContentClass="baron-influence-dialog-content"
            ActionsClass="baron-influence-dialog-actions">
     <TitleContent>
-        <MudText Typo="Typo.h6">Assign captain</MudText>
+        <MudText Typo="Typo.h6">@L["Assign captain"]</MudText>
     </TitleContent>
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog unit-captain-pick">
@@ -26,14 +26,14 @@
             <button type="button"
                     class="unit-captain-pick__option @(_selectedId is null ? "unit-captain-pick__option--picked" : null)"
                     @onclick="() => _selectedId = null">
-                <span class="unit-captain-pick__name">No captain</span>
-                <span class="unit-captain-pick__hint">Clear assignment</span>
+                <span class="unit-captain-pick__name">@L["No captain"]</span>
+                <span class="unit-captain-pick__hint">@L["Clear assignment"]</span>
             </button>
 
             @if (!Selectable.Any())
             {
                 <MudText Typo="Typo.body2" Class="mt-2" Style="color:var(--barony-muted);">
-                    No free courtiers available.
+                    @L["No free courtiers available."]
                 </MudText>
             }
             else
@@ -50,7 +50,7 @@
                             <span class="unit-captain-pick__meta">
                                 @if (unlocked > 0)
                                 {
-                                    <BaronyTooltip Text="Unlocked commander abilities">
+                                    <BaronyTooltip Text="@(L["Unlocked commander abilities"])">
                                         <span class="unit-captain-option__badge">
                                             <MudIcon Icon="@Icons.Material.Filled.MilitaryTech" Size="Size.Small" />
                                             @unlocked
@@ -69,7 +69,7 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
         <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">
             @(_selectedId is null ? "Clear" : "Assign")
         </MudButton>

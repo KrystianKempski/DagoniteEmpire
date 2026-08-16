@@ -7,14 +7,14 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog seat-room-edit-dialog">
             <MudTextField @bind-Value="_room.Name"
-                          Label="Chamber name"
+                          Label="@(L["Chamber name"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Required="true"
                           Class="baron-influence-field" />
             <MudSelect T="int"
                        @bind-Value="_room.Level"
-                       Label="Floor level"
+                       Label="@(L["Floor level"])"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Class="baron-influence-field">
@@ -24,10 +24,10 @@
                 }
             </MudSelect>
             <div class="seat-room-edit-dialog__grid-fields">
-                <MudNumericField T="int" Value="_room.GridX" ValueChanged="OnGridXChanged" Label="Grid X" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Class="baron-influence-field" />
-                <MudNumericField T="int" Value="_room.GridY" ValueChanged="OnGridYChanged" Label="Grid Y" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Class="baron-influence-field" />
-                <MudNumericField T="int" Value="_room.GridW" ValueChanged="OnGridWChanged" Label="Width (tiles)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Class="baron-influence-field" />
-                <MudNumericField T="int" Value="_room.GridH" ValueChanged="OnGridHChanged" Label="Height (tiles)" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Class="baron-influence-field" />
+                <MudNumericField T="int" Value="_room.GridX" ValueChanged="OnGridXChanged" Label="@(L["Grid X"])" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Class="baron-influence-field" />
+                <MudNumericField T="int" Value="_room.GridY" ValueChanged="OnGridYChanged" Label="@(L["Grid Y"])" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Class="baron-influence-field" />
+                <MudNumericField T="int" Value="_room.GridW" ValueChanged="OnGridWChanged" Label="@(L["Width (tiles)"])" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Class="baron-influence-field" />
+                <MudNumericField T="int" Value="_room.GridH" ValueChanged="OnGridHChanged" Label="@(L["Height (tiles)"])" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Class="baron-influence-field" />
             </div>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
                 Size: @SeatRoomSizeCategory.OptionLabel(_room.SizeCategory) (@_room.TileCount tiles)
@@ -35,7 +35,7 @@
             <MudSelect T="string"
                        Value="_room.Material"
                        ValueChanged="OnMaterialChanged"
-                       Label="Material"
+                       Label="@(L["Material"])"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Class="baron-influence-field">
@@ -58,7 +58,7 @@
             </MudSelect>
             <MudNumericField T="decimal"
                              @bind-Value="_room.PrestigeMultiplier"
-                             Label="Prestige multiplier"
+                             Label="@(L["Prestige multiplier"])"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="0.1m"
@@ -67,7 +67,7 @@
                              HelperText="@($"Suggested from material + size: {_suggested:0.##}")" />
             <MudNumericField T="int"
                              @bind-Value="_room.SortOrder"
-                             Label="Sort order"
+                             Label="@(L["Sort order"])"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Class="baron-influence-field" />
@@ -75,7 +75,7 @@
             <MudSelect T="int?"
                        Value="_room.PurposeTemplateId"
                        ValueChanged="OnPurposeChanged"
-                       Label="Purpose (optional)"
+                       Label="@(L["Purpose (optional)"])"
                        Clearable="true"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
@@ -86,34 +86,34 @@
                 }
             </MudSelect>
 
-            <PpbVectorEditor @bind-Value="_room.Additive" Title="Chamber PPB (additive)" Compact="true" />
-            <PpbVectorEditor @bind-Value="_room.Percent" Title="Chamber PPB (%)" Percent="true" Compact="true" />
+            <PpbVectorEditor @bind-Value="_room.Additive" Title="@(L["Chamber PPB (additive)"])" Compact="true" />
+            <PpbVectorEditor @bind-Value="_room.Percent" Title="@(L["Chamber PPB (%)"])" Percent="true" Compact="true" />
 
             <div class="seat-room-traits">
                 <div class="seat-room-traits__header">
-                    <span>Advantages &amp; disadvantages</span>
-                    <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Add" OnClick="AddTrait">Add</MudButton>
+                    <span>@L["Advantages &amp; disadvantages"]</span>
+                    <MudButton Size="Size.Small" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.Add" OnClick="AddTrait">@L["Add"]</MudButton>
                 </div>
                 @if (_room.Traits.Count == 0)
                 {
-                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">No traits yet.</MudText>
+                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">@L["No traits yet."]</MudText>
                 }
                 @for (var i = 0; i < _room.Traits.Count; i++)
                 {
                     var index = i;
                     <div class="seat-room-traits__row">
-                        <MudSelect T="string" @bind-Value="_room.Traits[index].Kind" Label="Kind" Variant="Variant.Outlined" Margin="Margin.Dense" Class="baron-influence-field seat-room-traits__kind">
+                        <MudSelect T="string" @bind-Value="_room.Traits[index].Kind" Label="@(L["Kind"])" Variant="Variant.Outlined" Margin="Margin.Dense" Class="baron-influence-field seat-room-traits__kind">
                             @foreach (var k in SeatRoomTraitKind.All)
                             {
                                 <MudSelectItem Value="@k">@k</MudSelectItem>
                             }
                         </MudSelect>
                         <MudTextField @bind-Value="_room.Traits[index].Text"
-                                      Label="Text"
+                                      Label="@(L["Text"])"
                                       Variant="Variant.Outlined"
                                       Margin="Margin.Dense"
                                       Class="baron-influence-field seat-room-traits__text" />
-                        <BaronyTooltip Text="Remove trait">
+                        <BaronyTooltip Text="@(L["Remove trait"])">
                             <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                            Size="Size.Small"
                                            Color="Color.Error"
@@ -125,8 +125,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="baron-influence-save-btn" OnClick="Save">Save</MudButton>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="baron-influence-save-btn" OnClick="Save">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>
 

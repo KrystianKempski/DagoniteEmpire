@@ -19,18 +19,18 @@
                     <div class="court-domain-other-block">
                         <div class="court-other-row">
                             <MudTextField @bind-Value="entry.Name"
-                                          Label="Source"
+                                          Label="@(L["Source"])"
                                           Variant="Variant.Outlined"
                                           Margin="Margin.Dense"
                                           Class="court-other-row__name" />
-                            <BaronyTooltip Text="Remove">
+                            <BaronyTooltip Text="@(L["Remove"])">
                                 <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                Size="Size.Small"
                                                Color="Color.Error"
                                                OnClick="@(() => Remove(index))" />
                             </BaronyTooltip>
                         </div>
-                        <PpbVectorEditor @bind-Value="entry.Additive" Title="PPB bonuses" Compact="true" ExcludeTreasury="true" />
+                        <PpbVectorEditor @bind-Value="entry.Additive" Title="@(L["PPB bonuses"])" Compact="true" ExcludeTreasury="true" />
                     </div>
                 }
             </div>
@@ -40,13 +40,13 @@
                        StartIcon="@Icons.Material.Filled.Add"
                        Class="mt-2"
                        OnClick="Add">
-                Add source
+                @L["Add source"]
             </MudButton>
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>
 

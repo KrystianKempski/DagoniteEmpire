@@ -7,7 +7,7 @@
 <MudPaper Class="pa-4 mb-4" Elevation="2">
     <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
         <MudIcon Icon="@Icons.Material.Filled.Castle" Class="mr-1" />
-        <MudText Typo="Typo.h6">Baronies</MudText>
+        <MudText Typo="Typo.h6">@L["Baronies"]</MudText>
         <MudSpacer />
         <MudButton Variant="Variant.Outlined"
                    Color="Color.Secondary"
@@ -15,18 +15,18 @@
                    StartIcon="@Icons.Material.Filled.Refresh"
                    Disabled="@IsLoading"
                    OnClick="LoadAsync">
-            Refresh
+            @L["Refresh"]
         </MudButton>
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    Size="Size.Small"
                    StartIcon="@Icons.Material.Filled.Add"
                    OnClick="OpenCreateDialogAsync">
-            Create barony
+            @L["Create barony"]
         </MudButton>
     </MudStack>
     <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pb-3">
-        Create baronies for Duke characters and open them in the barony layer. Each barony is tied to one baron character (1:1).
+        @L["Create baronies for Duke characters and open them in the barony layer. Each barony is tied to one baron character (1:1)."]
     </MudText>
 
     @if (IsLoading)
@@ -36,10 +36,10 @@
 
     <MudTable Items="@Baronies" Dense="true" Hover="true" Bordered="true" Elevation="0">
         <HeaderContent>
-            <MudTh>Barony</MudTh>
+            <MudTh>@L["Barony"]</MudTh>
             <MudTh>Baron</MudTh>
-            <MudTh>Description</MudTh>
-            <MudTh Style="width:120px">Actions</MudTh>
+            <MudTh>@L["Description"]</MudTh>
+            <MudTh Style="width:120px">@L["Actions"]</MudTh>
         </HeaderContent>
         <RowTemplate>
             <MudTd DataLabel="Barony">@context.Name</MudTd>
@@ -59,12 +59,12 @@
                            Size="Size.Small"
                            StartIcon="@Icons.Material.Filled.OpenInNew"
                            OnClick="@(() => OpenBaronyAsync(context))">
-                    Open
+                    @L["Open"]
                 </MudButton>
             </MudTd>
         </RowTemplate>
         <NoRecordsContent>
-            <MudText Typo="Typo.body2" Color="Color.Secondary">No baronies yet. Create the first one.</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@L["No baronies yet. Create the first one."]</MudText>
         </NoRecordsContent>
     </MudTable>
 </MudPaper>

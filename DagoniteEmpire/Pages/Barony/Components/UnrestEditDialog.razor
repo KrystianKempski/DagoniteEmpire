@@ -10,7 +10,7 @@
                 Stability, Law, Economy, and Production. Raised by failed loyalty tests when Stability ≤ 0.
             </MudText>
             <MudNumericField @bind-Value="_unrest"
-                             Label="Unrest"
+                             Label="@(L["Unrest"])"
                              HelperText="@($"0 to {UnrestPpbFormulas.Max}")"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
@@ -21,8 +21,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>
 

@@ -7,7 +7,7 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudTextField @bind-Value="_name"
-                          Label="Name"
+                          Label="@(L["Name"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field"
@@ -15,7 +15,7 @@
 
             <MudSelect T="string"
                        @bind-Value="_kind"
-                       Label="Type"
+                       Label="@(L["Type"])"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Class="baron-influence-field"
@@ -28,8 +28,8 @@
 
             <MudSelect T="string"
                        @bind-Value="_origin"
-                       Label="Source"
-                       HelperText="How the item was obtained"
+                       Label="@(L["Source"])"
+                       HelperText="@(L["How the item was obtained"])"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Class="baron-influence-field"
@@ -42,7 +42,7 @@
 
             <div class="baron-php-edit-fields">
                 <MudNumericField @bind-Value="_prestige"
-                                 Label="Prestige"
+                                 Label="@(L["Prestige"])"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Class="baron-influence-field php-field php-field--prestige" />
@@ -52,7 +52,7 @@
                                  Margin="Margin.Dense"
                                  Class="baron-influence-field php-field php-field--honor" />
                 <MudNumericField @bind-Value="_fear"
-                                 Label="Fear"
+                                 Label="@(L["Fear"])"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Class="baron-influence-field php-field php-field--fear" />
@@ -61,7 +61,7 @@
             <MudSelect T="int?"
                        Value="_seatRoomId"
                        ValueChanged="OnRoomChanged"
-                       Label="Location"
+                       Label="@(L["Location"])"
                        HelperText="@_roomHelper"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
@@ -84,8 +84,8 @@
             }
 
             <MudTextField @bind-Value="_description"
-                          Label="Description"
-                          HelperText="Optional. Shown on hover over the name in the table."
+                          Label="@(L["Description"])"
+                          HelperText="@(L["Optional. Shown on hover over the name in the table."])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="3"
@@ -93,8 +93,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>
 

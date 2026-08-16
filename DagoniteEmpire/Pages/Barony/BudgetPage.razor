@@ -9,7 +9,7 @@
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>@L["Loading..."]</span>
 }
 else if (LoadError is not null)
 {
@@ -17,27 +17,27 @@ else if (LoadError is not null)
 }
 else if (_overview is not null)
 {
-    <BaronyPageHeader Title="Budget" HelpKey="budget" />
+    <BaronyPageHeader Title="@(L["Budget"])" HelpKey="budget" />
 
-    <BaronySection Title="Gold Overview">
+    <BaronySection Title="@(L["Gold Overview"])">
         <Summary>
             <span class="budget-overview-chips">
-                <span>Treasury <b>@Num(_overview.Barony.TreasuryGold)</b></span>
-                <span>Purse <b>@Num(_overview.Barony.BaronPurseGold)</b></span>
-                <span>Turn <b style="color:@(_turnBalance >= 0 ? "var(--barony-pos)" : "var(--barony-neg)")">@Num(_turnBalance)</b></span>
+                <span>@L["Treasury"] <b>@Num(_overview.Barony.TreasuryGold)</b></span>
+                <span>@L["Purse"] <b>@Num(_overview.Barony.BaronPurseGold)</b></span>
+                <span>@L["Turn"] <b style="color:@(_turnBalance >= 0 ? "var(--barony-pos)" : "var(--barony-neg)")">@Num(_turnBalance)</b></span>
             </span>
         </Summary>
         <ChildContent>
             <MudGrid>
                 <MudItem xs="12" md="4">
-                    <div class="barony-stat"><span class="barony-stat__label">Barony Treasury</span><span class="barony-stat__value">@Num(_overview.Barony.TreasuryGold)</span></div>
+                    <div class="barony-stat"><span class="barony-stat__label">@L["Barony Treasury"]</span><span class="barony-stat__value">@Num(_overview.Barony.TreasuryGold)</span></div>
                 </MudItem>
                 <MudItem xs="12" md="4">
-                    <div class="barony-stat"><span class="barony-stat__label">Baron Purse</span><span class="barony-stat__value">@Num(_overview.Barony.BaronPurseGold)</span></div>
+                    <div class="barony-stat"><span class="barony-stat__label">@L["Baron Purse"]</span><span class="barony-stat__value">@Num(_overview.Barony.BaronPurseGold)</span></div>
                 </MudItem>
                 <MudItem xs="12" md="4">
                     <div class="barony-stat">
-                        <span class="barony-stat__label">Treasury Turn Balance</span>
+                        <span class="barony-stat__label">@L["Treasury Turn Balance"]</span>
                         <span class="barony-stat__value" style="color:@(_turnBalance >= 0 ? "var(--barony-pos)" : "var(--barony-neg)")">@Num(_turnBalance)</span>
                     </div>
                     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
@@ -50,8 +50,8 @@ else if (_overview is not null)
                 <div class="d-flex flex-wrap align-center gap-3 mt-3">
                     <MudNumericField T="decimal"
                                      @bind-Value="_liegeTributePercent"
-                                     Label="Liege tribute % (pay senior)"
-                                     HelperText="Share of gross gold income paid to the senior before expenses. Default 15%."
+                                     Label="@(L["Liege tribute % (pay senior)"])"
+                                     HelperText="@(L["Share of gross gold income paid to the senior before expenses. Default 15%."])"
                                      Variant="Variant.Outlined"
                                      Margin="Margin.Dense"
                                      Min="0"
@@ -59,8 +59,8 @@ else if (_overview is not null)
                                      Style="max-width:14rem;" />
                     <MudNumericField T="decimal"
                                      @bind-Value="_vassalTributePercent"
-                                     Label="Vassal fief % (keep from villages)"
-                                     HelperText="Share of village gold on vassal fiefs kept by the baron. Default 15%."
+                                     Label="@(L["Vassal fief % (keep from villages)"])"
+                                     HelperText="@(L["Share of village gold on vassal fiefs kept by the baron. Default 15%."])"
                                      Variant="Variant.Outlined"
                                      Margin="Margin.Dense"
                                      Min="0"
@@ -70,7 +70,7 @@ else if (_overview is not null)
                                Class="baron-influence-save-btn"
                                Disabled="@(!_tributeRatesDirty)"
                                OnClick="SaveTributeRatesAsync">
-                        Save rates
+                        @L["Save rates"]
                     </MudButton>
                 </div>
             }
@@ -84,11 +84,11 @@ else if (_overview is not null)
         </ChildContent>
     </BaronySection>
 
-    <BaronySection Title="Barony Treasury">
+    <BaronySection Title="@(L["Barony Treasury"])">
         <Summary>
             <span class="budget-overview-chips">
-                <span>Income <b class="ppb-cell-pos">@Fmt(_totalIncome)</b></span>
-                <span>Expenses <b class="ppb-cell-neg">@Fmt(_totalExpense)</b></span>
+                <span>@L["Income"] <b class="ppb-cell-pos">@Fmt(_totalIncome)</b></span>
+                <span>@L["Expenses"] <b class="ppb-cell-neg">@Fmt(_totalExpense)</b></span>
             </span>
         </Summary>
         <ChildContent>
@@ -100,9 +100,9 @@ else if (_overview is not null)
             <MudGrid>
                 <MudItem xs="12" md="6">
                     <div class="barony-card">
-                        <div class="barony-card__title">Income</div>
+                        <div class="barony-card__title">@L["Income"]</div>
                         <table class="ppb-table ppb-table--lined">
-                            <thead><tr><th class="ppb-row-label">Source</th><th>Gold</th></tr></thead>
+                            <thead><tr><th class="ppb-row-label">@L["Source"]</th><th>@L["Gold"]</th></tr></thead>
                             <tbody>
                                 @foreach (var line in _incomeLines)
                                 {
@@ -116,7 +116,7 @@ else if (_overview is not null)
                                     </tr>
                                 }
                                 <tr class="ppb-summary-row">
-                                    <td class="ppb-row-label">Σ income</td>
+                                    <td class="ppb-row-label">@L["Σ income"]</td>
                                     <td class="ppb-cell-pos"><b>@Fmt(_totalIncome)</b></td>
                                 </tr>
                             </tbody>
@@ -125,9 +125,9 @@ else if (_overview is not null)
                 </MudItem>
                 <MudItem xs="12" md="6">
                     <div class="barony-card">
-                        <div class="barony-card__title">Expenses</div>
+                        <div class="barony-card__title">@L["Expenses"]</div>
                         <table class="ppb-table ppb-table--lined">
-                            <thead><tr><th class="ppb-row-label">Source</th><th>Gold</th></tr></thead>
+                            <thead><tr><th class="ppb-row-label">@L["Source"]</th><th>@L["Gold"]</th></tr></thead>
                             <tbody>
                                 @foreach (var line in _expenseLines)
                                 {
@@ -141,7 +141,7 @@ else if (_overview is not null)
                                     </tr>
                                 }
                                 <tr class="ppb-summary-row">
-                                    <td class="ppb-row-label">Σ expenses</td>
+                                    <td class="ppb-row-label">@L["Σ expenses"]</td>
                                     <td class="ppb-cell-neg"><b>@Fmt(_totalExpense)</b></td>
                                 </tr>
                             </tbody>
@@ -152,33 +152,33 @@ else if (_overview is not null)
         </ChildContent>
     </BaronySection>
 
-    <BaronySection Title="Baron Purse">
+    <BaronySection Title="@(L["Baron Purse"])">
         <Summary>
             <span class="budget-overview-chips">
-                <span>Purse <b>@Num(_overview.Barony.BaronPurseGold)</b></span>
-                <span>Ledger <b class="@ValueClass(_purseBalance)">@Fmt(_purseBalance)</b></span>
+                <span>@L["Purse"] <b>@Num(_overview.Barony.BaronPurseGold)</b></span>
+                <span>@L["Ledger"] <b class="@ValueClass(_purseBalance)">@Fmt(_purseBalance)</b></span>
             </span>
         </Summary>
         <ChildContent>
             @if (CanEdit)
             {
                 <div class="barony-card mb-3">
-                    <div class="barony-card__title">Transfer Between Treasury and Purse</div>
+                    <div class="barony-card__title">@L["Transfer Between Treasury and Purse"]</div>
                     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                        Transfers update balances and are logged in the purse ledger and Resources → Resource Balance.
+                        @L["Transfers update balances and are logged in the purse ledger and Resources → Resource Balance."]
                     </MudText>
                     <MudStack Row="true" Spacing="2" AlignItems="AlignItems.End" Wrap="Wrap.Wrap">
-                        <MudNumericField T="decimal" @bind-Value="_transferAmount" Label="Amount" Min="0" HideSpinButtons="true" Style="max-width:140px;" />
-                        <MudButton Variant="Variant.Outlined" OnClick="TransferToPurseAsync">Treasury → Purse</MudButton>
-                        <MudButton Variant="Variant.Outlined" OnClick="TransferToTreasuryAsync">Purse → Treasury</MudButton>
+                        <MudNumericField T="decimal" @bind-Value="_transferAmount" Label="@(L["Amount"])" Min="0" HideSpinButtons="true" Style="max-width:140px;" />
+                        <MudButton Variant="Variant.Outlined" OnClick="TransferToPurseAsync">@L["Treasury → Purse"]</MudButton>
+                        <MudButton Variant="Variant.Outlined" OnClick="TransferToTreasuryAsync">@L["Purse → Treasury"]</MudButton>
                     </MudStack>
                 </div>
             }
 
             <div class="barony-card mb-2">
-                <div class="barony-card__title">Purse Income &amp; Expenses</div>
+                <div class="barony-card__title">@L["Purse Income &amp; Expenses"]</div>
                 <table class="ppb-table ppb-table--lined">
-                    <thead><tr><th class="ppb-row-label">Source</th><th>Gold</th></tr></thead>
+                    <thead><tr><th class="ppb-row-label">@L["Source"]</th><th>@L["Gold"]</th></tr></thead>
                     <tbody>
                         @foreach (var src in _purseSources)
                         {
@@ -191,10 +191,10 @@ else if (_overview is not null)
                                         @if (CanManageAsMg)
                                         {
                                             <span class="city-building-name-actions">
-                                                <BaronyTooltip Text="Edit">
+                                                <BaronyTooltip Text="@(L["Edit"])">
                                                     <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => EditPurseSourceAsync(src))" />
                                                 </BaronyTooltip>
-                                                <BaronyTooltip Text="Remove">
+                                                <BaronyTooltip Text="@(L["Remove"])">
                                                     <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeletePurseSourceAsync(src))" />
                                                 </BaronyTooltip>
                                             </span>
@@ -206,10 +206,10 @@ else if (_overview is not null)
                         }
                         @if (_purseSources.Count == 0)
                         {
-                            <tr><td class="ppb-row-label" colspan="2" style="color:var(--barony-muted);font-weight:400;">No purse sources yet.</td></tr>
+                            <tr><td class="ppb-row-label" colspan="2" style="color:var(--barony-muted);font-weight:400;">@L["No purse sources yet."]</td></tr>
                         }
                         <tr class="ppb-summary-row">
-                            <td class="ppb-row-label">Σ purse ledger</td>
+                            <td class="ppb-row-label">@L["Σ purse ledger"]</td>
                             <td class="@ValueClass(_purseBalance)"><b>@Fmt(_purseBalance)</b></td>
                         </tr>
                     </tbody>
@@ -222,7 +222,7 @@ else if (_overview is not null)
                     <MudButton Variant="Variant.Outlined"
                                StartIcon="@Icons.Material.Filled.Add"
                                OnClick="AddPurseSourceAsync">
-                        Add Purse Source
+                        @L["Add Purse Source"]
                     </MudButton>
                 </div>
             }

@@ -52,9 +52,14 @@ def wrap_file(path: str, keys: set[str]) -> tuple[int, int]:
     head, tail = src[:split], src[split:]
     text_n = attr_n = 0
 
-    # 1) Element text nodes: >TEXT<
+    # 1) Element text nodes: >TEXT<  (real tag boundaries only)
     def text_sub(m: re.Match) -> str:
         nonlocal text_n
+        # Skip matches that sit inside a string literal on this line (odd number of
+        # quotes before the match — e.g. HTML embedded in a C# @("<p>..</p>") expression).
+        line_start = m.string.rfind("\n", 0, m.start()) + 1
+        if m.string.count('"', line_start, m.start()) % 2:
+            return m.group(0)
         lead, body, trail = m.group(1), m.group(2), m.group(3)
         key = body.strip()
         if key in keys and wrappable(key) and "@L[" not in body:
@@ -62,7 +67,7 @@ def wrap_file(path: str, keys: set[str]) -> tuple[int, int]:
             return f'>{lead}@L["{key}"]{trail}<'
         return m.group(0)
 
-    head = re.sub(r'>(\s*)([^<>@{}"]+?)(\s*)<', text_sub, head)
+    head = re.sub(r'(?<![=!<>/-])>(\s*)([^<>@{}"]+?)(\s*)<(?=[/\w])', text_sub, head)
 
     # 2) Whitelisted display attributes: Attr="TEXT"
     attr_alt = "|".join(re.escape(a) for a in ATTR_WHITELIST)

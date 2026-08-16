@@ -16,7 +16,7 @@
 
         <div class="terrain-map-size__amount">
             <MudNumericField T="int"
-                             Label="Tiles per click"
+                             Label="@(L["Tiles per click"])"
                              @bind-Value="_amount"
                              Min="1"
                              Max="10"
@@ -28,14 +28,14 @@
 
         <div class="terrain-map-size__pad">
             <div class="terrain-map-size__edge terrain-map-size__edge--top">
-                <span class="terrain-map-size__edge-label">Top</span>
-                <BaronyTooltip Text="Remove rows from the top">
+                <span class="terrain-map-size__edge-label">@L["Top"]</span>
+                <BaronyTooltip Text="@(L["Remove rows from the top"])">
                     <MudIconButton Icon="@Icons.Material.Filled.Remove"
                                    Size="Size.Small"
                                    Disabled="@(_busy || !CanShrinkTop)"
                                    OnClick="@(() => ApplyAsync(0, 0, -Amount, 0))" />
                 </BaronyTooltip>
-                <BaronyTooltip Text="Add rows at the top">
+                <BaronyTooltip Text="@(L["Add rows at the top"])">
                     <MudIconButton Icon="@Icons.Material.Filled.Add"
                                    Size="Size.Small"
                                    Disabled="@(_busy || !CanGrowTop)"
@@ -45,14 +45,14 @@
 
             <div class="terrain-map-size__middle">
                 <div class="terrain-map-size__edge terrain-map-size__edge--left">
-                    <span class="terrain-map-size__edge-label">Left</span>
-                    <BaronyTooltip Text="Remove columns from the left">
+                    <span class="terrain-map-size__edge-label">@L["Left"]</span>
+                    <BaronyTooltip Text="@(L["Remove columns from the left"])">
                         <MudIconButton Icon="@Icons.Material.Filled.Remove"
                                        Size="Size.Small"
                                        Disabled="@(_busy || !CanShrinkLeft)"
                                        OnClick="@(() => ApplyAsync(-Amount, 0, 0, 0))" />
                     </BaronyTooltip>
-                    <BaronyTooltip Text="Add columns on the left">
+                    <BaronyTooltip Text="@(L["Add columns on the left"])">
                         <MudIconButton Icon="@Icons.Material.Filled.Add"
                                        Size="Size.Small"
                                        Disabled="@(_busy || !CanGrowLeft)"
@@ -65,14 +65,14 @@
                 </div>
 
                 <div class="terrain-map-size__edge terrain-map-size__edge--right">
-                    <span class="terrain-map-size__edge-label">Right</span>
-                    <BaronyTooltip Text="Add columns on the right">
+                    <span class="terrain-map-size__edge-label">@L["Right"]</span>
+                    <BaronyTooltip Text="@(L["Add columns on the right"])">
                         <MudIconButton Icon="@Icons.Material.Filled.Add"
                                        Size="Size.Small"
                                        Disabled="@(_busy || !CanGrowRight)"
                                        OnClick="@(() => ApplyAsync(0, Amount, 0, 0))" />
                     </BaronyTooltip>
-                    <BaronyTooltip Text="Remove columns from the right">
+                    <BaronyTooltip Text="@(L["Remove columns from the right"])">
                         <MudIconButton Icon="@Icons.Material.Filled.Remove"
                                        Size="Size.Small"
                                        Disabled="@(_busy || !CanShrinkRight)"
@@ -82,14 +82,14 @@
             </div>
 
             <div class="terrain-map-size__edge terrain-map-size__edge--bottom">
-                <span class="terrain-map-size__edge-label">Bottom</span>
-                <BaronyTooltip Text="Add rows at the bottom">
+                <span class="terrain-map-size__edge-label">@L["Bottom"]</span>
+                <BaronyTooltip Text="@(L["Add rows at the bottom"])">
                     <MudIconButton Icon="@Icons.Material.Filled.Add"
                                    Size="Size.Small"
                                    Disabled="@(_busy || !CanGrowBottom)"
                                    OnClick="@(() => ApplyAsync(0, 0, 0, Amount))" />
                 </BaronyTooltip>
-                <BaronyTooltip Text="Remove rows from the bottom">
+                <BaronyTooltip Text="@(L["Remove rows from the bottom"])">
                     <MudIconButton Icon="@Icons.Material.Filled.Remove"
                                    Size="Size.Small"
                                    Disabled="@(_busy || !CanShrinkBottom)"

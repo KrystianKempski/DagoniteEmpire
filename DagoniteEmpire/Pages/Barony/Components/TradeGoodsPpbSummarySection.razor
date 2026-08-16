@@ -1,6 +1,6 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
-<BaronySection Title="Trade good bonus summary" DefaultOpen="true">
+<BaronySection Title="@(L["Trade good bonus summary"])" DefaultOpen="true">
     <Summary>
         <span class="projects-summary__item">@SelectedCount good@(SelectedCount == 1 ? "" : "s")</span>
         <span class="projects-summary__item">@LuxuryTier.NameEn</span>
@@ -10,7 +10,7 @@
         @if (SelectedCount == 0 && !HasLuxuryBonus && TreatyRouteEconomyBonus == 0m && TreatyGoldOutflowPerTurn == 0m)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                Available goods (from production, trade, or MG override), luxury access, route economy, and treaty gold contribute to Domain Panel PPB.
+                @L["Available goods (from production, trade, or MG override), luxury access, route economy, and treaty gold contribute to Domain Panel PPB."]
             </MudText>
         }
         else
@@ -20,8 +20,8 @@
                     <thead>
                         <tr>
                             <th>PPB</th>
-                            <th>Additive</th>
-                            <th>Percent</th>
+                            <th>@L["Additive"]</th>
+                            <th>@L["Percent"]</th>
                         </tr>
                     </thead>
                     <tbody>

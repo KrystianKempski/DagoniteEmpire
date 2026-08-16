@@ -10,7 +10,7 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog">
             <MudTextField @bind-Value="_name"
-                          Label="Name"
+                          Label="@(L["Name"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Required="true"
@@ -20,36 +20,36 @@
             <div class="building-template-dialog__row">
                 <MudNumericField T="int"
                                  @bind-Value="_lordship"
-                                 Label="Lordship"
-                                 HelperText="Minimum lordship level required."
+                                 Label="@(L["Lordship"])"
+                                 HelperText="@(L["Minimum lordship level required."])"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Min="0"
                                  Max="10"
                                  Class="baron-influence-field building-template-dialog__lordship" />
                 <MudSelect T="string"
-                           Label="Type"
+                           Label="@(L["Type"])"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Dense="true"
                            Class="baron-influence-field building-template-dialog__kind"
                            @bind-Value="_kind">
-                    <MudSelectItem Value="@BuildingKind.Building">Building</MudSelectItem>
-                    <MudSelectItem Value="@BuildingKind.Improvement">Improvement</MudSelectItem>
+                    <MudSelectItem Value="@BuildingKind.Building">@L["Building"]</MudSelectItem>
+                    <MudSelectItem Value="@BuildingKind.Improvement">@L["Improvement"]</MudSelectItem>
                 </MudSelect>
             </div>
 
             <div class="building-template-dialog__row">
                 <MudNumericField T="decimal"
                                  @bind-Value="_productionCost"
-                                 Label="Production cost"
+                                 Label="@(L["Production cost"])"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Min="0"
                                  Class="baron-influence-field building-template-dialog__cost" />
                 <MudNumericField T="decimal"
                                  @bind-Value="_goldCost"
-                                 Label="Gold cost"
+                                 Label="@(L["Gold cost"])"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Min="0"
@@ -57,8 +57,8 @@
             </div>
 
             <MudTextField @bind-Value="_description"
-                          Label="Description"
-                          HelperText="Shown in the catalog (tooltips). Use separate lines for Produces / Requires trade access."
+                          Label="@(L["Description"])"
+                          HelperText="@(L["Shown in the catalog (tooltips). Use separate lines for Produces / Requires trade access."])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="4"
@@ -67,8 +67,8 @@
             @if (IsImprovement)
             {
                 <MudSelect T="string"
-                           Label="Terrain requirement"
-                           HelperText="Where this can be built on the map (catalog hint)."
+                           Label="@(L["Terrain requirement"])"
+                           HelperText="@(L["Where this can be built on the map (catalog hint)."])"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Dense="true"
@@ -80,7 +80,7 @@
                     }
                 </MudSelect>
 
-                <MudText Typo="Typo.caption" Class="mb-1" Style="color:var(--barony-muted);">Map icon</MudText>
+                <MudText Typo="Typo.caption" Class="mb-1" Style="color:var(--barony-muted);">@L["Map icon"]</MudText>
                 <div class="custom-improvement-icon-picker">
                     @foreach (var icon in MapImprovement.IconChoices)
                     {
@@ -98,12 +98,12 @@
                 </div>
             }
 
-            <PpbVectorEditor @bind-Value="_additive" Title="PPB additive (+)" Compact="true" />
-            <PpbVectorEditor @bind-Value="_percent" Title="PPB percent (%)" Compact="true" Percent="true" />
+            <PpbVectorEditor @bind-Value="_additive" Title="@(L["PPB additive (+)"])" Compact="true" />
+            <PpbVectorEditor @bind-Value="_percent" Title="@(L["PPB percent (%)"])" Compact="true" Percent="true" />
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
         <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@SaveButtonLabel</MudButton>
     </DialogActions>
 </MudDialog>

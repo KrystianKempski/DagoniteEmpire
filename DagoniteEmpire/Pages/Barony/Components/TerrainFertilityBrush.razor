@@ -2,15 +2,15 @@
 
 <div class="terrain-brush">
     <MudText Typo="Typo.caption" Class="terrain-brush__hint">
-        Click or drag on the map to paint. Unknown clears fertility. Mountains cannot receive fertility.
+        @L["Click or drag on the map to paint. Unknown clears fertility. Mountains cannot receive fertility."]
     </MudText>
     <div class="terrain-brush__body">
         <div class="terrain-brush__options">
-            <BaronyTooltip Text="Unknown fertility">
+            <BaronyTooltip Text="@(L["Unknown fertility"])">
                 <button type="button"
                         class="terrain-fertility-swatch terrain-fertility-swatch--unknown @(Value == TerrainFertility.Unknown ? "terrain-fertility-swatch--selected" : "")"
                         style="background-color: @TerrainMapVisuals.UnknownFertilityColor"
-                        aria-label="Unknown fertility"
+                        aria-label="@(L["Unknown fertility"])"
                         @onclick="() => SelectValue(TerrainFertility.Unknown)">
                 </button>
             </BaronyTooltip>

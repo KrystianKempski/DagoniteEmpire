@@ -10,7 +10,7 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudTextField @bind-Value="_name"
-                          Label="Name"
+                          Label="@(L["Name"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field"
@@ -20,7 +20,7 @@
             {
                 <MudNumericField T="int"
                                  @bind-Value="_population"
-                                 Label="Population (Pop)"
+                                 Label="@(L["Population (Pop)"])"
                                  HelperText="@PopulationHelp"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
@@ -31,7 +31,7 @@
             {
                 <MudCheckBox T="bool"
                              @bind-Value="_hasPalisade"
-                             Label="Palisade (+5 Defense, +3 Stability, +1 Law)"
+                             Label="@(L["Palisade (+5 Defense, +3 Stability, +1 Law)"])"
                              Color="Color.Primary"
                              Dense="true"
                              Class="baron-influence-field" />
@@ -39,8 +39,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Confirm</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@L["Confirm"]</MudButton>
     </DialogActions>
 </MudDialog>
 

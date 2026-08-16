@@ -18,7 +18,7 @@
 
 @if (IsLoading)
 {
-    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>Loading battle map...</span>
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>@L["Loading battle map..."]</span>
 }
 else if (LoadError is not null)
 {
@@ -26,18 +26,18 @@ else if (LoadError is not null)
 }
 else if (Map is null)
 {
-    <MudAlert Severity="Severity.Warning" Class="my-2">Could not load battle map.</MudAlert>
+    <MudAlert Severity="Severity.Warning" Class="my-2">@L["Could not load battle map."]</MudAlert>
 }
 else if (!CanManageAsMg && !Map.IsActive)
 {
     <MudAlert Severity="Severity.Info" Class="my-2">
-        Battle Map is not visible yet. Wait for the Game Master to show the map so you can deploy your units.
+        @L["Battle Map is not visible yet. Wait for the Game Master to show the map so you can deploy your units."]
     </MudAlert>
 }
 else
 {
     <div class="bbm-page">
-        <BaronyPageHeader Title="Battle" HelpKey="battle-map" ShowSectionToggle="false">
+        <BaronyPageHeader Title="@(L["Battle"])" HelpKey="battle-map" ShowSectionToggle="false">
             <Summary>
                 <span class="bbm-phase-chip">@PhaseLabel</span>
                 @if (IsMovementPhase && ActiveToken is not null)
@@ -87,9 +87,9 @@ else
                                                 Class="march-map-tool-toggle"
                                                 SelectionMode="SelectionMode.SingleSelection"
                                                 CheckMark="false">
-                                    <MudToggleItem Value="@("tiles")" Text="Tiles" />
-                                    <MudToggleItem Value="@("text")" Text="Text" />
-                                    <MudToggleItem Value="@("erase")" Text="Eraser" />
+                                    <MudToggleItem Value="@("tiles")" Text="@(L["Tiles"])" />
+                                    <MudToggleItem Value="@("text")" Text="@(L["Text"])" />
+                                    <MudToggleItem Value="@("erase")" Text="@(L["Eraser"])" />
                                 </MudToggleGroup>
 
                                 @if (_tool == "tiles")
@@ -101,13 +101,13 @@ else
                                                     Class="march-map-tool-toggle"
                                                     SelectionMode="SelectionMode.SingleSelection"
                                                     CheckMark="false">
-                                        <MudToggleItem Value="@("color")" Text="Color" />
-                                        <MudToggleItem Value="@("deploy")" Text="Deploy" />
-                                        <MudToggleItem Value="@("difficult")" Text="Difficult" />
+                                        <MudToggleItem Value="@("color")" Text="@(L["Color"])" />
+                                        <MudToggleItem Value="@("deploy")" Text="@(L["Deploy"])" />
+                                        <MudToggleItem Value="@("difficult")" Text="@(L["Difficult"])" />
                                         <MudToggleItem Value="@("impassable")">
-                                            <span class="bbm-toggle-twoline">Impass<br />able</span>
+                                            <span class="bbm-toggle-twoline">@L["Impass"]<br />able</span>
                                         </MudToggleItem>
-                                        <MudToggleItem Value="@("normal")" Text="Clear cell" />
+                                        <MudToggleItem Value="@("normal")" Text="@(L["Clear cell"])" />
                                     </MudToggleGroup>
                                     @if (_tileBrush == "color")
                                     {
@@ -138,7 +138,7 @@ else
                                            Color="Color.Error"
                                            Class="march-map-toolbar__btn"
                                            OnClick="ClearMap">
-                                    Clear map
+                                    @L["Clear map"]
                                 </MudButton>
                             </div>
                         }
@@ -195,24 +195,24 @@ else
                         else if (WaitingForMovementResolve)
                         {
                             <span class="bbm-map-wait">
-                                All movement orders set — waiting for the Game Master to resolve.
+                                @L["All movement orders set — waiting for the Game Master to resolve."]
                             </span>
                         }
                         else if (IsAttackPlanningPhase && CanManageAsMg)
                         {
                             @if (Map.TurnState.BaronPhaseReady)
                             {
-                                <span class="bbm-map-ready">Baron is ready</span>
+                                <span class="bbm-map-ready">@L["Baron is ready"]</span>
                             }
                             else
                             {
-                                <span class="bbm-map-wait">Waiting for baron ready</span>
+                                <span class="bbm-map-wait">@L["Waiting for baron ready"]</span>
                             }
                         }
                         else if (IsAttackPlanningPhase && CanEdit && Map.TurnState.BaronPhaseReady)
                         {
                             <span class="bbm-map-ready">
-                                Ready — waiting for the Game Master to begin combat.
+                                @L["Ready — waiting for the Game Master to begin combat."]
                             </span>
                         }
                     </div>
@@ -230,7 +230,7 @@ else
                             <button type="button"
                                     class="bbm-map-btn bbm-map-btn--solid"
                                     @onclick="BeginBattle">
-                                Begin battle
+                                @L["Begin battle"]
                             </button>
                         }
                         @if (ShowMovementControls)
@@ -239,14 +239,14 @@ else
                                     class="bbm-map-btn bbm-map-btn--solid"
                                     @onclick="FinishMove"
                                     disabled="@(_isResolvingMovement || _isResolvingCombat)">
-                                Finish move
+                                @L["Finish move"]
                             </button>
                             @if (CanUndoMove)
                             {
                                 <button type="button"
                                         class="bbm-map-btn bbm-map-btn--ghost"
                                         @onclick="UndoMoveStep">
-                                    Undo
+                                    @L["Undo"]
                                 </button>
                             }
                         }
@@ -256,7 +256,7 @@ else
                                     class="bbm-map-btn @(AllMovementOrdersFinished ? "bbm-map-btn--solid" : "bbm-map-btn--ghost")"
                                     @onclick="ResolveMovementPhase"
                                     disabled="@(_isResolvingMovement || _isResolvingCombat)">
-                                Resolve all movement
+                                @L["Resolve all movement"]
                             </button>
                         }
                         @if (CanManageAsMg && IsCombatPhase)
@@ -265,7 +265,7 @@ else
                                     class="bbm-map-btn bbm-map-btn--solid"
                                     @onclick="EndCombatPhase"
                                     disabled="@(_isResolvingMovement || _isResolvingCombat)">
-                                End combat / next round
+                                @L["End combat / next round"]
                             </button>
                         }
                         @if (CanManageAsMg && IsBattlePhase)
@@ -274,7 +274,7 @@ else
                                     class="bbm-map-btn bbm-map-btn--end-battle bbm-map-btn--compact"
                                     @onclick="EndBattle"
                                     disabled="@(_isResolvingMovement || _isResolvingCombat)">
-                                End battle
+                                @L["End battle"]
                             </button>
                         }
                         @if (IsAttackPlanningPhase && !_isResolvingCombat)
@@ -284,7 +284,7 @@ else
                                 <button type="button"
                                         class="bbm-map-btn bbm-map-btn--ghost bbm-map-btn--compact"
                                         @onclick="AutoAssignAttackTargets">
-                                    Auto-assign attacks
+                                    @L["Auto-assign attacks"]
                                 </button>
                             }
                             @if (CanManageAsMg)
@@ -292,7 +292,7 @@ else
                                 <button type="button"
                                         class="bbm-map-btn bbm-map-btn--solid bbm-map-btn--compact"
                                         @onclick="AdvanceToCombat">
-                                    Begin combat
+                                    @L["Begin combat"]
                                 </button>
                             }
                             else if (CanEdit && !Map.TurnState.BaronPhaseReady)
@@ -300,7 +300,7 @@ else
                                 <button type="button"
                                         class="bbm-map-btn bbm-map-btn--solid bbm-map-btn--compact"
                                         @onclick="MarkBaronPhaseReady">
-                                    I'm ready
+                                    @L["I'm ready"]
                                 </button>
                             }
                         }
@@ -314,14 +314,14 @@ else
                             title="Show battle log"
                             @onclick="() => _battleLogCollapsed = false">
                         <span class="bbm-map-log-toggle__icon" aria-hidden="true"></span>
-                        <span class="bbm-map-log-toggle__label">Log</span>
+                        <span class="bbm-map-log-toggle__label">@L["Log"]</span>
                     </button>
                 }
                 else
                 {
                     <div class="bbm-map-log">
                         <div class="bbm-map-log__head">
-                            <span class="bbm-map-log__title">Battle log</span>
+                            <span class="bbm-map-log__title">@L["Battle log"]</span>
                             <button type="button"
                                     class="bbm-map-log__hide"
                                     title="Hide battle log"
@@ -343,19 +343,19 @@ else
                             }
                             @if (Map.Log.Count == 0)
                             {
-                                <div class="bbm-map-log__empty">No entries yet.</div>
+                                <div class="bbm-map-log__empty">@L["No entries yet."]</div>
                             }
                         </div>
                         <div class="bbm-map-log__chat">
                             <input class="bbm-input bbm-map-log__input" placeholder="Message…" @bind="_chatDraft" @onkeydown="OnChatKey" />
-                            <button type="button" class="bbm-map-btn bbm-map-btn--ghost bbm-map-log__send" @onclick="SendChat">Send</button>
+                            <button type="button" class="bbm-map-btn bbm-map-btn--ghost bbm-map-log__send" @onclick="SendChat">@L["Send"]</button>
                         </div>
                     </div>
                 }
             </section>
 
             <aside class="bbm-side-pane">
-                <BaronySection Title="Your forces">
+                <BaronySection Title="@(L["Your forces"])">
                     <div class="bbm-force-list">
                         @foreach (var unit in _activeUnits)
                         {
@@ -404,7 +404,7 @@ else
                                             <button type="button"
                                                     class="barony-turn-btn--ghost bbm-mini-btn"
                                                     @onclick="() => RecallUnit(unit.Id)">
-                                                Recall
+                                                @L["Recall"]
                                             </button>
                                         }
                                     </div>
@@ -439,12 +439,12 @@ else
                         }
                         @if (_activeUnits.Count == 0)
                         {
-                            <p class="bbm-empty">No Active units in Army.</p>
+                            <p class="bbm-empty">@L["No Active units in Army."]</p>
                         }
                     </div>
                 </BaronySection>
 
-                <BaronySection Title="Enemy forces">
+                <BaronySection Title="@(L["Enemy forces"])">
                     <div class="bbm-force-list">
                         @foreach (var enemy in Map.Tokens.Where(t => t.IsEnemy))
                         {
@@ -530,41 +530,41 @@ else
                                     <button type="button"
                                             class="bbm-map-btn bbm-map-btn--ghost bbm-enemy-add-btn"
                                             @onclick="OpenEnemyAbilityDialogAsync">
-                                        Dodaj zdolnosc
+                                        @L["Dodaj zdolnosc"]
                                     </button>
                                     @if (_editingEnemyTokenId is not null)
                                     {
                                         <button type="button"
                                                 class="bbm-map-btn bbm-map-btn--ghost bbm-enemy-add-btn"
                                                 @onclick="CancelEditEnemy">
-                                            Cancel
+                                            @L["Cancel"]
                                         </button>
                                         <button type="button"
                                                 class="bbm-map-btn bbm-map-btn--solid bbm-enemy-add-btn"
                                                 @onclick="SaveEditedEnemyAsync">
-                                            Edit
+                                            @L["Edit"]
                                         </button>
                                     }
                                     else
                                     {
                                         <button type="button" class="bbm-map-btn bbm-map-btn--solid bbm-enemy-add-btn" @onclick="AddEnemyToken">
-                                            Add
+                                            @L["Add"]
                                         </button>
                                     }
                                 </div>
                                 <div class="bbm-enemy-stats">
-                                    <label>Attack <input type="number" @bind="_enemyDraft.Attack" /></label>
-                                    <label>Defence <input type="number" @bind="_enemyDraft.Defense" /></label>
-                                    <label>Damage <input type="number" @bind="_enemyDraft.Damage" /></label>
+                                    <label>@L["Attack"] <input type="number" @bind="_enemyDraft.Attack" /></label>
+                                    <label>@L["Defence"] <input type="number" @bind="_enemyDraft.Defense" /></label>
+                                    <label>@L["Damage"] <input type="number" @bind="_enemyDraft.Damage" /></label>
                                     <label>HP <input type="number" @bind="_enemyDraft.Hp" /></label>
-                                    <label>Armor <input type="number" @bind="_enemyDraft.Armor" /></label>
-                                    <label>Discipline <input type="number" @bind="_enemyDraft.Discipline" /></label>
-                                    <label>Men <input type="number" @bind="_enemyDraft.TroopCount" /></label>
-                                    <label>Move <input type="number" @bind="_enemyDraft.Move" /></label>
-                                    <label>Range <input type="number" @bind="_enemyDraft.Range" title="0 = melee only; >0 = ranged unit" /></label>
-                                    <label>Pierce <input type="number" @bind="_enemyDraft.Pierce" title="Armor cut through by this unit's attacks; 0 = none" /></label>
+                                    <label>@L["Armor"] <input type="number" @bind="_enemyDraft.Armor" /></label>
+                                    <label>@L["Discipline"] <input type="number" @bind="_enemyDraft.Discipline" /></label>
+                                    <label>@L["Men"] <input type="number" @bind="_enemyDraft.TroopCount" /></label>
+                                    <label>@L["Move"] <input type="number" @bind="_enemyDraft.Move" /></label>
+                                    <label>@L["Range"] <input type="number" @bind="_enemyDraft.Range" title="0 = melee only; >0 = ranged unit" /></label>
+                                    <label>@L["Pierce"] <input type="number" @bind="_enemyDraft.Pierce" title="Armor cut through by this unit's attacks; 0 = none" /></label>
                                     <label>
-                                        Mounted
+                                        @L["Mounted"]
                                         <input type="checkbox" @bind="_enemyDraft.Mounted" title="Needed for mount-based abilities" />
                                     </label>
                                 </div>
@@ -590,12 +590,12 @@ else
                         }
                         else if (!Map.Tokens.Any(t => t.IsEnemy))
                         {
-                            <p class="bbm-empty">No enemies on the map yet.</p>
+                            <p class="bbm-empty">@L["No enemies on the map yet."]</p>
                         }
                     </div>
                 </BaronySection>
 
-                <BaronySection Title="Actions">
+                <BaronySection Title="@(L["Actions"])">
                     @if (CanManageAsMg)
                     {
                         <div class="bbm-actions">
@@ -605,7 +605,7 @@ else
                                     <button type="button"
                                             class="bbm-map-btn bbm-map-btn--ghost"
                                             @onclick="() => OnActiveChanged(false)">
-                                        Hide map
+                                        @L["Hide map"]
                                     </button>
                                 }
                                 else
@@ -613,7 +613,7 @@ else
                                     <button type="button"
                                             class="bbm-map-btn bbm-map-btn--solid"
                                             @onclick="() => OnActiveChanged(true)">
-                                        Show map
+                                        @L["Show map"]
                                     </button>
                                 }
                             </div>
@@ -673,7 +673,7 @@ else
                             .ToList();
                         @if (recentCombat.Count > 0)
                         {
-                            <p class="bbm-hint" style="margin-top:0.6rem;">Recent combat summary:</p>
+                            <p class="bbm-hint" style="margin-top:0.6rem;">@L["Recent combat summary:"]</p>
                             <ul class="bbm-initiative" style="margin-top:0.2rem;">
                                 @foreach (var entry in recentCombat)
                                 {

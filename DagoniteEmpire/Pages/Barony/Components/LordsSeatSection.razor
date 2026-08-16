@@ -3,7 +3,7 @@
 @inject ISnackbar _snackBar
 @inject IDialogService _dialogService
 
-<BaronySection Title="Chambers">
+<BaronySection Title="@(L["Chambers"])">
     <Summary>
         <PpbSummaryChips Vector="@Glance" />
     </Summary>
@@ -21,11 +21,11 @@
                            Size="Size.Small"
                            StartIcon="@Icons.Material.Filled.Add"
                            OnClick="AddRoomAsync">
-                    Add chamber
+                    @L["Add chamber"]
                 </MudButton>
             </div>
             <div class="lords-seat-levelbar">
-                <span class="lords-seat-levelbar__label">Floor</span>
+                <span class="lords-seat-levelbar__label">@L["Floor"]</span>
                 @foreach (var level in ActiveLevels)
                 {
                     <button type="button"
@@ -36,7 +36,7 @@
                 }
                 @if (AvailableLevelsToAdd.Any())
                 {
-                    <span class="lords-seat-levelbar__label lords-seat-levelbar__label--add">Add</span>
+                    <span class="lords-seat-levelbar__label lords-seat-levelbar__label--add">@L["Add"]</span>
                     @foreach (var level in AvailableLevelsToAdd)
                     {
                         var levelToAdd = level;
@@ -49,7 +49,7 @@
                         </BaronyTooltip>
                     }
                 }
-                <BaronyTooltip Text="Remove current floor">
+                <BaronyTooltip Text="@(L["Remove current floor"])">
                     <MudIconButton Icon="@Icons.Material.Filled.Remove"
                                    Size="Size.Small"
                                    Disabled="@(_currentLevel == SeatFloorLevel.Ground || ActiveLevels.Count <= 1)"
@@ -57,37 +57,37 @@
                 </BaronyTooltip>
             </div>
             <div class="lords-seat-paintbar">
-                <span class="lords-seat-levelbar__label">Paint</span>
+                <span class="lords-seat-levelbar__label">@L["Paint"]</span>
                 <BaronyTooltip Text="@SeatTileKind.Label(SeatTileKind.Wall)">
                     <button type="button"
                             class="@PaintChipClassWall()"
-                            @onclick="PaintWall">Wall</button>
+                            @onclick="PaintWall">@L["Wall"]</button>
                 </BaronyTooltip>
                 <BaronyTooltip Text="@SeatTileKind.Label(SeatTileKind.Ground)">
                     <button type="button"
                             class="@PaintChipClassGround()"
-                            @onclick="PaintGround">Ground</button>
+                            @onclick="PaintGround">@L["Ground"]</button>
                 </BaronyTooltip>
                 <BaronyTooltip Text="@SeatTileKind.Label(SeatTileKind.Water)">
                     <button type="button"
                             class="@PaintChipClassWater()"
-                            @onclick="PaintWater">Water</button>
+                            @onclick="PaintWater">@L["Water"]</button>
                 </BaronyTooltip>
-                <BaronyTooltip Text="Erase painted tile">
+                <BaronyTooltip Text="@(L["Erase painted tile"])">
                     <button type="button"
                             class="@PaintChipClassErase()"
-                            @onclick="PaintErase">Erase</button>
+                            @onclick="PaintErase">@L["Erase"]</button>
                 </BaronyTooltip>
                 @if (_paintKind is not null)
                 {
-                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="ClearPaintMode">Done</MudButton>
+                    <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="ClearPaintMode">@L["Done"]</MudButton>
                 }
             </div>
         }
         else if (ActiveLevels.Count > 1)
         {
             <div class="lords-seat-levelbar">
-                <span class="lords-seat-levelbar__label">Floor</span>
+                <span class="lords-seat-levelbar__label">@L["Floor"]</span>
                 @foreach (var level in ActiveLevels)
                 {
                     <button type="button"
@@ -106,7 +106,7 @@
                 {
                     <MudText Typo="Typo.caption" Class="lords-seat-placement-hint">
                         Click a grid cell on @SeatFloorLevel.Label(_currentLevel) to place a new chamber (2×2).
-                        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="CancelPlacementMode">Cancel</MudButton>
+                        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="CancelPlacementMode">@L["Cancel"]</MudButton>
                     </MudText>
                 }
                 else if (CanManage && _paintKind is not null)
@@ -227,22 +227,22 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th rowspan="2" class="ppb-row-label lords-seat-col-name">Chamber</th>
-                            <th rowspan="2" class="ppb-row-label lords-seat-col-purpose">Purpose</th>
+                            <th rowspan="2" class="ppb-row-label lords-seat-col-name">@L["Chamber"]</th>
+                            <th rowspan="2" class="ppb-row-label lords-seat-col-purpose">@L["Purpose"]</th>
                             <th rowspan="2" class="lords-seat-col-level">
-                                <BaronyTooltip Text="Floor level">
-                                    <span>Floor</span>
+                                <BaronyTooltip Text="@(L["Floor level"])">
+                                    <span>@L["Floor"]</span>
                                 </BaronyTooltip>
                             </th>
                             <th rowspan="2" class="lords-seat-col-size">
-                                <BaronyTooltip Text="Size category (tiles)">
-                                    <span>Size</span>
+                                <BaronyTooltip Text="@(L["Size category (tiles)"])">
+                                    <span>@L["Size"]</span>
                                 </BaronyTooltip>
                             </th>
-                            <th rowspan="2" class="lords-seat-col-occupant">Occupant</th>
+                            <th rowspan="2" class="lords-seat-col-occupant">@L["Occupant"]</th>
                             <th rowspan="2" class="lords-seat-col-prestige seat-php-header">
-                                <BaronyTooltip Text="Prestige / Honor / Fear (per-chamber, × multiplier)">
-                                    <span>Prestige</span>
+                                <BaronyTooltip Text="@(L["Prestige / Honor / Fear (per-chamber, × multiplier)"])">
+                                    <span>@L["Prestige"]</span>
                                 </BaronyTooltip>
                             </th>
                             @foreach (var info in PpbCatalog.All)
@@ -269,18 +269,18 @@
                             <tr class="@RowClass(room)">
                                 <td class="lords-seat-col-name">
                                     <div class="city-building-name-cell">
-                                        <BaronyTooltip Title="Chamber" Text="@RoomTooltip(room, GetLayoutIssue(room))">
+                                        <BaronyTooltip Title="@(L["Chamber"])" Text="@RoomTooltip(room, GetLayoutIssue(room))">
                                             <span class="city-building-name-text">@room.Name</span>
                                         </BaronyTooltip>
                                         @if (CanManage)
                                         {
                                             <span class="city-building-name-actions">
-                                                <BaronyTooltip Text="Edit chamber">
+                                                <BaronyTooltip Text="@(L["Edit chamber"])">
                                                     <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                                    Size="Size.Small"
                                                                    OnClick="@(() => EditRoomAsync(room))" />
                                                 </BaronyTooltip>
-                                                <BaronyTooltip Text="Remove chamber">
+                                                <BaronyTooltip Text="@(L["Remove chamber"])">
                                                     <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                                    Size="Size.Small"
                                                                    Color="Color.Error"
@@ -292,13 +292,13 @@
                                 </td>
                                 <td class="lords-seat-col-purpose">
                                     <div class="city-building-name-cell">
-                                        <BaronyTooltip Title="Purpose" Text="@PurposeTooltip(room)">
+                                        <BaronyTooltip Title="@(L["Purpose"])" Text="@PurposeTooltip(room)">
                                             <span class="city-building-name-text">@PurposeLabel(room)</span>
                                         </BaronyTooltip>
                                         @if (CanEdit && !room.IsRuin)
                                         {
                                             <span class="city-building-name-actions">
-                                                <BaronyTooltip Text="Assign purpose">
+                                                <BaronyTooltip Text="@(L["Assign purpose"])">
                                                     <MudIconButton Icon="@Icons.Material.Filled.SwapHoriz"
                                                                    Size="Size.Small"
                                                                    OnClick="@(() => AssignPurposeAsync(room))" />
@@ -328,7 +328,7 @@
                                     }
                                     else
                                     {
-                                        <BaronyTooltip Title="Occupant" Text="@(occupantTip ?? occupantName)">
+                                        <BaronyTooltip Title="@(L["Occupant"])" Text="@(occupantTip ?? occupantName)">
                                             <span class="lords-seat-occupant-name">@occupantName</span>
                                         </BaronyTooltip>
                                     }
@@ -338,7 +338,7 @@
                                         var php = RoomPhpTotals(room);
                                         var mult = room.PrestigeMultiplier;
                                     }
-                                    <BaronyTooltip Title="Prestige / Honor / Fear"
+                                    <BaronyTooltip Title="@(L["Prestige / Honor / Fear"])"
                                                    Text="@PhpTooltip(room, php, mult)">
                                         @if (php is null)
                                         {
@@ -388,9 +388,9 @@
                         @if (OrderedRooms.Any())
                         {
                             <tr class="ppb-summary-row">
-                                <td class="ppb-row-label" colspan="5">Σ Lord's Seat</td>
+                                <td class="ppb-row-label" colspan="5">@L["Σ Lord's Seat"]</td>
                                 <td class="lords-seat-col-prestige seat-php-cell">
-                                    <BaronyTooltip Title="Prestige / Honor / Fear"
+                                    <BaronyTooltip Title="@(L["Prestige / Honor / Fear"])"
                                                    Text="@($"Lord's Seat total: Prestige {FmtPhp(SeatPhpSum.Prestige)} · Honor {FmtPhp(SeatPhpSum.Honor)} · Fear {FmtPhp(SeatPhpSum.Fear)}")">
                                         <span class="seat-php-values">
                                             <span class="seat-php-value @BaronPhpVisuals.CssClass(PhpMetric.Prestige)">

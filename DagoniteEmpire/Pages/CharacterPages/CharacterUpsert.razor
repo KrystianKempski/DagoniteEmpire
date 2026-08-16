@@ -47,14 +47,14 @@
                         <MudHidden Breakpoint="Breakpoint.LgAndUp" Invert="true">
 
                             <div class="save-btn"> 
-                                <button @onclick="UpsertCharacter" class="btn btn-primary">Save</button>
+                                <button @onclick="UpsertCharacter" class="btn btn-primary">@L["Save"]</button>
 
                             </div>
                         </MudHidden> 
                         <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
 
                             <div class="save-btn down"> 
-                                <button @onclick="UpsertCharacter" class="btn btn-primary">Save</button>
+                                <button @onclick="UpsertCharacter" class="btn btn-primary">@L["Save"]</button>
 
                             </div>
                         </MudHidden> 
@@ -64,7 +64,7 @@
                             <h3 class="char-title card-title p-3 m-0">@Title character</h3>
                             <div class="row">
                                 <div class="form-group col-8 col-md-3 px-1">
-                                    <label>Character name</label>
+                                    <label>@L["Character name"]</label>
                                     @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
                                     {
                                         <input type="text" @bind-value="NPCName" class="form-control"></input>
@@ -75,7 +75,7 @@
                                     }
                                 </div>
                                 <div class="form-group col-4 col-md-1 px-1">
-                                    <label>Age</label>
+                                    <label>@L["Age"]</label>
                                     @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
                                     {
                                         <InputNumber  @bind-Value="NPCAge" class="form-control col-2"></InputNumber>
@@ -87,7 +87,7 @@
                                 </div>
 
                                 <div class="form-group col-8 col-md-3 px-1">
-                                    <label>Character Type</label>
+                                    <label>@L["Character Type"]</label>
                                     @if (CanEditCharacterType)
                                     {
                                         <InputSelect @bind-Value="AllParams.Character.NPCType" class="form-select" @bind-Value:after="CharacterTypeHandle">
@@ -108,12 +108,12 @@
                                     }
                                 </div>
                                 <div class="form-group col-4 col-md-1 px-1">
-                                    <label>Finished</label>
+                                    <label>@L["Finished"]</label>
                                     <MudCheckBox Disabled="@((UserInfo?.IsAdminOrMG == false))" @bind-Value="@IsApproved" Size="Size.Medium"></MudCheckBox>
                                 </div>
                                 <div class="col-8 col-md-4 px-1">
                                     <MudStack Spacing="0">
-                                        <label>Current date</label>
+                                        <label>@L["Current date"]</label>
                                         <DateComponent Date="CurrentDate" Editable="UserInfo?.IsAdminOrMG == true"></DateComponent>
                                     </MudStack>
                                 </div>       
@@ -138,7 +138,7 @@
 
                                 <div class="traits p-2">
                                     <MudPaper Class="p-2 m-0 w-100 h-100">
-                                        <h3 class="p-3 m-0 text-center">TRAITS</h3>
+                                        <h3 class="p-3 m-0 text-center">@L["TRAITS"]</h3>
                                         <div class="trait-container">
                                             <TraitsComponent OnTraitsChange="TraitsChange" @bind-Traits="@AllParams.TraitsCharacter" TraitType="@SD.TraitType_Character"></TraitsComponent>
                                         </div>
@@ -158,7 +158,7 @@
 
                                 <div class="traits p-2">
                                     <MudPaper Class="p-2 m-0 w-100 h-100">
-                                        <h3 class="p-3 m-0 text-center">LANGUAGES</h3>
+                                        <h3 class="p-3 m-0 text-center">@L["LANGUAGES"]</h3>
                                         <div class="trait-container">
                                             <LanguagesComponent OnLanguagesChange="LanguagesChange"></LanguagesComponent>
                                         </div>
@@ -169,7 +169,7 @@
                                 {
                                     <div class="traits p-2">
                                         <MudPaper Class="p-2 m-0 w-100 h-100">
-                                            <h3 class="p-3 m-0 text-center">TEMPORARY STATES</h3>
+                                            <h3 class="p-3 m-0 text-center">@L["TEMPORARY STATES"]</h3>
                                             <div class="trait-container">
                                                 <TraitsComponent OnTraitsChange="TraitsChange" @bind-Traits="@AllParams.TraitsTemporary" TraitType="@SD.TraitType_Temporary"></TraitsComponent>
                                             </div>
@@ -183,11 +183,11 @@
                     <section class="section-create-character" @key="@("character-skills-" + Id)">
                         <div class="container-fluid">
                             <div class="row">
-                                <h3 class="p-3 m-0 text-center">SPECIAL SKILLS</h3>
+                                <h3 class="p-3 m-0 text-center">@L["SPECIAL SKILLS"]</h3>
                                 @if(AllParams.Character.IsApproved == false)
                                 {
 
-                                    <button class="btn btn-secondary" style="width: 180px; margin-left:10px; " @onclick="AutoChooseRelatedAttributesForSpecialSkills">Autoselect attributes</button>
+                                    <button class="btn btn-secondary" style="width: 180px; margin-left:10px; " @onclick="AutoChooseRelatedAttributesForSpecialSkills">@L["Autoselect attributes"]</button>
                                 }
                                 <div class="specialskills">
 
@@ -202,7 +202,7 @@
                         </div>
                     </section>
                     <div class="form-group py-2">
-                        <NavLink href="character" class="btn btn-secondary">Back to list</NavLink>
+                        <NavLink href="character" class="btn btn-secondary">@L["Back to list"]</NavLink>
                     </div>
 
                 }

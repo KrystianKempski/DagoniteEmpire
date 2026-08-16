@@ -3,7 +3,7 @@
 @inject ISnackbar _snackBar
 @inject IDialogService _dialogService
 
-<BaronySection Title="Purpose templates">
+<BaronySection Title="@(L["Purpose templates"])">
     <Summary>
         <span class="projects-summary__item">@Templates.Count template@(Templates.Count == 1 ? "" : "s")</span>
     </Summary>
@@ -23,11 +23,11 @@
                 </colgroup>
                 <thead>
                     <tr>
-                        <th rowspan="2" class="ppb-row-label lords-seat-templates-col-name">Name</th>
-                        <th rowspan="2" class="lords-seat-templates-col-size">Min size</th>
-                        <th rowspan="2" class="lords-seat-templates-col-desc">Description</th>
+                        <th rowspan="2" class="ppb-row-label lords-seat-templates-col-name">@L["Name"]</th>
+                        <th rowspan="2" class="lords-seat-templates-col-size">@L["Min size"]</th>
+                        <th rowspan="2" class="lords-seat-templates-col-desc">@L["Description"]</th>
                         <th rowspan="2" class="lords-seat-templates-col-prestige seat-php-header">
-                            <BaronyTooltip Title="Prestige" Text="Prestige / Honor / Fear (additive)">Prestige</BaronyTooltip>
+                            <BaronyTooltip Title="@(L["Prestige"])" Text="@(L["Prestige / Honor / Fear (additive)"])">@L["Prestige"]</BaronyTooltip>
                         </th>
                         @foreach (var info in PpbCatalog.All)
                         {
@@ -52,12 +52,12 @@
                                         <span class="city-building-name-text">@t.Name</span>
                                     </BaronyTooltip>
                                     <span class="city-building-name-actions">
-                                        <BaronyTooltip Text="Edit template">
+                                        <BaronyTooltip Text="@(L["Edit template"])">
                                             <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                            Size="Size.Small"
                                                            OnClick="@(() => EditAsync(t))" />
                                         </BaronyTooltip>
-                                        <BaronyTooltip Text="Delete template">
+                                        <BaronyTooltip Text="@(L["Delete template"])">
                                             <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                            Size="Size.Small"
                                                            Color="Color.Error"
@@ -74,13 +74,13 @@
                                 }
                                 else
                                 {
-                                    <BaronyTooltip Title="Description" Text="@t.Description">
+                                    <BaronyTooltip Title="@(L["Description"])" Text="@t.Description">
                                         <span class="lords-seat-ellipsis">@t.Description</span>
                                     </BaronyTooltip>
                                 }
                             </td>
                             <td class="lords-seat-templates-col-prestige seat-php-cell">
-                                <BaronyTooltip Title="Prestige / Honor / Fear" Text="@TemplatePhpTooltip(t)">
+                                <BaronyTooltip Title="@(L["Prestige / Honor / Fear"])" Text="@TemplatePhpTooltip(t)">
                                     <span class="seat-php-values seat-php-values--stacked seat-php-values--stacked-singlecol">
                                         <span class="seat-php-value @BaronPhpVisuals.CssClass(PhpMetric.Prestige)">
                                             <PhpMetricIcon Metric="PhpMetric.Prestige" Title="" />
@@ -112,7 +112,7 @@
                    StartIcon="@Icons.Material.Filled.Add"
                    Class="mt-2"
                    OnClick="AddAsync">
-            Add purpose template
+            @L["Add purpose template"]
         </MudButton>
     </ChildContent>
 </BaronySection>

@@ -2,7 +2,7 @@
 
 <div class="terrain-brush">
     <MudText Typo="Typo.caption" Class="terrain-brush__hint">
-        Select a domain, then click or drag on the map. Player barony domain is the most transparent overlay.
+        @L["Select a domain, then click or drag on the map. Player barony domain is the most transparent overlay."]
     </MudText>
     <div class="terrain-brush__body">
         <div class="terrain-brush__options">
@@ -24,21 +24,21 @@
                             </span>
                         </button>
                     </BaronyTooltip>
-                    <BaronyTooltip Text="Change domain color">
+                    <BaronyTooltip Text="@(L["Change domain color"])">
                         <input type="color"
                                class="terrain-domain-chip__color-input"
                                value="@d.ColorHex"
                                aria-label="@($"Change color for {d.Name}")"
                                @onchange="e => OnDomainColorInputChangedAsync(d.Id, e)" />
                     </BaronyTooltip>
-                    <BaronyTooltip Text="Edit domain">
+                    <BaronyTooltip Text="@(L["Edit domain"])">
                         <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                        Size="Size.Small"
                                        OnClick="@(() => OnEditDomainAsync(d.Id))" />
                     </BaronyTooltip>
                     @if (!d.IsPrimary)
                     {
-                        <BaronyTooltip Text="Delete domain">
+                        <BaronyTooltip Text="@(L["Delete domain"])">
                             <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                            Size="Size.Small"
                                            Color="Color.Error"
@@ -51,7 +51,7 @@
                        Size="Size.Small"
                        StartIcon="@Icons.Material.Filled.Add"
                        OnClick="OnAddDomainAsync">
-                Add domain
+                @L["Add domain"]
             </MudButton>
         </div>
     </div>

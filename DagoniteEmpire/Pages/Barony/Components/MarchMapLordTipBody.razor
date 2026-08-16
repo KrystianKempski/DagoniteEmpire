@@ -5,7 +5,7 @@
     {
         <div class="barony-tip__title">
             @(string.IsNullOrWhiteSpace(Player.BaronName) ? "You" : Player.BaronName)
-            <span class="march-map-lord-tip__you">(you)</span>
+            <span class="march-map-lord-tip__you">@L["(you)"]</span>
         </div>
         <div class="march-map-lord-tip__meta">
             Baron · @Player.SeatMapLabel · @Player.BaronyName
@@ -23,7 +23,7 @@
         @if (!string.IsNullOrWhiteSpace(Lord.ProducedGoods))
         {
             <div class="march-map-lord-tip__section">
-                <div class="march-map-lord-tip__label">Available goods</div>
+                <div class="march-map-lord-tip__label">@L["Available goods"]</div>
                 <div class="trade-good-chip-row trade-good-chip-row--tip">
                     @foreach (var key in TradeGoodLordNames.ParseLordGoodsList(Lord.ProducedGoods))
                     {
@@ -41,7 +41,7 @@
         @if (!string.IsNullOrWhiteSpace(Lord.Description))
         {
             <div class="march-map-lord-tip__section">
-                <div class="march-map-lord-tip__label">Description</div>
+                <div class="march-map-lord-tip__label">@L["Description"]</div>
                 <div class="barony-tip__body">@Lord.Description</div>
             </div>
         }
@@ -50,7 +50,7 @@
     {
         <div class="barony-tip__title">@PlaceLabel</div>
         <div class="barony-tip__body" style="color:var(--barony-muted);">
-            No linked lord in the Known lords catalog.
+            @L["No linked lord in the Known lords catalog."]
         </div>
     }
 </div>

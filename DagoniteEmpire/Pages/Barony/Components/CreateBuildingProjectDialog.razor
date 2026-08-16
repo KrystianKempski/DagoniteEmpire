@@ -13,7 +13,7 @@
             @if (Templates.Count == 0)
             {
                 <MudAlert Severity="Severity.Info" Dense="true">
-                    No catalog improvements fit this tile (same rules as the improvement brush).
+                    @L["No catalog improvements fit this tile (same rules as the improvement brush)."]
                 </MudAlert>
             }
             else
@@ -27,7 +27,7 @@
                 }
 
                 <MudSelect T="int"
-                           Label="Improvement"
+                           Label="@(L["Improvement"])"
                            Value="_templateId"
                            ValueChanged="OnTemplateChanged"
                            Variant="Variant.Outlined"
@@ -41,22 +41,22 @@
                 </MudSelect>
 
                 <MudTextField @bind-Value="_name"
-                              Label="Project name"
+                              Label="@(L["Project name"])"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Required="true"
                               Class="baron-influence-field mt-2" />
                 <MudTextField @bind-Value="_description"
-                              Label="Description"
+                              Label="@(L["Description"])"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Lines="2"
                               Class="baron-influence-field" />
 
-                <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Cost (forced)</MudText>
+                <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">@L["Cost (forced)"]</MudText>
                 <div class="terrain-build-project-cost">
-                    <span>Gold: <b>@Fmt(_goldCost)</b></span>
-                    <span>Production: <b>@Fmt(_productionCost)</b></span>
+                    <span>@L["Gold:"] <b>@Fmt(_goldCost)</b></span>
+                    <span>@L["Production:"] <b>@Fmt(_productionCost)</b></span>
                 </div>
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-1">
                     Output type: @ProjectOutputKind.Improvement · Payment: Gold &amp; Production only
@@ -65,12 +65,12 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Close</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Close"]</MudButton>
         <MudButton Class="baron-influence-save-btn"
                    Variant="Variant.Filled"
                    OnClick="MakeProject"
                    Disabled="@(Templates.Count == 0)">
-            Make project
+            @L["Make project"]
         </MudButton>
     </DialogActions>
 </MudDialog>

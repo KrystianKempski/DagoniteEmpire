@@ -11,18 +11,18 @@
                 Non-cumulative PPB → Events · Cumulative PPB → Resources (Expected Income) · PHP → Baron Card (From Adventures).
             </MudText>
             <MudTextField @bind-Value="_note"
-                          Label="Description of changes"
+                          Label="@(L["Description of changes"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="4"
                           Immediate="true"
-                          HelperText="Shown under the Resource change entry"
+                          HelperText="@(L["Shown under the Resource change entry"])"
                           Class="baron-influence-field mb-2" />
-            <PpbVectorEditor @bind-Value="_delta" Title="PPB change (+)" Compact="true" />
-            <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">Prestige / Honor / Fear</MudText>
+            <PpbVectorEditor @bind-Value="_delta" Title="@(L["PPB change (+)"])" Compact="true" />
+            <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">@L["Prestige / Honor / Fear"]</MudText>
             <div class="baron-php-edit-fields">
                 <MudNumericField @bind-Value="_prestige"
-                                 Label="Prestige"
+                                 Label="@(L["Prestige"])"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Immediate="true"
@@ -34,7 +34,7 @@
                                  Immediate="true"
                                  Class="baron-influence-field php-field php-field--honor" />
                 <MudNumericField @bind-Value="_fear"
-                                 Label="Fear"
+                                 Label="@(L["Fear"])"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Immediate="true"
@@ -43,9 +43,9 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
         <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save" Disabled="!CanSave">
-            Add resources
+            @L["Add resources"]
         </MudButton>
     </DialogActions>
 </MudDialog>

@@ -12,15 +12,15 @@
                 Net Gold profit = (Economy + Conjuncture) × 2; also shifts Community Economy %.
             </MudText>
             <MudNumericField @bind-Value="_dice"
-                             Label="2d6 roll"
-                             HelperText="Raw dice total (2–12). Use Re-roll to draw a new turn value."
+                             Label="@(L["2d6 roll"])"
+                             HelperText="@(L["Raw dice total (2–12). Use Re-roll to draw a new turn value."])"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="2"
                              Max="12"
                              Class="baron-influence-field" />
             <MudNumericField @bind-Value="_modifier"
-                             Label="MG modifier"
+                             Label="@(L["MG modifier"])"
                              HelperText="Only MG. War −3, good harvest +2, etc."
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
@@ -32,9 +32,9 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Reroll">Re-roll 2d6</MudButton>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Reroll">@L["Re-roll 2d6"]</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>
 

@@ -3,10 +3,10 @@
 @inject IBaronyRepository _baronyRepo
 @inject ISnackbar _snackBar
 
-<BaronySection Title="Unit generator">
+<BaronySection Title="@(L["Unit generator"])">
     <Summary>
         <span class="projects-summary">
-            <span class="projects-summary__item">Live preview updates with every selector</span>
+            <span class="projects-summary__item">@L["Live preview updates with every selector"]</span>
         </span>
     </Summary>
     <ChildContent>
@@ -17,7 +17,7 @@
                     <MudTextField @bind-Value="_name"
                                   @bind-Value:after="Recalc"
                                   Immediate="true"
-                                  Label="Unit name"
+                                  Label="@(L["Unit name"])"
                                   Variant="Variant.Outlined"
                                   Margin="Margin.Dense"
                                   Disabled="@(!CanEdit)"
@@ -25,22 +25,22 @@
 
                     @* ---- Total cost (Excel “KOSZT CAŁKOWITY”) — above recruit/training ---- *@
                     <div class="unit-workshop__costs">
-                        <div class="unit-workshop__costs-title">Total cost</div>
+                        <div class="unit-workshop__costs-title">@L["Total cost"]</div>
                         <div class="unit-workshop__cost-grid">
-                            <BaronyTooltip Title="Production"
-                                           Text="Production needed to craft gear for the unit. Items set to Buy or Defense contribute 0 here.">
+                            <BaronyTooltip Title="@(L["Production"])"
+                                           Text="@(L["Production needed to craft gear for the unit. Items set to Buy or Defense contribute 0 here."])">
                                 <div class="unit-workshop__cost">
-                                    <span class="unit-workshop__cost-label">Production</span>
+                                    <span class="unit-workshop__cost-label">@L["Production"]</span>
                                     <span class="unit-workshop__cost-value unit-workshop__cost-value--production">
                                         @_costs.Production
                                         <BaronyResourceIcon Resource="Ppb.Production" Size="xs" />
                                     </span>
                                 </div>
                             </BaronyTooltip>
-                            <BaronyTooltip Title="Gold total"
-                                           Text="Total gold before training completes: recruit hire gold + gear gold + one-time training fee.">
+                            <BaronyTooltip Title="@(L["Gold total"])"
+                                           Text="@(L["Total gold before training completes: recruit hire gold + gear gold + one-time training fee."])">
                                 <div class="unit-workshop__cost">
-                                    <span class="unit-workshop__cost-label">Gold (total)</span>
+                                    <span class="unit-workshop__cost-label">@L["Gold (total)"]</span>
                                     <span class="unit-workshop__cost-value unit-workshop__cost-value--gold">
                                         @_costs.GoldTotal
                                         <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
@@ -50,10 +50,10 @@
                                     </span>
                                 </div>
                             </BaronyTooltip>
-                            <BaronyTooltip Title="Defense"
-                                           Text="Defense needed to create the unit: recruit selection + gear acquired as Defense (2× market gold) + accelerate (50 Defense per turn cut).">
+                            <BaronyTooltip Title="@(L["Defense"])"
+                                           Text="@(L["Defense needed to create the unit: recruit selection + gear acquired as Defense (2× market gold) + accelerate (50 Defense per turn cut)."])">
                                 <div class="unit-workshop__cost">
-                                    <span class="unit-workshop__cost-label">Defense</span>
+                                    <span class="unit-workshop__cost-label">@L["Defense"]</span>
                                     <span class="unit-workshop__cost-value unit-workshop__cost-value--defense">
                                         @_costs.DefenseTotal
                                         <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" />
@@ -63,10 +63,10 @@
                                     </span>
                                 </div>
                             </BaronyTooltip>
-                            <BaronyTooltip Title="Wage / turn"
+                            <BaronyTooltip Title="@(L["Wage / turn"])"
                                            Text="@WageTurnTip">
                                 <div class="unit-workshop__cost">
-                                    <span class="unit-workshop__cost-label">Wage / turn</span>
+                                    <span class="unit-workshop__cost-label">@L["Wage / turn"]</span>
                                     <span class="unit-workshop__cost-value unit-workshop__cost-value--gold">
                                         @_previewUpkeep.Gold
                                         <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
@@ -77,27 +77,27 @@
                                     </span>
                                 </div>
                             </BaronyTooltip>
-                            <BaronyTooltip Title="Time"
-                                           Text="Turns required to finish the unit after acceleration. Express can complete in 0 turns.">
+                            <BaronyTooltip Title="@(L["Time"])"
+                                           Text="@(L["Turns required to finish the unit after acceleration. Express can complete in 0 turns."])">
                                 <div class="unit-workshop__cost">
-                                    <span class="unit-workshop__cost-label">Time (turns)</span>
+                                    <span class="unit-workshop__cost-label">@L["Time (turns)"]</span>
                                     <span class="unit-workshop__cost-value">@_costs.Turns</span>
                                 </div>
                             </BaronyTooltip>
-                            <BaronyTooltip Title="Gold (gear)"
-                                           Text="Gold for weapons and armor at project start: Craft uses catalog gold; Buy uses market (Mkt); Defense items add 0 here.">
+                            <BaronyTooltip Title="@(L["Gold (gear)"])"
+                                           Text="@(L["Gold for weapons and armor at project start: Craft uses catalog gold; Buy uses market (Mkt); Defense items add 0 here."])">
                                 <div class="unit-workshop__cost">
-                                    <span class="unit-workshop__cost-label">Gold (gear)</span>
+                                    <span class="unit-workshop__cost-label">@L["Gold (gear)"]</span>
                                     <span class="unit-workshop__cost-value unit-workshop__cost-value--gold">
                                         @_costs.GoldEquipment
                                         <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
                                     </span>
                                 </div>
                             </BaronyTooltip>
-                            <BaronyTooltip Title="Gold (training)"
+                            <BaronyTooltip Title="@(L["Gold (training)"])"
                                            Text="Recruit hire gold (e.g. mercenaries) plus the one-time training fee (Express 10 · Accelerated 20 · Standard 40 · Elite 75). Paid when the project starts — not per turn.">
                                 <div class="unit-workshop__cost">
-                                    <span class="unit-workshop__cost-label">Gold (training)</span>
+                                    <span class="unit-workshop__cost-label">@L["Gold (training)"]</span>
                                     <span class="unit-workshop__cost-value unit-workshop__cost-value--gold">
                                         @(_costs.GoldTraining + _costs.GoldRecruit)
                                         <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
@@ -107,7 +107,7 @@
                                     </span>
                                 </div>
                             </BaronyTooltip>
-                            <BaronyTooltip Title="Experience points"
+                            <BaronyTooltip Title="@(L["Experience points"])"
                                            Text="Experience points (XP) to spend after training finishes. Attribute raise = target level × 10; base skill = level × 3; specialization = level × 1 (cannot exceed parent); discipline raise = current level.">
                                 <div class="unit-workshop__cost">
                                     <span class="unit-workshop__cost-label">XP</span>
@@ -122,9 +122,9 @@
 
                     <div class="unit-workshop__pair">
                         <section class="unit-workshop__block unit-workshop__block--compact">
-                            <BaronyTooltip Title="Recruit selection"
-                                           Text="Choose how you select recruits. Sets starting attributes and max base skill (combined with training’s Skl — the lower wins). Cost may be Defense and/or gold; Forced hire also adds a Loyalty/Stability event.">
-                                <h3 class="unit-workshop__heading">Recruit</h3>
+                            <BaronyTooltip Title="@(L["Recruit selection"])"
+                                           Text="@(L["Choose how you select recruits. Sets starting attributes and max base skill (combined with training’s Skl — the lower wins). Cost may be Defense and/or gold; Forced hire also adds a Loyalty/Stability event."])">
+                                <h3 class="unit-workshop__heading">@L["Recruit"]</h3>
                             </BaronyTooltip>
                             <MudRadioGroup T="string"
                                            Value="_recruitKey"
@@ -134,17 +134,17 @@
                                     <thead>
                                         <tr>
                                             <th></th>
-                                            <th class="ppb-row-label">Option</th>
+                                            <th class="ppb-row-label">@L["Option"]</th>
                                             <th>
-                                                <BaronyTooltip Title="Attributes"
-                                                               Text="Attribute level for the unit (Build, Agility, Will, Perception start at this score)."
+                                                <BaronyTooltip Title="@(L["Attributes"])"
+                                                               Text="@(L["Attribute level for the unit (Build, Agility, Will, Perception start at this score)."])"
                                                                Placement="Placement.Top">
-                                                    <span>Att</span>
+                                                    <span>@L["Att"]</span>
                                                 </BaronyTooltip>
                                             </th>
                                             <th>
-                                                <BaronyTooltip Title="Defense"
-                                                               Text="Defense resource cost for this selection (0 for mercenaries / forced hire)."
+                                                <BaronyTooltip Title="@(L["Defense"])"
+                                                               Text="@(L["Defense resource cost for this selection (0 for mercenaries / forced hire)."])"
                                                                Placement="Placement.Top">
                                                     <span class="unit-workshop__th-res">
                                                         <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" />
@@ -152,8 +152,8 @@
                                                 </BaronyTooltip>
                                             </th>
                                             <th>
-                                                <BaronyTooltip Title="Gold"
-                                                               Text="Hire gold for this selection (mercenaries). Added to the project gold track."
+                                                <BaronyTooltip Title="@(L["Gold"])"
+                                                               Text="@(L["Hire gold for this selection (mercenaries). Added to the project gold track."])"
                                                                Placement="Placement.Top">
                                                     <span class="unit-workshop__th-res">
                                                         <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
@@ -161,17 +161,17 @@
                                                 </BaronyTooltip>
                                             </th>
                                             <th>
-                                                <BaronyTooltip Title="Max base skill"
-                                                               Text="Maximum base skill rank reachable by graduation. Combined with training’s Skl (the lower wins)."
+                                                <BaronyTooltip Title="@(L["Max base skill"])"
+                                                               Text="@(L["Maximum base skill rank reachable by graduation. Combined with training’s Skl (the lower wins)."])"
                                                                Placement="Placement.Top">
-                                                    <span>Skl</span>
+                                                    <span>@L["Skl"]</span>
                                                 </BaronyTooltip>
                                             </th>
                                             <th>
-                                                <BaronyTooltip Title="Wage"
+                                                <BaronyTooltip Title="@(L["Wage"])"
                                                                Text="Share of the unit’s wage after training. Total wage = recruit + training."
                                                                Placement="Placement.Top">
-                                                    <span>Wag</span>
+                                                    <span>@L["Wag"]</span>
                                                 </BaronyTooltip>
                                             </th>
                                         </tr>
@@ -202,9 +202,9 @@
                         </section>
 
                         <section class="unit-workshop__block unit-workshop__block--compact">
-                            <BaronyTooltip Title="Training"
-                                           Text="Grants XP on graduation, a one-time gold fee, turns (Trn), starting discipline (Dis), max base skill (Skl), and wage (Wag). Standard/Elite also grant free attribute points after graduation.">
-                                <h3 class="unit-workshop__heading">Training</h3>
+                            <BaronyTooltip Title="@(L["Training"])"
+                                           Text="@(L["Grants XP on graduation, a one-time gold fee, turns (Trn), starting discipline (Dis), max base skill (Skl), and wage (Wag). Standard/Elite also grant free attribute points after graduation."])">
+                                <h3 class="unit-workshop__heading">@L["Training"]</h3>
                             </BaronyTooltip>
                             <MudRadioGroup T="string"
                                            Value="_trainingKey"
@@ -214,16 +214,16 @@
                                     <thead>
                                         <tr>
                                             <th></th>
-                                            <th class="ppb-row-label">Type</th>
+                                            <th class="ppb-row-label">@L["Type"]</th>
                                             <th>
-                                                <BaronyTooltip Title="Experience points"
-                                                               Text="Experience points (XP) available to spend after training finishes."
+                                                <BaronyTooltip Title="@(L["Experience points"])"
+                                                               Text="@(L["Experience points (XP) available to spend after training finishes."])"
                                                                Placement="Placement.Top">
                                                     <span>XP</span>
                                                 </BaronyTooltip>
                                             </th>
                                             <th>
-                                                <BaronyTooltip Title="Gold"
+                                                <BaronyTooltip Title="@(L["Gold"])"
                                                                Text="One-time training fee in gold: Express 10 · Accelerated 20 · Standard 40 · Elite 75."
                                                                Placement="Placement.Top">
                                                     <span class="unit-workshop__th-res">
@@ -232,31 +232,31 @@
                                                 </BaronyTooltip>
                                             </th>
                                             <th>
-                                                <BaronyTooltip Title="Turns"
-                                                               Text="Turns needed to finish training before acceleration."
+                                                <BaronyTooltip Title="@(L["Turns"])"
+                                                               Text="@(L["Turns needed to finish training before acceleration."])"
                                                                Placement="Placement.Top">
-                                                    <span>Trn</span>
+                                                    <span>@L["Trn"]</span>
                                                 </BaronyTooltip>
                                             </th>
                                             <th>
-                                                <BaronyTooltip Title="Max base skill"
-                                                               Text="Max base skill at graduation. Combined with recruit’s Skl (the lower wins)."
+                                                <BaronyTooltip Title="@(L["Max base skill"])"
+                                                               Text="@(L["Max base skill at graduation. Combined with recruit’s Skl (the lower wins)."])"
                                                                Placement="Placement.Top">
-                                                    <span>Skl</span>
+                                                    <span>@L["Skl"]</span>
                                                 </BaronyTooltip>
                                             </th>
                                             <th>
-                                                <BaronyTooltip Title="Discipline"
-                                                               Text="Starting discipline after training (range 1–18). Raising discipline later costs XP equal to the current level."
+                                                <BaronyTooltip Title="@(L["Discipline"])"
+                                                               Text="@(L["Starting discipline after training (range 1–18). Raising discipline later costs XP equal to the current level."])"
                                                                Placement="Placement.Top">
-                                                    <span>Dis</span>
+                                                    <span>@L["Dis"]</span>
                                                 </BaronyTooltip>
                                             </th>
                                             <th>
-                                                <BaronyTooltip Title="Wage"
+                                                <BaronyTooltip Title="@(L["Wage"])"
                                                                Text="Training share of wage after graduation. Total wage = recruit + training."
                                                                Placement="Placement.Top">
-                                                    <span>Wag</span>
+                                                    <span>@L["Wag"]</span>
                                                 </BaronyTooltip>
                                             </th>
                                         </tr>
@@ -287,8 +287,8 @@
                                 </table>
                             </MudRadioGroup>
                             <div class="unit-workshop__accel">
-                                <BaronyTooltip Title="Accelerate"
-                                               Text="Speed up training with Defense. Cutting one turn costs 50 Defense. Enter how many turns to cut — usable any time during training (here: at project start).">
+                                <BaronyTooltip Title="@(L["Accelerate"])"
+                                               Text="@(L["Speed up training with Defense. Cutting one turn costs 50 Defense. Enter how many turns to cut — usable any time during training (here: at project start)."])">
                                     <div class="unit-workshop__accel-field">
                                         <span class="unit-workshop__accel-icon" aria-hidden="true">
                                             <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" />
@@ -318,7 +318,7 @@
                             </BaronyTooltip>
                             <div class="unit-workshop__race-picks">
                                 <MudSelect T="string"
-                                           Label="Base skill +1"
+                                           Label="@(L["Base skill +1"])"
                                            Value="@(_raceBonus1 ?? string.Empty)"
                                            ValueChanged="OnRaceBonus1Changed"
                                            Variant="Variant.Outlined"
@@ -334,7 +334,7 @@
                                     }
                                 </MudSelect>
                                 <MudSelect T="string"
-                                           Label="Base skill +1"
+                                           Label="@(L["Base skill +1"])"
                                            Value="@(_raceBonus2 ?? string.Empty)"
                                            ValueChanged="OnRaceBonus2Changed"
                                            Variant="Variant.Outlined"
@@ -352,21 +352,21 @@
                             </div>
                             <MudText Typo="Typo.caption" Class="unit-workshop__note unit-workshop__note--tight">
                                 Cap max base skill: <b>@_costs.MaxBaseSkill</b>
-                                (lower of recruit/training Skl)
+                                @L["(lower of recruit/training Skl)"]
                             </MudText>
                         </section>
                     }
 
                     <section class="unit-workshop__block unit-workshop__block--compact">
                         <div class="unit-workshop__gear-head">
-                            <BaronyTooltip Title="Gear"
+                            <BaronyTooltip Title="@(L["Gear"])"
                                            Text="How each item is acquired: Craft = Production + catalog gold; Buy = market gold (Mkt) only, no Production; Defense = 2× Mkt as Defense. Weapon 1 quality (Good +1 / Poor −1 Atk &amp; Dmg) is set by the GM for the whole barony.">
-                                <h3 class="unit-workshop__heading">Gear</h3>
+                                <h3 class="unit-workshop__heading">@L["Gear"]</h3>
                             </BaronyTooltip>
                             @if (CanManageAsMg)
                             {
                                 <MudSelect T="string"
-                                           Label="Gear quality (MG)"
+                                           Label="@(L["Gear quality (MG)"])"
                                            Value="_quality"
                                            ValueChanged="OnQualityChanged"
                                            Variant="Variant.Outlined"
@@ -383,12 +383,12 @@
                             {
                                 <MudText Typo="Typo.caption" Class="unit-workshop__quality-ro">
                                     Quality: <b>@_quality</b>
-                                    <span style="color:var(--barony-muted);"> (GM)</span>
+                                    <span style="color:var(--barony-muted);"> @L["(GM)"]</span>
                                 </MudText>
                             }
                         </div>
                         <MudText Typo="Typo.caption" Class="unit-workshop__note unit-workshop__note--tight">
-                            Acquire:
+                            @L["Acquire:"]
                             <BaronyResourceIcon Resource="Ppb.Production" Size="xs" /> Craft ·
                             <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" /> Buy (Mkt) ·
                             <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" /> Def (2×Mkt)
@@ -416,7 +416,7 @@
                                    Variant="Variant.Filled"
                                    Disabled="@(_busy)"
                                    OnClick="StartAsync">
-                            Start training project
+                            @L["Start training project"]
                         </MudButton>
                     }
                 </div>
@@ -439,13 +439,13 @@
                                            Variant="Variant.Filled"
                                            Class="barony-turn-btn barony-turn-btn--solid"
                                            OnClick="SaveDraftXp">
-                                    Save
+                                    @L["Save"]
                                 </MudButton>
                                 <MudButton Size="Size.Small"
                                            Variant="Variant.Outlined"
                                            Class="barony-turn-btn barony-turn-btn--ghost"
                                            OnClick="UndoDraftXp">
-                                    Undo
+                                    @L["Undo"]
                                 </MudButton>
                             </div>
                         </div>

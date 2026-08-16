@@ -1,14 +1,14 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @using DA_Business.Repository.BaronyRepos
 
-<BaronySection Title="Units">
+<BaronySection Title="@(L["Units"])">
     <Summary>
-        <span class="projects-summary__item">Select a unit to open its card</span>
+        <span class="projects-summary__item">@L["Select a unit to open its card"]</span>
     </Summary>
     <ChildContent>
         @if (Units.Count == 0)
         {
-            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">No units yet. Use the generator above.</MudText>
+            <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">@L["No units yet. Use the generator above."]</MudText>
         }
         else
         {
@@ -16,14 +16,14 @@
                 <table class="ppb-table ppb-table--source ppb-table--lined">
                     <thead>
                         <tr>
-                            <th class="ppb-row-label source-col">Name</th>
+                            <th class="ppb-row-label source-col">@L["Name"]</th>
                             <th>Status</th>
                             <th>Atk</th>
                             <th>Def</th>
                             <th>HP</th>
-                            <th>Move</th>
-                            <th>Wage</th>
-                            <th>Training</th>
+                            <th>@L["Move"]</th>
+                            <th>@L["Wage"]</th>
+                            <th>@L["Training"]</th>
                         </tr>
                     </thead>
                     <tbody>

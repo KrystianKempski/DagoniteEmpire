@@ -3,7 +3,7 @@
 @inject ISnackbar _snackBar
 @inject IDialogService _dialogService
 
-<BaronySection Title="Projects">
+<BaronySection Title="@(L["Projects"])">
     <Summary>
         <span class="projects-summary">
             <span class="projects-summary__item">@ActiveProjects.Count project@(ActiveProjects.Count == 1 ? "" : "s")</span>
@@ -20,7 +20,7 @@
     <ChildContent>
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
             Fund projects by allocating Gold, Production, and other cumulative stocks from your barony.
-            Auto-created projects start in <strong>Resource allocation</strong> — turns do not tick until they are fully funded.
+            Auto-created projects start in <strong>@L["Resource allocation"]</strong> — turns do not tick until they are fully funded.
             Spent allocations appear on the Resources balance.
             Click a project title row to expand or collapse details.
         </MudText>
@@ -31,7 +31,7 @@
                 <MudButton Variant="Variant.Outlined"
                            StartIcon="@Icons.Material.Filled.Add"
                            OnClick="AddAsync">
-                    Add Project
+                    @L["Add Project"]
                 </MudButton>
             </div>
         }
@@ -42,7 +42,7 @@
                 No open projects.
                 @if (CanEdit)
                 {
-                    <text> Add one above.</text>
+                    <text> @L["Add one above."]</text>
                 }
             </MudText>
         }
@@ -65,7 +65,7 @@
     </ChildContent>
 </BaronySection>
 
-<BaronySection Title="Completed Projects" DefaultOpen="false">
+<BaronySection Title="@(L["Completed Projects"])" DefaultOpen="false">
     <Summary>
         <span class="projects-summary">
             <span class="projects-summary__item">@CompletedProjects.Count completed</span>
@@ -75,7 +75,7 @@
         @if (CompletedProjects.Count == 0)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                No completed projects yet.
+                @L["No completed projects yet."]
             </MudText>
         }
         else

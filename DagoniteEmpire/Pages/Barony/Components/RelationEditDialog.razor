@@ -9,7 +9,7 @@
             <MudSelect T="string"
                        Value="_category"
                        ValueChanged="OnCategoryChanged"
-                       Label="Section"
+                       Label="@(L["Section"])"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Class="baron-influence-field">
@@ -23,12 +23,12 @@
                 <MudSelect T="string"
                            Value="_groupPick"
                            ValueChanged="OnGroupPickChanged"
-                           Label="Group"
-                           HelperText="Pick an existing house/organization, or create a new one."
+                           Label="@(L["Group"])"
+                           HelperText="@(L["Pick an existing house/organization, or create a new one."])"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Class="baron-influence-field">
-                    <MudSelectItem Value="@NewGroupValue">(new group…)</MudSelectItem>
+                    <MudSelectItem Value="@NewGroupValue">@L["(new group…)"]</MudSelectItem>
                     @foreach (var group in ExistingGroups)
                     {
                         <MudSelectItem Value="@group">@group</MudSelectItem>
@@ -39,66 +39,66 @@
             {
                 <MudTextField @bind-Value="_groupName"
                               Label="@(ExistingGroups.Count > 0 ? "New group name" : "Group")"
-                              HelperText="House or organization name (shared across people for rowspan)."
+                              HelperText="@(L["House or organization name (shared across people for rowspan)."])"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"
                               Class="baron-influence-field" />
             }
             <MudTextField @bind-Value="_name"
-                          Label="Name"
+                          Label="@(L["Name"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Required="true"
                           Class="baron-influence-field" />
             <MudTextField @bind-Value="_title"
-                          Label="Title"
+                          Label="@(L["Title"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field" />
             <MudNumericField T="int?"
                              @bind-Value="_age"
-                             Label="Age"
+                             Label="@(L["Age"])"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="0"
                              Class="baron-influence-field" />
             <MudTextField @bind-Value="_description"
-                          Label="Description"
+                          Label="@(L["Description"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="3"
                           Class="baron-influence-field" />
             <MudNumericField T="int"
                              @bind-Value="_troopCount"
-                             Label="Troops"
+                             Label="@(L["Troops"])"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="0"
                              Class="baron-influence-field" />
             <MudTextField @bind-Value="_notes"
-                          Label="Notes"
-                          HelperText="Also editable by the baron."
+                          Label="@(L["Notes"])"
+                          HelperText="@(L["Also editable by the baron."])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="2"
                           Class="baron-influence-field" />
             <MudNumericField T="int"
                              @bind-Value="_sortOrder"
-                             Label="Sort order"
+                             Label="@(L["Sort order"])"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Class="baron-influence-field" />
 
             <div class="relation-modifiers">
                 <div class="relation-modifiers__header">
-                    <span class="relation-modifiers__title">Attitude modifiers</span>
+                    <span class="relation-modifiers__title">@L["Attitude modifiers"]</span>
                     <span class="relation-modifiers__sum @AttitudeSumClass">
                         Sum: @FormatAttitude(AttitudeSum) (@RelationCategory.AttitudeLabel(AttitudeSum))
                     </span>
                 </div>
                 @if (_modifiers.Count == 0)
                 {
-                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">No modifiers yet.</MudText>
+                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">@L["No modifiers yet."]</MudText>
                 }
                 else
                 {
@@ -107,17 +107,17 @@
                         var index = i;
                         <div class="relation-modifiers__row">
                             <MudTextField @bind-Value="_modifiers[index].Description"
-                                          Label="Description"
+                                          Label="@(L["Description"])"
                                           Variant="Variant.Outlined"
                                           Margin="Margin.Dense"
                                           Class="baron-influence-field relation-modifiers__desc" />
                             <MudNumericField T="int"
                                              @bind-Value="_modifiers[index].Value"
-                                             Label="Value"
+                                             Label="@(L["Value"])"
                                              Variant="Variant.Outlined"
                                              Margin="Margin.Dense"
                                              Class="baron-influence-field relation-modifiers__value" />
-                            <BaronyTooltip Text="Remove modifier">
+                            <BaronyTooltip Text="@(L["Remove modifier"])">
                                 <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                Size="Size.Small"
                                                Color="Color.Error"
@@ -130,14 +130,14 @@
                            Size="Size.Small"
                            StartIcon="@Icons.Material.Filled.Add"
                            OnClick="AddModifier">
-                    Add modifier
+                    @L["Add modifier"]
                 </MudButton>
             </div>
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>
 

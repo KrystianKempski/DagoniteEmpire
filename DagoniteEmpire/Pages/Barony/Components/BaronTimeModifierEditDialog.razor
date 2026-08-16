@@ -7,20 +7,20 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudTextField @bind-Value="_source"
-                          Label="Source"
-                          HelperText="e.g. Illness, Blessing, Decree…"
+                          Label="@(L["Source"])"
+                          HelperText="@(L["e.g. Illness, Blessing, Decree…"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field"
                           Required="true" />
             <MudNumericField @bind-Value="_percent"
-                             Label="Percent"
-                             HelperText="Applied to base BT. Positive increases the pool, negative reduces it."
+                             Label="@(L["Percent"])"
+                             HelperText="@(L["Applied to base BT. Positive increases the pool, negative reduces it."])"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Class="baron-influence-field" />
             <MudTextField @bind-Value="_description"
-                          Label="Description"
+                          Label="@(L["Description"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="2"
@@ -28,8 +28,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Outlined" OnClick="Cancel">Cancel</MudButton>
-        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">Save</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@L["Save"]</MudButton>
     </DialogActions>
 </MudDialog>
 
