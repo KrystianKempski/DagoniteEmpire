@@ -50,6 +50,9 @@ public sealed class CourtSkillInfo
     public string NameEn { get; init; } = string.Empty;
     public string NamePl { get; init; } = string.Empty;
     public string ShortEn { get; init; } = string.Empty;
+
+    /// <summary>Nazwa zależna od bieżącej kultury UI (PL/EN, EN = fallback).</summary>
+    public string Name => BaronyCulture.IsPolish && !string.IsNullOrEmpty(NamePl) ? NamePl : NameEn;
 }
 
 /// <summary>Catalog + value ranges for court character sheets.</summary>

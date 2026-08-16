@@ -574,8 +574,8 @@ else
                                         @foreach (var key in _enemyDraft.CommanderAbilities)
                                         {
                                             var ab = CourtCommanderCatalog.Find(key);
-                                            <span class="bbm-enemy-ability-chip" title="@ab?.DescriptionEn">
-                                                @(ab?.NameEn ?? key)
+                                            <span class="bbm-enemy-ability-chip" title="@(ab is null ? null : L[ab.DescriptionEn].Value)">
+                                                @(L[ab?.NameEn ?? key])
                                                 <button type="button"
                                                         title="Remove"
                                                         @onclick:stopPropagation="true"
@@ -5730,8 +5730,8 @@ else
             {
                 var ab = CourtCommanderCatalog.Find(key);
                 <span class="bbm-force-ability-chip"
-                      title="@($"[T{ab?.Tier}] {ab?.Branch} · {ab?.DescriptionEn}")">
-                    @(ab?.NameEn ?? key)
+                      title="@($"[T{ab?.Tier}] {ab?.Branch} · {(ab is null ? null : L[ab.DescriptionEn].Value)}")">
+                    @(L[ab?.NameEn ?? key])
                 </span>
             }
         </div>

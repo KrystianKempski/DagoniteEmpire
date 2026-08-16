@@ -26,7 +26,7 @@
                             <th rowspan="2" class="ppb-row-label community-col-source">@L["Source"]</th>
                             @foreach (var info in PpbCatalog.All)
                             {
-                                <th colspan="2"><BaronyTooltip Text="@info.NameEn">@PpbShort(info.Key)</BaronyTooltip></th>
+                                <th colspan="2"><BaronyTooltip Text="@info.Name">@PpbShort(info.Key)</BaronyTooltip></th>
                             }
                         </tr>
                         <tr>
@@ -65,7 +65,7 @@
                                     <td class="@PpbCellStyle.ValueClass(info.Key, add)">
                                         @if (addTip is not null)
                                         {
-                                            <BaronyTooltip Title="@info.NameEn" Text="@addTip"><span>@FmtAdd(add)</span></BaronyTooltip>
+                                            <BaronyTooltip Title="@info.Name" Text="@addTip"><span>@FmtAdd(add)</span></BaronyTooltip>
                                         }
                                         else
                                         {
@@ -75,7 +75,7 @@
                                     <td class="@PpbCellStyle.ValueClass(info.Key, pct)">
                                         @if (pctTip is not null)
                                         {
-                                            <BaronyTooltip Title="@info.NameEn" Text="@pctTip"><span>@FmtPct(pct)</span></BaronyTooltip>
+                                            <BaronyTooltip Title="@info.Name" Text="@pctTip"><span>@FmtPct(pct)</span></BaronyTooltip>
                                         }
                                         else
                                         {
@@ -128,23 +128,7 @@
         _ => null,
     };
 
-    private static string PpbShort(Ppb p) => p switch
-    {
-        Ppb.Food => "Food",
-        Ppb.Economy => "Econ",
-        Ppb.Production => "Prod",
-        Ppb.Loyalty => "Loy",
-        Ppb.Stability => "Stab",
-        Ppb.Law => "Law",
-        Ppb.Corruption => "Corr",
-        Ppb.Science => "Sci",
-        Ppb.Magic => "Mag",
-        Ppb.Culture => "Cult",
-        Ppb.Intelligence => "Intel",
-        Ppb.Defense => "Def",
-        Ppb.Treasury => "Gold",
-        _ => p.ToString(),
-    };
+    private static string PpbShort(Ppb p) => PpbCatalog.Short(p);
 
     private static string FmtAdd(decimal v) => PpbFormat.Additive(v);
     private static string FmtPct(decimal v) => PpbFormat.Percent(v);

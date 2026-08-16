@@ -33,6 +33,12 @@ namespace DA_Common.Barony
         public bool IsCumulative { get; init; }
 
         public string Code => Key.ToString();
+
+        /// <summary>Nazwa zależna od bieżącej kultury UI (PL/EN).</summary>
+        public string Name => BaronyCulture.IsPolish ? NamePl : NameEn;
+
+        /// <summary>Skrót zależny od bieżącej kultury UI (PL/EN).</summary>
+        public string Short => BaronyCulture.IsPolish ? ShortPl : ShortEn;
     }
 
     /// <summary>Statyczny katalog wszystkich PPB w kanonicznej kolejności kolumn.</summary>
@@ -59,9 +65,9 @@ namespace DA_Common.Barony
 
         public static PpbInfo Info(Ppb p) => All[(int)p];
 
-        public static string Name(Ppb p) => All[(int)p].NamePl;
+        public static string Name(Ppb p) => All[(int)p].Name;
 
-        public static string Short(Ppb p) => All[(int)p].ShortPl;
+        public static string Short(Ppb p) => All[(int)p].Short;
 
         public static string NameEnglish(Ppb p) => All[(int)p].NameEn;
 

@@ -31,7 +31,7 @@
                             <th rowspan="2" class="ppb-row-label community-col-source">@L["Unit"]</th>
                             @foreach (var info in PpbCatalog.All)
                             {
-                                <th colspan="2"><BaronyTooltip Text="@info.NameEn">@PpbShort(info.Key)</BaronyTooltip></th>
+                                <th colspan="2"><BaronyTooltip Text="@info.Name">@PpbShort(info.Key)</BaronyTooltip></th>
                             }
                         </tr>
                         <tr>
@@ -90,23 +90,7 @@
     private PpbVector PercentSum => BaronyCalc.SumPercent(RowList);
     private PpbVector Glance => BaronyCalc.SectionGlance(RowList);
 
-    private static string PpbShort(Ppb p) => p switch
-    {
-        Ppb.Food => "Food",
-        Ppb.Economy => "Econ",
-        Ppb.Production => "Prod",
-        Ppb.Loyalty => "Loy",
-        Ppb.Stability => "Stab",
-        Ppb.Law => "Law",
-        Ppb.Corruption => "Corr",
-        Ppb.Science => "Sci",
-        Ppb.Magic => "Mag",
-        Ppb.Culture => "Cult",
-        Ppb.Intelligence => "Intel",
-        Ppb.Defense => "Def",
-        Ppb.Treasury => "Gold",
-        _ => p.ToString(),
-    };
+    private static string PpbShort(Ppb p) => PpbCatalog.Short(p);
 
     private static string FmtAdd(decimal v) => PpbFormat.Additive(v);
     private static string FmtPct(decimal v) => PpbFormat.Percent(v);

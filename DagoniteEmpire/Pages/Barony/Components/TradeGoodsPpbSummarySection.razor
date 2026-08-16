@@ -3,7 +3,7 @@
 <BaronySection Title="@(L["Trade good bonus summary"])" DefaultOpen="true">
     <Summary>
         <span class="projects-summary__item">@SelectedCount good@(SelectedCount == 1 ? "" : "s")</span>
-        <span class="projects-summary__item">@LuxuryTier.NameEn</span>
+        <span class="projects-summary__item">@L[LuxuryTier.NameEn]</span>
         <PpbSummaryChips Vector="@GlanceAdditive" />
     </Summary>
     <ChildContent>
@@ -93,7 +93,7 @@
                 if (a == 0m && p == 0m)
                     continue;
                 yield return new PpbRow(
-                    info.NameEn,
+                    info.Name,
                     a == 0m ? "—" : PpbFormat.Additive(a),
                     p == 0m ? "—" : PpbFormat.Percent(p));
             }

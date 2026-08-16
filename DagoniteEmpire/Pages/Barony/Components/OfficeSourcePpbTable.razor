@@ -19,7 +19,7 @@
             {
                 var inactive = IsColumnInactive(info.Key);
                 <th class="@HeaderClass(inactive)">
-                    <BaronyTooltip Title="@(inactive ? info.NameEn : null)" Text="@HeaderTitle(info, inactive)">
+                    <BaronyTooltip Title="@(inactive ? info.Name : null)" Text="@HeaderTitle(info, inactive)">
                         @PpbShort(info.Key)
                     </BaronyTooltip>
                 </th>
@@ -71,7 +71,7 @@
                     <td class="@CellClass(info.Key, row.Values[info.Key], inactive)">
                         @if (tip is not null)
                         {
-                            <BaronyTooltip Title="@info.NameEn" Text="@tip">
+                            <BaronyTooltip Title="@info.Name" Text="@tip">
                                 <span>@Fmt(row.Values[info.Key])</span>
                             </BaronyTooltip>
                         }
@@ -129,22 +129,7 @@
         return $"{row.Source} | {row.Formula}";
     }
 
-    private static string PpbShort(Ppb p) => p switch
-    {
-        Ppb.Food => "Food",
-        Ppb.Economy => "Econ",
-        Ppb.Production => "Prod",
-        Ppb.Loyalty => "Loy",
-        Ppb.Stability => "Stab",
-        Ppb.Law => "Law",
-        Ppb.Corruption => "Corr",
-        Ppb.Science => "Sci",
-        Ppb.Magic => "Mag",
-        Ppb.Culture => "Cult",
-        Ppb.Intelligence => "Intel",
-        Ppb.Defense => "Def",
-        _ => p.ToString(),
-    };
+    private static string PpbShort(Ppb p) => PpbCatalog.Short(p);
 
     private static string Fmt(decimal v) => PpbFormat.Additive(v);
 
@@ -164,7 +149,7 @@
         => inactive ? "ppb-col-inactive" : string.Empty;
 
     private static string? HeaderTitle(PpbInfo info, bool inactive)
-        => inactive ? "Not significant for this office" : info.NameEn;
+        => inactive ? "Not significant for this office" : info.Name;
 
     private static string CostClass(decimal cost)
         => cost > 0m ? "ppb-cell-neg" : "ppb-cell-zero";

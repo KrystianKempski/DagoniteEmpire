@@ -97,7 +97,7 @@
                                                     @foreach (var skill in CourtSkillCatalog.Main)
                                                     {
                                                         <th>
-                                                            <BaronyTooltip Text="@skill.NameEn">@(string.IsNullOrEmpty(skill.ShortEn) ? skill.NameEn : skill.ShortEn)</BaronyTooltip>
+                                                            <BaronyTooltip Text="@skill.Name">@(string.IsNullOrEmpty(skill.ShortEn) ? skill.Name : skill.ShortEn)</BaronyTooltip>
                                                         </th>
                                                     }
                                                 </tr>
@@ -160,7 +160,7 @@
                                             {
                                                 var info = CourtSkillCatalog.FindSecondary(entry.Key);
                                                 <span class="ppb-chip">
-                                                    <span class="ppb-chip__label">@(info?.NameEn ?? entry.Key)</span>
+                                                    <span class="ppb-chip__label">@(info?.Name ?? entry.Key)</span>
                                                     <span class="ppb-chip__value">@entry.Value</span>
                                                 </span>
                                             }
@@ -193,11 +193,11 @@
                                                             }
                                                             @if (!string.IsNullOrEmpty(combatFormula))
                                                             {
-                                                                <BaronyTooltip Title="@skill.NameEn" Text="@combatFormula">@skill.ShortEn</BaronyTooltip>
+                                                                <BaronyTooltip Title="@skill.Name" Text="@combatFormula">@skill.ShortEn</BaronyTooltip>
                                                             }
                                                             else
                                                             {
-                                                                <BaronyTooltip Text="@skill.NameEn">@skill.ShortEn</BaronyTooltip>
+                                                                <BaronyTooltip Text="@skill.Name">@skill.ShortEn</BaronyTooltip>
                                                             }
                                                         </th>
                                                     }
@@ -216,7 +216,7 @@
                                                             }
                                                             @if (!string.IsNullOrEmpty(fromSkillFormula))
                                                             {
-                                                                <BaronyTooltip Title="@skill.NameEn" Text="@fromSkillFormula"><span>@combat.Get(skill.Key)</span></BaronyTooltip>
+                                                                <BaronyTooltip Title="@skill.Name" Text="@fromSkillFormula"><span>@combat.Get(skill.Key)</span></BaronyTooltip>
                                                             }
                                                             else
                                                             {
@@ -302,7 +302,7 @@
                                                 var ability = CourtCommanderCatalog.Find(key);
                                                 <BaronyTooltip Text="@(ability?.DescriptionEn)">
                                                     <span class="ppb-chip">
-                                                        <span class="ppb-chip__label">@(ability?.NameEn ?? key)</span>
+                                                        <span class="ppb-chip__label">@(L[ability?.NameEn ?? key])</span>
                                                         <span class="ppb-chip__value">T@(ability?.Tier ?? 0)</span>
                                                     </span>
                                                 </BaronyTooltip>

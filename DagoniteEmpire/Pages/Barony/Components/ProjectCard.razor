@@ -193,7 +193,7 @@
                                 @foreach (var info in PpbCatalog.All)
                                 {
                                     <th colspan="2">
-                                        <BaronyTooltip Title="@info.NameEn" Text="@info.NamePl">
+                                        <BaronyTooltip Title="@info.Name" Text="@info.NamePl">
                                             <span>@PpbShort(info.Key)</span>
                                         </BaronyTooltip>
                                     </th>
@@ -263,7 +263,7 @@
             .Select(info => new CostRow
             {
                 Key = info.Key,
-                Name = info.NameEn,
+                Name = info.Name,
                 Required = activeCost[info.Key],
                 Allocated = Project.Allocated[info.Key],
                 Remaining = remaining[info.Key],
@@ -332,23 +332,7 @@
 
     private static string PpbCellClass(Ppb key, decimal v) => PpbCellStyle.ValueClass(key, v);
 
-    private static string PpbShort(Ppb p) => p switch
-    {
-        Ppb.Food => "Food",
-        Ppb.Economy => "Econ",
-        Ppb.Production => "Prod",
-        Ppb.Loyalty => "Loy",
-        Ppb.Stability => "Stab",
-        Ppb.Law => "Law",
-        Ppb.Corruption => "Corr",
-        Ppb.Science => "Sci",
-        Ppb.Magic => "Mag",
-        Ppb.Culture => "Cult",
-        Ppb.Intelligence => "Intel",
-        Ppb.Defense => "Def",
-        Ppb.Treasury => "Gold",
-        _ => p.ToString(),
-    };
+    private static string PpbShort(Ppb p) => PpbCatalog.Short(p);
 
     private sealed class CostRow
     {

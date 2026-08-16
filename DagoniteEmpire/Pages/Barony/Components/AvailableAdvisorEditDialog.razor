@@ -28,8 +28,8 @@
                         @foreach (var skill in CourtSkillCatalog.Main)
                         {
                             <th>
-                                <BaronyTooltip Text="@skill.NameEn">
-                                    <span>@(string.IsNullOrEmpty(skill.ShortEn) ? skill.NameEn : skill.ShortEn)</span>
+                                <BaronyTooltip Text="@skill.Name">
+                                    <span>@(string.IsNullOrEmpty(skill.ShortEn) ? skill.Name : skill.ShortEn)</span>
                                 </BaronyTooltip>
                             </th>
                         }
@@ -75,8 +75,8 @@
             {
                 var info = CourtSkillCatalog.FindSecondary(entry.Key);
                 <div class="court-secondary-row">
-                    <BaronyTooltip Text="@(info?.NameEn ?? entry.Key)">
-                        <span class="court-secondary-row__name">@(info?.NameEn ?? entry.Key)</span>
+                    <BaronyTooltip Text="@(info?.Name ?? entry.Key)">
+                        <span class="court-secondary-row__name">@(info?.Name ?? entry.Key)</span>
                     </BaronyTooltip>
                     <MudNumericField T="int"
                                      Value="@entry.Value"
@@ -108,7 +108,7 @@
                                Class="court-secondary-add__select court-skill-num--bare">
                         @foreach (var skill in UnusedSecondaries)
                         {
-                            <MudSelectItem Value="@skill.Key">@skill.NameEn</MudSelectItem>
+                            <MudSelectItem Value="@skill.Key">@skill.Name</MudSelectItem>
                         }
                     </MudSelect>
                     <MudNumericField T="int"

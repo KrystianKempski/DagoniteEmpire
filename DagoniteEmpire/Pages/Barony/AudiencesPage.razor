@@ -81,7 +81,7 @@ else if (Barony is not null)
                                     @foreach (var info in PpbCatalog.All)
                                     {
                                         <th>
-                                            <BaronyTooltip Text="@info.NameEn">
+                                            <BaronyTooltip Text="@info.Name">
                                                 <span>@PpbShort(info.Key)</span>
                                             </BaronyTooltip>
                                         </th>
@@ -862,21 +862,5 @@ else if (Barony is not null)
         $"php-cell {BaronPhpVisuals.CssClass(metric)}"
         + (value > 0 ? " php-cell--pos" : value < 0 ? " php-cell--neg" : "");
 
-    private static string PpbShort(Ppb p) => p switch
-    {
-        Ppb.Food => "Food",
-        Ppb.Economy => "Econ",
-        Ppb.Production => "Prod",
-        Ppb.Loyalty => "Loy",
-        Ppb.Stability => "Stab",
-        Ppb.Law => "Law",
-        Ppb.Corruption => "Corr",
-        Ppb.Science => "Sci",
-        Ppb.Magic => "Mag",
-        Ppb.Culture => "Cult",
-        Ppb.Intelligence => "Intel",
-        Ppb.Defense => "Def",
-        Ppb.Treasury => "Gold",
-        _ => p.ToString(),
-    };
+    private static string PpbShort(Ppb p) => PpbCatalog.Short(p);
 }

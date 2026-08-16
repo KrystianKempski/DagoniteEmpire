@@ -317,9 +317,9 @@
     {
         TradeTreatyCalculator.SumTreatyBonuses(new[] { PreviewTreaty() }, out var add, out _);
         return PpbCatalog.All
-            .Select(info => (info.NameEn, add[info.Key]))
+            .Select(info => (info.Name, add[info.Key]))
             .Where(x => x.Item2 != 0m)
-            .Select(x => new PpbPreviewRow(x.NameEn, PpbFormat.Additive(x.Item2)))
+            .Select(x => new PpbPreviewRow(x.Name, PpbFormat.Additive(x.Item2)))
             .ToList();
     }
 
