@@ -78,7 +78,7 @@
             {
                 <aside class="court-commander-tree__detail">
                     <div class="court-commander-tree__detail-head">
-                        <strong>@_selected.NameEn</strong>
+                        <strong>@L[_selected.NameEn]</strong>
                         <span class="court-commander-tree__detail-meta">
                             @BranchTitle(_selected.Branch) · Tier @(_selected.Tier) · @_selected.CxCost CX
                         </span>
@@ -95,7 +95,7 @@
                         }
                     </div>
                     <span class="court-commander-status @StatusCss(_selected.Status)">@StatusLabel(_selected.Status)</span>
-                    <p>@_selected.DescriptionEn</p>
+                    <p>@L[_selected.DescriptionEn]</p>
                     @if (!string.IsNullOrWhiteSpace(_selected.Effects))
                     {
                         <p class="court-commander-tree__effects">Effect: @_selected.Effects</p>
@@ -184,8 +184,8 @@
         <button type="button"
                 class="court-commander-node @css @(selected ? "court-commander-node--selected" : null)"
                 @onclick="() => Select(ability.Key)">
-            <BaronyTooltip Title="@ability.NameEn" Text="@ability.DescriptionEn">
-                <span class="court-commander-node__name">@ability.NameEn</span>
+            <BaronyTooltip Title="@L[ability.NameEn]" Text="@L[ability.DescriptionEn]">
+                <span class="court-commander-node__name">@L[ability.NameEn]</span>
             </BaronyTooltip>
         </button>
     };
