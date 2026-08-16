@@ -45,6 +45,11 @@ def wrappable(key: str) -> bool:
 def wrap_file(path: str, keys: set[str]) -> tuple[int, int]:
     with open(path, encoding="utf-8") as fh:
         src = fh.read()
+    # Only touch the markup region: never edit inside @code / @functions blocks,
+    # whose C# string literals can legitimately contain HTML like ">clicking here<".
+    m = re.search(r'@(code|functions)\b', src)
+    split = m.start() if m else len(src)
+    head, tail = src[:split], src[split:]
     text_n = attr_n = 0
 
     # 1) Element text nodes: >TEXT<
@@ -57,7 +62,7 @@ def wrap_file(path: str, keys: set[str]) -> tuple[int, int]:
             return f'>{lead}@L["{key}"]{trail}<'
         return m.group(0)
 
-    src = re.sub(r'>(\s*)([^<>@{}"]+?)(\s*)<', text_sub, src)
+    head = re.sub(r'>(\s*)([^<>@{}"]+?)(\s*)<', text_sub, head)
 
     # 2) Whitelisted display attributes: Attr="TEXT"
     attr_alt = "|".join(re.escape(a) for a in ATTR_WHITELIST)
@@ -70,11 +75,11 @@ def wrap_file(path: str, keys: set[str]) -> tuple[int, int]:
             return f'{name}="@(L["{val}"])"'
         return m.group(0)
 
-    src = re.sub(rf'\b({attr_alt})="([^"@{{]+)"', attr_sub, src)
+    head = re.sub(rf'\b({attr_alt})="([^"@{{]+)"', attr_sub, head)
 
     if text_n or attr_n:
         with open(path, "w", encoding="utf-8") as fh:
-            fh.write(src)
+            fh.write(head + tail)
     return text_n, attr_n
 
 

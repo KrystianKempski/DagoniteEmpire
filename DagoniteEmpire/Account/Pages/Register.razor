@@ -17,21 +17,21 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Register</PageTitle>
+<PageTitle>@L["Register"]</PageTitle>
 
 <div class="container pt-2">
-<h1>Register</h1>
+<h1>@L["Register"]</h1>
 <div class="row">
     <div class="col-md-4">
         <StatusMessage Message="@Message" />
         <EditForm Model="Input" asp-route-returnUrl="@ReturnUrl" method="post" OnValidSubmit="RegisterUser" FormName="register">
             <DataAnnotationsValidator />
-            <h2>Create a new account.</h2>
+            <h2>@L["Create a new account."]</h2>
             <hr />
             <ValidationSummary class="text-danger" role="alert" />
             <div class="form-floating mb-3">
                 <InputText @bind-Value="Input.UserName" class="form-control" autocomplete="username" aria-required="true" placeholder="User name" />
-                <label for="username">User Name</label>
+                <label for="username">@L["User Name"]</label>
                 <ValidationMessage For="() => Input.UserName" class="text-danger" />
             </div>
             <div class="form-floating mb-3">
@@ -39,7 +39,7 @@
                     <option selected value="@SD.NPCType.Hero">@SD.NPCType.Hero</option>
                     <option value="@SD.NPCType.Duke">@SD.NPCType.Duke</option>                                    
                 </InputSelect>
-                <label for="userrole">User Role</label>
+                <label for="userrole">@L["User Role"]</label>
                 <ValidationMessage For="() => Input.UserRole" class="text-danger" />
             </div>
             <div class="form-floating mb-3">
@@ -49,20 +49,20 @@
             </div>
             <div class="form-floating mb-3">
                 <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label for="password">Password</label>
+                <label for="password">@L["Password"]</label>
                 <ValidationMessage For="() => Input.Password" class="text-danger" />
             </div>
             <div class="form-floating mb-3">
                 <InputText type="password" @bind-Value="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label for="confirm-password">Confirm Password</label>
+                <label for="confirm-password">@L["Confirm Password"]</label>
                 <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger" />
             </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
+            <button type="submit" class="w-100 btn btn-lg btn-primary">@L["Register"]</button>
         </EditForm>
     </div>
     <div class="col-md-6 col-md-offset-2">
         <section>
-            <h3>Use another service to register.</h3>
+            <h3>@L["Use another service to register."]</h3>
             <hr />
             <ExternalLoginPicker />
         </section>
