@@ -9,7 +9,7 @@
 @inject IDialogService _dialogService
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster)]
 
-<PageTitle>Dagonite Empire | Panel Mistrza Gry</PageTitle>
+<PageTitle>Dagonite Empire | @L["Game Master Panel"]</PageTitle>
 
 <MudContainer Class="px-3" Fixed="false">
     @if (IsLoading)
@@ -19,7 +19,7 @@
     else if (UserInfo?.IsAdminOrMG != true)
     {
         <MudAlert Severity="Severity.Warning" Class="mt-4">
-            Ta strona jest dostępna wyłącznie dla Mistrza Gry.
+            @L["This page is available only to the Game Master."]
         </MudAlert>
     }
     else
@@ -27,10 +27,10 @@
         <MudBreadcrumbs Items="_breadcrumbs" />
         <MudText Typo="Typo.h4" Class="py-3">
             <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Class="mr-2" />
-            Panel Mistrza Gry
+            @L["Game Master Panel"]
         </MudText>
         <MudText Typo="Typo.body1" Color="Color.Secondary" Class="pb-4">
-            Narzędzia Mistrza Gry: baronie, podsumowania kampanii oraz edycja zatwierdzonych przedmiotów w bazie.
+            @L["Game Master tools: baronies, campaign summaries, and editing approved items in the database."]
         </MudText>
 
         <GmApprovedEquipmentSection />
@@ -40,7 +40,7 @@
         <MudPaper Class="pa-4 mb-4" Elevation="2">
             <MudGrid>
                 <MudItem xs="12" md="6">
-                    <MudSelect T="CampaignDTO" Label="Kampania" Value="SelectedCampaign" ValueChanged="OnCampaignChanged" Variant="Variant.Outlined" Dense="true">
+                    <MudSelect T="CampaignDTO" Label="@L["Campaign"]" Value="SelectedCampaign" ValueChanged="OnCampaignChanged" Variant="Variant.Outlined" Dense="true">
                         @foreach (var campaign in Campaigns)
                         {
                             <MudSelectItem Value="@campaign">@campaign.Name</MudSelectItem>
@@ -48,8 +48,8 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem xs="12" md="6">
-                    <MudSelect T="ChapterDTO?" Label="Rozdział (opcjonalnie)" @bind-Value="SelectedChapter" Variant="Variant.Outlined" Dense="true" Disabled="@(SelectedCampaign is null)">
-                        <MudSelectItem Value="@((ChapterDTO?)null)">Cała kampania</MudSelectItem>
+                    <MudSelect T="ChapterDTO?" Label="@L["Chapter (optional)"]" @bind-Value="SelectedChapter" Variant="Variant.Outlined" Dense="true" Disabled="@(SelectedCampaign is null)">
+                        <MudSelectItem Value="@((ChapterDTO?)null)">@L["Whole campaign"]</MudSelectItem>
                         @foreach (var chapter in Chapters)
                         {
                             <MudSelectItem Value="@chapter">@chapter.Name</MudSelectItem>
@@ -68,7 +68,7 @@
                     {
                         <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
                     }
-                    Generuj podsumowanie
+                    @L["Generate summary"]
                 </MudButton>
                 @if (SummaryResult is not null)
                 {
@@ -76,7 +76,7 @@
                                Color="Color.Secondary"
                                StartIcon="@Icons.Material.Filled.Download"
                                OnClick="DownloadSummary">
-                        Pobierz plik .txt
+                        @L["Download .txt file"]
                     </MudButton>
                 }
                 <MudButton Variant="Variant.Outlined"
@@ -84,21 +84,21 @@
                            StartIcon="@Icons.Material.Filled.History"
                            Disabled="@(SelectedChapter is null)"
                            OnClick="OpenBattleLogs">
-                    Archiwum bitew
+                    @L["Battle archive"]
                 </MudButton>
             </MudStack>
             @if (SelectedCampaign is not null && SelectedChapter is null)
             {
                 <MudText Typo="Typo.caption" Color="Color.Secondary" Class="mt-1">
-                    Wybierz rozdział, aby przeglądać archiwum bitew.
+                    @L["Select a chapter to browse the battle archive."]
                 </MudText>
             }
 
             @if (SummaryResult is not null)
             {
                 <MudStack Row="true" Class="mt-3" Spacing="2">
-                    <MudChip T="string" Color="Color.Info" Size="Size.Small">@SummaryResult.ChapterCount rozdział(ów)</MudChip>
-                    <MudChip T="string" Color="Color.Info" Size="Size.Small">@SummaryResult.PostCount post(ów)</MudChip>
+                    <MudChip T="string" Color="Color.Info" Size="Size.Small">@SummaryResult.ChapterCount @L["chapter(s)"]</MudChip>
+                    <MudChip T="string" Color="Color.Info" Size="Size.Small">@SummaryResult.PostCount @L["post(s)"]</MudChip>
                     <MudChip T="string" Color="Color.Default" Size="Size.Small">@SummaryResult.FileName</MudChip>
                 </MudStack>
             }
@@ -107,7 +107,7 @@
         @if (SummaryResult is not null)
         {
             <MudPaper Class="pa-4" Elevation="1">
-                <MudText Typo="Typo.h6" Class="mb-2">Podgląd</MudText>
+                <MudText Typo="Typo.h6" Class="mb-2">@L["Preview"]</MudText>
                 <MudTextField T="string"
                               Value="@SummaryResult.Content"
                               Variant="Variant.Outlined"
@@ -154,7 +154,7 @@
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Błąd ładowania panelu: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Error loading panel: "] + ex.Message, Severity.Error);
         }
         finally
         {
@@ -185,7 +185,7 @@
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Błąd ładowania rozdziałów: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Error loading chapters: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -210,16 +210,16 @@
 
             if (SummaryResult is null)
             {
-                _snackBar.Add("Nie udało się wygenerować podsumowania.", Severity.Warning);
+                _snackBar.Add(L["Failed to generate the summary."], Severity.Warning);
             }
             else
             {
-                _snackBar.Add("Podsumowanie wygenerowane.", Severity.Success);
+                _snackBar.Add(L["Summary generated."], Severity.Success);
             }
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Błąd generowania: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Error generating: "] + ex.Message, Severity.Error);
         }
         finally
         {

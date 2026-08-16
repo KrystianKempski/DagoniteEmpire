@@ -8,7 +8,7 @@
 <MudPaper Class="pa-4 mb-4" Elevation="2">
     <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
         <MudIcon Icon="@Icons.Material.Filled.Inventory2" Class="mr-1" />
-        <MudText Typo="Typo.h6">Zatwierdzone przedmioty</MudText>
+        <MudText Typo="Typo.h6">@L["Approved items"]</MudText>
         <MudSpacer />
         <MudButton Variant="Variant.Outlined"
                    Color="Color.Secondary"
@@ -16,11 +16,11 @@
                    StartIcon="@Icons.Material.Filled.Refresh"
                    Disabled="@IsLoadingEquipment"
                    OnClick="LoadEquipmentAsync">
-            Odśwież
+            @L["Refresh"]
         </MudButton>
     </MudStack>
     <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pb-3">
-        Edycja wszystkich zatwierdzonych przedmiotów w bazie — zarówno z seeda, jak i dodanych później. Zmiany dotyczą wszystkich postaci, które dany przedmiot posiadają.
+        @L["Edit all approved items in the database — both seeded and added later. Changes affect all characters that own the item."]
     </MudText>
 
     @if (IsLoadingEquipment)
@@ -29,7 +29,7 @@
     }
 
     <MudTextField @bind-Value="_searchString"
-                  Placeholder="Szukaj po nazwie, typie lub posiadaczu"
+                  Placeholder="@L["Search by name, type, or owner"]"
                   Adornment="Adornment.Start"
                   AdornmentIcon="@Icons.Material.Filled.Search"
                   Immediate="true"
@@ -48,11 +48,11 @@
                  FixedHeader="true"
                  Height="420px">
         <Columns>
-            <PropertyColumn Property="x => x.Equipment.Name" Title="Nazwa" />
-            <PropertyColumn Property="x => x.Equipment.EquipmentType" Title="Typ" />
-            <PropertyColumn Property="x => x.Equipment.Price" Title="Cena [Imp]" Format="F3" />
-            <PropertyColumn Property="x => x.Equipment.Weight" Title="Waga [St]" Format="F1" />
-            <TemplateColumn Title="Posiadacze" Sortable="false">
+            <PropertyColumn Property="x => x.Equipment.Name" Title="@L["Name"]" />
+            <PropertyColumn Property="x => x.Equipment.EquipmentType" Title="@L["Type"]" />
+            <PropertyColumn Property="x => x.Equipment.Price" Title="@L["Price [Imp]"]" Format="F3" />
+            <PropertyColumn Property="x => x.Equipment.Weight" Title="@L["Weight [St]"]" Format="F1" />
+            <TemplateColumn Title="@L["Owners"]" Sortable="false">
                 <CellTemplate>
                     @if (context.Item.OwnerSummary == string.Empty)
                     {
@@ -64,18 +64,18 @@
                     }
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="Akcje" Sortable="false" CellClass="text-center">
+            <TemplateColumn Title="@L["Actions"]" Sortable="false" CellClass="text-center">
                 <CellTemplate>
                     <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                    Color="Color.Primary"
                                    Size="Size.Small"
-                                   Title="Edytuj przedmiot"
+                                   Title="@L["Edit item"]"
                                    OnClick="@(() => EditEquipmentAsync(context.Item))" />
                 </CellTemplate>
             </TemplateColumn>
         </Columns>
         <NoRecordsContent>
-            <MudText Typo="Typo.body2" Color="Color.Secondary">Brak zatwierdzonych przedmiotów.</MudText>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@L["No approved items."]</MudText>
         </NoRecordsContent>
     </MudDataGrid>
 </MudPaper>
@@ -155,7 +155,7 @@
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Błąd ładowania przedmiotów: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Error loading items: "] + ex.Message, Severity.Error);
         }
         finally
         {
@@ -170,7 +170,7 @@
             var equipment = await _equipmentRepository.GetById(row.Equipment.Id);
             if (equipment.Id == 0)
             {
-                _snackBar.Add("Nie znaleziono przedmiotu.", Severity.Warning);
+                _snackBar.Add(L["Item not found."], Severity.Warning);
                 return;
             }
 
@@ -188,7 +188,7 @@
             };
 
             var dialog = await _dialogService.ShowAsync<CreateEquipmentSlotDialog>(
-                "Edytuj przedmiot",
+                L["Edit item"],
                 parameters,
                 await SetDialogOptions());
 
@@ -197,12 +197,12 @@
                 return;
 
             await _equipmentRepository.Update(updatedSlot.Equipment);
-            _snackBar.Add($"Zaktualizowano przedmiot: {updatedSlot.Equipment.Name}", Severity.Success);
+            _snackBar.Add(L["Item updated: "] + updatedSlot.Equipment.Name, Severity.Success);
             await LoadEquipmentAsync();
         }
         catch (Exception ex)
         {
-            _snackBar.Add("Błąd edycji przedmiotu: " + ex.Message, Severity.Error);
+            _snackBar.Add(L["Error editing item: "] + ex.Message, Severity.Error);
         }
     }
 

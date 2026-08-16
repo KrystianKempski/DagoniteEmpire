@@ -455,11 +455,11 @@ else
                                        Size="Size.Small"
                                        Color="@(_toolbarExpanded ? Color.Primary : Color.Default)"
                                        OnClick="ToggleToolbar"
-                                       Title="@(_toolbarExpanded ? "Ukryj formatowanie" : "Pokaż formatowanie")" />
+                                       Title="@(_toolbarExpanded ? L["Hide formatting"] : L["Show formatting"])" />
                         <MudIconButton Icon="@(_editorFullScreen ? Icons.Material.Filled.FullscreenExit : Icons.Material.Filled.Fullscreen)"
                                        Size="Size.Small"
                                        OnClick="ToggleFullScreen"
-                                       Title="@(_editorFullScreen ? "Zamknij pełny ekran" : "Pełny ekran")" />
+                                       Title="@(_editorFullScreen ? L["Exit full screen"] : L["Full screen"])" />
                     </div>
                     <div id="chapter-post-editor" class="post-editor flex-grow-1">
                     <BlazoredTextEditor @ref="@PostEditor" ReadOnly="@(!SendPostEnabled)">
@@ -583,8 +583,8 @@ else
     private double? _pendingRestoreHeight;
 
     private string CollapsedHint => IsEditMode
-        ? "Kliknij, aby kontynuować edycję posta..."
-        : "Kliknij, aby napisać post...";
+        ? L["Click to continue editing the post..."]
+        : L["Click to write a post..."];
 
     private string SendButtonIcon => IsEditMode
         ? Icons.Material.Filled.Check
@@ -1403,7 +1403,7 @@ else
         };
 
         var dialog = await DialogService.ShowAsync<StartBattleDialog>(
-            "Rozpocznij bitwę",
+            L["Start battle"],
             parameters,
             await SetDialogOptions(MaxWidth.Small));
         var result = await dialog.Result;
@@ -1413,7 +1413,7 @@ else
 
         if (result.Data is not IReadOnlyList<BattleParticipantSnapshot> participants || participants.Count == 0)
         {
-            SnackBar.Add("Wybierz co najmniej jedną postać.", Severity.Warning);
+            SnackBar.Add(L["Select at least one character."], Severity.Warning);
             return;
         }
 

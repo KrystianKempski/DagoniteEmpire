@@ -560,12 +560,12 @@
         get
         {
             if (!HasUsedAtLeastOneAction)
-                return ("Dodaj kolejną akcję", "Wymaga wykorzystanej akcji");
+                return (L["Add another action"], L["Requires a used action"]);
             if (HasTemporaryState(States.Names.NoTurn))
-                return ("Dodaj kolejną akcję", "No turn → Half turn");
+                return (L["Add another action"], "No turn → Half turn");
             if (HasTemporaryState(States.Names.HalfTurn))
-                return ("Dodaj kolejną akcję", "Usuwa Half turn");
-            return ("Dodaj kolejną akcję", "Wymaga wykorzystanej akcji");
+                return (L["Add another action"], L["Removes Half turn"]);
+            return (L["Add another action"], L["Requires a used action"]);
         }
     }
 
@@ -1017,12 +1017,12 @@
             {
                 Mob.States = RemoveMobState(Mob.States, States.Names.NoTurn);
                 Mob.States = CombatStateString.Add(Mob.States, States.Names.HalfTurn, States.Duration.SingleTurn);
-                Snackbar.Add("Przyznano half turn.", Severity.Success);
+                Snackbar.Add(L["Half turn granted."], Severity.Success);
             }
             else if (CombatStateString.HasState(Mob.States, States.Names.HalfTurn))
             {
                 Mob.States = RemoveMobState(Mob.States, States.Names.HalfTurn);
-                Snackbar.Add("Usunięto half turn — pełna tura przywrócona.", Severity.Success);
+                Snackbar.Add(L["Half turn removed — full turn restored."], Severity.Success);
             }
 
             await _mobRepository.Update(Mob);
@@ -1046,7 +1046,7 @@
 
             await _traitCharacterRepository.Create(
                 StateSeeder.GetStateDTO(States.Names.HalfTurn, false, States.Duration.SingleTurn, Id));
-            Snackbar.Add("Przyznano half turn.", Severity.Success);
+            Snackbar.Add(L["Half turn granted."], Severity.Success);
         }
         else if (HasTemporaryState(States.Names.HalfTurn))
         {
@@ -1057,7 +1057,7 @@
                 AllParams.TraitsTemporary.Remove(halfTurn);
             }
 
-            Snackbar.Add("Usunięto half turn — pełna tura przywrócona.", Severity.Success);
+            Snackbar.Add(L["Half turn removed — full turn restored."], Severity.Success);
         }
 
         await OnFullDefenceApplied.InvokeAsync(Id);

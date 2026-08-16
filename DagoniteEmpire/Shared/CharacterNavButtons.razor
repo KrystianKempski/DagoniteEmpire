@@ -87,7 +87,7 @@
         }
         catch (Exception e)
         {
-            _snackBar.Add("Błąd przejścia do Baronii: " + e.Message, Severity.Error);
+            _snackBar.Add(L["Error navigating to Barony: "] + e.Message, Severity.Error);
         }
     }
 
@@ -98,7 +98,7 @@
             UserInfo = await _userService.GetUserInfo();
             if (UserInfo?.HasGlobalCharacterAccess != true)
             {
-                _snackBar.Add("Panel MG jest dostępny wyłącznie dla Mistrza Gry.", Severity.Warning);
+                _snackBar.Add(L["The GM panel is available only to the Game Master."], Severity.Warning);
                 return;
             }
 
@@ -107,7 +107,7 @@
         }
         catch (Exception e)
         {
-            _snackBar.Add("Błąd przejścia do Panelu MG: " + e.Message, Severity.Error);
+            _snackBar.Add(L["Error navigating to the GM panel: "] + e.Message, Severity.Error);
         }
     }
 

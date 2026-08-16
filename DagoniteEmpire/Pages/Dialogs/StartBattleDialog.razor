@@ -6,14 +6,14 @@
     <TitleContent>
         <MudText Typo="Typo.h6">
             <img src="@MyIcon.Attack" width="40" height="40" class="pr-2" alt="" />
-            Rozpocznij bitwę
+            @L["Start battle"]
         </MudText>
     </TitleContent>
     <DialogContent>
-        <MudText Typo="Typo.body1" Class="mb-3">Kto bierze udział w walce?</MudText>
+        <MudText Typo="Typo.body1" Class="mb-3">@L["Who takes part in the battle?"]</MudText>
         @if (Participants.Count == 0)
         {
-            <MudText Typo="Typo.body2">Brak postaci w tym wątku.</MudText>
+            <MudText Typo="Typo.body2">@L["No characters in this thread."]</MudText>
         }
         else
         {
@@ -29,8 +29,8 @@
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Anuluj</MudButton>
-        <MudButton Color="Color.Error" Disabled="@(!HasSelection)" OnClick="Confirm">Rozpocznij bitwę</MudButton>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Error" Disabled="@(!HasSelection)" OnClick="Confirm">@L["Start battle"]</MudButton>
     </DialogActions>
 </MudDialog>
 

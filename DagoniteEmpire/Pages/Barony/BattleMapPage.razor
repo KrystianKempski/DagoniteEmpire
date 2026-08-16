@@ -1944,7 +1944,7 @@ else
                     if (steps < minSteps)
                     {
                         blockedEarly = true;
-                        fail = "Na drodze szarży stoi inny oddział uniemożliwiający szarżę.";
+                        fail = L["Another unit stands in the charge path, preventing the charge."];
                     }
                     break;
                 }
@@ -1953,7 +1953,7 @@ else
                 if (steps < minSteps)
                 {
                     blockedEarly = true;
-                    fail = "Na drodze szarży stoi inny oddział uniemożliwiający szarżę.";
+                    fail = L["Another unit stands in the charge path, preventing the charge."];
                     break;
                 }
 
@@ -5725,7 +5725,7 @@ else
             return;
 
         <div class="bbm-force-abilities">
-            <span class="bbm-force-abilities__label">Zdolności:</span>
+            <span class="bbm-force-abilities__label">@L["Abilities:"]</span>
             @foreach (var key in keys)
             {
                 var ab = CourtCommanderCatalog.Find(key);
