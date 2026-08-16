@@ -376,3 +376,54 @@ i18n(pl): <faza/obszar> — <krótki opis>
 ```
 
 Przykład: `i18n(pl): Faza 1 — nawigacja i przyciski postaci`
+
+---
+
+## 11. Migracja do przełączalnego i18n (PL/EN) — plan
+
+> **Zmiana kierunku (2026-08-16):** docelowo chcemy **przełączania języka**, nie tylko PL-only.
+> Dobra wiadomość: `master` nadal ma wszystkie **angielskie** stringi w tych samych miejscach,
+> w których gałąź `Localisation` ma **polskie**. Dzięki temu `git diff master..Localisation`
+> to gotowy korpus par **EN↔PL** — nie tłumaczymy od nowa, tylko *ekstrahujemy* i wpinamy w zasoby.
+
+### Decyzje (zatwierdzone)
+1. **Klucz zasobu = angielski tekst źródłowy.** Angielski działa jako fallback bez pliku zasobów
+   (`L["Refresh"]` → „Refresh", gdy brak wpisu). Potrzebny tylko `pl.resx` z mapą `EN → PL`.
+2. **Baza pracy = nowa gałąź `i18n` odbita od `master`** (kod trzyma angielskie klucze).
+   Gałąź `Localisation` = wyłącznie źródło danych PL (potem archiwizacja).
+3. **Seedy/DB zostają jednojęzyczne (angielskie).** `DbInitializer` nie jest lokalizowany w tej iteracji.
+4. Ten plan zapisany tutaj (sekcja 11).
+
+### Strategia zasobów
+- `IStringLocalizer<T>` z **marker-klasami per obszar** (mniej plików, reużycie):
+  `SharedResources`, `BaronyResources`, `CombatResources`, `AccountResources`, `CharacterResources`.
+- Pliki `Resources/*.pl.resx` (klucz = EN, wartość = PL). Brak `*.en.resx` — EN to fallback z klucza.
+
+### Fazy
+- **I0 — Infrastruktura.** `AddLocalization(o => o.ResourcesPath = "Resources")`;
+  `UseRequestLocalization` z kulturami `en`,`pl`; provider = cookie `.AspNetCore.Culture` (+ querystring do testów).
+  Blazor Server: zmiana kultury per-circuit → przełącznik ustawia cookie i **wymusza pełny reload**
+  (endpoint `Culture/Set?culture=pl&redirect=...`). Zmiana „na żywo" mid-circuit nie jest wspierana.
+- **I1 — Ekstrakcja korpusu EN↔PL (skrypt).** Python paruje usunięte(EN)/dodane(PL) linie z
+  `git diff master..Localisation` → generuje `Resources/*.pl.resx`. Linie „1 string/zmianę" automatycznie;
+  wielo-literałowe i interpolacje (`$"...{x}..."`) na listę do ręcznego przeglądu (parametryzacja `{0}`).
+- **I2 — Owinięcie literałów `L["..."]` (główny nakład).** Miejsca do owinięcia = **dokładnie te,
+  które diff pokazuje jako zmienione** (gotowa lista user-facing). Robione **fazami tematycznymi 1–11**
+  jak wcześniej. Te same reguły „NIE tłumaczyć": klucze, `case`-labels, `SD.*`, `States.Names.*`,
+  enumy, nazwy własne, identyfikatory.
+- **I3 — Dane spoza kodu UI.** Osadzony `commander-skill-tree.json`: dodać `namePl`/`descriptionPl`
+  (EN z master, PL z Localisation), katalog wybiera po `CultureInfo.CurrentUICulture` (wzorzec `NamePl`/`NameEn`
+  istnieje już w `Ppb`/`CourtSkillCatalog`). Seedy: **pozostają EN** (decyzja 3).
+- **I4 — Przełącznik języka (UI).** Toggle PL/EN w nawigacji → cookie kultury → reload.
+- **I5 — QA.** Build + testy (asercje stringów przez `L[...]` lub kultura `en`); przegląd obu języków,
+  fallback EN, braki w `pl.resx`.
+
+### Nakład / ryzyka
+- **I1 tanie** dzięki diffowi (oszczędza ~cały koszt tłumaczenia ~4 500 stringów).
+- **I2 największy blok** (mechaniczny, masowy) — te same ~350 plików.
+- Ryzyka: identyczny EN o różnym znaczeniu → jedno tłumaczenie (nieliczne, rozbroić kluczem semantycznym);
+  interpolacje wymagają ręcznej parametryzacji; Blazor Server = reload przy zmianie kultury (nie „na żywo").
+
+### Kolejność startu
+1. I0 (infra) → 2. I1 (skrypt ekstrakcji — dowód, że korpus PL wyciąga się z diffu) →
+3. I2 fazami 1–11 → 4. I3 → 5. I4 → 6. I5.
