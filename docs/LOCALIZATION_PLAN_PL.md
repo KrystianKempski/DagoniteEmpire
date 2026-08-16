@@ -317,7 +317,7 @@ wyświetlaną narrację/opisy, zostawiając wszystkie klucze.
   - `Pages/Dialogs/IconCropperDialog.razor` — tytuł/treść/przyciski/snackbar.
   - `Pages/Dialogs/AddBaronyResourcesPostDialog.razor` — opis/etykiety (Prestiż/Honor/Postrach)/przyciski.
 - Świadomie ZOSTAWIONE: `Components/UnitSkillTiles.razor` kolumny `Base/Other/Total/From/Attr` — zwięzłe kody kolumn (mini-legenda) powiązane z polskimi tooltipami; celowo bez zmian.
-- ⏳ **Decyzja do potwierdzenia**: `docs/barony/commander-skill-tree.json` (osadzony jako `DA_Common.Barony.commander-skill-tree.json`) — ~30+ zdolności dowódcy, pola `name`/`description` (mapowane na `NameEn`/`DescriptionEn`, widoczne w drzewie dowódcy) są ang. Gęsta terminologia mechanik walki (Exposure, Testudo, Enfilade, EffectiveArmor). Do przetłumaczenia w osobnej partii po potwierdzeniu terminologii.
+- ✅ **Zdolności dowódcy przetłumaczone**: `docs/barony/commander-skill-tree.json` (osadzony jako `DA_Common.Barony.commander-skill-tree.json`) — 48 zdolności: pola `name` i `description` (mapowane na `NameEn`/`DescriptionEn`, widoczne w drzewie dowódcy i na kartach oddziałów) oraz `requirementsText` (15 progów) przetłumaczone na PL. ZOSTAWIONE: `key`, `effects` (skrót projektowy „Hp+8" itp.), `status`, `notes`, `branch`, `requirements[].skill` (klucze umiejętności). Terminologia bojowa spójna z UI: HP/Maks. HP, Ruch, Obrażenia, Pancerz, Przebicie, Zasięg, Szarża, pole, Trudny teren, Dyscyplina, Inicjatywa, faza ruchu/planowania ataku/runda walki; Ekspozycja (Exposure), Testudo/czworobok (Square), Ostrzał flankujący (Enfilade). Testy `CourtCommanderFormulasTests` 15/15 zielone (JSON parsuje się poprawnie).
 
 ---
 
