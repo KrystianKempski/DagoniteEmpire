@@ -7,7 +7,7 @@
 <MudDialog >
     <TitleContent>
         <MudText Typo="Typo.h6">
-            Cropp your image
+            Przytnij obraz
         </MudText>
     </TitleContent>
     <DialogContent>
@@ -25,8 +25,8 @@
         <InputFile id="imageRebuildInput" OnChange="RebuildImageAsync" accept="image/*" />
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Error" OnClick="SaveBtn">Save</MudButton>
+        <MudButton OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Color="Color.Error" OnClick="SaveBtn">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -162,7 +162,7 @@
             var croppedCanvas = await cropperComponent!.GetCroppedCanvasAsync(getCroppedCanvasOptions);
             var uploadedUrl = await JSRuntime.InvokeAsync<string>("uploadCroppedPortrait", croppedCanvas.JSRuntimeObjectRef, SD.Portrait);
             MudDialog.Close(DialogResult.Ok(uploadedUrl));
-            Snackbar.Add("Image added", Severity.Success);
+            Snackbar.Add("Dodano obraz", Severity.Success);
         }
         catch (Exception ex)
         {

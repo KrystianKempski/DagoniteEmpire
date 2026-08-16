@@ -110,8 +110,8 @@ public class TradeGoodAvailabilityTests
         Assert.Equal(1m, row.Additive[Ppb.Science]);
         Assert.Equal(2m, row.Additive[Ppb.Economy]); // spices
         Assert.Equal(-2m, row.Additive[Ppb.Stability]); // insufficient luxury
-        Assert.Contains("2 available goods", row.Note);
-        Assert.Contains("luxury", row.Note, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("dostępne towary: 2", row.Note);
+        Assert.Contains("luksus", row.Note, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

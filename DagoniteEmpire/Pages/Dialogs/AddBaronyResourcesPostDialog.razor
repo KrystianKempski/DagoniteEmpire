@@ -2,13 +2,13 @@
     <DialogContent>
         <MudStack Spacing="2">
             <MudText Typo="Typo.body2">
-                Add barony resources as a separate chapter post.
+                Dodaj zasoby baronii jako osobny wpis rozdziału.
             </MudText>
 
             <PpbVectorEditor @bind-Value="_ppbDelta" Title="Zasoby (Wyżywienie, Lojalność, Produkcja, ...)" />
 
             <MudNumericField T="int"
-                             Label="Prestige"
+                             Label="Prestiż"
                              @bind-Value="_prestigeDelta"
                              Immediate="true"
                              Variant="Variant.Outlined" />
@@ -18,16 +18,16 @@
                              Immediate="true"
                              Variant="Variant.Outlined" />
             <MudNumericField T="int"
-                             Label="Fear"
+                             Label="Postrach"
                              @bind-Value="_fearDelta"
                              Immediate="true"
                              Variant="Variant.Outlined" />
         </MudStack>
     </DialogContent>
     <DialogActions>
-        <MudButton Variant="Variant.Text" OnClick="Cancel">Cancel</MudButton>
+        <MudButton Variant="Variant.Text" OnClick="Cancel">Anuluj</MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Accept" Disabled="@(!CanAccept)">
-            Confirm
+            Zatwierdź
         </MudButton>
     </DialogActions>
 </MudDialog>

@@ -6,12 +6,12 @@
 <MudDialog>
     <TitleContent>
         <MudText Typo="Typo.h6">
-            Make an icon
+            Utwórz ikonę
         </MudText>
     </TitleContent>
     <DialogContent>
         <MudText Typo="Typo.body2" Class="mb-2">
-            Select a circular area from the portrait. Resize the selection to fit the face or part of the silhouette.
+            Zaznacz okrągły obszar portretu. Zmień rozmiar zaznaczenia, aby dopasować twarz lub fragment sylwetki.
         </MudText>
         <div class="icon-cropper-container img-container">
             <CropperComponent Class="big-img"
@@ -26,8 +26,8 @@
         </div>
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="Color.Primary" OnClick="SaveBtn">Create icon</MudButton>
+        <MudButton OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Color="Color.Primary" OnClick="SaveBtn">Utwórz ikonę</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -110,7 +110,7 @@
             var croppedCanvas = await cropperComponent!.GetCroppedCanvasAsync(getCroppedCanvasOptions);
             var uploadedUrl = await JSRuntime.InvokeAsync<string>("uploadEllipseIcon", croppedCanvas.JSRuntimeObjectRef, SD.Icon);
             MudDialog.Close(DialogResult.Ok(uploadedUrl));
-            Snackbar.Add("Icon created", Severity.Success);
+            Snackbar.Add("Utworzono ikonę", Severity.Success);
         }
         catch (Exception ex)
         {

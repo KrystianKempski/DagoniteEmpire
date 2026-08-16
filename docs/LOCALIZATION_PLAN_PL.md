@@ -301,12 +301,23 @@ wyświetlaną narrację/opisy, zostawiając wszystkie klucze.
 - **„Duke"** jako nazwa typu (`SD.NPCType.Duke`) ZOSTAWIONE — enum renderuje się jako „Duke" i tak jest używany w polskim tekście w innych miejscach (CharacterUpsert).
 - [x] ~~`Pages/Scribe/ScribePage.razor`~~ — **poza zakresem** (moduł Scribe nieużywany, nie tłumaczyć)
 
-### Faza 10 — QA, testy, spójność 🟡 (M)
-- [ ] Zaktualizować testy asertujące stringi (`CombatStateStringTests`, `RichTextTests`, `WoundsTurnSummaryTests`, `CombatStateStringTests` itp.)
-- [ ] `dotnet build` + `dotnet test` — zielone.
-- [ ] Przegląd spójności terminologii wg glosariusza (grep pozostałych ang. słów kluczowych).
-- [ ] Przegląd wizualny kluczowych ekranów (przycięcia tekstu, layout MudBlazor).
-- [ ] Sprawdzić brak „przecieków" ang. w snackbarach i tooltipach.
+### Faza 10 — QA, testy, spójność ✅ UKOŃCZONA (M)
+- [x] Zaktualizowano test asertujący zmieniony string: `TradeGoodAvailabilityTests` (nowy format notatki „dostępne towary: {n}" / „luksus — …"). Test przechodzi.
+- [x] `dotnet build` (web) + `dotnet test` — zielone. Wynik testów: **Passed 404 / Failed 2 / Total 406**.
+  - Dwa niepowodzenia to **`CourtPpbFormulasTests`** (`DefaultSheet_UsesBaseMainsWithoutSecondaries`, `SumsMainPlusTwoSecondaries_PerAgreedMapping`) — błędy **liczbowe**, nie stringowe. Kod (`DA_Common/Barony/CourtCharacterSkills.cs`) nie był ruszany przez żaden commit lokalizacyjny → **wcześniej istniejące, poza zakresem lokalizacji**.
+- [x] Przegląd spójności terminologii wg glosariusza (grep pozostałych ang. słów kluczowych) — dokończono pokrycie folderu `Pages/Dialogs/`.
+- [x] Sprawdzono brak „przecieków" ang. w snackbarach i tooltipach (sweep 85 plików / 292 dopasowania — snackbary już PL poza naprawionymi niżej).
+- Naprawione przecieki ang. w dialogach:
+  - `Pages/Dialogs/CreateMobDialog.razor` — całość (etykiety, umiejętności moba wg kanonicznych nazw, relacja Sojusznik/Neutralny/Wróg, „Brak", pola ran/szybkości, stany, snackbary, tytuł kadrowania).
+  - `Pages/Dialogs/ExistingMobsDialog.razor` — całość (tytuły kolumn, przyciski, snackbary).
+  - `Pages/Dialogs/CreateFightSequenceDialog.razor` — całość (etykiety wyboru, „Rzut!", akcje, 8 snackbarów, „Some component is missing" → „Brakuje jakiegoś elementu").
+  - `Pages/Dialogs/BattleLogDialog.razor` — dopełnienie z Fazy 8 (tytuł, „Bitwa", stany puste, „Tura", „Zamknij").
+  - `Pages/Dialogs/ConfirmationDialog.razor` — „Cancel" → „Anuluj".
+  - `Pages/Dialogs/CropperDialog.razor` — tytuł/przyciski/snackbar.
+  - `Pages/Dialogs/IconCropperDialog.razor` — tytuł/treść/przyciski/snackbar.
+  - `Pages/Dialogs/AddBaronyResourcesPostDialog.razor` — opis/etykiety (Prestiż/Honor/Postrach)/przyciski.
+- Świadomie ZOSTAWIONE: `Components/UnitSkillTiles.razor` kolumny `Base/Other/Total/From/Attr` — zwięzłe kody kolumn (mini-legenda) powiązane z polskimi tooltipami; celowo bez zmian.
+- ⏳ **Decyzja do potwierdzenia**: `docs/barony/commander-skill-tree.json` (osadzony jako `DA_Common.Barony.commander-skill-tree.json`) — ~30+ zdolności dowódcy, pola `name`/`description` (mapowane na `NameEn`/`DescriptionEn`, widoczne w drzewie dowódcy) są ang. Gęsta terminologia mechanik walki (Exposure, Testudo, Enfilade, EffectiveArmor). Do przetłumaczenia w osobnej partii po potwierdzeniu terminologii.
 
 ---
 

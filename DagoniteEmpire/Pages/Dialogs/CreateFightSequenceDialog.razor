@@ -9,7 +9,7 @@
     <TitleContent>
         <MudText Typo="Typo.h6">
             <img src="@MyIcon.Attack" width="40" height="40" />
-            Fight sequence
+            Sekwencja walki
         </MudText>
     </TitleContent>
     <DialogContent>
@@ -21,7 +21,7 @@
                     <MudPaper Elevation="1" Class="pa-2 h-100">
 
                         @* Select Attacker *@
-                        <MudSelect Value="@SelectedAttacker" T="string" Required="true" ValueChanged="SelectAttacker" Label="Select Attacker">
+                        <MudSelect Value="@SelectedAttacker" T="string" Required="true" ValueChanged="SelectAttacker" Label="Wybierz atakującego">
                             <MudSelectItem Value="@string.Empty">@string.Empty</MudSelectItem>
                             @foreach(var attacker in CharacterAllParams) {
                                 @if (attacker is not null && attacker.Character?.NPCName != SelectedDefender && CanSelectCharacterAsAttacker(attacker))
@@ -38,7 +38,7 @@
                             }
                         </MudSelect>                
                         @* Select action type *@
-                        <MudSelect T="string" Required="true" @bind-Value="@FightSequence.AttackAction" Label="Select action type">
+                        <MudSelect T="string" Required="true" @bind-Value="@FightSequence.AttackAction" Label="Wybierz typ akcji">
                             @foreach (var defType in SD.AttackAction.All)
                             {
                                 if (defType == SD.AttackAction.Targeted) continue;
@@ -47,19 +47,19 @@
                         </MudSelect>
                         @* Select if targeted and  location *@
                         <MudStack Spacing="1" Row>
-                            <MudCheckBox @bind-Value="@IsTargeted" Label="Aimed?" ></MudCheckBox>
-                            <MudSelect T="string" Disabled="@(IsTargeted == false)" Required="true" @bind-Value="@FightSequence.AttackLocation" Label="Select location">
+                            <MudCheckBox @bind-Value="@IsTargeted" Label="Celowany?" ></MudCheckBox>
+                            <MudSelect T="string" Disabled="@(IsTargeted == false)" Required="true" @bind-Value="@FightSequence.AttackLocation" Label="Wybierz lokację">
                                 @foreach (var location in Wounds.Location.All)
                                 {
                                     <MudSelectItem Value="@location">@location</MudSelectItem>
                                 }
                             </MudSelect>
                         </MudStack>                    
-                        <MudCheckBox @bind-Value="@IsFlanking" Label="Flanking"></MudCheckBox>                    
+                        <MudCheckBox @bind-Value="@IsFlanking" Label="Oskrzydlenie"></MudCheckBox>                    
                         @* Attacker states *@
                         @if (FightSequence?.Attacker?.States is not null && FightSequence.Attacker.States.Any())
                         {
-                            <MudText Typo="Typo.button">States</MudText>                       
+                            <MudText Typo="Typo.button">Stany</MudText>                       
                             <MudGrid>
                                 @foreach(var state in FightSequence.Attacker.States)
                                 {
@@ -71,7 +71,7 @@
                         }
                         @* Other attacker bonuses. penalties states *@
                         <MudStack Class="pt-1" Row AlignItems="AlignItems.Center" Spacing="1">
-                            <MudText Typo="Typo.body2">Add bonus</MudText>
+                            <MudText Typo="Typo.body2">Dodaj premię</MudText>
                             <MudFab Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAttackerBonus" />
                             <MudFab Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Remove" OnClick="RemoveAttackerBonus" />
                         </MudStack>
@@ -92,7 +92,7 @@
                 <MudItem xs="6">
                     <MudPaper Elevation="1" Class="pa-2 h-100">
                         @* Select Defender *@
-                        <MudSelect Value="@SelectedDefender" T="string" Required="true" ValueChanged="SelectDefender" Label="Select Defender">
+                        <MudSelect Value="@SelectedDefender" T="string" Required="true" ValueChanged="SelectDefender" Label="Wybierz obrońcę">
                             <MudSelectItem Value="@string.Empty">@string.Empty</MudSelectItem>
                             @foreach (var defender in CharacterAllParams)
                             {
@@ -112,8 +112,8 @@
                         @* Select defence type *@
                         <MudStack Class="p-0 m-0" Spacing="1" Row>
 
-                            <MudButton OnClick="SelectBestDefence">Select best</MudButton>
-                            <MudSelect T="string" Required="true" @bind-Value="@FightSequence.DefenceType" Label="Select defence type">
+                            <MudButton OnClick="SelectBestDefence">Wybierz najlepszą</MudButton>
+                            <MudSelect T="string" Required="true" @bind-Value="@FightSequence.DefenceType" Label="Wybierz typ obrony">
                                 @if(string.IsNullOrEmpty(SelectedDefender) == false)
                                 {
                                     @foreach (var defType in SD.DefenceType.All)
@@ -127,13 +127,13 @@
                             </MudSelect>
                         </MudStack>
                         <MudStack Spacing="1" Row>
-                            <MudCheckBox @bind-Value="@IsSurrounded" Label="Surrounded?"></MudCheckBox>
-                            <MudNumericField Disabled="@(IsSurrounded == false)" @bind-Value="@SurroundedValue" Min="2" Label="Attackers (total)"> </MudNumericField>
+                            <MudCheckBox @bind-Value="@IsSurrounded" Label="Otoczony?"></MudCheckBox>
+                            <MudNumericField Disabled="@(IsSurrounded == false)" @bind-Value="@SurroundedValue" Min="2" Label="Atakujący (łącznie)"> </MudNumericField>
                         </MudStack>
                         @* Defender states *@
                         @if (FightSequence.Defender.States is not null && FightSequence.Defender.States.Any())
                         {
-                            <MudText Typo="Typo.button">States</MudText>
+                            <MudText Typo="Typo.button">Stany</MudText>
                             <MudGrid>
                                 @foreach (var state in FightSequence.Defender.States)
                                 {
@@ -145,7 +145,7 @@
                         }
                         @* Other defender bonuses. penalties states *@
                         <MudStack Class="pt-1" Row AlignItems="AlignItems.Center" Spacing="1">
-                            <MudText Typo="Typo.body2">Add bonus</MudText>
+                            <MudText Typo="Typo.body2">Dodaj premię</MudText>
                             <MudFab Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Add" OnClick="AddDefenderBonus" />
                             <MudFab Color="Color.Primary" Size="Size.Small" StartIcon="@Icons.Material.Filled.Remove" OnClick="RemoveDefenderBonus" />
                         </MudStack>
@@ -164,7 +164,7 @@
                 </MudItem>
 
                 <MudItem xs="12">
-                    <MudButton Class="p-2 m-2 w-100 justify-content-center"  Variant="Variant.Filled" Color="Color.Primary" OnClick="MakeAttackRoll">Roll!</MudButton>
+                    <MudButton Class="p-2 m-2 w-100 justify-content-center"  Variant="Variant.Filled" Color="Color.Primary" OnClick="MakeAttackRoll">Rzut!</MudButton>
                 </MudItem>
 
                 <MudItem xs="12">
@@ -196,8 +196,8 @@
         }
     </DialogContent>
     <DialogActions>
-        <MudButton OnClick="Cancel">Exit</MudButton>
-        <MudButton Color="Color.Error" OnClick="SaveSequenceBtn">Save</MudButton>
+        <MudButton OnClick="Cancel">Wyjdź</MudButton>
+        <MudButton Color="Color.Error" OnClick="SaveSequenceBtn">Zapisz</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -372,7 +372,7 @@
                 var fighter = FightSequenceModel.AddFighter(characterParams);
                 if (fighter is null)
                 {
-                    Snackbar.Add("Error while selecting Attacker: character battle data is missing", Severity.Warning);
+                    Snackbar.Add("Błąd wyboru atakującego: brak danych bojowych postaci", Severity.Warning);
                     return;
                 }
                 FightSequence.Attacker = fighter;
@@ -386,7 +386,7 @@
                 var fighter = FightSequenceModel.AddFighter(mob);
                 if (fighter is null)
                 {
-                    Snackbar.Add("Error while selecting Attacker: mob data is missing", Severity.Warning);
+                    Snackbar.Add("Błąd wyboru atakującego: brak danych moba", Severity.Warning);
                     return;
                 }
                 FightSequence.Attacker = fighter;
@@ -395,7 +395,7 @@
         }
         catch(Exception ex)
         {
-            Snackbar.Add("Error while selecting Attacker: " + ex.Message, Severity.Error);
+            Snackbar.Add("Błąd wyboru atakującego: " + ex.Message, Severity.Error);
         }
     }
 
@@ -422,7 +422,7 @@
                 var fighter = FightSequenceModel.AddFighter(characterParams);
                 if (fighter is null)
                 {
-                    Snackbar.Add("Error while selecting Defender: character battle data is missing", Severity.Warning);
+                    Snackbar.Add("Błąd wyboru obrońcy: brak danych bojowych postaci", Severity.Warning);
                     return;
                 }
                 FightSequence.Defender = fighter;
@@ -438,7 +438,7 @@
                 var fighter = FightSequenceModel.AddFighter(mob);
                 if (fighter is null)
                 {
-                    Snackbar.Add("Error while selecting Defender: mob data is missing", Severity.Warning);
+                    Snackbar.Add("Błąd wyboru obrońcy: brak danych moba", Severity.Warning);
                     return;
                 }
                 FightSequence.Defender = fighter;
@@ -449,7 +449,7 @@
         }
         catch(Exception ex)
         {
-            Snackbar.Add("Error while selecting Defender: " + ex.Message, Severity.Error);
+            Snackbar.Add("Błąd wyboru obrońcy: " + ex.Message, Severity.Error);
         }
     }
 
@@ -466,7 +466,7 @@
             if (SelectedAttacker == string.Empty || SelectedDefender == string.Empty || FightSequence is null || FightSequence.AttackAction == string.Empty ||
                (_isTargeted == true && FightSequence.AttackLocation == string.Empty))
             {
-                Snackbar.Add("Some component is missing", Severity.Warning);
+                Snackbar.Add("Brakuje jakiegoś elementu", Severity.Warning);
                 return;
             }
 
@@ -492,7 +492,7 @@
         }
         catch (Exception ex)
         {
-            Snackbar.Add("Error while rolling: " + ex.Message, Severity.Error);
+            Snackbar.Add("Błąd rzutu: " + ex.Message, Severity.Error);
         }
     }
 
@@ -564,7 +564,7 @@
         }
         catch(Exception ex)
         {
-            Snackbar.Add("Error while saving: " + ex.Message, Severity.Error);
+            Snackbar.Add("Błąd zapisu: " + ex.Message, Severity.Error);
         }
     }
 }
