@@ -266,14 +266,29 @@ wartości używanych jako klucze dopasowań (switch/Contains/Equals/`Key`/`Type`
 
 **Odłożone do Fazy 8:** narracja walki, seed, enumy prezentacyjne, komunikaty repo/service.
 
-### Faza 8 — Backend: komunikaty, enumy, dane seedowe 🟡 (M)
-- [ ] Komunikaty w `DA_Business/Services/*` (~89 literałów) i repozytoriach
-- [ ] Teksty walki/tur generowane programowo (`DA_Common/Barony/Battle`, `CombatStateString.cs` w `DA_Common`)
-- [ ] Enumy prezentowane w UI (8 plików z `enum` w `DA_Models`/`DA_Common`) — dodać mapowanie etykiet PL, nie zmieniać kodów
-- [ ] Dane seedowe widoczne w UI (`DA_Models/SeedData`, seedery postaci/baronów) — decyzja: co tłumaczyć
-- [ ] **Audyt akronimów**: wyszukać i poprawić ewentualne angielskie rozwinięcia `PPB`/`PHP`
-      na polskie (PPB = Podstawowe Parametry Baronii, PHP = Prestiż, Honor i Postrach)
-      oraz „GM" → „MG" w całym kodzie
+### Faza 8 — Backend: komunikaty, enumy, dane seedowe 🟡 (M) ✅ UKOŃCZONA
+Przegląd wykazał, że większość backendu to LEAVE (wyjątki, logi `ILogger`, klucze dopasowań,
+nazwy seedowe matchowane przez `.Name ==`, identyfikatory enumów). Przetłumaczono realnie
+wyświetlaną narrację/opisy, zostawiając wszystkie klucze.
+
+**Zrobione:**
+- [x] `RollService.cs` — wyniki rzutów (Sukces!/Porażka!/Remis!/wygrywa!, „to … vs PT: …") + aktualizacja `RollServiceTests`
+- [x] Narracja walki: `BattleLogDialog.FormatEvent`, `ChapterThread` (`FormatTurnEvent`,
+      `FormatCausedBy`, `FormatRoundCount`, `BuildBattleEndSummaryHtml`, `BuildTurnSummaryHtml`,
+      nagłówki `GetBattleSummaryHeader` — numer parsowany z klucza, `case`/`AlternativeName` zostają)
+- [x] `BattleMapPage.razor` — ~37 `systemMessage:`/`AddUnitLogEntry` (rozstawianie/ruch/szarża/rundy/
+      Pełna Obrona/podsumowania PD); kategorie logu `"battle"/"xp"/…` i `„juz dodana"` zostawione
+- [x] Dane seedowe `DbInitializer.cs` — ~90 wartości `Description`/`Descr`/`ShortDescr` (rasy, cechy,
+      magia, ekwipunek); wszystkie `Name`/klucze/`SD.*`/`States.Names.*` zostawione
+- [x] Enumy — brak pracy: żaden enum nie jest renderowany przez `.ToString()`; teksty pochodzą
+      ze switchy (return) już przetłumaczonych
+- [x] Audyt GM→MG w narracji („Game Master" → „Mistrz Gry"); klucze `GameMaster_NPCName`/`SD.*` zostają
+
+**Zostawione świadomie (klucze/sprzężenia):** `CombatStateString.cs` (czysta logika, Name=klucz),
+`AlternativeName` („Battle turn/started/ended" — matchowane), komunikaty wyjątków/logów w repo/serwisach,
+`SD.GameMaster_NPCName`, `States.Names.*`, nazwy seedowe (Human/Dwarf/Elf/cechy — matchowane w DbInitializer).
+
+**Uwaga:** opisy seedowe działają tylko przy świeżym seedzie; istniejące bazy mają starą treść.
 
 ### Faza 9 — Panel MG, Wiki, Scribe 🟡 (M)
 - [ ] `Pages/GameMaster/*` (GameMasterPanel, CreateBaronyDialog, GmBaronySection, GmApprovedEquipmentSection)

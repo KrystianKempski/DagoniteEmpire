@@ -138,16 +138,16 @@
     // Major events are shown in bold so they stand out; Minor events use the normal font.
     private static string FormatEvent(BattleEventDTO e)
     {
-        var target = Encode(string.IsNullOrWhiteSpace(e.TargetName) ? "Unknown" : e.TargetName.Trim());
+        var target = Encode(string.IsNullOrWhiteSpace(e.TargetName) ? "Nieznany" : e.TargetName.Trim());
         var description = Encode(e.Description);
-        var causedBy = string.IsNullOrEmpty(e.CausedBy) ? string.Empty : $" (by {Encode(e.CausedBy)})";
+        var causedBy = string.IsNullOrEmpty(e.CausedBy) ? string.Empty : $" (od {Encode(e.CausedBy)})";
         var text = e.Kind switch
         {
-            BattleTurnEventKind.Wound => $"{target} received {description}{causedBy}",
-            BattleTurnEventKind.Unconscious => $"{target} became unconscious{causedBy}",
-            BattleTurnEventKind.Dead => $"{target} died{causedBy}",
-            BattleTurnEventKind.BleedingPainTest => $"{target} — pain resistance test (Bleeding): {description}",
-            _ => $"{target} gained {description}{causedBy}",
+            BattleTurnEventKind.Wound => $"{target} otrzymał {description}{causedBy}",
+            BattleTurnEventKind.Unconscious => $"{target} stracił przytomność{causedBy}",
+            BattleTurnEventKind.Dead => $"{target} zginął{causedBy}",
+            BattleTurnEventKind.BleedingPainTest => $"{target} — test odporności na ból (Krwawienie): {description}",
+            _ => $"{target} zyskał {description}{causedBy}",
         };
 
         var line = "&#8226; " + text;

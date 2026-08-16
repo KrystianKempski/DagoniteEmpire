@@ -43,8 +43,8 @@ public static class RollService
         var roll = RollDice();
         var total = skill + roll.Sum;
         var success = total >= dc;
-        var outcome = success ? "Success!" : "Fail!";
-        var text = $"{skill} + {roll.Text} is {RichText.BoldText(total.ToString())} vs DC: {RichText.BoldText(dc.ToString())}. {RichText.BoldText(outcome)}";
+        var outcome = success ? "Sukces!" : "Porażka!";
+        var text = $"{skill} + {roll.Text} to {RichText.BoldText(total.ToString())} vs PT: {RichText.BoldText(dc.ToString())}. {RichText.BoldText(outcome)}";
         return new RollCheckResult(success, text);
     }
 
@@ -81,11 +81,11 @@ public static class RollService
         var firstWins = total1 >= total2;
         string outcome;
         if (isTie)
-            outcome = $"Tie! {RichText.BoldText(name1)} wins on equal totals.";
+            outcome = $"Remis! {RichText.BoldText(name1)} wygrywa przy równych sumach.";
         else if (firstWins)
-            outcome = $"{RichText.BoldText(name1)} wins!";
+            outcome = $"{RichText.BoldText(name1)} wygrywa!";
         else
-            outcome = $"{RichText.BoldText(name2)} wins!";
+            outcome = $"{RichText.BoldText(name2)} wygrywa!";
 
         var text = $"{side1} vs {side2}. {outcome}";
         return new OppositeRollResult(firstWins, isTie, text);

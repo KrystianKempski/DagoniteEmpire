@@ -23,7 +23,7 @@ public class RollServiceTests : IDisposable
 
         Assert.True(result.Success);
         Assert.Contains("10", result.Text);
-        Assert.Contains("Success!", result.Text);
+        Assert.Contains("Sukces!", result.Text);
     }
 
     [Fact]
@@ -34,7 +34,7 @@ public class RollServiceTests : IDisposable
         var result = RollService.MakeRollTest(10, 4);
 
         Assert.False(result.Success);
-        Assert.Contains("Fail!", result.Text);
+        Assert.Contains("Porażka!", result.Text);
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class RollServiceTests : IDisposable
 
         Assert.False(result.FirstSideWins);
         Assert.Contains("High", result.Text);
-        Assert.Contains("wins!", result.Text);
+        Assert.Contains("wygrywa!", result.Text);
     }
 
     [Theory]
@@ -128,7 +128,7 @@ public class RollServiceTests : IDisposable
 
         Assert.True(result.IsTie);
         Assert.True(result.FirstSideWins);
-        Assert.Contains("Tie!", result.Text);
+        Assert.Contains("Remis!", result.Text);
         Assert.Contains("Alpha", result.Text);
     }
 }

@@ -2460,28 +2460,31 @@ else
     private static string GetBattleSummaryHeader(PostDTO post)
     {
         if (post.AlternativeName?.StartsWith("Battle turn ", StringComparison.Ordinal) == true)
-            return $"{post.AlternativeName.Trim()} begins";
+        {
+            var turnNo = post.AlternativeName.AsSpan("Battle turn ".Length).Trim().ToString();
+            return $"Tura bitwy {turnNo} — początek";
+        }
 
         if (IsBattleEndedPost(post))
-            return "Battle ended";
+            return "Bitwa zakończona";
 
         if (post.AlternativeName is "Battle turn")
         {
             var match = System.Text.RegularExpressions.Regex.Match(
                 post.Content ?? string.Empty,
-                @"Battle turn (\d+) begins",
+                @"tury (\d+)",
                 System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             if (match.Success)
-                return $"Battle turn {match.Groups[1].Value} begins";
+                return $"Tura bitwy {match.Groups[1].Value} — początek";
 
-            return "Battle turn";
+            return "Tura bitwy";
         }
 
         return post.AlternativeName switch
         {
-            "Battle started" => "Battle begins",
-            "Battle ended" => "Battle ended",
-            _ => post.AlternativeName ?? "Battle"
+            "Battle started" => "Rozpoczęcie bitwy",
+            "Battle ended" => "Bitwa zakończona",
+            _ => post.AlternativeName ?? "Bitwa"
         };
     }
 
@@ -2674,7 +2677,7 @@ else
     }
 
     private static string FormatCausedBy(string? causedBy) =>
-        string.IsNullOrEmpty(causedBy) ? string.Empty : $" (by {RichText.BoldText(causedBy)})";
+        string.IsNullOrEmpty(causedBy) ? string.Empty : $" (od {RichText.BoldText(causedBy)})";
 
     private static string FormatWoundLine(BattleTurnEvent e) =>
         $"{BoldWoundDescription(e.Description)}{FormatCausedBy(e.CausedBy)}";
@@ -2699,7 +2702,7 @@ else
     }
 
     private static string GetEventTargetName(string? targetName) =>
-        string.IsNullOrWhiteSpace(targetName) ? "Unknown" : targetName.Trim();
+        string.IsNullOrWhiteSpace(targetName) ? "Nieznany" : targetName.Trim();
 
     private static string FormatTurnEvent(BattleTurnEvent e)
     {
@@ -2707,23 +2710,23 @@ else
         var causedBy = FormatCausedBy(e.CausedBy);
         return e.Kind switch
         {
-            BattleTurnEventKind.Wound => $"{target} received {BoldWoundDescription(e.Description)}{causedBy}",
-            BattleTurnEventKind.Unconscious => $"{target} became {RichText.BoldText(States.Names.Unconscious)}{causedBy}",
-            BattleTurnEventKind.Dead => $"{target} died{causedBy}",
+            BattleTurnEventKind.Wound => $"{target} otrzymał {BoldWoundDescription(e.Description)}{causedBy}",
+            BattleTurnEventKind.Unconscious => $"{target} stracił {RichText.BoldText("przytomność")}{causedBy}",
+            BattleTurnEventKind.Dead => $"{target} zginął{causedBy}",
             BattleTurnEventKind.BleedingPainTest =>
-                $"{target} — pain resistance test ({RichText.BoldText(States.Names.Bleeding)}): {e.Description}",
-            _ => $"{target} gained {BoldStateDescription(e.Description)}{causedBy}",
+                $"{target} — test odporności na ból ({RichText.BoldText("Krwawienie")}): {e.Description}",
+            _ => $"{target} zyskał {BoldStateDescription(e.Description)}{causedBy}",
         };
     }
 
     private static string FormatRoundCount(int rounds) =>
-        rounds == 1 ? "1 round" : $"{rounds} rounds";
+        rounds == 1 ? "1 runda" : $"{rounds} rund";
 
     private string BuildBattleEndSummaryHtml(int rounds, IReadOnlyList<BattleTurnEvent> events)
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<p>");
-        sb.Append($"The battle lasted {RichText.BoldText(FormatRoundCount(rounds))}.");
+        sb.Append($"Bitwa trwała {RichText.BoldText(FormatRoundCount(rounds))}.");
         sb.Append("<br><br>");
 
         var casualties = events
@@ -2732,7 +2735,7 @@ else
 
         if (casualties.Count > 0)
         {
-            sb.Append(RichText.BoldText("Casualties:"));
+            sb.Append(RichText.BoldText("Straty:"));
             sb.Append("<br>");
             foreach (var e in casualties)
             {
@@ -2752,7 +2755,7 @@ else
         var hasWounds = woundsByTarget.Any();
         if (hasWounds)
         {
-            sb.Append(RichText.BoldText("Wounds:"));
+            sb.Append(RichText.BoldText("Rany:"));
             sb.Append("<br>");
             foreach (var group in woundsByTarget)
             {
@@ -2769,7 +2772,7 @@ else
         }
 
         if (casualties.Count == 0 && !hasWounds)
-            sb.Append("Nothing notable happened during the battle.");
+            sb.Append("Podczas bitwy nie wydarzyło się nic znaczącego.");
 
         sb.Append("</p>");
         return sb.ToString();
@@ -2837,11 +2840,11 @@ else
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<p>");
-        sb.Append(RichText.BoldText($"Summary of turn {endingTurn}:"));
+        sb.Append(RichText.BoldText($"Podsumowanie tury {endingTurn}:"));
         sb.Append("<br>");
         if (events.Count == 0)
         {
-            sb.Append("Nothing notable happened.");
+            sb.Append("Nie wydarzyło się nic znaczącego.");
         }
         else
         {

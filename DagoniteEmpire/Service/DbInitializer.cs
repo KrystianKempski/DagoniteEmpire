@@ -218,14 +218,14 @@ namespace DagoniteEmpire.Service
                     Race raceHuman = new Race()
                     {
                         Name = "Human",
-                        Description = "Humans are universal. Their strength lies in their diversity and adaptability",
+                        Description = "Ludzie są uniwersalni. Ich siła tkwi w różnorodności i zdolności przystosowania",
                         RaceApproved = true,
                         Traits = new List<TraitRace>()
                         {
                             new TraitRace()
                             {
                                 Name="Diversity",
-                                Descr = "Human characters gain a +2 racial bonus to one attribute score of their choice at creation to represent their varied nature",
+                                Descr = "Postacie ludzi otrzymują +2 rasowej premii do jednego wybranego atrybutu podczas tworzenia, aby odzwierciedlić ich zróżnicowaną naturę",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -234,7 +234,7 @@ namespace DagoniteEmpire.Service
                             new TraitRace()
                             {
                                 Name="Attribute Score Modifier",
-                                Descr = "Human characters gain the +1 racial bonus to two basic skills score of their choice at creation to represent their universal nature",
+                                Descr = "Postacie ludzi otrzymują +1 rasowej premii do dwóch wybranych umiejętności podstawowych podczas tworzenia, aby odzwierciedlić ich uniwersalną naturę",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -251,14 +251,14 @@ namespace DagoniteEmpire.Service
                     Race raceDwarf = new Race()
                     {
                         Name = "Dwarf",
-                        Description = "Common in the Empire, but rare in power. Fierce warriors and excellent craftsmen",
+                        Description = "Powszechni w Imperium, lecz rzadko u władzy. Zaciekli wojownicy i znakomici rzemieślnicy",
                         RaceApproved = true,
                         Traits = new List<TraitRace>()
                         {
                             new TraitRace()
                             {
                                 Name="Attribute Score Modifier",
-                                Descr = "Dwarves are both tough and wise, but also a bit gruff",
+                                Descr = "Krasnoludy są zarówno twarde, jak i mądre, lecz też nieco gburowate",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -288,7 +288,7 @@ namespace DagoniteEmpire.Service
                             new TraitRace()
                             {
                                 Name="Hardy",
-                                Descr = "Dwarves are hard to overpower, and proficient in armor",
+                                Descr = "Krasnoludy trudno pokonać siłą i biegle radzą sobie w zbroi",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -306,7 +306,7 @@ namespace DagoniteEmpire.Service
                             new TraitRace()
                             {
                                 Name="Excellent craftsman",
-                                Descr = "All dwarves have natural talent with craftsmanship",
+                                Descr = "Wszystkie krasnoludy mają naturalny talent do rzemiosła",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -335,7 +335,7 @@ namespace DagoniteEmpire.Service
                                     {
                                         FeatureType = SD.FeatureBaseSkill,
                                         FeatureName = "Darkvision",
-                                        Description = "This race can see perfectly in the dark up to 60 feet"
+                                        Description = "Ta rasa widzi doskonale w ciemności do 60 stóp"
                                     },
                                 }
                             },
@@ -353,7 +353,7 @@ namespace DagoniteEmpire.Service
                                     {
                                         FeatureType = SD.FeatureBaseSkill,
                                         FeatureName = "Hatred",
-                                        Description = "Dwarves gain a +1 racial bonus on attack rolls against humanoid creatures of the orc and goblinoid subtypes because of their special training against these hated foes"
+                                        Description = "Krasnoludy otrzymują +1 rasowej premii do rzutów na atak przeciw humanoidalnym istotom z podtypów orków i goblinoidów dzięki specjalnemu wyszkoleniu przeciw tym znienawidzonym wrogom"
                                     },
                                 }
                             },
@@ -371,7 +371,7 @@ namespace DagoniteEmpire.Service
                                     {
                                         FeatureType = SD.FeatureOther,
                                         FeatureName = "Unpopular amongst people",
-                                        Description = "Non-human races receive a penalty for ruling and diplomacy as nobles in the Empire."
+                                        Description = "Rasy nieludzkie otrzymują karę do rządzenia i dyplomacji jako szlachta w Imperium."
                                     },
                                 }
                             },
@@ -389,14 +389,14 @@ namespace DagoniteEmpire.Service
                     Race raceElf = new Race()
                     {
                         Name = "Elf",
-                        Description = "Long-lived children of natural world. Rather uncommon in Empire",
+                        Description = "Długowieczne dzieci świata natury. Raczej rzadko spotykane w Imperium",
                         RaceApproved = true,
                         Traits = new List<TraitRace>()
                         {
                             new TraitRace()
                             {
                                 Name="Attribute Score Modifier",
-                                Descr = "Elves are nimble, both in body and mind, but their form is frail",
+                                Descr = "Elfy są zwinne, zarówno ciałem, jak i umysłem, lecz ich powłoka jest wątła",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -426,7 +426,7 @@ namespace DagoniteEmpire.Service
                             new TraitRace()
                             {
                                 Name="Keen Senses",
-                                Descr = "Elves' senses are naturally heightened",
+                                Descr = "Zmysły elfów są z natury wyostrzone",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -444,7 +444,7 @@ namespace DagoniteEmpire.Service
                             new TraitRace()
                             {
                                 Name="Elven Magic",
-                                Descr =  "This ancient race has a better connection to winds of magic",
+                                Descr =  "Ta starożytna rasa ma lepsze połączenie z wiatrami magii",
                                 TraitApproved = true,
                                 IsUnique=true,
                                 TraitType=SD.TraitType_Race,
@@ -455,7 +455,7 @@ namespace DagoniteEmpire.Service
                                     {
                                         FeatureType = SD.FeatureOther,
                                         FeatureName = "Elven Magic",
-                                        Description = "Elves get a +2 bonus to all spell-related rolls and defences."
+                                        Description = "Elfy otrzymują +2 premii do wszystkich rzutów i obron związanych z zaklęciami."
                                     },
                                 }
                             },
@@ -473,7 +473,7 @@ namespace DagoniteEmpire.Service
                                     {
                                         FeatureType = SD.FeatureOther,
                                         FeatureName = "Darkvision",
-                                        Description = "This race can see twice as far as humans in conditions of dim light."
+                                        Description = "Ta rasa widzi dwa razy dalej niż ludzie w warunkach przyćmionego światła."
                                     },
                                 }
                             },
@@ -497,7 +497,7 @@ namespace DagoniteEmpire.Service
                                     {
                                         FeatureType = SD.FeatureOther,
                                         FeatureName = "Unpopular amongst people",
-                                        Description = "Non-human races receive a penalty for ruling and diplomacy as nobles in the Empire."
+                                        Description = "Rasy nieludzkie otrzymują karę do rządzenia i dyplomacji jako szlachta w Imperium."
                                     },
                                 }
                         };
@@ -514,7 +514,7 @@ namespace DagoniteEmpire.Service
                     trait = new TraitCharacter()
                     {
                         Name = "Lame",
-                        Descr = "An old wound or disfigurement makes this character limp",
+                        Descr = "Stara rana lub oszpecenie sprawia, że ta postać utyka",
                         TraitApproved = true,
                         IsUnique = false,
                         TraitType = SD.TraitType_Character,
@@ -543,7 +543,7 @@ namespace DagoniteEmpire.Service
                     trait = new TraitCharacter()
                     {
                         Name = "Beautiful",
-                        Descr = "This character is somehow physically beautiful",
+                        Descr = "Ta postać jest w jakiś sposób piękna fizycznie",
                         TraitApproved = true,
                         IsUnique = false,
                         TraitType = SD.TraitType_Character,
@@ -572,7 +572,7 @@ namespace DagoniteEmpire.Service
                     trait = new TraitCharacter()
                     {
                         Name = "Genius",
-                        Descr = "This character is exceptionally intelligent",
+                        Descr = "Ta postać jest wyjątkowo inteligentna",
                         TraitApproved = true,
                         IsUnique = false,
                         TraitType = SD.TraitType_Character,
@@ -601,7 +601,7 @@ namespace DagoniteEmpire.Service
                     trait = new TraitCharacter()
                     {
                         Name = "Ugly",
-                        Descr = "This character is not pleasant to the eye",
+                        Descr = "Ta postać nie jest miła dla oka",
                         TraitApproved = true,
                         IsUnique = false,
                         TraitType = SD.TraitType_Character,
@@ -630,7 +630,7 @@ namespace DagoniteEmpire.Service
                     trait = new TraitCharacter()
                     {
                         Name = "Wrathful",
-                        Descr =  "This character's outbursts of anger are frequent and violent (sometimes makes will checks)",
+                        Descr =  "Wybuchy gniewu tej postaci są częste i gwałtowne (czasami wymuszają testy woli)",
                         TraitApproved = true,
                         IsUnique = false,
                         TraitType = SD.TraitType_Character,
@@ -653,7 +653,7 @@ namespace DagoniteEmpire.Service
                             {
                                 FeatureType = SD.FeatureOther,
                                 FeatureName = "Occasional fits of rage",
-                                Description = "When this character finds himself in an uncomfortable situation, sometimes the GM can force him to make willpower test against stupid fury."
+                                Description = "Gdy ta postać znajdzie się w niewygodnej sytuacji, MG może czasami zmusić go do testu siły woli przeciw głupiej furii."
                             },
                         },
                     };
@@ -666,7 +666,7 @@ namespace DagoniteEmpire.Service
                     trait = new TraitCharacter()
                     {
                         Name = "Ambidextrous",
-                        Descr = "Able to use the right and left hands equally well",
+                        Descr = "Potrafi posługiwać się prawą i lewą ręką równie dobrze",
                         TraitApproved = true,
                         IsUnique = false,
                         TraitType = SD.TraitType_Character,
@@ -771,7 +771,7 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.WizardMagic + " 1",
-                        Descr = "Able to cast magic with wizard pool for cantrips and spells of 1st circle",
+                        Descr = "Pozwala rzucać magię z puli maga na sztuczki i zaklęcia 1. kręgu",
                         TraitApproved = true,
                         IsUnique = false,
                         Level = 1,
@@ -785,7 +785,7 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.WizardMagic + " 2",
-                        Descr = "Able to cast magic with wizard pool for spells of 2nd and 3rd circle",
+                        Descr = "Pozwala rzucać magię z puli maga na zaklęcia 2. i 3. kręgu",
                         TraitApproved = true,
                         IsUnique = false,
                         Level = 2,
@@ -799,7 +799,7 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.WizardMagic + " 3",
-                        Descr = "Able to cast magic with wizard pool for spells of 4th circle",
+                        Descr = "Pozwala rzucać magię z puli maga na zaklęcia 4. kręgu",
                         TraitApproved = true,
                         IsUnique = false,
                         Level = 3,
@@ -813,7 +813,7 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.WizardMagic + " 4",
-                        Descr = "Able to cast magic with wizard pool for spells of 5th and 6th circle",
+                        Descr = "Pozwala rzucać magię z puli maga na zaklęcia 5. i 6. kręgu",
                         TraitApproved = true,
                         IsUnique = false,
                         Level = 4,
@@ -827,7 +827,7 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.WizardMagic + " 5",
-                        Descr = "Able to cast magic with wizard pool for spells of 7th and 8th circle",
+                        Descr = "Pozwala rzucać magię z puli maga na zaklęcia 7. i 8. kręgu",
                         TraitApproved = true,
                         IsUnique = false,
                         Level = 5,
@@ -841,7 +841,7 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.WizardMagic + " 6",
-                        Descr = "Able to cast magic with wizard pool for spells of 9th circle",
+                        Descr = "Pozwala rzucać magię z puli maga na zaklęcia 9. kręgu",
                         TraitApproved = true,
                         IsUnique = false,
                         Level = 6,
@@ -855,7 +855,7 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.WizardMagic + " 7",
-                        Descr = "Able to cast magic with wizard pool for spells of mythic level",
+                        Descr = "Pozwala rzucać magię z puli maga na zaklęcia poziomu mitycznego",
                         TraitApproved = true,
                         IsUnique = false,
                         Level = 7,
@@ -870,7 +870,7 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.SorcererMagic + " 1",
-                        Descr = "Able to cast magic with sorcerer pool for cantrips and spells of 1st circle",
+                        Descr = "Pozwala rzucać magię z puli czarodzieja na sztuczki i zaklęcia 1. kręgu",
                         TraitApproved = true,
                         IsUnique = false,
                         Level = 1,
@@ -884,7 +884,7 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.SorcererMagic + " 2",
-                        Descr = "Able to cast magic with sorcerer pool for spells of 2nd and 3rd circle",
+                        Descr = "Pozwala rzucać magię z puli czarodzieja na zaklęcia 2. i 3. kręgu",
                         TraitApproved = true,
                         IsUnique = false,
                         Level = 2,
@@ -898,7 +898,7 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.SorcererMagic + " 3",
-                        Descr = "Able to cast magic with sorcerer pool for spells of 4th circle",
+                        Descr = "Pozwala rzucać magię z puli czarodzieja na zaklęcia 4. kręgu",
                         TraitApproved = true,
                         IsUnique = false,
                         Level = 3,
@@ -912,7 +912,7 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.SorcererMagic + " 4",
-                        Descr = "Able to cast magic with sorcerer pool for spells of 5th and 6th circle",
+                        Descr = "Pozwala rzucać magię z puli czarodzieja na zaklęcia 5. i 6. kręgu",
                         TraitApproved = true,
                         IsUnique = false,
                         Level = 4,
@@ -926,7 +926,7 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.SorcererMagic + " 5",
-                        Descr = "Able to cast magic with sorcerer pool for spells of 7th and 8th circle",
+                        Descr = "Pozwala rzucać magię z puli czarodzieja na zaklęcia 7. i 8. kręgu",
                         TraitApproved = true,
                         IsUnique = false,
                         Level = 5,
@@ -940,7 +940,7 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.SorcererMagic + " 6",
-                        Descr = "Able to cast magic with sorcerer pool for spells of 9th circle",
+                        Descr = "Pozwala rzucać magię z puli czarodzieja na zaklęcia 9. kręgu",
                         TraitApproved = true,
                         IsUnique = false,
                         Level = 6,
@@ -954,7 +954,7 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.SorcererMagic + " 7",
-                        Descr = "Able to cast magic with sorcerer pool for spells of mythic level",
+                        Descr = "Pozwala rzucać magię z puli czarodzieja na zaklęcia poziomu mitycznego",
                         TraitApproved = true,
                         IsUnique = false,
                         Level = 7,
@@ -969,7 +969,7 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.DoubleWeaponFighting,
-                        Descr = "Allows character to fight with two weapons without penalties, if the second weapon is light",
+                        Descr = "Pozwala postaci walczyć dwiema brońmi bez kar, jeśli druga broń jest lekka",
                         TraitApproved = true,
                         IsUnique = false,
                         Level = 1,
@@ -983,7 +983,7 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.GreaterDoubleWeaponFighting,
-                        Descr = "Allows character to fight with two weapons without penalties. Requires 14 strength",
+                        Descr = "Pozwala postaci walczyć dwiema brońmi bez kar. Wymaga 14 siły",
                         TraitApproved = true,
                         IsUnique = false,
                         Level = 3,
@@ -997,7 +997,7 @@ namespace DagoniteEmpire.Service
                     traitProf = new TraitProfession()
                     {
                         Name = SD.ProfessionSkills.MightyGrip,
-                        Descr = "Allows character to wield two-handed weapon with one hand. Requires 20 strength",
+                        Descr = "Pozwala postaci władać bronią dwuręczną jedną ręką. Wymaga 20 siły",
                         TraitApproved = true,
                         IsUnique = false,
                         Level = 2,
@@ -1016,9 +1016,9 @@ namespace DagoniteEmpire.Service
                     item = new Equipment()
                     {
                         Name = "Bandage",
-                        Description = "For dressing wounds",
+                        Description = "Do opatrywania ran",
                         EquipmentType = SD.EquipmentType.Other,
-                        ShortDescr = "For dressing wounds",
+                        ShortDescr = "Do opatrywania ran",
                         Weight = 0.2m,
                         Price = 0.01m,
                         IsApproved = true,
@@ -1033,8 +1033,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = "Wound balm",
                         EquipmentType = SD.EquipmentType.Other,
-                        Description = "Helps with healing wounds. 20 doses, +2 to tending wounds. 1 dose for light and medium wounds, 2 for heavy, and 4 for critical",
-                        ShortDescr = "Helps with healing wounds. 20 doses, +2 to tending wounds. 1 dose for light and medium wounds, 2 for heavy, and 4 for critical",
+                        Description = "Pomaga w leczeniu ran. 20 dawek, +2 do opatrywania ran. 1 dawka na rany lekkie i średnie, 2 na ciężkie i 4 na krytyczne",
+                        ShortDescr = "Pomaga w leczeniu ran. 20 dawek, +2 do opatrywania ran. 1 dawka na rany lekkie i średnie, 2 na ciężkie i 4 na krytyczne",
                         Weight = 1.0m,
                         Price = 0.1m,
                         IsApproved = true,
@@ -1049,8 +1049,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = "Rope",
                         EquipmentType = SD.EquipmentType.Other,
-                        Description = "20 feet of strong rope",
-                        ShortDescr = "20 feet of strong rope",
+                        Description = "20 stóp mocnej liny",
+                        ShortDescr = "20 stóp mocnej liny",
 
                         Weight = 5.0m,
                         Price = 0.1m,
@@ -1069,8 +1069,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = "Light leather armor",
                         EquipmentType = SD.EquipmentType.Body,
-                        Description = "Light but sturdy",
-                        ShortDescr = "Light but sturdy",
+                        Description = "Lekka, lecz wytrzymała",
+                        ShortDescr = "Lekka, lecz wytrzymała",
                         Weight = 10.0m,
                         Price = 5.0m,
                         IsApproved = true,
@@ -1111,8 +1111,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicArmors.LeatherScaleArmor,
                         EquipmentType = SD.EquipmentType.Body,
-                        Description = "Offers good protection and mobility",
-                        ShortDescr = "Offers good protection and mobility",
+                        Description = "Zapewnia dobrą ochronę i mobilność",
+                        ShortDescr = "Zapewnia dobrą ochronę i mobilność",
                         Weight = 15.0m,
                         Price = 10.0m,
                         IsApproved = true,
@@ -1153,8 +1153,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicArmors.SteelScaleArmor,
                         EquipmentType = SD.EquipmentType.Body,
-                        Description = "Offers good protection and mobility",
-                        ShortDescr = "Offers good protection and mobility",
+                        Description = "Zapewnia dobrą ochronę i mobilność",
+                        ShortDescr = "Zapewnia dobrą ochronę i mobilność",
                         Weight = 20.0m,
                         Price = 20.0m,
                         IsApproved = true,
@@ -1195,8 +1195,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicArmors.HalfPlate,
                         EquipmentType = SD.EquipmentType.Body,
-                        Description = "Good protection of solid steel",
-                        ShortDescr = "Good protection of solid steel",
+                        Description = "Dobra ochrona z litej stali",
+                        ShortDescr = "Dobra ochrona z litej stali",
                         Weight = 30.0m,
                         Price = 50.0m,
                         IsApproved = true,
@@ -1237,8 +1237,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicArmors.FullPlate,
                         EquipmentType = SD.EquipmentType.Body,
-                        Description = "Best protection there is",
-                        ShortDescr = "Best protection there is",
+                        Description = "Najlepsza ochrona, jaka istnieje",
+                        ShortDescr = "Najlepsza ochrona, jaka istnieje",
                         Weight = 40.0m,
                         Price = 80.0m,
                         IsApproved = true,
@@ -1281,8 +1281,8 @@ namespace DagoniteEmpire.Service
                         Name = SD.BasicShields.WoodenBuckler,
                         EquipmentType = SD.EquipmentType.Shield,
                         RelatedSkill = SD.SpecialSkills.Melee.Shields,
-                        Description = "Small, but better than nothing",
-                        ShortDescr = "Small, but better than nothing",
+                        Description = "Mała, ale lepsza niż nic",
+                        ShortDescr = "Mała, ale lepsza niż nic",
                         Weight = 2.0m,
                         Price = 0.6m,
                         IsApproved = true,
@@ -1320,8 +1320,8 @@ namespace DagoniteEmpire.Service
                         Name = SD.BasicShields.MetalBuckler,
                         EquipmentType = SD.EquipmentType.Shield,
                         RelatedSkill = SD.SpecialSkills.Melee.Shields,
-                        Description = "Small, but better than nothing",
-                        ShortDescr = "Small, but better than nothing",
+                        Description = "Mała, ale lepsza niż nic",
+                        ShortDescr = "Mała, ale lepsza niż nic",
                         Weight = 2.0m,
                         Price = 2.0m,
                         IsApproved = true,
@@ -1353,8 +1353,8 @@ namespace DagoniteEmpire.Service
                         Name = SD.BasicShields.WoodenShield,
                         EquipmentType = SD.EquipmentType.Shield,
                         RelatedSkill = SD.SpecialSkills.Melee.Shields,
-                        Description = "Simple, wooden shield",
-                        ShortDescr = "Simple, wooden shield",
+                        Description = "Prosta, drewniana tarcza",
+                        ShortDescr = "Prosta, drewniana tarcza",
                         Weight = 5.0m,
                         Price = 1.0m,
                         IsApproved = true,
@@ -1392,8 +1392,8 @@ namespace DagoniteEmpire.Service
                         Name = SD.BasicShields.MetalShield,
                         EquipmentType = SD.EquipmentType.Shield,
                         RelatedSkill = SD.SpecialSkills.Melee.Shields,
-                        Description = "Strong, metal shield",
-                        ShortDescr = "Strong, metal shield",
+                        Description = "Mocna, metalowa tarcza",
+                        ShortDescr = "Mocna, metalowa tarcza",
                         Weight = 5.0m,
                         Price = 6.0m,
                         IsApproved = true,
@@ -1431,8 +1431,8 @@ namespace DagoniteEmpire.Service
                         Name = SD.BasicShields.BigWoodenShield,
                         EquipmentType = SD.EquipmentType.Shield,
                         RelatedSkill = SD.SpecialSkills.Melee.Shields,
-                        Description = "Bigger for better protection",
-                        ShortDescr = "Bigger for better protection",
+                        Description = "Większa dla lepszej ochrony",
+                        ShortDescr = "Większa dla lepszej ochrony",
                         Weight = 10.0m,
                         Price = 2.0m,
                         IsApproved = true,
@@ -1469,8 +1469,8 @@ namespace DagoniteEmpire.Service
                         Name = SD.BasicShields.BigMetalShield,
                         EquipmentType = SD.EquipmentType.Shield,
                         RelatedSkill = SD.SpecialSkills.Melee.Shields,
-                        Description = "Bigger for better protection",
-                        ShortDescr = "Bigger for better protection",
+                        Description = "Większa dla lepszej ochrony",
+                        ShortDescr = "Większa dla lepszej ochrony",
                         Weight = 10.0m,
                         Price = 9.0m,
                         IsApproved = true,
@@ -1507,8 +1507,8 @@ namespace DagoniteEmpire.Service
                         Name = SD.BasicShields.Pavise,
                         EquipmentType = SD.EquipmentType.Shield,
                         RelatedSkill = SD.SpecialSkills.Melee.Shields,
-                        Description = "Large stationary shield. −2 to fight tests; can provide full cover in some situations",
-                        ShortDescr = "Large stationary shield",
+                        Description = "Duża, stacjonarna tarcza. −2 do testów walki; w niektórych sytuacjach może zapewnić pełną osłonę",
+                        ShortDescr = "Duża, stacjonarna tarcza",
                         Weight = 18.0m,
                         Price = 15.0m,
                         IsApproved = true,
@@ -1549,8 +1549,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.Dagger,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Small and deadly",
-                        ShortDescr = "Small and deadly",
+                        Description = "Mały i zabójczy",
+                        ShortDescr = "Mały i zabójczy",
                         RelatedSkill = SD.SpecialSkills.Melee.Light,
                         Weight = 1.0m,
                         Price = 0.5m,
@@ -1591,8 +1591,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.LongSword,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Main tool of all adventurers",
-                        ShortDescr = "Main tool of all adventurers",
+                        Description = "Główne narzędzie wszystkich poszukiwaczy przygód",
+                        ShortDescr = "Główne narzędzie wszystkich poszukiwaczy przygód",
                         RelatedSkill = SD.SpecialSkills.Melee.Swords,
                         Weight = 3.0m,
                         Price = 3.0m,
@@ -1628,8 +1628,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = "Battle axe",
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Simple and deadly",
-                        ShortDescr = "Simple and deadly",
+                        Description = "Prosty i zabójczy",
+                        ShortDescr = "Prosty i zabójczy",
                         RelatedSkill = SD.SpecialSkills.Melee.Heavy,
                         Weight = 3.0m,
                         Price = 1.0m,
@@ -1664,8 +1664,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.Pickaxe,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Good for penetrating armor",
-                        ShortDescr = "Good for penetrating armor",
+                        Description = "Dobra do przebijania pancerza",
+                        ShortDescr = "Dobra do przebijania pancerza",
                         RelatedSkill = SD.SpecialSkills.Melee.Heavy,
                         Weight = 4.0m,
                         Price = 2.0m,
@@ -1701,8 +1701,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.Mace,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "One handed and good way to stun opponent",
-                        ShortDescr = "One handed and good way to stun opponent",
+                        Description = "Jednoręczna i dobra do ogłuszania przeciwnika",
+                        ShortDescr = "Jednoręczna i dobra do ogłuszania przeciwnika",
                         RelatedSkill = SD.SpecialSkills.Melee.Heavy,
                         Weight = 5.0m,
                         Price = 2.0m,
@@ -1738,8 +1738,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.Morningstar,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Weapon of heavily armed knights",
-                        ShortDescr = "Weapon of heavily armed knights",
+                        Description = "Broń ciężkozbrojnych rycerzy",
+                        ShortDescr = "Broń ciężkozbrojnych rycerzy",
                         RelatedSkill = SD.SpecialSkills.Melee.Heavy,
                         Weight = 5.0m,
                         Price = 6.0m,
@@ -1775,8 +1775,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.Unarmed,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Punches, kicks, bites, and other unarmed attacks",
-                        ShortDescr = "Punches, kicks, bites, and other unarmed attacks",
+                        Description = "Ciosy pięścią, kopnięcia, ugryzienia i inne ataki bez broni",
+                        ShortDescr = "Ciosy pięścią, kopnięcia, ugryzienia i inne ataki bez broni",
                         RelatedSkill = SD.SpecialSkills.Melee.Unarmed,
                         IsTwoHanded = true,
                         Weight = 0.0m,
@@ -1808,8 +1808,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.ShorSpear,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Basic weapon of all soldiers",
-                        ShortDescr = "Basic weapon of all soldiers",
+                        Description = "Podstawowa broń wszystkich żołnierzy",
+                        ShortDescr = "Podstawowa broń wszystkich żołnierzy",
                         RelatedSkill = SD.SpecialSkills.Melee.Polearms,
                         Weight = 1.0m,
                         Price = 0.5m,
@@ -1845,8 +1845,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.Rapier,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Fast and elegant weapon",
-                        ShortDescr = "Fast and elegant weapon",
+                        Description = "Szybka i elegancka broń",
+                        ShortDescr = "Szybka i elegancka broń",
                         RelatedSkill = SD.SpecialSkills.Melee.Fencing,
                         Weight = 2.0m,
                         Price = 6.0m,
@@ -1888,8 +1888,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.TwoHandedFlail,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Heavy and slow, but easy to knock down an opponent",
-                        ShortDescr = "Heavy and slow, but easy to knock down an opponent",
+                        Description = "Ciężka i powolna, lecz łatwo nią powalić przeciwnika",
+                        ShortDescr = "Ciężka i powolna, lecz łatwo nią powalić przeciwnika",
                         RelatedSkill = SD.SpecialSkills.Melee.Heavy,
                         Weight = 10.0m,
                         Price = 3.0m,
@@ -1936,8 +1936,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.Warhammer,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Powerful weapon that can easily stun the enemy",
-                        ShortDescr = "Powerful weapon that can easily stun the enemy",
+                        Description = "Potężna broń, która z łatwością ogłusza wroga",
+                        ShortDescr = "Potężna broń, która z łatwością ogłusza wroga",
                         RelatedSkill = SD.SpecialSkills.Melee.Heavy,
                         Weight = 15.0m,
                         Price = 7.0m,
@@ -1984,8 +1984,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.Greataxe,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "A truly devastating weapon",
-                        ShortDescr = "A truly devastating weapon",
+                        Description = "Naprawdę druzgocąca broń",
+                        ShortDescr = "Naprawdę druzgocąca broń",
                         RelatedSkill = SD.SpecialSkills.Melee.Heavy,
                         Weight = 10.0m,
                         Price = 7.0m,
@@ -2032,8 +2032,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.Poleaxe,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Axe head on long pole",
-                        ShortDescr = "Axe head on long pole",
+                        Description = "Głowica topora na długim drzewcu",
+                        ShortDescr = "Głowica topora na długim drzewcu",
                         RelatedSkill = SD.SpecialSkills.Melee.Polearms,
                         Weight = 12.0m,
                         Price = 7.0m,
@@ -2080,8 +2080,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.Sarissa,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Very long spear",
-                        ShortDescr = "Very long spear",
+                        Description = "Bardzo długa włócznia",
+                        ShortDescr = "Bardzo długa włócznia",
                         RelatedSkill = SD.SpecialSkills.Melee.Polearms,
                         Weight = 15.0m,
                         Price = 3.0m,
@@ -2124,8 +2124,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsShooting.CrossbowLight,
                         EquipmentType = SD.EquipmentType.WeaponRanged,
-                        Description = "Easy to use and slow to reload",
-                        ShortDescr = "Easy to use and slow to reload",
+                        Description = "Łatwa w użyciu i wolna w przeładowaniu",
+                        ShortDescr = "Łatwa w użyciu i wolna w przeładowaniu",
                         RelatedSkill = SD.SpecialSkills.Shooting.Crossbows,
                         Weight = 6.0m,
                         Price = 10.0m,
@@ -2172,8 +2172,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsShooting.CrossbowHeavy,
                         EquipmentType = SD.EquipmentType.WeaponRanged,
-                        Description = "Powerful but slow",
-                        ShortDescr = "Powerful but slow",
+                        Description = "Potężna, lecz powolna",
+                        ShortDescr = "Potężna, lecz powolna",
                         RelatedSkill = SD.SpecialSkills.Shooting.Crossbows,
                         Weight = 6.0m,
                         Price = 10.0m,
@@ -2225,8 +2225,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsShooting.BowSimple,
                         EquipmentType = SD.EquipmentType.WeaponRanged,
-                        Description = "Common tool of hunters",
-                        ShortDescr = "Common tool of hunters",
+                        Description = "Pospolite narzędzie myśliwych",
+                        ShortDescr = "Pospolite narzędzie myśliwych",
                         RelatedSkill = SD.SpecialSkills.Shooting.Bows,
                         Weight = 3.0m,
                         Price = 1.0m,
@@ -2269,8 +2269,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsShooting.Longbow,
                         EquipmentType = SD.EquipmentType.WeaponRanged,
-                        Description = "Military archers' primary weapon",
-                        ShortDescr = "Military archers' primary weapon",
+                        Description = "Główna broń wojskowych łuczników",
+                        ShortDescr = "Główna broń wojskowych łuczników",
                         RelatedSkill = SD.SpecialSkills.Shooting.Bows,
                         Weight = 3.0m,
                         Price = 1.0m,
@@ -2308,8 +2308,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsShooting.Slingshot,
                         EquipmentType = SD.EquipmentType.WeaponRanged,
-                        Description = "Simple but effective",
-                        ShortDescr = "Simple but effective",
+                        Description = "Prosta, lecz skuteczna",
+                        ShortDescr = "Prosta, lecz skuteczna",
                         RelatedSkill = SD.SpecialSkills.Shooting.Slingshots,
                         Weight = 0.5m,
                         Price = 0.5m,
@@ -2347,8 +2347,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.Khopesh,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Curved exotic blade",
-                        ShortDescr = "Curved exotic blade",
+                        Description = "Zakrzywione, egzotyczne ostrze",
+                        ShortDescr = "Zakrzywione, egzotyczne ostrze",
                         RelatedSkill = SD.SpecialSkills.Melee.Swords,
                         Weight = 3.0m,
                         Price = 4.0m,
@@ -2378,8 +2378,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.Whip,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Flexible reach weapon",
-                        ShortDescr = "Flexible reach weapon",
+                        Description = "Giętka broń o dużym zasięgu",
+                        ShortDescr = "Giętka broń o dużym zasięgu",
                         RelatedSkill = SD.SpecialSkills.Melee.Light,
                         Weight = 1.0m,
                         Price = 2.0m,
@@ -2408,8 +2408,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.WarClub,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Heavy bludgeoning weapon",
-                        ShortDescr = "Heavy bludgeoning weapon",
+                        Description = "Ciężka broń obuchowa",
+                        ShortDescr = "Ciężka broń obuchowa",
                         RelatedSkill = SD.SpecialSkills.Melee.Heavy,
                         Weight = 3.0m,
                         Price = 2.0m,
@@ -2437,8 +2437,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.Bardiche,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Heavy pole axe with long reach",
-                        ShortDescr = "Heavy pole axe with long reach",
+                        Description = "Ciężki topór na drzewcu o dużym zasięgu",
+                        ShortDescr = "Ciężki topór na drzewcu o dużym zasięgu",
                         RelatedSkill = SD.SpecialSkills.Melee.Heavy,
                         Weight = 8.0m,
                         Price = 8.0m,
@@ -2469,8 +2469,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.LanceCavalry,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Lance designed for mounted combat",
-                        ShortDescr = "Lance designed for mounted combat",
+                        Description = "Kopia przeznaczona do walki konnej",
+                        ShortDescr = "Kopia przeznaczona do walki konnej",
                         RelatedSkill = SD.SpecialSkills.Melee.Polearms,
                         Weight = 6.0m,
                         Price = 5.0m,
@@ -2500,8 +2500,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.LanceInfantry,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Heavy infantry lance",
-                        ShortDescr = "Heavy infantry lance",
+                        Description = "Ciężka włócznia piechoty",
+                        ShortDescr = "Ciężka włócznia piechoty",
                         RelatedSkill = SD.SpecialSkills.Melee.Polearms,
                         Weight = 10.0m,
                         Price = 4.0m,
@@ -2531,8 +2531,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.Greatsword,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Large two-handed sword",
-                        ShortDescr = "Large two-handed sword",
+                        Description = "Wielki miecz dwuręczny",
+                        ShortDescr = "Wielki miecz dwuręczny",
                         RelatedSkill = SD.SpecialSkills.Melee.Swords,
                         Weight = 6.0m,
                         Price = 12.0m,
@@ -2563,8 +2563,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.Halberd,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Versatile polearm with axe blade",
-                        ShortDescr = "Versatile polearm with axe blade",
+                        Description = "Wszechstronna broń drzewcowa z ostrzem topora",
+                        ShortDescr = "Wszechstronna broń drzewcowa z ostrzem topora",
                         RelatedSkill = SD.SpecialSkills.Melee.Polearms,
                         Weight = 10.0m,
                         Price = 9.0m,
@@ -2597,8 +2597,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.Billhook,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Hooked polearm for pulling and tripping",
-                        ShortDescr = "Hooked polearm for pulling and tripping",
+                        Description = "Broń drzewcowa z hakiem do ściągania i przewracania",
+                        ShortDescr = "Broń drzewcowa z hakiem do ściągania i przewracania",
                         RelatedSkill = SD.SpecialSkills.Melee.Polearms,
                         Weight = 7.0m,
                         Price = 5.0m,
@@ -2628,8 +2628,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.MainGauche,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Parrying dagger for off-hand use",
-                        ShortDescr = "Parrying dagger for off-hand use",
+                        Description = "Sztylet do parowania do użytku w drugiej ręce",
+                        ShortDescr = "Sztylet do parowania do użytku w drugiej ręce",
                         RelatedSkill = SD.SpecialSkills.Melee.Fencing,
                         Weight = 1.0m,
                         Price = 3.0m,
@@ -2657,8 +2657,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsMelee.Staff,
                         EquipmentType = SD.EquipmentType.WeaponMelee,
-                        Description = "Simple wooden staff",
-                        ShortDescr = "Simple wooden staff",
+                        Description = "Prosty, drewniany kostur",
+                        ShortDescr = "Prosty, drewniany kostur",
                         RelatedSkill = SD.SpecialSkills.Melee.Polearms,
                         Weight = 3.0m,
                         Price = 0.5m,
@@ -2688,8 +2688,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsShooting.Musket,
                         EquipmentType = SD.EquipmentType.WeaponRanged,
-                        Description = "Black powder firearm",
-                        ShortDescr = "Black powder firearm",
+                        Description = "Broń palna na czarny proch",
+                        ShortDescr = "Broń palna na czarny proch",
                         RelatedSkill = SD.SpecialSkills.Shooting.Firearms,
                         Weight = 8.0m,
                         Price = 25.0m,
@@ -2719,8 +2719,8 @@ namespace DagoniteEmpire.Service
                     {
                         Name = SD.BasicWeaponsShooting.Javelin,
                         EquipmentType = SD.EquipmentType.WeaponRanged,
-                        Description = "Thrown spear",
-                        ShortDescr = "Thrown spear",
+                        Description = "Rzucana włócznia",
+                        ShortDescr = "Rzucana włócznia",
                         RelatedSkill = SD.SpecialSkills.Shooting.Javelins,
                         Weight = 2.0m,
                         Price = 1.0m,
@@ -2780,15 +2780,15 @@ namespace DagoniteEmpire.Service
 
                 var correctedEquipmentDescriptions = new Dictionary<string, (string Description, string ShortDescr)>
                 {
-                    [SD.BasicArmors.HalfPlate] = ("Good protection of solid steel", "Good protection of solid steel"),
+                    [SD.BasicArmors.HalfPlate] = ("Dobra ochrona z litej stali", "Dobra ochrona z litej stali"),
                     ["Wound balm"] = (
-                        "Helps with healing wounds. 20 doses, +2 to tending wounds. 1 dose for light and medium wounds, 2 for heavy, and 4 for critical",
-                        "Helps with healing wounds. 20 doses, +2 to tending wounds. 1 dose for light and medium wounds, 2 for heavy, and 4 for critical"),
-                    ["Rope"] = ("20 feet of strong rope", "20 feet of strong rope"),
-                    [SD.BasicShields.BigWoodenShield] = ("Bigger for better protection", "Bigger for better protection"),
-                    [SD.BasicShields.BigMetalShield] = ("Bigger for better protection", "Bigger for better protection"),
-                    [SD.BasicWeaponsMelee.Unarmed] = ("Punches, kicks, bites, and other unarmed attacks", "Punches, kicks, bites, and other unarmed attacks"),
-                    [SD.BasicWeaponsShooting.CrossbowHeavy] = ("Powerful but slow", "Powerful but slow"),
+                        "Pomaga w leczeniu ran. 20 dawek, +2 do opatrywania ran. 1 dawka na rany lekkie i średnie, 2 na ciężkie i 4 na krytyczne",
+                        "Pomaga w leczeniu ran. 20 dawek, +2 do opatrywania ran. 1 dawka na rany lekkie i średnie, 2 na ciężkie i 4 na krytyczne"),
+                    ["Rope"] = ("20 stóp mocnej liny", "20 stóp mocnej liny"),
+                    [SD.BasicShields.BigWoodenShield] = ("Większa dla lepszej ochrony", "Większa dla lepszej ochrony"),
+                    [SD.BasicShields.BigMetalShield] = ("Większa dla lepszej ochrony", "Większa dla lepszej ochrony"),
+                    [SD.BasicWeaponsMelee.Unarmed] = ("Ciosy pięścią, kopnięcia, ugryzienia i inne ataki bez broni", "Ciosy pięścią, kopnięcia, ugryzienia i inne ataki bez broni"),
+                    [SD.BasicWeaponsShooting.CrossbowHeavy] = ("Potężna, lecz powolna", "Potężna, lecz powolna"),
                 };
 
                 foreach (var (name, descriptions) in correctedEquipmentDescriptions)

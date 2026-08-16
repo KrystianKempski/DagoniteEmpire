@@ -942,8 +942,8 @@ else
             return;
         Map.IsActive = value;
         await SaveAsync(systemMessage: value
-            ? "Battle Map shown to the baron — deployment is open."
-            : "Battle Map hidden from the baron (state kept).");
+            ? "Mapa bitwy pokazana baronowi — rozstawianie otwarte."
+            : "Mapa bitwy ukryta przed baronem (stan zachowany).");
     }
 
     private void SetTool(string tool)
@@ -1170,10 +1170,10 @@ else
                         }
                         ClearBaronPhaseReadyIfPlayer();
                         var msg = attacker.AttackTargetId is null
-                            ? $"{attacker.Label} cleared attack order."
+                            ? $"{attacker.Label} anulował rozkaz ataku."
                             : IsShotAt(attacker, planClicked)
-                                ? $"{attacker.Label} shoot target: {planClicked.Label}{ShotPenaltyLabel(attacker, planClicked)}"
-                                : $"{attacker.Label} attack target: {planClicked.Label}";
+                                ? $"{attacker.Label} cel strzału: {planClicked.Label}{ShotPenaltyLabel(attacker, planClicked)}"
+                                : $"{attacker.Label} cel ataku: {planClicked.Label}";
                         await SaveAsync(systemMessage: msg);
                     }
                     RefreshRange();
@@ -1277,7 +1277,7 @@ else
         Map.Tokens.Add(token);
         _deployUnitId = null;
         _selectedTokenId = token.Id;
-        await SaveAsync(systemMessage: $"{token.Label} deployed at {FormatCell(x, y)}.");
+        await SaveAsync(systemMessage: $"{token.Label} rozstawiony na {FormatCell(x, y)}.");
         RefreshRange();
     }
 
@@ -1289,7 +1289,7 @@ else
         if (token is null)
             return;
         Map.Tokens.Remove(token);
-        await SaveAsync(systemMessage: $"{token.Label} recalled.");
+        await SaveAsync(systemMessage: $"{token.Label} wycofany.");
         RefreshRange();
     }
 
@@ -1339,7 +1339,7 @@ else
 
         _plannedRoutes.Remove(token.Id);
 
-        await SaveAsync(systemMessage: $"Enemy {token.Label} removed.");
+        await SaveAsync(systemMessage: $"Wróg {token.Label} usunięty.");
         RefreshRange();
     }
 
@@ -1450,7 +1450,7 @@ else
         var label = token.Label;
         CancelEditEnemy();
         _selectedTokenId = token.Id;
-        await SaveAsync(systemMessage: $"Enemy {label} updated.");
+        await SaveAsync(systemMessage: $"Wróg {label} zaktualizowany.");
         RefreshRange();
     }
 
@@ -1506,7 +1506,7 @@ else
         _editingEnemyTokenId = null;
         _selectedTokenId = token.Id;
         _enemyDraft = EnemyDraft.Default();
-        await SaveAsync(systemMessage: $"Enemy {token.Label} placed at {FormatCell(x, y)}.");
+        await SaveAsync(systemMessage: $"Wróg {token.Label} umieszczony na {FormatCell(x, y)}.");
         RefreshRange();
     }
 
@@ -1577,7 +1577,7 @@ else
             token.X = nx;
             token.Y = ny;
             _selectedTokenId = null;
-            await SaveAsync(systemMessage: $"{token.Label} moved to {FormatCell(nx, ny)}.");
+            await SaveAsync(systemMessage: $"{token.Label} przemieścił się na {FormatCell(nx, ny)}.");
             RefreshRange();
             return true;
         }
@@ -1605,7 +1605,7 @@ else
             token.RemainingMove = token.Move;
             ClearCharge(token);
             _selectedTokenId = token.Id;
-            await SaveAsync(systemMessage: $"{token.Label} cleared movement path.");
+            await SaveAsync(systemMessage: $"{token.Label} wyczyścił ścieżkę ruchu.");
             RefreshRange();
             return true;
         }
@@ -1618,7 +1618,7 @@ else
             token.RemainingMove = provisional.RemainingMoveAfter;
             ApplyTravelFacings(token);
             _selectedTokenId = token.Id;
-            await SaveAsync(systemMessage: $"{token.Label} locked waypoint at {FormatCell(nx, ny)} ({provisional.RemainingMoveAfter} move left).");
+            await SaveAsync(systemMessage: $"{token.Label} zablokował punkt trasy na {FormatCell(nx, ny)} (pozostało ruchu: {provisional.RemainingMoveAfter}).");
             RefreshRange();
             return true;
         }
@@ -1707,7 +1707,7 @@ else
 
         // RemainingMove is spent only when the ghost is locked (or charge/finish commits).
         _selectedTokenId = token.Id;
-        await SaveAsync(systemMessage: $"{token.Label} destination {FormatCell(nx, ny)} (cost {cost}, {remaining} left if locked).");
+        await SaveAsync(systemMessage: $"{token.Label} cel {FormatCell(nx, ny)} (koszt {cost}, po zablokowaniu pozostanie {remaining}).");
         RefreshRange();
         return true;
     }
@@ -1840,8 +1840,8 @@ else
         var atkB = ChargeAttackBonus(token);
         var dmgB = ChargeDamageBonus(token);
         var chargeMsg = built.Target is not null
-            ? $"{token.Label} charges ({facing * 45}°) at {built.Target.Label} — +{atkB} Atk/+{dmgB} Dmg if contact holds."
-            : $"{token.Label} charges ({facing * 45}°) in a straight line.";
+            ? $"{token.Label} szarżuje ({facing * 45}°) na {built.Target.Label} — +{atkB} do ataku/+{dmgB} do obrażeń, jeśli utrzyma kontakt."
+            : $"{token.Label} szarżuje ({facing * 45}°) w linii prostej.";
         await SaveAsync(systemMessage: chargeMsg);
         RefreshRange();
     }
@@ -2173,8 +2173,8 @@ else
             token.Facing = setupSnapped;
             CancelFacingEdit();
             await SaveAsync(systemMessage: setupChanged
-                ? $"{token.Label} facing set ({setupSnapped * 45}°)."
-                : $"{token.Label} facing unchanged.");
+                ? $"{token.Label} kierunek ustawiony ({setupSnapped * 45}°)."
+                : $"{token.Label} kierunek bez zmian.");
             RefreshRange();
             return;
         }
@@ -2219,12 +2219,12 @@ else
 
         tip.Facing = snapped;
         CancelFacingEdit();
-        var facingCostNote = freeTurn ? ", free turn" : tip.FacingCostPaid > 0 ? ", −1 move" : "";
+        var facingCostNote = freeTurn ? ", darmowy obrót" : tip.FacingCostPaid > 0 ? ", −1 ruch" : "";
         if (freeTurn && !string.IsNullOrWhiteSpace(freeTurnAbility))
             AppendLocalLog(string.Empty, "phase", $"{token.Label} uses {freeTurnAbility} (free facing change).");
         await SaveAsync(systemMessage: changed
-            ? $"{token.Label} facing set ({snapped * 45}°){facingCostNote}."
-            : $"{token.Label} facing unchanged.");
+            ? $"{token.Label} kierunek ustawiony ({snapped * 45}°){facingCostNote}."
+            : $"{token.Label} kierunek bez zmian.");
         RefreshRange();
     }
 
@@ -2509,13 +2509,13 @@ else
                     AppendLocalLog(string.Empty, "phase",
                         $"{token.Label} uses Full Defense: +{BattleMovementRules.FullDefenseDefenseBonus} Defence, −{BattleMovementRules.FullDefenseAttackPenalty} Attack, movement set to 0.");
                     await SaveAsync(systemMessage:
-                        $"{token.Label} takes Full Defense: +{BattleMovementRules.FullDefenseDefenseBonus} Defence, −{BattleMovementRules.FullDefenseAttackPenalty} Attack, no movement this round.");
+                        $"{token.Label} przyjmuje Pełną Obronę: +{BattleMovementRules.FullDefenseDefenseBonus} Obrony, −{BattleMovementRules.FullDefenseAttackPenalty} Ataku, brak ruchu w tej rundzie.");
                 }
                 else
                 {
                     AppendLocalLog(string.Empty, "phase", $"{token.Label} drops Full Defense.");
                     token.RemainingMove = token.Move;
-                    await SaveAsync(systemMessage: $"{token.Label} drops Full Defense.");
+                    await SaveAsync(systemMessage: $"{token.Label} rezygnuje z Pełnej Obrony.");
                 }
                 RefreshRange();
                 break;
@@ -2531,7 +2531,7 @@ else
                 token.IroncladActive = true;
                 AppendLocalLog(string.Empty, "phase", $"{token.Label} activates Ironclad (+2 Armor this combat round).");
                 await SaveAsync(systemMessage:
-                    $"{token.Label} braces — Ironclad: +2 Armor for this combat round.");
+                    $"{token.Label} przygotowuje się — Ironclad: +2 Pancerza na tę rundę walki.");
                 break;
 
             default:
@@ -2799,7 +2799,7 @@ else
         }
 
         ClearBaronPhaseReadyIfPlayer();
-        await SaveAsync(systemMessage: $"Auto-assign attacks: {assigned} assigned, {cleared} cleared.");
+        await SaveAsync(systemMessage: $"Automatyczne przydzielanie ataków: przydzielono {assigned}, wyczyszczono {cleared}.");
         RefreshRange();
     }
 
@@ -3352,7 +3352,7 @@ else
             .Select(t => $"{t.Label}: {t.Discipline}+{t.InitiativeDie}{(t.CommanderInitiative != 0 ? $"+{t.CommanderInitiative}" : "")}={t.InitiativeTotal}");
         AppendLocalLog(string.Empty, "phase",
             PhaseBanner($"Start of Movement Phase {Map.TurnState.Round}"));
-        await SaveAsync(systemMessage: "Battle begins — movement phase (low → high initiative). " + string.Join("; ", lines));
+        await SaveAsync(systemMessage: "Bitwa się rozpoczyna — faza ruchu (od niskiej do wysokiej inicjatywy). " + string.Join("; ", lines));
         _selectedTokenId = ActiveTokenId;
         RefreshRange();
     }
@@ -3601,21 +3601,21 @@ else
             var beforePd = unit.RemainingPd;
             unit.RemainingPd = Math.Max(0, unit.RemainingPd + delta);
 
-            var battleText = $"Battle round {Math.Max(1, round)} summary: dealt {entry.DamageDealt}, took {entry.DamageTaken}, engaged rounds {entry.EngagedRounds}, kills {entry.Kills}, fled {(entry.Fled ? "yes" : "no")} -> XP {entry.XpNetBase:+#;-#;0}.";
+            var battleText = $"Podsumowanie rundy bitwy {Math.Max(1, round)}: zadane {entry.DamageDealt}, otrzymane {entry.DamageTaken}, rundy w starciu {entry.EngagedRounds}, zabici {entry.Kills}, ucieczka {(entry.Fled ? "tak" : "nie")} -> PD {entry.XpNetBase:+#;-#;0}.";
             AddUnitLogEntry(unit, "battle", battleText, xpDelta: entry.XpNetBase);
             if (entry.MgBonusXp != 0 || !string.IsNullOrWhiteSpace(entry.MgNote))
             {
                 AddUnitLogEntry(
                     unit,
                     "xp",
-                    $"MG adjustment: {entry.MgBonusXp:+#;-#;0} XP.",
+                    $"Korekta MG: {entry.MgBonusXp:+#;-#;0} PD.",
                     xpDelta: entry.MgBonusXp,
                     note: entry.MgNote);
             }
             AddUnitLogEntry(
                 unit,
                 "xp",
-                $"XP pool update: {beforePd} -> {unit.RemainingPd}.",
+                $"Aktualizacja puli PD: {beforePd} -> {unit.RemainingPd}.",
                 xpDelta: delta);
 
             await _baronyRepo.SaveUnit(unit);
@@ -3661,7 +3661,7 @@ else
             AddUnitLogEntry(
                 unit,
                 "xp",
-                $"Captain {captain.Name} gained {gained} CX (pool {sheet.CommanderXp}).",
+                $"Kapitan {captain.Name} zdobył {gained} CX (pula {sheet.CommanderXp}).",
                 xpDelta: null);
             await _baronyRepo.SaveUnit(unit);
         }
@@ -3763,7 +3763,7 @@ else
         if (Map.XpSummary is null || !string.Equals(Map.XpSummary.Id, summary.Id, StringComparison.Ordinal))
             return;
         Map.XpSummary.AcknowledgedByBaron = true;
-        await SaveAsync(systemMessage: "Baron acknowledged battle XP summary.");
+        await SaveAsync(systemMessage: "Baron zatwierdził podsumowanie PD z bitwy.");
     }
 
     private async Task EndBattle()
@@ -3852,7 +3852,7 @@ else
                 $"XP — {entry.UnitName}: base {entry.XpNetBase:+#;-#;0}, MG {entry.MgBonusXp:+#;-#;0}, final {entry.XpNetFinal:+#;-#;0}.");
         }
 
-        await SaveAsync(systemMessage: "Battle ended. Ally HP and XP synced to Army.");
+        await SaveAsync(systemMessage: "Bitwa zakończona. HP i PD sojuszników zsynchronizowane z Armią.");
         _selectedTokenId = null;
         RefreshRange();
         _snackBar.Add("Bitwa zakończona — zaktualizowano HP i XP w Armii.", Severity.Success);
@@ -3931,7 +3931,7 @@ else
             t.RemainingMove = t.Move;
             t.ClearPath();
         }
-        await SaveAsync(systemMessage: "Returned to setup.");
+        await SaveAsync(systemMessage: "Powrót do ustawień.");
         RefreshRange();
     }
 
@@ -3963,8 +3963,8 @@ else
 
         var end = active.PlannedEnd();
         var msg = active.HasPath
-            ? $"{active.Label} finished move → {FormatCell(end.X, end.Y)}."
-            : $"{active.Label} finished move (staying put).";
+            ? $"{active.Label} zakończył ruch → {FormatCell(end.X, end.Y)}."
+            : $"{active.Label} zakończył ruch (pozostaje w miejscu).";
 
         var next = Map.TurnState.CurrentIndex + 1;
         if (next >= Map.TurnState.InitiativeOrder.Count)
@@ -3979,7 +3979,7 @@ else
                 return;
             }
 
-            await SaveAsync(systemMessage: $"{msg} All movement orders set — waiting for the Game Master to resolve.");
+            await SaveAsync(systemMessage: $"{msg} Wszystkie rozkazy ruchu ustawione — oczekiwanie na rozstrzygnięcie przez Mistrza Gry.");
             _selectedTokenId = null;
             RefreshRange();
             return;
@@ -3989,7 +3989,7 @@ else
         var nextTok = ActiveToken;
         await SaveAsync(systemMessage: nextTok is null
             ? msg
-            : $"{msg} Next: {nextTok.Label}.");
+            : $"{msg} Następny: {nextTok.Label}.");
         _selectedTokenId = ActiveTokenId;
         RefreshRange();
     }
@@ -4027,7 +4027,7 @@ else
         ClearCharge(active);
 
         _selectedTokenId = active.Id;
-        await SaveAsync(systemMessage: $"{active.Label} cleared movement plan.");
+        await SaveAsync(systemMessage: $"{active.Label} wyczyścił plan ruchu.");
         RefreshRange();
     }
 
@@ -4250,8 +4250,8 @@ else
                 PhaseBanner($"Start of Attack Planning Phase {round}"));
 
             var summary = moved > 0
-                ? $"Movement resolved — {moved} unit(s) moved. Attack planning phase."
-                : "Movement resolved — no units moved. Attack planning phase.";
+                ? $"Ruch rozstrzygnięty — poruszyło się oddziałów: {moved}. Faza planowania ataku."
+                : "Ruch rozstrzygnięty — żaden oddział się nie poruszył. Faza planowania ataku.";
             await SaveAsync(systemMessage: summary);
             _selectedTokenId = null;
             RefreshRange();
@@ -4838,7 +4838,7 @@ else
             return;
 
         Map.TurnState.BaronPhaseReady = true;
-        await SaveAsync(systemMessage: "Baron is ready for combat.");
+        await SaveAsync(systemMessage: "Baron jest gotowy do walki.");
         RefreshRange();
     }
 
@@ -4889,7 +4889,7 @@ else
         await PlayCombatExchangesAsync(plans);
         TrackEngagedRound(round);
 
-        await SaveAsync(systemMessage: $"Attack planning done — round {round} combat begins and attacks are resolved.");
+        await SaveAsync(systemMessage: $"Planowanie ataków zakończone — rozpoczyna się runda {round} walki i ataki są rozstrzygane.");
         _selectedTokenId = null;
         RefreshRange();
     }
@@ -4927,7 +4927,7 @@ else
         ReconcileEngagements();
         AppendLocalLog(string.Empty, "phase",
             PhaseBanner($"Start of Movement Phase {Map.TurnState.Round}"));
-        await SaveAsync(systemMessage: $"Round {Map.TurnState.Round} — movement phase (low → high initiative).");
+        await SaveAsync(systemMessage: $"Runda {Map.TurnState.Round} — faza ruchu (od niskiej do wysokiej inicjatywy).");
         _selectedTokenId = ActiveTokenId;
         RefreshRange();
     }
@@ -4951,7 +4951,7 @@ else
         Map.Phase = BaronyBattlePhases.Setup;
         Map.TurnState = new();
         _selectedTokenId = null;
-        await SaveAsync(systemMessage: "Map cleared.");
+        await SaveAsync(systemMessage: "Mapa wyczyszczona.");
         RefreshRange();
     }
 
