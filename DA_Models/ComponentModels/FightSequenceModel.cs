@@ -82,7 +82,9 @@ namespace DA_Models.ComponentModels
 
         public string WoundSeverity { get; set; } = string.Empty;
         public RichText ResultStringMG { get; set; } = new();
-        public List<WoundDTO> NewWounds { get; set; } = new List<WoundDTO>();   
+        public List<WoundDTO> NewWounds { get; set; } = new List<WoundDTO>();
+        public int AppliedMobDamage { get; set; }
+        public int IgnoredMobDamage { get; set; } 
 
         // functions
 
@@ -126,8 +128,9 @@ namespace DA_Models.ComponentModels
             fighter.Health = new MobHealthModel(mob);
             fighter.Name = mob.Name;
             fighter.PainResistance = mob.PainResSkillValue;
-            fighter.Lifting = mob.AttackSkillValue - mob.CurrentWounds / 2;
-            fighter.Balance = mob.DodgeSkillValue - mob.CurrentWounds / 2;
+            var hpPenalty = MobHealthModel.CombatPenalty(mob.CurrentWounds, mob.MaxWounds);
+            fighter.Lifting = mob.AttackSkillValue - hpPenalty;
+            fighter.Balance = mob.DodgeSkillValue - hpPenalty;
             return fighter;
         }
 
@@ -271,6 +274,8 @@ namespace DA_Models.ComponentModels
             Attacker.OldStates = string.Empty;
             Defender.OldStates = string.Empty;
             WoundSeverity = string.Empty;
+            AppliedMobDamage = 0;
+            IgnoredMobDamage = 0;
             Attacker.Roll = new Tuple<int, string>(0, string.Empty);
             Defender.Roll  = new Tuple<int, string>(0, string.Empty);
             NewWounds = new List<WoundDTO>();
@@ -741,8 +746,20 @@ namespace DA_Models.ComponentModels
 
             if (IsMobDefender())
             {
-                var woundPenalty = Wounds.GetPenaltyFromValue(newWound.Value, newWound.IsIgnored);
-                var projectedWounds = Defender.Health.CurrentWounds + woundPenalty;
+                AppliedMobDamage = MobHealthModel.ApplyIncomingDamage(DamageDelt, painResRoll.Item1);
+                IgnoredMobDamage = DamageDelt - AppliedMobDamage;
+                var projectedWounds = Defender.Health.CurrentWounds + AppliedMobDamage;
+                ResultStringMG.NewLine();
+                if (IgnoredMobDamage > 0)
+                {
+                    ResultStringMG +=
+                        $"Mob damage: {AppliedMobDamage} applied ({IgnoredMobDamage} ignored). {MobHealthModel.FormatHpLog(projectedWounds, Defender.Health.MaxWounds)}";
+                }
+                else
+                {
+                    ResultStringMG +=
+                        $"Mob damage: {AppliedMobDamage} applied. {MobHealthModel.FormatHpLog(projectedWounds, Defender.Health.MaxWounds)}";
+                }
                 _pendingMobOverflow = EvaluateMobWoundOverflow(projectedWounds, Defender.Health.MaxWounds);
                 return;
             }

@@ -53,8 +53,8 @@ namespace DA_Models.ComponentModels
             if (parrySkill is not null)
                 isParrying = parrySkill.GearBonus > 0;
 
-            // add wounds penalty
-            int woundPenalty = -Mob.CurrentWounds / 2;
+            // add remaining-HP penalty to attack and defence
+            int woundPenalty = -MobHealthModel.CombatPenalty(Mob.CurrentWounds, Mob.MaxWounds);
             Get(SD.BattleProperty.AttackBase).HealthBonus = woundPenalty;
             Get(SD.BattleProperty.DefenceDodge).HealthBonus = woundPenalty;
             Get(SD.BattleProperty.DefenceShield).HealthBonus = woundPenalty;

@@ -8,4 +8,8 @@ public sealed record FightPersistenceSnapshot(
     string AttackerNewStates,
     string DefenderNewStates,
     List<WoundDTO> NewWounds,
-    string WoundSeverity);
+    string WoundSeverity,
+    int AppliedMobDamage = 0,
+    int IgnoredMobDamage = 0,
+    int MobWoundsAfter = 0,
+    int MobMaxWounds = 0);

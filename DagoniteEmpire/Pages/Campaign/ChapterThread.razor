@@ -1782,10 +1782,7 @@ else
 
             if (defenderMob is not null)
             {
-                var woundAdded = snapshot.NewWounds.Any()
-                    ? snapshot.NewWounds.Sum(w => Wounds.GetPenaltyFromValue(w.Value, w.IsIgnored))
-                    : Wounds.GetPenaltyFromSeverity(snapshot.WoundSeverity, isIgnored: false);
-                defenderMob.CurrentWounds += woundAdded;
+                defenderMob.CurrentWounds += snapshot.AppliedMobDamage;
                 var overflow = FightSequenceModel.EvaluateMobWoundOverflow(
                     defenderMob.CurrentWounds,
                     defenderMob.MaxWounds);
@@ -2603,19 +2600,30 @@ else
         var attacker = snapshot.SelectedAttacker;
         var defender = snapshot.SelectedDefender;
 
-        foreach (var wound in snapshot.NewWounds)
+        if (snapshot.MobMaxWounds > 0)
         {
-            if (!Wounds.IsReportableInTurnSummary(wound.Severity))
-                continue;
-
-            var description = $"{wound.Severity} wound to {wound.Location.ToLower()}";
+            var hpLog = MobHealthModel.FormatHpLog(snapshot.MobWoundsAfter, snapshot.MobMaxWounds);
+            var description = snapshot.IgnoredMobDamage > 0
+                ? $"{snapshot.AppliedMobDamage} damage ({snapshot.IgnoredMobDamage} ignored), {hpLog}"
+                : $"{snapshot.AppliedMobDamage} damage, {hpLog}";
             await AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Wound, defender, attacker, description));
         }
-
-        if (snapshot.NewWounds.Count == 0
-            && Wounds.IsReportableInTurnSummary(snapshot.WoundSeverity))
+        else
         {
-            await AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Wound, defender, attacker, $"{snapshot.WoundSeverity} wound"));
+            foreach (var wound in snapshot.NewWounds)
+            {
+                if (!Wounds.IsReportableInTurnSummary(wound.Severity))
+                    continue;
+
+                var description = $"{wound.Severity} wound to {wound.Location.ToLower()}";
+                await AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Wound, defender, attacker, description));
+            }
+
+            if (snapshot.NewWounds.Count == 0
+                && Wounds.IsReportableInTurnSummary(snapshot.WoundSeverity))
+            {
+                await AddTurnEvent(new BattleTurnEvent(BattleTurnEventKind.Wound, defender, attacker, $"{snapshot.WoundSeverity} wound"));
+            }
         }
 
         await RecordStateEvents(snapshot.DefenderNewStates, defender, attacker);

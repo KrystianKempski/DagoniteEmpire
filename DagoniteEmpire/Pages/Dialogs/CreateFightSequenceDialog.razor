@@ -527,13 +527,21 @@
         if (FightSequence?.Attacker is null || FightSequence.Defender is null)
             return null;
 
+        var isMobDefender = FightSequence.Defender.Health is MobHealthModel;
+        var woundsAfter = isMobDefender
+            ? (FightSequence.Defender.Health?.CurrentWounds ?? 0) + FightSequence.AppliedMobDamage
+            : 0;
         return new FightPersistenceSnapshot(
             SelectedAttacker,
             SelectedDefender,
             FightSequence.Attacker.NewStates,
             FightSequence.Defender.NewStates,
             FightSequence.NewWounds.ToList(),
-            FightSequence.WoundSeverity);
+            FightSequence.WoundSeverity,
+            isMobDefender ? FightSequence.AppliedMobDamage : 0,
+            isMobDefender ? FightSequence.IgnoredMobDamage : 0,
+            woundsAfter,
+            isMobDefender ? FightSequence.Defender.Health?.MaxWounds ?? 0 : 0);
     }
 
     private async Task SaveSequenceBtn()
