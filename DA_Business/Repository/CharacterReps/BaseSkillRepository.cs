@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using DA_Business.Repository.CharacterReps.IRepository;
+using DA_Common;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Data;
 using DA_Models.CharacterModels;
@@ -29,6 +30,7 @@ namespace DA_Business.Repository.CharacterReps
             {
                 using var contex = await _db.CreateDbContextAsync();
                 var obj = _mapper.Map<BaseSkillDTO, BaseSkill>(objDTO);
+                Canonicalize(obj);
                 var addedObj = contex.BaseSkills.Add(obj);
                 await contex.SaveChangesAsync();
 
@@ -55,9 +57,16 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<IEnumerable<BaseSkillDTO>> GetAll(int? charId = null)
         {
             using var contex = await _db.CreateDbContextAsync();
+            IEnumerable<BaseSkill> source;
             if (charId == null || charId < 1)
-                return _mapper.Map<IEnumerable<BaseSkill>, IEnumerable<BaseSkillDTO>>(await contex.BaseSkills.AsNoTracking().ToListAsync());
-            return _mapper.Map<IEnumerable<BaseSkill>, IEnumerable<BaseSkillDTO>>(await contex.BaseSkills.AsNoTracking().Where(u => u.CharacterId == charId).OrderBy(u => u.Index).ToListAsync());
+                source = await contex.BaseSkills.AsNoTracking().ToListAsync();
+            else
+                source = await contex.BaseSkills.AsNoTracking().Where(u => u.CharacterId == charId).OrderBy(u => u.Index).ToListAsync();
+
+            var list = _mapper.Map<IEnumerable<BaseSkill>, IEnumerable<BaseSkillDTO>>(source).ToList();
+            foreach (var dto in list)
+                Canonicalize(dto);
+            return list;
         }
 
         public async Task<BaseSkillDTO> GetById(int id)
@@ -66,7 +75,9 @@ namespace DA_Business.Repository.CharacterReps
             var obj = await contex.BaseSkills.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
-                return _mapper.Map<BaseSkill, BaseSkillDTO>(obj);
+                var dto = _mapper.Map<BaseSkill, BaseSkillDTO>(obj);
+                Canonicalize(dto);
+                return dto;
             }
             return new BaseSkillDTO();
         }
@@ -77,6 +88,7 @@ namespace DA_Business.Repository.CharacterReps
             var obj = await contex.BaseSkills.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
             if (obj != null)
             {
+                Canonicalize(objDTO);
                 obj.Name = objDTO.Name;
                 obj.CharacterId = objDTO.CharacterId;        
                 obj.OtherBonuses = objDTO.OtherBonuses;        
@@ -93,6 +105,20 @@ namespace DA_Business.Repository.CharacterReps
                 return _mapper.Map<BaseSkill,BaseSkillDTO>(obj);    
             }
             return objDTO;
+        }
+
+        private static void Canonicalize(BaseSkill obj)
+        {
+            obj.Name = SD.BaseSkills.Canonical(obj.Name);
+            obj.RelatedAttribute1 = SD.Attributes.Canonical(obj.RelatedAttribute1);
+            obj.RelatedAttribute2 = SD.Attributes.Canonical(obj.RelatedAttribute2);
+        }
+
+        private static void Canonicalize(BaseSkillDTO obj)
+        {
+            obj.Name = SD.BaseSkills.Canonical(obj.Name);
+            obj.RelatedAttribute1 = SD.Attributes.Canonical(obj.RelatedAttribute1);
+            obj.RelatedAttribute2 = SD.Attributes.Canonical(obj.RelatedAttribute2);
         }
     }
 }

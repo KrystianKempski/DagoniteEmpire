@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using DA_Business.Repository.CharacterReps.IRepository;
+using DA_Common;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Data;
 using DA_Models.CharacterModels;
@@ -27,6 +28,7 @@ namespace DA_Business.Repository.CharacterReps
             {
                 using var contex = await _db.CreateDbContextAsync();
                 var obj = _mapper.Map<AttributeDTO, Attribute>(objDTO);
+                obj.Name = SD.Attributes.Canonical(obj.Name);
                 var addedObj = await contex.Attributes.AddAsync(obj);           
                 await contex.SaveChangesAsync();
                 return _mapper.Map<Attribute, AttributeDTO>(addedObj.Entity);
@@ -67,6 +69,7 @@ namespace DA_Business.Repository.CharacterReps
                     IDictionary<string, AttributeDTO> result = new Dictionary<string, AttributeDTO>();
                     foreach (var atr in list)
                     {
+                        atr.Name = SD.Attributes.Canonical(atr.Name);
                         result[atr.Name] = atr;
                     }
                     return result;
@@ -85,7 +88,9 @@ namespace DA_Business.Repository.CharacterReps
             var obj = await contex.Attributes.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
-                return _mapper.Map<Attribute, AttributeDTO>(obj);
+                var dto = _mapper.Map<Attribute, AttributeDTO>(obj);
+                dto.Name = SD.Attributes.Canonical(dto.Name);
+                return dto;
             }
             return new AttributeDTO();
         }
@@ -97,7 +102,7 @@ namespace DA_Business.Repository.CharacterReps
             var obj = await contex.Attributes.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
             if (obj != null)
             {
-                // Update parent
+                objDTO.Name = SD.Attributes.Canonical(objDTO.Name);
                 contex.Entry(obj).CurrentValues.SetValues(objDTO);
                 await contex.SaveChangesAsync();
                 return _mapper.Map<Attribute, AttributeDTO>(obj);

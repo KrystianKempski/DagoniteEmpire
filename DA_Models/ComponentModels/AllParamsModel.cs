@@ -30,6 +30,13 @@ namespace DA_Models.ComponentModels
         public AttributesModel Attributes { get; set; }
         public IEnumerable<BaseSkillDTO> BaseSkills { get; set; } = Enumerable.Empty<BaseSkillDTO>();
         public SpecialSkillModel SpecialSkills { get; set; }
+
+        public BaseSkillDTO? GetBaseSkill(string? name)
+        {
+            var canonical = SD.BaseSkills.Canonical(name);
+            return BaseSkills.FirstOrDefault(u =>
+                string.Equals(SD.BaseSkills.Canonical(u.Name), canonical, StringComparison.Ordinal));
+        }
         public ICollection<TraitDTO> TraitsCharacter { get; set; } = new List<TraitDTO>();
         public ICollection<TraitDTO> TraitsTemporary { get; set; } = new List<TraitDTO>();
         public ICollection<TraitDTO> TraitsProfession { get; set; } = new List<TraitDTO>();
@@ -290,7 +297,7 @@ namespace DA_Models.ComponentModels
                             feature = Attributes.Get(bonus.FeatureName);
                             break;
                         case SD.FeatureBaseSkill:
-                            feature = BaseSkills.FirstOrDefault(u => u.Name == bonus.FeatureName);
+                            feature = GetBaseSkill(bonus.FeatureName);
                             break;
                         case SD.FeatureSpecialSkill:
                             feature = SpecialSkills.Get(bonus?.FeatureName);

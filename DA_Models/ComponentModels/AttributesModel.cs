@@ -103,6 +103,10 @@ namespace DA_Models.ComponentModels
             return "";
         }
 
-
+        public override AttributeDTO? Get(string key)
+        {
+            var canonical = Attributes.Canonical(key);
+            return base.Get(canonical) ?? base.Get(key);
+        }
     }
 }

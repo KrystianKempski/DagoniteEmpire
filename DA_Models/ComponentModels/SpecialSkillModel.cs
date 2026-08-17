@@ -1,5 +1,6 @@
 ﻿using Abp.Collections.Extensions;
 using Castle.Core;
+using DA_Common;
 using DA_DataAccess.CharacterClasses;
 using DA_Models.CharacterModels;
 using DA_Models.ComponentInterfaces;
@@ -22,12 +23,22 @@ namespace DA_Models.ComponentModels
         public ICollection<SpecialSkillDTO> SkillsToDelete { get; set; } = new List<SpecialSkillDTO>();
         public IEnumerable<SpecialSkillDTO> GetAllSection(string baseSkillName)
         {
-
-            return Properties.Values.Where(u=>u.RelatedBaseSkillName == baseSkillName);
+            var canonical = SD.BaseSkills.Canonical(baseSkillName);
+            return Properties.Values.Where(u => SD.BaseSkills.Canonical(u.RelatedBaseSkillName) == canonical);
         }
         public override SpecialSkillDTO? Get(string key)
         {
-            var skill= base.Get(key);
+            var skill = base.Get(key);
+            if (skill is null)
+            {
+                var canonical = SD.SpecialSkills.Canonical(key);
+                skill = base.Get(canonical);
+                if (skill is null)
+                {
+                    skill = Properties.Values.FirstOrDefault(s =>
+                        string.Equals(SD.SpecialSkills.Canonical(s.Name), canonical, StringComparison.Ordinal));
+                }
+            }
             if (skill is null) return null;
             FillRelatedProperties(skill);
             return skill;
@@ -38,6 +49,9 @@ namespace DA_Models.ComponentModels
             if (newSkill is null || newSkill.Name.IsNullOrEmpty())
                 return null;
             FillRelatedProperties(newSkill);
+            newSkill.Name = SD.SpecialSkills.Canonical(newSkill.Name);
+            if (!string.IsNullOrEmpty(newSkill.RelatedBaseSkillName))
+                newSkill.RelatedBaseSkillName = SD.BaseSkills.Canonical(newSkill.RelatedBaseSkillName);
             Properties.Add(newSkill.Name, newSkill);
             return newSkill;
         }
@@ -71,7 +85,7 @@ namespace DA_Models.ComponentModels
                 skill.RelatedAttribute = _allParams.Attributes.Get(skill.ChosenAttribute);
 
             if (skill.RelatedBaseSkill is null && skill.RelatedBaseSkillName.IsNullOrEmpty() == false)
-                skill.RelatedBaseSkill = _allParams.BaseSkills.FirstOrDefault(u => u.Name == skill.RelatedBaseSkillName);
+                skill.RelatedBaseSkill = _allParams.GetBaseSkill(skill.RelatedBaseSkillName);
         }
 
         // move to specialskillmodel
@@ -117,7 +131,7 @@ namespace DA_Models.ComponentModels
         {
             if (obj != null && obj.RelatedBaseSkillName != null && obj.Name != null)
             {
-                var baseSkill = _allParams.BaseSkills.FirstOrDefault(p => p.Name == obj.RelatedBaseSkillName);
+                var baseSkill = _allParams.GetBaseSkill(obj.RelatedBaseSkillName);
                 if (baseSkill == null) return;
                 obj.AddPropertyListener(baseSkill);
                 return;
@@ -137,6 +151,9 @@ namespace DA_Models.ComponentModels
         {
             foreach (var property in properties)
             {
+                property.Name = SD.SpecialSkills.Canonical(property.Name);
+                if (!string.IsNullOrEmpty(property.RelatedBaseSkillName))
+                    property.RelatedBaseSkillName = SD.BaseSkills.Canonical(property.RelatedBaseSkillName);
                 Properties[property.Name] = property;
             }
         }

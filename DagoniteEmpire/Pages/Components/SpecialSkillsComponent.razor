@@ -5,7 +5,7 @@
 <div class="specialskills-table">
     <MudPaper Class="p-2 m-0  w-100 h-100">
     <div class="specialskills-control">
-        <label class="specialskills-label">@BaseSkill.Name</label>
+        <label class="specialskills-label">@BaseSkill.DisplayNameUpper(L)</label>
         <span class="specialskills-indicator">@BaseSkill.SumBonus</span>
     </div>
     <table class="table align-middle mb-1">
@@ -38,7 +38,7 @@
                         }
                         else
                         {
-                            <label class="names-label">@obj.Name.ToUpper()</label>
+                            <label class="names-label">@obj.DisplayNameUpper(L)</label>
                         }
                     </td>
                 </tr>
@@ -54,7 +54,7 @@
                         }
                         else
                         {
-                            <label class="names-label">@obj.Name</label>
+                            <label class="names-label">@obj.DisplayName(L)</label>
                         }
                     </td>
                     <td>
@@ -75,7 +75,7 @@
                             {
                                 @if (AllParams.Character.IsApproved && string.IsNullOrEmpty(obj.ChosenAttribute) == false)
                                 {
-                                    <label class="text-center" style="width: 100%;">@obj.ChosenAttribute</label>
+                                    <label class="text-center" style="width: 100%;">@LocCatalog.Name(obj.ChosenAttribute, L)</label>
                                 }
                                 else
                                 {
@@ -86,7 +86,7 @@
                                     <option value="0" selected disabled>@L["--Select--"]</option>
                                     @foreach (var att in SD.Attributes.All)
                                     {
-                                        <option value=@att> @att</option>
+                                        <option value=@att>@LocCatalog.Name(att, L)</option>
                                     }
                                     </InputSelect>
                                 }
@@ -96,7 +96,7 @@
                                 @if ((obj.ChosenAttribute != null && obj.RelatedAttribute1 == "") 
                                     || (AllParams.Character.IsApproved && string.IsNullOrEmpty(obj.ChosenAttribute)==false))
                                 {
-                                    <label class="text-center" style="width: 100%;">@obj.ChosenAttribute</label>
+                                    <label class="text-center" style="width: 100%;">@LocCatalog.Name(obj.ChosenAttribute, L)</label>
                                 }
                                 else
                                 {
@@ -105,8 +105,8 @@
                                                  Value="@obj.ChosenAttribute"
                                                  ValueChanged="@((string value) => ChangeSSRelatedAttribute(value, obj.Name))">
                                         <option value="0" selected disabled>@L["--Select--"]</option>
-                                        <option value="@obj.RelatedAttribute1"> @obj.RelatedAttribute1</option>
-                                        <option value="@obj.RelatedAttribute2"> @obj.RelatedAttribute2</option>
+                                        <option value="@obj.RelatedAttribute1">@LocCatalog.Name(obj.RelatedAttribute1, L)</option>
+                                        <option value="@obj.RelatedAttribute2">@LocCatalog.Name(obj.RelatedAttribute2, L)</option>
                                     </InputSelect>
                                 }
                             }
@@ -171,7 +171,7 @@
     {
         try
         {
-            var limit = AllParams.BaseSkills.FirstOrDefault(u => u.Name == obj.RelatedBaseSkillName).SumBonus;
+            var limit = AllParams.GetBaseSkill(obj.RelatedBaseSkillName).SumBonus;
             var expChange = 0;
             string message;
 
@@ -252,7 +252,7 @@
         {
             if (obj != null && obj.RelatedBaseSkillName != null && obj.Name != null)
             {
-                var baseSkill = AllParams.BaseSkills.FirstOrDefault(p => p.Name == obj.RelatedBaseSkillName);
+                var baseSkill = AllParams.GetBaseSkill(obj.RelatedBaseSkillName);
                 if (baseSkill == null) return;
                 obj.AddPropertyListener(baseSkill);
                 await OnSpecialSkillChange.InvokeAsync();

@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using DA_Common.Localization;
 using MudBlazor;
 using MudBlazor.Charts;
 
@@ -183,6 +186,23 @@ namespace DA_Common
             public const string Willpower = "Willpower";
             public const string Charisma = "Charisma";
             public static readonly string[] All = { Strength, Dexterity, Endurance, Intelligence, Instinct, Willpower, Charisma };
+
+            /// <summary>
+            /// Maps a stored attribute name (English key or legacy Polish alias) to the canonical English key.
+            /// Unknown values are returned trimmed, unchanged.
+            /// </summary>
+            public static string Canonical(string? name) => CatalogKey.Resolve(name, CanonicalMap);
+
+            private static readonly Dictionary<string, string> CanonicalMap = CatalogKey.BuildMap(All, new Dictionary<string, string>
+            {
+                ["siła"] = Strength,
+                ["zręczność"] = Dexterity,
+                ["wytrzymałość"] = Endurance,
+                ["inteligencja"] = Intelligence,
+                ["instynkt"] = Instinct,
+                ["siła woli"] = Willpower,
+                ["charyzma"] = Charisma,
+            });
         }
         public readonly struct BaseSkills
         {
@@ -201,6 +221,33 @@ namespace DA_Common
             public const string AnimalHandle = "Animal handle";
             public const string Medicine = "Medicine";
             public static readonly string[] All = { Melee, Shooting, Acrobatics, SleightOfHands, Athletics, Talk, Deceit, Perception, Knowledge, Craft, Survival, AnimalHandle, Medicine };
+
+            /// <summary>
+            /// Maps a stored base-skill name (English key or legacy Polish alias) to the canonical English key.
+            /// Unknown values are returned trimmed, unchanged.
+            /// </summary>
+            public static string Canonical(string? name) => CatalogKey.Resolve(name, CanonicalMap);
+
+            private static readonly Dictionary<string, string> CanonicalMap = CatalogKey.BuildMap(All, new Dictionary<string, string>
+            {
+                ["walka wręcz"] = Melee,
+                ["strzelanie"] = Shooting,
+                ["strzelectwo"] = Shooting,
+                ["akrobatyka"] = Acrobatics,
+                ["zręczność rąk"] = SleightOfHands,
+                ["atletyka"] = Athletics,
+                ["rozmowa"] = Talk,
+                ["oszustwo"] = Deceit,
+                ["podstęp"] = Deceit,
+                ["percepcja"] = Perception,
+                ["spostrzegawczość"] = Perception,
+                ["wiedza"] = Knowledge,
+                ["rzemiosło"] = Craft,
+                ["przetrwanie"] = Survival,
+                ["obchodzenie się ze zwierzętami"] = AnimalHandle,
+                ["obchodzenie ze zwierzętami"] = AnimalHandle,
+                ["medycyna"] = Medicine,
+            });
         }
 
         public readonly struct SpecialSkills
@@ -214,7 +261,8 @@ namespace DA_Common
                 public const string Shields = "Shields";
                 public const string Polearms = "Polearms";
                 public const string Unarmed = "Unarmed";
-                public static readonly string[] All = { Heavy, Swords, Fencing, Light, Shields, Polearms, Unarmed };
+                public const string Exotic = "Exotic weapons";
+                public static readonly string[] All = { Heavy, Swords, Fencing, Light, Shields, Polearms, Unarmed, Exotic };
             };
             public readonly struct Shooting
             {
@@ -225,7 +273,7 @@ namespace DA_Common
                 public const string Javelins = "Javelins";
                 public const string Firearms = "Firearms";
                 public const string Grenades = "Grenades";
-                public static readonly string[] All = { Bows, Crossbows, Throwing, Slingshots, Javelins, Grenades, };
+                public static readonly string[] All = { Bows, Crossbows, Throwing, Slingshots, Javelins, Firearms, Grenades };
             }
             public readonly struct Acrobatics
             {
@@ -234,7 +282,7 @@ namespace DA_Common
                 public const string Balance = "Balance";
                 public const string Running = "Running";
                 public const string Dodge = "Dodge";
-                public static readonly string[] All = { Jumping, Climbing, Balance, Running, Dodge, };
+                public static readonly string[] All = { Jumping, Climbing, Balance, Running, Dodge };
             }
             public readonly struct SleightOfHands
             {
@@ -243,7 +291,7 @@ namespace DA_Common
                 public const string DisarmingTraps = "Disarming traps";
                 public const string Tricks = "Tricks";
                 public const string Handcraft = "Handcraft";
-                public static readonly string[] All = { Pickpocketing, Lockpicking, DisarmingTraps, Tricks, Handcraft, };
+                public static readonly string[] All = { Pickpocketing, Lockpicking, DisarmingTraps, Tricks, Handcraft };
             }
             public readonly struct Athletics
             {
@@ -253,18 +301,199 @@ namespace DA_Common
                 public const string Threatening = "Threatening";
                 public const string PainResistance = "Pain Resistance";
                 public const string Swimming = "Swimming";
-                public static readonly string[] All = { Wrestling, Lifting, Armor, Threatening, PainResistance, Swimming, };
+                public static readonly string[] All = { Wrestling, Lifting, Armor, Threatening, PainResistance, Swimming };
+            }
+            public readonly struct Talk
+            {
+                public const string Persuasion = "Persuasion";
+                public const string Bluff = "Bluff";
+                public const string Acting = "Acting";
+                public const string PublicSpeech = "Public speech";
+                public const string Inspire = "Inspire";
+                public const string Diplomacy = "Diplomacy";
+                public const string Trade = "Trade";
+                public static readonly string[] All = { Persuasion, Bluff, Acting, PublicSpeech, Inspire, Diplomacy, Trade };
+            }
+            public readonly struct Deceit
+            {
+                public const string Sneak = "Sneak";
+                public const string Gambling = "Gambling";
+                public const string DirtyTricks = "Dirty tricks";
+                public const string Investigation = "Investigation";
+                public const string Disguise = "Disguise";
+                public const string Intimidate = "Intimidate";
+                public static readonly string[] All = { Sneak, Gambling, DirtyTricks, Investigation, Disguise, Intimidate };
+            }
+            public readonly struct Perception
+            {
+                public const string Observation = "Observation";
+                public const string SenseMotives = "Sense motives";
+                public const string Hearing = "Hearing";
+                public const string Smell = "Smell";
+                public const string Vigilance = "Vigilance";
+                public static readonly string[] All = { Observation, SenseMotives, Hearing, Smell, Vigilance };
+            }
+            public readonly struct Knowledge
+            {
+                public const string HistoryAndReligion = "History and religion";
+                public const string Beasts = "Beasts";
+                public const string Linguistics = "Linguistics";
+                public const string RacesAndNations = "Races and nations";
+                public const string Geography = "Geography";
+                public const string PlantsAndMushrooms = "Plants and mushrooms";
+                public const string Heraldry = "Heraldry";
+                public const string MathematicsAndLogic = "Mathematics and logic";
+                public const string AlchemyAndPhysics = "Alchemy and physics";
+                public const string StrategyAndTactics = "Strategy and tactics";
+                public static readonly string[] All = { HistoryAndReligion, Beasts, Linguistics, RacesAndNations, Geography, PlantsAndMushrooms, Heraldry, MathematicsAndLogic, AlchemyAndPhysics, StrategyAndTactics };
+            }
+            public readonly struct Craft
+            {
+                public const string ArchitectureAndStonemasonry = "Architecture and stonemasonry";
+                public const string GeologyAndMining = "Geology and mining";
+                public const string MetallurgyAndBlacksmithing = "Metallurgy and blacksmithing";
+                public const string EngineeringAndGunsmithing = "Engineering and gunsmithing";
+                public const string ShipbuildingAndCarpentry = "Shipbuilding and carpentry";
+                public const string FineArts = "Fine arts";
+                public static readonly string[] All = { ArchitectureAndStonemasonry, GeologyAndMining, MetallurgyAndBlacksmithing, EngineeringAndGunsmithing, ShipbuildingAndCarpentry, FineArts };
+            }
+            public readonly struct Survival
+            {
+                public const string Tracking = "Tracking";
+                public const string SenseOfDirection = "Sense of direction";
+                public const string Trapping = "Trapping";
+                public const string WildernessKnowledge = "Wilderness knowledge";
+                public const string Sailing = "Sailing";
+                public static readonly string[] All = { Tracking, SenseOfDirection, Trapping, WildernessKnowledge, Sailing };
+            }
+            public readonly struct Medicine
+            {
+                public const string Surgery = "Surgery";
+                public const string TendWounds = "Tend wounds";
+                public const string Diseases = "Diseases";
+                public const string TendBeasts = "Tend beasts";
+                public const string PoisonsAndVenoms = "Poisons and venoms";
+                public const string Torture = "Torture";
+                public static readonly string[] All = { Surgery, TendWounds, Diseases, TendBeasts, PoisonsAndVenoms, Torture };
+            }
+            public readonly struct AnimalHandle
+            {
+                public const string Training = "Training";
+                public const string Taming = "Taming";
+                public const string Riding = "Riding";
+                public const string AnimalsCare = "Animals care";
+                public static readonly string[] All = { Training, Taming, Riding, AnimalsCare };
             }
 
             public static readonly string[] ArmorPenaltySkills = { Acrobatics.Jumping, Acrobatics.Climbing, Acrobatics.Balance, Acrobatics.Running, Acrobatics.Dodge,
-                                                                SleightOfHands.Pickpocketing, "Sneak",Athletics.Swimming};
-            public static readonly string[] All =
-            {   Shooting.Bows, Shooting.Crossbows, Shooting.Throwing, Shooting.Slingshots, Shooting.Javelins, Shooting.Grenades,
-                Acrobatics.Jumping, Acrobatics.Climbing, Acrobatics.Balance, Acrobatics.Running, Acrobatics.Dodge,
-                SleightOfHands.Pickpocketing, SleightOfHands.Lockpicking, SleightOfHands.DisarmingTraps, SleightOfHands.Tricks, SleightOfHands.Handcraft,
-                Athletics.Wrestling, Athletics.Lifting, Athletics.Armor, Athletics.Threatening, Athletics.PainResistance, Athletics.Swimming,
+                                                                SleightOfHands.Pickpocketing, Deceit.Sneak, Athletics.Swimming };
+            public static readonly string[] All = Melee.All
+                .Concat(Shooting.All)
+                .Concat(Acrobatics.All)
+                .Concat(SleightOfHands.All)
+                .Concat(Athletics.All)
+                .Concat(Talk.All)
+                .Concat(Deceit.All)
+                .Concat(Perception.All)
+                .Concat(Knowledge.All)
+                .Concat(Craft.All)
+                .Concat(Survival.All)
+                .Concat(Medicine.All)
+                .Concat(AnimalHandle.All)
+                .ToArray();
 
-            };
+            /// <summary>
+            /// Maps a stored special-skill name (English key or legacy Polish alias) to the canonical English key.
+            /// Unknown values (including custom editable skill names) are returned trimmed, unchanged.
+            /// </summary>
+            public static string Canonical(string? name) => CatalogKey.Resolve(name, CanonicalMap);
+
+            private static readonly Dictionary<string, string> CanonicalMap = CatalogKey.BuildMap(All, new Dictionary<string, string>
+            {
+                ["broń ciężka"] = Melee.Heavy,
+                ["ciężka broń"] = Melee.Heavy,
+                ["miecze i szable"] = Melee.Swords,
+                ["broń fechtunkowa"] = Melee.Fencing,
+                ["broń lekka"] = Melee.Light,
+                ["lekka broń"] = Melee.Light,
+                ["tarcze"] = Melee.Shields,
+                ["broń drzewcowa"] = Melee.Polearms,
+                ["bez broni"] = Melee.Unarmed,
+                ["broń egzotyczna"] = Melee.Exotic,
+                ["egzotyczna"] = Melee.Exotic,
+                ["łuki"] = Shooting.Bows,
+                ["kusze"] = Shooting.Crossbows,
+                ["broń miotana"] = Shooting.Throwing,
+                ["proce"] = Shooting.Slingshots,
+                ["oszczepy"] = Shooting.Javelins,
+                ["broń palna"] = Shooting.Firearms,
+                ["granaty"] = Shooting.Grenades,
+                ["skoki"] = Acrobatics.Jumping,
+                ["wspinaczka"] = Acrobatics.Climbing,
+                ["równowaga"] = Acrobatics.Balance,
+                ["bieg"] = Acrobatics.Running,
+                ["unik"] = Acrobatics.Dodge,
+                ["kieszonkostwo"] = SleightOfHands.Pickpocketing,
+                ["otwieranie zamków"] = SleightOfHands.Lockpicking,
+                ["rozbrajanie pułapek"] = SleightOfHands.DisarmingTraps,
+                ["sztuczki"] = SleightOfHands.Tricks,
+                ["rękodzieło"] = SleightOfHands.Handcraft,
+                ["zapasy"] = Athletics.Wrestling,
+                ["podnoszenie"] = Athletics.Lifting,
+                ["pancerz"] = Athletics.Armor,
+                ["grożenie"] = Athletics.Threatening,
+                ["odporność na ból"] = Athletics.PainResistance,
+                ["pływanie"] = Athletics.Swimming,
+                ["perswazja"] = Talk.Persuasion,
+                ["blef"] = Talk.Bluff,
+                ["aktorstwo"] = Talk.Acting,
+                ["przemawianie publiczne"] = Talk.PublicSpeech,
+                ["inspirowanie"] = Talk.Inspire,
+                ["dyplomacja"] = Talk.Diplomacy,
+                ["handel"] = Talk.Trade,
+                ["skradanie"] = Deceit.Sneak,
+                ["hazard"] = Deceit.Gambling,
+                ["brudne zagrania"] = Deceit.DirtyTricks,
+                ["śledztwo"] = Deceit.Investigation,
+                ["maskowanie"] = Deceit.Disguise,
+                ["zastraszanie"] = Deceit.Intimidate,
+                ["obserwacja"] = Perception.Observation,
+                ["wyczucie motywów"] = Perception.SenseMotives,
+                ["słuch"] = Perception.Hearing,
+                ["węch"] = Perception.Smell,
+                ["czujność"] = Perception.Vigilance,
+                ["historia i religia"] = Knowledge.HistoryAndReligion,
+                ["bestie"] = Knowledge.Beasts,
+                ["lingwistyka"] = Knowledge.Linguistics,
+                ["rasy i narody"] = Knowledge.RacesAndNations,
+                ["geografia"] = Knowledge.Geography,
+                ["rośliny i grzyby"] = Knowledge.PlantsAndMushrooms,
+                ["heraldyka"] = Knowledge.Heraldry,
+                ["matematyka i logika"] = Knowledge.MathematicsAndLogic,
+                ["alchemia i fizyka"] = Knowledge.AlchemyAndPhysics,
+                ["strategia i taktyka"] = Knowledge.StrategyAndTactics,
+                ["architektura i kamieniarstwo"] = Craft.ArchitectureAndStonemasonry,
+                ["geologia i górnictwo"] = Craft.GeologyAndMining,
+                ["metalurgia i kowalstwo"] = Craft.MetallurgyAndBlacksmithing,
+                ["inżynieria i rusznikarstwo"] = Craft.EngineeringAndGunsmithing,
+                ["szkutnictwo i ciesielstwo"] = Craft.ShipbuildingAndCarpentry,
+                ["sztuki piękne"] = Craft.FineArts,
+                ["tropienie"] = Survival.Tracking,
+                ["orientacja w terenie"] = Survival.SenseOfDirection,
+                ["pułapkowanie"] = Survival.Trapping,
+                ["wiedza o dziczy"] = Survival.WildernessKnowledge,
+                ["żeglarstwo"] = Survival.Sailing,
+                ["chirurgia"] = Medicine.Surgery,
+                ["opieka nad ranami"] = Medicine.TendWounds,
+                ["choroby"] = Medicine.Diseases,
+                ["leczenie zwierząt"] = Medicine.TendBeasts,
+                ["trucizny i jady"] = Medicine.PoisonsAndVenoms,
+                ["tortury"] = Medicine.Torture,
+                ["szkolenie"] = AnimalHandle.Training,
+                ["oswajanie"] = AnimalHandle.Taming,
+                ["jazda konna"] = AnimalHandle.Riding,
+                ["pielęgnacja zwierząt"] = AnimalHandle.AnimalsCare,
+            });
         }
         public readonly struct EquipmentType
         {

@@ -28,6 +28,7 @@ namespace DA_Business.Repository.CharacterReps
         {
             using var contex = await _db.CreateDbContextAsync();
             var obj = _mapper.Map<SpecialSkillDTO, SpecialSkill>(objDTO);
+            Canonicalize(obj);
             var addedObj = await contex.SpecialSkills.AddAsync(obj);
             await contex.SaveChangesAsync();
 
@@ -67,6 +68,7 @@ namespace DA_Business.Repository.CharacterReps
                     IDictionary<string, SpecialSkillDTO> result = new Dictionary<string, SpecialSkillDTO>();
                     foreach (var atr in list)
                     {
+                        Canonicalize(atr);
                         result[atr.Name] = atr;
                     }
                     return result;
@@ -92,8 +94,12 @@ namespace DA_Business.Repository.CharacterReps
                 }
                 else
                 {
-                    obj = await contex.SpecialSkills.AsNoTracking().Where(u => u.CharacterId == charId && u.RelatedBaseSkillName == baseSkillName).OrderBy(u => u.Index).ToListAsync();
-                    return _mapper.Map<IEnumerable<SpecialSkill>, IEnumerable<SpecialSkillDTO>>(obj);
+                    var canonicalBase = BaseSkills.Canonical(baseSkillName);
+                    obj = await contex.SpecialSkills.AsNoTracking().Where(u => u.CharacterId == charId).OrderBy(u => u.Index).ToListAsync();
+                    var list = _mapper.Map<IEnumerable<SpecialSkill>, IEnumerable<SpecialSkillDTO>>(obj).ToList();
+                    foreach (var dto in list)
+                        Canonicalize(dto);
+                    return list.Where(s => BaseSkills.Canonical(s.RelatedBaseSkillName) == canonicalBase).ToList();
                 }               
             }
             catch (Exception ex)
@@ -108,7 +114,9 @@ namespace DA_Business.Repository.CharacterReps
             var obj = await contex.SpecialSkills.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
-                return _mapper.Map<SpecialSkill, SpecialSkillDTO>(obj);
+                var dto = _mapper.Map<SpecialSkill, SpecialSkillDTO>(obj);
+                Canonicalize(dto);
+                return dto;
             }
             return new SpecialSkillDTO();
         }
@@ -119,6 +127,7 @@ namespace DA_Business.Repository.CharacterReps
             var obj = await contex.SpecialSkills.FirstOrDefaultAsync(u => u.Id == objDTO.Id);
             if (obj != null)
             {
+                Canonicalize(objDTO);
                 // Update parent
                 contex.Entry(obj).CurrentValues.SetValues(objDTO);
                 await contex.SaveChangesAsync();
@@ -126,6 +135,7 @@ namespace DA_Business.Repository.CharacterReps
             }
             else
             {
+                Canonicalize(objDTO);
                 obj = _mapper.Map<SpecialSkillDTO, SpecialSkill>(objDTO);
                 var addedObj = await contex.SpecialSkills.AddAsync(obj);
                 await contex.SaveChangesAsync();
@@ -143,6 +153,32 @@ namespace DA_Business.Repository.CharacterReps
                 await contex.SaveChangesAsync();
                
             }
+        }
+
+        private static void Canonicalize(SpecialSkill obj)
+        {
+            obj.Name = SpecialSkills.Canonical(obj.Name);
+            if (!string.IsNullOrEmpty(obj.RelatedBaseSkillName))
+                obj.RelatedBaseSkillName = BaseSkills.Canonical(obj.RelatedBaseSkillName);
+            if (!string.IsNullOrEmpty(obj.RelatedAttribute1))
+                obj.RelatedAttribute1 = Attributes.Canonical(obj.RelatedAttribute1);
+            if (!string.IsNullOrEmpty(obj.RelatedAttribute2))
+                obj.RelatedAttribute2 = Attributes.Canonical(obj.RelatedAttribute2);
+            if (!string.IsNullOrEmpty(obj.ChosenAttribute))
+                obj.ChosenAttribute = Attributes.Canonical(obj.ChosenAttribute);
+        }
+
+        private static void Canonicalize(SpecialSkillDTO obj)
+        {
+            obj.Name = SpecialSkills.Canonical(obj.Name);
+            if (!string.IsNullOrEmpty(obj.RelatedBaseSkillName))
+                obj.RelatedBaseSkillName = BaseSkills.Canonical(obj.RelatedBaseSkillName);
+            if (!string.IsNullOrEmpty(obj.RelatedAttribute1))
+                obj.RelatedAttribute1 = Attributes.Canonical(obj.RelatedAttribute1);
+            if (!string.IsNullOrEmpty(obj.RelatedAttribute2))
+                obj.RelatedAttribute2 = Attributes.Canonical(obj.RelatedAttribute2);
+            if (!string.IsNullOrEmpty(obj.ChosenAttribute))
+                obj.ChosenAttribute = Attributes.Canonical(obj.ChosenAttribute);
         }
     }
 }

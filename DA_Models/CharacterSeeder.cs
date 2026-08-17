@@ -159,6 +159,12 @@ namespace DA_Models
                 },
                 
             };
+            foreach (var skill in baseSkills)
+            {
+                skill.Name = SD.BaseSkills.Canonical(skill.Name);
+                skill.RelatedAttribute1 = SD.Attributes.Canonical(skill.RelatedAttribute1);
+                skill.RelatedAttribute2 = SD.Attributes.Canonical(skill.RelatedAttribute2);
+            }
             return baseSkills;
         }
         static public ICollection<SpecialSkillDTO> GetSpecialSkills()
@@ -809,6 +815,17 @@ namespace DA_Models
                 },
 
             };
+            foreach (var skill in SpecialSkills)
+            {
+                skill.Name = SD.SpecialSkills.Canonical(skill.Name);
+                skill.RelatedBaseSkillName = SD.BaseSkills.Canonical(skill.RelatedBaseSkillName);
+                if (!string.IsNullOrEmpty(skill.RelatedAttribute1))
+                    skill.RelatedAttribute1 = SD.Attributes.Canonical(skill.RelatedAttribute1);
+                if (!string.IsNullOrEmpty(skill.RelatedAttribute2))
+                    skill.RelatedAttribute2 = SD.Attributes.Canonical(skill.RelatedAttribute2);
+                if (!string.IsNullOrEmpty(skill.ChosenAttribute))
+                    skill.ChosenAttribute = SD.Attributes.Canonical(skill.ChosenAttribute);
+            }
             return SpecialSkills;
         }
     }

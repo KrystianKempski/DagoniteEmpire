@@ -9,7 +9,7 @@
     <div class="sheet-img">
        @*  <img src="../images/old_paper2.png" class="stretch" /> *@
     </div>
-    <h3 class="my-3 ml-3 text-center">@L["CLASS"]</h3>
+    <h3 class="my-3 ml-3 text-center" style="text-transform:uppercase">@L["Class"]</h3>
     @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
     {
         <InputText style="width: 100%;font-size: 14px;padding: 2px 2px 2px 2px; margin: 0px; border: 1px solid RGB(206 212 218); border-radius: 4px; background-color:transparent;"
@@ -36,7 +36,7 @@
                     <label class="name-label">@Profession.ClassLevel</label>
                 </td>
                 <td>
-                    <label class="name-label">@Profession.RelatedAttributeName</label>
+                    <label class="name-label">@LocCatalog.Name(Profession.RelatedAttributeName, L)</label>
                 </td>
                 <td>
                     <label class="name-label">@Profession.ProfessionSkillRoll</label>
