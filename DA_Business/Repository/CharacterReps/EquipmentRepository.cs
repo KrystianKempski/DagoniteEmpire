@@ -1,18 +1,17 @@
 ﻿using Abp.Collections.Extensions;
 using AutoMapper;
-using Castle.MicroKernel.Registration;
 using DA_Business.Repository.CharacterReps.IRepository;
+using DA_Common;
+using DA_Common.Localization;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Data;
 using DA_Models.CharacterModels;
+using DagoniteEmpire.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using DagoniteEmpire.Exceptions;
-using DA_Common;
 
 namespace DA_Business.Repository.CharacterReps
 {
@@ -32,6 +31,7 @@ namespace DA_Business.Repository.CharacterReps
             {
                 using var contex = await _db.CreateDbContextAsync();
                 var obj = _mapper.Map<EquipmentDTO, Equipment>(objDTO);
+                Canonicalize(obj);
                 
                 // Replace untracked trait entities with tracked ones (only fetch needed IDs)
                 var traitIds = obj.Traits.Select(t => t.Id).ToList();
@@ -49,7 +49,9 @@ namespace DA_Business.Repository.CharacterReps
                 var addedObj = await contex.Equipment.AddAsync(obj);
                 await contex.SaveChangesAsync();
 
-                return _mapper.Map<Equipment, EquipmentDTO>(addedObj.Entity);
+                var created = _mapper.Map<Equipment, EquipmentDTO>(addedObj.Entity);
+                Canonicalize(created);
+                return created;
             }
             catch (Exception ex)
             {
@@ -87,19 +89,22 @@ namespace DA_Business.Repository.CharacterReps
         public async Task<IEnumerable<EquipmentDTO>> GetAll()
         {
             using var contex = await _db.CreateDbContextAsync();
-            return _mapper.Map<IEnumerable<Equipment>, IEnumerable<EquipmentDTO>>(
+            var list = _mapper.Map<IEnumerable<Equipment>, IEnumerable<EquipmentDTO>>(
                 await contex.Equipment
                     .AsNoTracking()
                     .Include(u => u.Traits)
                         .ThenInclude(b => b.Bonuses)
                     .AsSplitQuery()
                     .ToListAsync());
+            foreach (var dto in list)
+                Canonicalize(dto);
+            return list;
         }
 
         public async Task<IEnumerable<EquipmentDTO>> GetAllApproved()
         {
             using var contex = await _db.CreateDbContextAsync();
-            return _mapper.Map<IEnumerable<Equipment>, IEnumerable<EquipmentDTO>>(
+            var list = _mapper.Map<IEnumerable<Equipment>, IEnumerable<EquipmentDTO>>(
                 await contex.Equipment
                     .AsNoTracking()
                     .Where(t => t.IsApproved == true && t.Name != SD.BasicWeaponsMelee.Unarmed)
@@ -107,6 +112,9 @@ namespace DA_Business.Repository.CharacterReps
                         .ThenInclude(b => b.Bonuses)
                     .AsSplitQuery()
                     .ToListAsync());
+            foreach (var dto in list)
+                Canonicalize(dto);
+            return list;
         }
 
         public async Task<IEnumerable<EquipmentDTO>> GetAllBaseTemplates()
@@ -123,13 +131,16 @@ namespace DA_Business.Repository.CharacterReps
                 .ToListAsync();
 
             var deduped = equipment
-                .GroupBy(t => t.Name, StringComparer.OrdinalIgnoreCase)
+                .GroupBy(t => SD.BasicEquipment.CanonicalNameOrRaw(t.Name), StringComparer.OrdinalIgnoreCase)
                 .Select(g => g.OrderBy(t => t.Id).First())
                 .OrderBy(t => t.EquipmentType)
                 .ThenBy(t => t.Name)
                 .ToList();
 
-            return _mapper.Map<IEnumerable<Equipment>, IEnumerable<EquipmentDTO>>(deduped);
+            var list = _mapper.Map<IEnumerable<Equipment>, IEnumerable<EquipmentDTO>>(deduped);
+            foreach (var dto in list)
+                Canonicalize(dto);
+            return list;
         }
 
         public async Task<EquipmentDTO> GetById(int id)
@@ -143,22 +154,38 @@ namespace DA_Business.Repository.CharacterReps
                 .FirstOrDefaultAsync(u => u.Id == id);
             if (obj != null)
             {
-                return _mapper.Map<Equipment, EquipmentDTO>(obj);
+                var dto = _mapper.Map<Equipment, EquipmentDTO>(obj);
+                Canonicalize(dto);
+                return dto;
             }
             return new EquipmentDTO();
         }
         public async Task<EquipmentDTO> GetByName(string name)
         {
             using var contex = await _db.CreateDbContextAsync();
+            var lookup = SD.BasicEquipment.CanonicalNameOrRaw(name);
+            if (string.IsNullOrWhiteSpace(lookup))
+                lookup = name;
             var obj = await contex.Equipment
                 .AsNoTracking()
                 .Include(u => u.Traits)
                     .ThenInclude(b => b.Bonuses)
                 .AsSplitQuery()
-                .FirstOrDefaultAsync(u => u.Name == name);
+                .FirstOrDefaultAsync(u => u.Name == lookup);
+            if (obj == null && !string.Equals(lookup, name, StringComparison.Ordinal))
+            {
+                obj = await contex.Equipment
+                    .AsNoTracking()
+                    .Include(u => u.Traits)
+                        .ThenInclude(b => b.Bonuses)
+                    .AsSplitQuery()
+                    .FirstOrDefaultAsync(u => u.Name == name);
+            }
             if (obj != null)
             {
-                return _mapper.Map<Equipment, EquipmentDTO>(obj);
+                var dto = _mapper.Map<Equipment, EquipmentDTO>(obj);
+                Canonicalize(dto);
+                return dto;
             }
             return new EquipmentDTO();
         }
@@ -175,6 +202,7 @@ namespace DA_Business.Repository.CharacterReps
                     .FirstOrDefaultAsync(u => u.Id == objDTO.Id);
                 if (obj is not null)
                 {
+                    Canonicalize(objDTO);
                     var updatedEquipment = _mapper.Map<EquipmentDTO, Equipment>(objDTO);
 
                     // Update built-in type members
@@ -286,16 +314,21 @@ namespace DA_Business.Repository.CharacterReps
                         }
                     }
                     await contex.SaveChangesAsync();
-                    return _mapper.Map<Equipment, EquipmentDTO>(obj);
+                    var result = _mapper.Map<Equipment, EquipmentDTO>(obj);
+                    Canonicalize(result);
+                    return result;
                 }
                 else
                 {
                     obj = _mapper.Map<EquipmentDTO, Equipment>(objDTO);
+                    Canonicalize(obj);
 
                     var addedObj = contex.Equipment.Add(obj);
                     await contex.SaveChangesAsync();
 
-                    return _mapper.Map<Equipment, EquipmentDTO>(addedObj.Entity);
+                    var created = _mapper.Map<Equipment, EquipmentDTO>(addedObj.Entity);
+                    Canonicalize(created);
+                    return created;
                 }
             }
             catch (Exception ex)
@@ -303,5 +336,80 @@ namespace DA_Business.Repository.CharacterReps
                 throw new RepositoryErrorException("Error in Equipment Repository Update: " + ex.Message);
             }
         }
+
+        private static void Canonicalize(EquipmentDTO obj)
+        {
+            if (obj is null)
+                return;
+            obj.EquipmentType = SD.EquipmentType.Canonical(obj.EquipmentType);
+            if (!string.IsNullOrEmpty(obj.RelatedSkill))
+                obj.RelatedSkill = SD.SpecialSkills.Canonical(obj.RelatedSkill);
+            obj.Name = SD.BasicEquipment.CanonicalNameOrRaw(obj.Name);
+            if (obj.Traits is null)
+                return;
+            foreach (var trait in obj.Traits)
+                CanonicalizeTrait(trait);
+        }
+
+        private static void Canonicalize(Equipment obj)
+        {
+            if (obj is null)
+                return;
+            obj.EquipmentType = SD.EquipmentType.Canonical(obj.EquipmentType);
+            if (!string.IsNullOrEmpty(obj.RelatedSkill))
+                obj.RelatedSkill = SD.SpecialSkills.Canonical(obj.RelatedSkill);
+            obj.Name = SD.BasicEquipment.CanonicalNameOrRaw(obj.Name);
+            if (obj.Traits is null)
+                return;
+            foreach (var trait in obj.Traits)
+                CanonicalizeTrait(trait);
+        }
+
+        private static void CanonicalizeTrait(TraitDTO trait)
+        {
+            if (trait is null)
+                return;
+            if (LocCatalog.CanonicalKey(trait.Name) == SD.WeaponParametersDescr)
+                trait.Name = SD.WeaponParametersDescr;
+            if (trait.Bonuses is null)
+                return;
+            foreach (var bonus in trait.Bonuses)
+                CanonicalizeBonus(bonus);
+        }
+
+        private static void CanonicalizeTrait(Trait trait)
+        {
+            if (trait is null)
+                return;
+            if (LocCatalog.CanonicalKey(trait.Name) == SD.WeaponParametersDescr)
+                trait.Name = SD.WeaponParametersDescr;
+            if (trait.Bonuses is null)
+                return;
+            foreach (var bonus in trait.Bonuses)
+                CanonicalizeBonus(bonus);
+        }
+
+        private static void CanonicalizeBonus(BonusDTO bonus)
+        {
+            if (bonus is null || string.IsNullOrEmpty(bonus.FeatureName))
+                return;
+            bonus.FeatureName = CanonicalFeatureName(bonus.FeatureType, bonus.FeatureName);
+        }
+
+        private static void CanonicalizeBonus(Bonus bonus)
+        {
+            if (bonus is null || string.IsNullOrEmpty(bonus.FeatureName))
+                return;
+            bonus.FeatureName = CanonicalFeatureName(bonus.FeatureType, bonus.FeatureName);
+        }
+
+        private static string CanonicalFeatureName(string? featureType, string featureName) => featureType switch
+        {
+            SD.FeatureAttribute => SD.Attributes.Canonical(featureName),
+            SD.FeatureBaseSkill => SD.BaseSkills.Canonical(featureName),
+            SD.FeatureSpecialSkill => SD.SpecialSkills.Canonical(featureName),
+            SD.FeatureWeaponQuality => SD.WeaponQuality.Canonical(featureName),
+            _ => featureName,
+        };
     }
 }

@@ -67,7 +67,7 @@
                                     </ChildContent>
                                     <TooltipContent>
                                         <span class="character-status-tooltip-text">
-                                            <span class="character-status-tooltip-name">@icon.Item1</span>
+                                            <span class="character-status-tooltip-name">@LocCatalog.Name(icon.Item1, L)</span>
                                             <span class="character-status-tooltip-duration">@FormatStateDuration(icon.Item3)</span>
                                         </span>
                                     </TooltipContent>
@@ -212,7 +212,7 @@
 
                             <div class="d-flex">
                                 <div class="flex-grow-1 weapon-prop-label">
-                                        <MudText Typo="Typo.button">Main: @BattlePropertyModel.MainWeaponUsed.Name</MudText>
+                                        <MudText Typo="Typo.button">Main: @BattlePropertyModel.MainWeaponUsed.DisplayName(L)</MudText>
                                 </div>
                             </div>
                                 @if (BattlePropertyModel.MainWeaponUsed.IsTwoHanded == true)
@@ -232,7 +232,7 @@
                                         <div class="d-flex">
 
                                             <div class="flex-grow-1 weapon-prop-label">
-                                                <label>@prop.Name: </label>
+                                                <label>@LocCatalog.Name(prop.Name, L): </label>
                                             </div>
                                             @if (prop.SumBonus != 0)
                                             {
@@ -253,7 +253,7 @@
                             <MudPaper Class="p-1 w-100 h-100" Elevation="1">
                             <div class="d-flex">
                                 <div class="flex-grow-1 weapon-prop-label">
-                                        <MudText Typo="Typo.button">Off: @BattlePropertyModel.OffWeaponUsed.Name</MudText>
+                                        <MudText Typo="Typo.button">Off: @BattlePropertyModel.OffWeaponUsed.DisplayName(L)</MudText>
                                 </div>
                             </div>
                                 @if (BattlePropertyModel.OffWeaponUsed.IsTwoHanded == true)
@@ -273,7 +273,7 @@
                                         <div class="d-flex">
 
                                             <div class="flex-grow-1 weapon-prop-label">
-                                                <label>@prop.Name: </label>
+                                                <label>@LocCatalog.Name(prop.Name, L): </label>
                                             </div>
                                             @if (prop.SumBonus != 0)
                                             {
@@ -294,7 +294,7 @@
                             <MudPaper Class="p-1 w-100 h-100" Elevation="1">
                             <div class="d-flex">
                                 <div class="flex-grow-1 weapon-prop-label">
-                                        <MudText Typo="Typo.button">Armor: @BattlePropertyModel.ArmorUsed.Name</MudText>
+                                        <MudText Typo="Typo.button">Armor: @BattlePropertyModel.ArmorUsed.DisplayName(L)</MudText>
                                 </div>
                             </div>
                             @if (ArmorProps is not null)
@@ -306,7 +306,7 @@
                                         <div class="d-flex">
 
                                             <div class="flex-grow-1 weapon-prop-label">
-                                                <label>@prop.Name: </label>
+                                                <label>@LocCatalog.Name(prop.Name, L): </label>
                                             </div>
                                             @if (prop.SumBonus != 0)
                                             {
@@ -327,7 +327,7 @@
                             <MudPaper Class="p-1 w-100 h-100" Elevation="1">
                             <div class="d-flex">
                                 <div class="flex-grow-1 weapon-prop-label">
-                                        <MudText Typo="Typo.button">Shield: @BattlePropertyModel.ShieldUsed.Name</MudText>
+                                        <MudText Typo="Typo.button">Shield: @BattlePropertyModel.ShieldUsed.DisplayName(L)</MudText>
                                 </div>
                             </div>
                             @if (ShieldProps is not null)
@@ -339,7 +339,7 @@
                                         <div class="d-flex">
 
                                             <div class="flex-grow-1 weapon-prop-label">
-                                                <label>@prop.Name: </label>
+                                                <label>@LocCatalog.Name(prop.Name, L): </label>
                                             </div>
                                             @if (prop.SumBonus != 0)
                                             {
@@ -370,7 +370,7 @@
                                     <div class="d-inline-block">
                                         <img src="@icon.Item2" width="25" height="25" class="pr-1 d-inline-block" />
                                         <div class="weapon-prop-label ">
-                                        <label>@icon.Item1: @icon.Item3,</label>
+                                        <label>@LocCatalog.Name(icon.Item1, L): @icon.Item3,</label>
                                         </div>
                                     </div>
                                 }
@@ -395,7 +395,7 @@
                                         <div class="d-inline-block">
                                             <img src="@Wounds.GetIcon(wound.IsTended)" width="25" height="25" class="pr-1 d-inline-block" />
                                             <div class="weapon-prop-label ">
-                                                <label>@wound.Severity,</label>
+                                                <label>@wound.DisplaySeverity(L),</label>
                                             </div>
                                         </div>
                                     }

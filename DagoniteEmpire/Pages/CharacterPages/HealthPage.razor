@@ -89,17 +89,25 @@
                     
                     <Columns >
                         
-                        <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px;padding:4px 4px 4px 12px;;" Property="x => x.Severity" Groupable="false" />
-                        <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;; " Property="x => x.Penalty" Groupable="false" />
+                        <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px;padding:4px 4px 4px 12px;;" Property="x => x.Severity" Groupable="false" Title="@(L["Severity"])">
+                            <CellTemplate>@context.Item.DisplaySeverity(L)</CellTemplate>
+                        </PropertyColumn>
+                        <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;; " Property="x => x.Penalty" Groupable="false" Title="@(L["Penalty"])" />
                         <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;;" Property="x => x.IsIgnored" Groupable="false" Title="@(L["Ignored"])" />
                         <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;;" Property="x => x.IsTended" Groupable="false" Title="@(L["Tended"])" />
                        <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;;" Property="x => x.IsMagicHealed" Groupable="false" Title="@(L["Magic healed"])" />
-                        <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:140px; padding:4px 4px 4px 12px;" Property="x => x.DateStart.ToString()" Groupable="false" Title="@(L["Injury date"])" />
-                        <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:140px; padding:4px 4px 4px 12px;" Property="x =>  x.DateReduce.ToString()" Groupable="false" Title="@(L["Reduce date"])" />
-                        <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" Property="x => x.Description" Groupable="false" />
+                        <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:140px; padding:4px 4px 4px 12px;" Property="x => x.DateStart" Groupable="false" Title="@(L["Injury date"])">
+                            <CellTemplate>@context.Item.DisplayDateStart(L)</CellTemplate>
+                        </PropertyColumn>
+                        <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:140px; padding:4px 4px 4px 12px;" Property="x => x.DateReduce" Groupable="false" Title="@(L["Reduce date"])">
+                            <CellTemplate>@context.Item.DisplayDateReduce(L)</CellTemplate>
+                        </PropertyColumn>
+                        <PropertyColumn HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" Property="x => x.Description" Groupable="false" Title="@(L["Description"])">
+                            <CellTemplate>@context.Item.DisplayDescription(L)</CellTemplate>
+                        </PropertyColumn>
                         <PropertyColumn HeaderStyle="font-weight:bold" Property="x => x.Location" Groupable="true" Grouping  GroupBy="@_groupBy"  Hidden="true">
                             <GroupTemplate  >
-                                    <span style="font-weight:bold">@context.Grouping.Key (@GetAttributesLabel(context.Grouping.Key)) </span>
+                                    <span style="font-weight:bold">@LocCatalog.Name(context.Grouping.Key?.ToString(), L) (@GetAttributesLabel(context.Grouping.Key)) </span>
                             </GroupTemplate>
                         </PropertyColumn >
                             <TemplateColumn  HeaderStyle="font-weight:bold; padding:4px 4px 4px 12px;" CellStyle="max-width:60px; padding:4px 4px 4px 12px;"  Title="@(L["Actions"])" Groupable="false">
@@ -413,21 +421,17 @@
         IsLeaveAllowed = false;
     }
 
-    private string GetAttributesLabel(object location)
+    private string GetAttributesLabel(object? location)
     {
         string? locationName = location?.ToString();
-        if(locationName is null)
-            return "";
+        if (locationName is null)
+            return string.Empty;
+
         var attributes = WoundDTO.GetAttributeNamesFromLocation(locationName);
         if (attributes is null)
-            return "";
-        string res = "";
-        foreach(var name in attributes)
-        {
-            res += name + ", ";
-        }
-        res = res.Remove(res.Length - 2);
-        return res;
+            return string.Empty;
+
+        return WoundDisplay.FormatAttributesLabel(attributes, L);
     }
     private async Task AddWound()
     {

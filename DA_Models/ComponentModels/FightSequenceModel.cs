@@ -499,9 +499,10 @@ namespace DA_Models.ComponentModels
 
         private string FormatSurroundedModifier(int penalty)
         {
+            var surroundedLabel = RichText.BoldText(LocCatalog.Name(States.Names.Surrounded));
             var label = string.Equals(DefenceType, SD.DefenceType.Armor, StringComparison.Ordinal)
-                ? $"{RichText.BoldText(Loc.T("surrounded"))} {RichText.BoldText(Loc.T("armored"))}"
-                : RichText.BoldText(Loc.T("surrounded"));
+                ? $"{surroundedLabel} {RichText.BoldText(Loc.T("armored"))}"
+                : surroundedLabel;
             return $" {label}{SD.BonusText(-penalty)}";
         }
 

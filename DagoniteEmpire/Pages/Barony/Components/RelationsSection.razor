@@ -85,7 +85,7 @@
                                                 }
                                                 @if (CanManage)
                                                 {
-                                                    <BaronyTooltip Text="@(L["Edit relation"])">
+                                                    <BaronyTooltip Text="@(L["Edit Relation"])">
                                                         <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                                                        Size="Size.Small"
                                                                        OnClick="@(() => EditAsync(item))" />
@@ -130,7 +130,7 @@
                                             </BaronyTooltip>
                                             @if (CanManage)
                                             {
-                                                <BaronyTooltip Text="@(L["Edit modifiers"])">
+                                                <BaronyTooltip Text="@(L["Edit Modifiers"])">
                                                     <MudIconButton Icon="@Icons.Material.Filled.Tune"
                                                                    Size="Size.Small"
                                                                    OnClick="@(() => EditModifiersAsync(item))" />
@@ -360,7 +360,7 @@
         attitude > 0 ? $"+{attitude}" : attitude.ToString();
 
     private string NotesTooltip(string? notes) =>
-        string.IsNullOrWhiteSpace(notes) ? L["Edit notes"] : notes;
+        string.IsNullOrWhiteSpace(notes) ? L["Edit Notes"] : notes;
 
     private static string NotesButtonClass(string? notes) =>
         string.IsNullOrWhiteSpace(notes)

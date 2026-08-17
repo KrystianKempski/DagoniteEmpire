@@ -1,5 +1,6 @@
 ﻿using Abp.Collections.Extensions;
 using DA_Common;
+using DA_Common.Localization;
 using DA_DataAccess.CharacterClasses;
 using DA_Models.ComponentModels;
 using System;
@@ -41,7 +42,7 @@ namespace DA_Models.CharacterModels
                             val = $"+{bonus.BonusValue}";
                         else
                             val = $"{bonus.BonusValue}";
-                        res += $"{val} to {bonus.FeatureName}; ";
+                        res += Loc.T("{0} to {1}", val, LocCatalog.Name(bonus.FeatureName)) + "; ";
                     }
                 }
                 return res;

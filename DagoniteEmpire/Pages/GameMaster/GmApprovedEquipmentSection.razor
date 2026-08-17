@@ -48,8 +48,12 @@
                  FixedHeader="true"
                  Height="420px">
         <Columns>
-            <PropertyColumn Property="x => x.Equipment.Name" Title="@L["Name"]" />
-            <PropertyColumn Property="x => x.Equipment.EquipmentType" Title="@L["Type"]" />
+            <PropertyColumn Property="x => x.Equipment.Name" Title="@L["Name"]">
+                <CellTemplate>@context.Item.Equipment.DisplayName(L)</CellTemplate>
+            </PropertyColumn>
+            <PropertyColumn Property="x => x.Equipment.EquipmentType" Title="@L["Type"]">
+                <CellTemplate>@context.Item.Equipment.DisplayType(L)</CellTemplate>
+            </PropertyColumn>
             <PropertyColumn Property="x => x.Equipment.Price" Title="@L["Price [Imp]"]" Format="F3" />
             <PropertyColumn Property="x => x.Equipment.Weight" Title="@L["Weight [St]"]" Format="F1" />
             <TemplateColumn Title="@L["Owners"]" Sortable="false">
@@ -100,8 +104,12 @@
 
         if (row.Equipment.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
             return true;
+        if (row.Equipment.DisplayName().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
 
         if (row.Equipment.EquipmentType.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (row.Equipment.DisplayType().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
             return true;
 
         if (row.OwnerSummary.Contains(_searchString, StringComparison.OrdinalIgnoreCase))

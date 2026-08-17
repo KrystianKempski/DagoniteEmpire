@@ -19,8 +19,11 @@
                          SortMode="@SortMode.None" Elevation="2" ColumnResizeMode="ResizeMode.Container" SelectOnRowClick="false" SelectedItemsChanged="@SelectedItemsChanged">
                     <Columns>
                         <SelectColumn T="EquipmentDTO" />
-                        <PropertyColumn Filterable="false" Property="x => x.Name" />
+                        <PropertyColumn Filterable="false" Property="x => x.Name" Title="@(L["Name"])">
+                            <CellTemplate>@context.Item.DisplayName(L)</CellTemplate>
+                        </PropertyColumn>
                         <PropertyColumn Property="x => x.EquipmentType" Title="@(L["Type"])">
+                            <CellTemplate>@context.Item.DisplayType(L)</CellTemplate>
                             <FilterTemplate>
                                 <MudIconButton OnClick="@OpenFilter" Icon="@_icon" Size="@Size.Small" />
                                 <MudOverlay Visible="@_filterOpen" OnClick="@(() => _filterOpen = false)" />
@@ -31,7 +34,7 @@
                                        <MudStack Spacing="0" Style="overflow-y:auto;max-height:250px">
                                             @foreach (var item in SD.EquipmentType.All)
                                            {
-                                                <MudCheckBox T="bool" Label="@item" Size="@Size.Small" Value="@(_selectedItems.FirstOrDefault(u=>u.EquipmentType == item) is not null)"
+                                                <MudCheckBox T="bool" Label="@LocCatalog.Name(item, L)" Size="@Size.Small" Value="@(_selectedItems.FirstOrDefault(u=>u.EquipmentType == item) is not null)"
                                                              ValueChanged="@((value) => SelectedChanged(value, item))" />
                                            }
                                        </MudStack>
@@ -43,7 +46,9 @@
                                 </MudPopover>
                             </FilterTemplate>
                         </PropertyColumn>
-                    <PropertyColumn Filterable="false" Property="x => x.Description" Title="@(L["Description"])" />
+                    <PropertyColumn Filterable="false" Property="x => x.Description" Title="@(L["Description"])">
+                        <CellTemplate>@context.Item.DisplayDescription(L)</CellTemplate>
+                    </PropertyColumn>
                     </Columns>
                 </MudDataGrid>
             </MudHidden>
@@ -54,8 +59,11 @@
                     <Columns>
                         <SelectColumn T="EquipmentDTO" />
                         <HierarchyColumn T="EquipmentDTO" />
-                        <PropertyColumn Filterable="false" Property="x => x.Name"  />
+                        <PropertyColumn Filterable="false" Property="x => x.Name" Title="@(L["Name"])">
+                            <CellTemplate>@context.Item.DisplayName(L)</CellTemplate>
+                        </PropertyColumn>
                         <PropertyColumn Property="x => x.EquipmentType" Title="@(L["Type"])">
+                            <CellTemplate>@context.Item.DisplayType(L)</CellTemplate>
                             <FilterTemplate>
                                 <MudIconButton OnClick="@OpenFilter" Icon="@_icon" Size="@Size.Small" />
                                 <MudOverlay Visible="@_filterOpen" OnClick="@(() => _filterOpen = false)" />
@@ -66,7 +74,7 @@
                                        <MudStack Spacing="0" Style="overflow-y:auto;max-height:250px">
                                             @foreach (var item in SD.EquipmentType.All)
                                             {
-                                                    <MudCheckBox T="bool" Label="@item" Size="@Size.Small" Value="@(_selectedItems.FirstOrDefault(u=>u.EquipmentType == item) is not null)"
+                                                    <MudCheckBox T="bool" Label="@LocCatalog.Name(item, L)" Size="@Size.Small" Value="@(_selectedItems.FirstOrDefault(u=>u.EquipmentType == item) is not null)"
                                                                  ValueChanged="@((value) => SelectedChanged(value, item))" />
                                             }
                                        </MudStack>
@@ -80,7 +88,7 @@
                         </PropertyColumn>
                     </Columns>
                     <ChildRowContent>
-                        <MudText Typo="Typo.body1">@context.Item.Description</MudText>
+                        <MudText Typo="Typo.body1">@context.Item.DisplayDescription(L)</MudText>
                     </ChildRowContent>
                 </MudDataGrid>
             </MudHidden>
@@ -142,8 +150,17 @@
 
         if (x.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
             return true;
+        if (x.DisplayName().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
 
         if (x.EquipmentType.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (x.DisplayType().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (!string.IsNullOrEmpty(x.Description) && x.Description.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (x.DisplayDescription().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
             return true;
 
         return false;

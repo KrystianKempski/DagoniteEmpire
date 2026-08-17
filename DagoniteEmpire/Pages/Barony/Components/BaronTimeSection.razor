@@ -20,7 +20,7 @@
                         @L["(Endurance {0} + Willpower {1}) × {2} = {3} BT", _budget.Endurance, _budget.Willpower, BaronTimeRules.AttributeFactor, _budget.BaseJc]
                         @if (_budget.ModifierPercent != 0m)
                         {
-                            <text> · @L["modifiers"] @BaronyCalc.FormatPercent(_budget.ModifierPercent) → <b>@_budget.TotalJc BT</b></text>
+                            <text> · @L["Modifiers"] @BaronyCalc.FormatPercent(_budget.ModifierPercent) → <b>@_budget.TotalJc BT</b></text>
                         }
                         else
                         {
@@ -197,7 +197,7 @@
             @if (CanEdit)
             {
                 <MudButton Variant="Variant.Outlined" Class="mt-2" StartIcon="@Icons.Material.Filled.Add" OnClick="AddModifierAsync">
-                    @L["Add Modifier"]
+                    @L["Add modifier"]
                 </MudButton>
             }
         </div>

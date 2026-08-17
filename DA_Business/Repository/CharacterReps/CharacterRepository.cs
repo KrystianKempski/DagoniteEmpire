@@ -65,7 +65,6 @@ namespace DA_Business.Repository.CharacterReps
             try
             {
                 using var contex = await _db.CreateDbContextAsync();
-                //delete traits adv
                 var obj = await contex.Characters
                     .Include(c => c.EquipmentSlots)
                         .ThenInclude(e => e.Equipment)
@@ -74,70 +73,111 @@ namespace DA_Business.Repository.CharacterReps
                     .FirstOrDefaultAsync(u => u.Id == id);
                 if (obj is null)
                     return 0;
-                    
-                var traits = contex.TraitsCharacter.Where(c=>c.CharacterId == id && c.TraitApproved == false);
-                foreach(var trait in traits)
+
+                var raceId = obj.RaceId;
+                var professionId = obj.ProfessionId;
+                var unapprovedEquipmentIds = (obj.EquipmentSlots ?? Enumerable.Empty<EquipmentSlot>())
+                    .Where(s => s.Equipment is { IsApproved: false })
+                    .Select(s => s.EquipmentID)
+                    .Distinct()
+                    .ToList();
+
+                var draftTraits = await contex.TraitsCharacter
+                    .Where(c => c.CharacterId == id && c.TraitApproved == false)
+                    .ToListAsync();
+                contex.TraitsCharacter.RemoveRange(draftTraits);
+
+                if (obj.EquipmentSlots is not null)
                 {
-                    contex.TraitsCharacter.Remove(trait);
+                    foreach (var slot in obj.EquipmentSlots.ToList())
+                        contex.EquipmentSlots.Remove(slot);
                 }
 
-                //delete race
-                var race = await contex.Races.Include(c => c.Traits).FirstOrDefaultAsync(u => u.Id == obj.RaceId && u.RaceApproved == false);
-                if (race is not null)
-                {
-                    if (!race.Traits.IsNullOrEmpty())
-                        race.Traits.Where(t=>t.TraitApproved==false).ToList().ForEach(t =>contex.TraitsRace.Remove(t));
-                    contex.Races.Remove(race);
-                }
-                //delete equipment slots
-                if (!obj.EquipmentSlots.IsNullOrEmpty())
-                {
-                    foreach(var slot in obj.EquipmentSlots)
-                    {
-                        var equi = slot.Equipment;
-                        if (equi.IsApproved == false)
-                        {
-                            if(equi.Traits is not null)
-                            {
-                                foreach(var trait in equi.Traits)
-                                {
-                                    if (trait.TraitApproved == false)
-                                        contex.TraitsEquipment.Remove(trait);
-                                }
-                            }
-                            contex.Equipment.Remove(equi);
-                        }
-                        contex.EquipmentSlots.Remove(slot);
-                    }
-                }
-                await contex.SaveChangesAsync();
-                
-                //delete class traits
-                var traitsProfession = await contex.TraitsProfession.Where(u => u.ProfessionId == obj.ProfessionId).ToListAsync();
-                if (!traitsProfession.IsNullOrEmpty())
-                {
-                    foreach (var trait in traitsProfession)
-                    {
-                        if (trait.TraitApproved == false)
-                            contex.TraitsProfession.Remove(trait);
-                    }
-                }
-                await contex.SaveChangesAsync();
-                //datele class
-                var profession = await contex.Professions.FirstOrDefaultAsync(u => u.Id == obj.ProfessionId && u.IsApproved == false && u.IsUniversal == false);
-                if (profession is not null)
-                {
-                    contex.Professions.Remove(profession);
-                }
-                
-                // Delete the character entity itself
+                // Drop the character before any shared Race/Profession row. Demo clones
+                // (and draft characters) reuse those FKs; deleting the race first hits
+                // FK_Characters_Races_RaceId while this row — and any sibling — still points at it.
                 contex.Characters.Remove(obj);
-                
-                return await contex.SaveChangesAsync();
+                var changes = await contex.SaveChangesAsync();
+
+                changes += await DeleteOrphanUnapprovedRaceAsync(contex, raceId);
+                changes += await DeleteOrphanUnapprovedProfessionAsync(contex, professionId);
+                changes += await DeleteOrphanUnapprovedEquipmentAsync(contex, unapprovedEquipmentIds);
+                return changes;
             }
             catch (Exception ex) {
                  throw new RepositoryErrorException("Error in" + System.Reflection.MethodBase.GetCurrentMethod().Name , ex );
             }
+        }
+
+        private static async Task<int> DeleteOrphanUnapprovedRaceAsync(ApplicationDbContext contex, int? raceId)
+        {
+            if (raceId is not int id)
+                return 0;
+            if (await contex.Characters.AnyAsync(c => c.RaceId == id))
+                return 0;
+
+            var race = await contex.Races.Include(c => c.Traits)
+                .FirstOrDefaultAsync(u => u.Id == id && u.RaceApproved == false);
+            if (race is null)
+                return 0;
+
+            if (!race.Traits.IsNullOrEmpty())
+            {
+                foreach (var trait in race.Traits.Where(t => t.TraitApproved == false).ToList())
+                    contex.TraitsRace.Remove(trait);
+            }
+            contex.Races.Remove(race);
+            return await contex.SaveChangesAsync();
+        }
+
+        private static async Task<int> DeleteOrphanUnapprovedProfessionAsync(ApplicationDbContext contex, int professionId)
+        {
+            if (professionId < 1)
+                return 0;
+            if (await contex.Characters.AnyAsync(c => c.ProfessionId == professionId))
+                return 0;
+
+            var profession = await contex.Professions
+                .FirstOrDefaultAsync(u => u.Id == professionId && u.IsApproved == false && u.IsUniversal == false);
+            if (profession is null)
+                return 0;
+
+            var draftTraits = await contex.TraitsProfession
+                .Where(u => u.ProfessionId == professionId && u.TraitApproved == false)
+                .ToListAsync();
+            contex.TraitsProfession.RemoveRange(draftTraits);
+            contex.Professions.Remove(profession);
+            return await contex.SaveChangesAsync();
+        }
+
+        private static async Task<int> DeleteOrphanUnapprovedEquipmentAsync(
+            ApplicationDbContext contex, IReadOnlyCollection<int> equipmentIds)
+        {
+            if (equipmentIds.Count == 0)
+                return 0;
+
+            var changes = 0;
+            foreach (var equipmentId in equipmentIds)
+            {
+                if (equipmentId < 1)
+                    continue;
+                if (await contex.EquipmentSlots.AnyAsync(s => s.EquipmentID == equipmentId))
+                    continue;
+
+                var equi = await contex.Equipment.Include(e => e.Traits)
+                    .FirstOrDefaultAsync(e => e.Id == equipmentId && e.IsApproved == false);
+                if (equi is null)
+                    continue;
+
+                if (equi.Traits is not null)
+                {
+                    foreach (var trait in equi.Traits.Where(t => t.TraitApproved == false).ToList())
+                        contex.TraitsEquipment.Remove(trait);
+                }
+                contex.Equipment.Remove(equi);
+                changes += await contex.SaveChangesAsync();
+            }
+            return changes;
         }
 
         public async Task<IEnumerable<CharacterDTO>> GetAll(int? id=null, bool fullIncludes = false)

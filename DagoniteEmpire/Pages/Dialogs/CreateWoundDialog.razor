@@ -12,13 +12,13 @@
         <MudSelect Required="true" @bind-Value="@NewWound.Location" Label="@(L["Location"])" Placeholder="@(L["Select location"])">
             @foreach(var loc in Wounds.Location.All)
             {
-                <MudSelectItem Value="@loc">@loc</MudSelectItem>
+                <MudSelectItem Value="@loc">@LocCatalog.Name(loc, L)</MudSelectItem>
             }
         </MudSelect>
         <MudSelect Required="true" @bind-Value="@SeverityName" Label="@(L["Severity"])" Placeholder="@(L["Select Severity"])">
             @foreach (var loc in Wounds.Severity.All)
             {
-                <MudSelectItem Value="@loc">@loc</MudSelectItem>
+                <MudSelectItem Value="@loc">@L[WoundDisplay.GetSeverityDisplayKey(loc)]</MudSelectItem>
             }
         </MudSelect>
         <MudTextField Required="true" @bind-Value="@NewWound.Description" Label="@(L["Description"])" Lines="3" />

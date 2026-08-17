@@ -178,6 +178,51 @@ public class CharacterRepositoryTests : IClassFixture<DatabaseFixture>
     }
 
     [Fact]
+    public async Task Delete_SharedUnapprovedRace_RemovesCharacterButKeepsRace()
+    {
+        using var context = _fixture.CreateContext();
+        var race = new Race { Name = "SharedDraftRace", Description = "shared", RaceApproved = false };
+        context.Races.Add(race);
+        await context.SaveChangesAsync();
+
+        var keep = new Character { UserName = "KeepUser", NPCName = "KeepChar", RaceId = race.Id, ProfessionId = 1 };
+        var drop = new Character { UserName = "DropUser", NPCName = "DropChar", RaceId = race.Id, ProfessionId = 1 };
+        context.Characters.AddRange(keep, drop);
+        await context.SaveChangesAsync();
+        var dropId = drop.Id;
+        var raceId = race.Id;
+
+        var result = await _repository.Delete(dropId);
+
+        Assert.True(result >= 1);
+        using var verify = _fixture.CreateContext();
+        Assert.Null(await verify.Characters.FindAsync(dropId));
+        Assert.NotNull(await verify.Characters.FindAsync(keep.Id));
+        Assert.NotNull(await verify.Races.FindAsync(raceId));
+    }
+
+    [Fact]
+    public async Task Delete_UniqueUnapprovedRace_RemovesOrphanRace()
+    {
+        using var context = _fixture.CreateContext();
+        var race = new Race { Name = "SoloDraftRace", Description = "solo", RaceApproved = false };
+        context.Races.Add(race);
+        await context.SaveChangesAsync();
+
+        var character = new Character { UserName = "SoloUser", NPCName = "SoloChar", RaceId = race.Id, ProfessionId = 1 };
+        context.Characters.Add(character);
+        await context.SaveChangesAsync();
+        var characterId = character.Id;
+        var raceId = race.Id;
+
+        await _repository.Delete(characterId);
+
+        using var verify = _fixture.CreateContext();
+        Assert.Null(await verify.Characters.FindAsync(characterId));
+        Assert.Null(await verify.Races.FindAsync(raceId));
+    }
+
+    [Fact]
     public async Task CheckIfCharacterBelongToUser_ShouldReturnTrue_WhenBelongs()
     {
         // Arrange

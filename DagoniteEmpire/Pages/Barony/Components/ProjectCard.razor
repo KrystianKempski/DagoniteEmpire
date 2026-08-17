@@ -69,7 +69,7 @@
                 }
                 @if (CanManage)
                 {
-                    <BaronyTooltip Text="@(L["Edit project"])">
+                    <BaronyTooltip Text="@(L["Edit Project"])">
                         <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                        Size="Size.Small"
                                        OnClick="OnEdit" />
@@ -312,7 +312,7 @@
     {
         get
         {
-            var word = Project.TurnsRemaining == 1 ? L["turn"] : L["turns"];
+            var word = Project.TurnsRemaining == 1 ? L["Turn"] : L["Turns"];
             return Project.Status == ProjectStatus.Draft
                 || ProjectStatus.IsResourceAllocation(Project.Status)
                 ? L["{0} {1} to complete (clock starts after full funding)", Project.TurnsRemaining, word]

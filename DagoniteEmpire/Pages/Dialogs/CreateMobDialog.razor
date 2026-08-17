@@ -82,11 +82,11 @@
                         <MudSelectItem Value="string.Empty">@L["None"]</MudSelectItem>
                         @foreach (string weapon in SD.BasicWeaponsMelee.All)
                         {
-                            <MudSelectItem Value="@weapon">@weapon</MudSelectItem>
+                            <MudSelectItem Value="@weapon">@LocCatalog.Name(weapon, L)</MudSelectItem>
                         }
                         @foreach (string weapon in SD.BasicWeaponsShooting.All)
                         {
-                            <MudSelectItem Value="@weapon">@weapon</MudSelectItem>
+                            <MudSelectItem Value="@weapon">@LocCatalog.Name(weapon, L)</MudSelectItem>
                         }
                     </MudSelect>
                 </MudItem>
@@ -95,11 +95,11 @@
                         <MudSelectItem Value="string.Empty">@L["None"]</MudSelectItem>
                         @foreach (string weapon in SD.BasicWeaponsMelee.All)
                         {
-                            <MudSelectItem Value="@weapon">@weapon</MudSelectItem>
+                            <MudSelectItem Value="@weapon">@LocCatalog.Name(weapon, L)</MudSelectItem>
                         }
                         @foreach (string weapon in SD.BasicWeaponsShooting.All)
                         {
-                            <MudSelectItem Value="@weapon">@weapon</MudSelectItem>
+                            <MudSelectItem Value="@weapon">@LocCatalog.Name(weapon, L)</MudSelectItem>
                         }
                     </MudSelect>
                 </MudItem>
@@ -108,7 +108,7 @@
                         <MudSelectItem Value="string.Empty">@L["None"]</MudSelectItem>
                         @foreach (string shield in SD.BasicShields.All)
                         {
-                            <MudSelectItem Value="@shield">@shield</MudSelectItem>
+                            <MudSelectItem Value="@shield">@LocCatalog.Name(shield, L)</MudSelectItem>
                         }
                     </MudSelect>
                 </MudItem>
@@ -117,7 +117,7 @@
                         <MudSelectItem Value="string.Empty">@L["None"]</MudSelectItem>
                         @foreach (string armor in SD.BasicArmors.All)
                         {
-                            <MudSelectItem Value="@armor">@armor</MudSelectItem>
+                            <MudSelectItem Value="@armor">@LocCatalog.Name(armor, L)</MudSelectItem>
                         }
                     </MudSelect>
                 </MudItem>
@@ -135,7 +135,7 @@
                     <MudSelect Value="SelectedState" T="string" ValueChanged="AddState" Label="@(L["AddState"])" AnchorOrigin="Origin.BottomCenter">
                         @foreach (string state in States.Names.All)
                         {
-                            <MudSelectItem Value="@state">@state</MudSelectItem>
+                            <MudSelectItem Value="@state">@LocCatalog.Name(state, L)</MudSelectItem>
                         }
                     </MudSelect>
                     <MudNumericField @bind-Value="@StateDuration" Label="@(L["Duration"])" />

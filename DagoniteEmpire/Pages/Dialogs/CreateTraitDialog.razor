@@ -17,7 +17,14 @@
                 <div class="d-flex ">
                     <div class="d-flex flex-column flex-grow-1">
                         <label class="fw-bold py-1">@NewTrait.TraitLabel name</label>
-                        <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Placeholder="@(L["Insert trait name"])" @bind-Value="@NewTrait.Name"></MudTextField>
+                        @if (IsInfoMode)
+                        {
+                            <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="true" Value="@NewTrait.DisplayName(L)"></MudTextField>
+                        }
+                        else
+                        {
+                            <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Placeholder="@(L["Insert trait name"])" @bind-Value="@NewTrait.Name"></MudTextField>
+                        }
                     </div>
                     @if (NewTrait.TraitType == SD.TraitType_Character || NewTrait.TraitType == SD.TraitType_Temporary)
                     {
@@ -52,7 +59,14 @@
                 </div>
                 <div class="align-items-start">
                     <div class="col-12 bonus-name py-0">
-                        <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Lines="3" Placeholder="@(L["Insert general description"])" @bind-Value="@NewTrait.Descr"></MudTextField>
+                        @if (IsInfoMode)
+                        {
+                            <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="true" Lines="3" Value="@NewTrait.DisplayDescription(L)"></MudTextField>
+                        }
+                        else
+                        {
+                            <MudTextField Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="IsInfoMode" Lines="3" Placeholder="@(L["Insert general description"])" @bind-Value="@NewTrait.Descr"></MudTextField>
+                        }
                     </div>
                 </div>
                         
@@ -68,7 +82,7 @@
                         {
                             <div class="bonus-cell">
                                 <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="@(L["Select a feature type"])" @bind-Value="@obj.FeatureType" Variant="Variant.Outlined" Margin="Margin.Dense" PopoverClass="trait-dialog-select-popover">
-                                    @foreach (var __ft in FeatureData) { <MudSelectItem Value="@__ft">@__ft</MudSelectItem> }
+                                    @foreach (var __ft in FeatureData) { <MudSelectItem Value="@__ft">@LocCatalog.Name(__ft, L)</MudSelectItem> }
                                 </MudSelect>
                             </div>
                         }
@@ -76,7 +90,7 @@
                         {
                             <div class="bonus-cell">
                                 <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select an Attribute " @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense">
-                                    @foreach (var __a in SD.Attributes.All) { <MudSelectItem Value="@__a">@__a</MudSelectItem> }
+                                    @foreach (var __a in SD.Attributes.All) { <MudSelectItem Value="@__a">@LocCatalog.Name(__a, L)</MudSelectItem> }
                                 </MudSelect>
                             </div>
                         }
@@ -84,7 +98,7 @@
                         {
                             <div class="bonus-cell">
                                 <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select base skill " @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense">
-                                    @foreach (var __b in SD.BaseSkills.All) { <MudSelectItem Value="@__b">@__b</MudSelectItem> }
+                                    @foreach (var __b in SD.BaseSkills.All) { <MudSelectItem Value="@__b">@LocCatalog.Name(__b, L)</MudSelectItem> }
                                 </MudSelect>
                             </div>
                         }
@@ -92,7 +106,7 @@
                         {
                             <div class="bonus-cell">
                                 <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select special skill " @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense">
-                                    @foreach (var __s in AllParams.SpecialSkills.GetAllArray()) { <MudSelectItem Value="@__s.Name">@__s.Name</MudSelectItem> }
+                                    @foreach (var __s in AllParams.SpecialSkills.GetAllArray()) { <MudSelectItem Value="@__s.Name">@__s.DisplayName(L)</MudSelectItem> }
                                 </MudSelect>
                             </div>
                         }
@@ -100,7 +114,7 @@
                         {
                             <div class="bonus-cell">
                                 <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="@(L["Select weapon quality"])" Value="obj.FeatureName" ValueChanged="@(v => OnWeaponQualityChanged(obj, v))" Variant="Variant.Outlined" Margin="Margin.Dense" PopoverClass="trait-dialog-select-popover">
-                                    @foreach (var __w in WeaponQualityList) { <MudSelectItem Value="@__w">@__w</MudSelectItem> }
+                                    @foreach (var __w in WeaponQualityList) { <MudSelectItem Value="@__w">@LocCatalog.Name(__w, L)</MudSelectItem> }
                                 </MudSelect>
                             </div>
                             @if (!IsBinaryWeaponQuality(obj.FeatureName))

@@ -24,7 +24,7 @@
                     if (obj.Equipment.Name == SD.BasicWeaponsMelee.Unarmed) continue;
                     <tr>
                         <td class="nobottomborder">
-                            <label class="name-label">@obj.Equipment.Name</label>
+                            <label class="name-label">@obj.Equipment.DisplayName(L)</label>
                         </td>
                         <td class="text-center nobottomborder">
                             <div class="control">
@@ -58,7 +58,7 @@
                     </tr>
                     <tr >
                         <td colspan="5">
-                            <label class="text-label">@obj.Equipment.ShortDescr</label>
+                            <label class="text-label">@obj.Equipment.DisplayShortDescr(L)</label>
                         </td>
                     </tr>
                 }
@@ -229,7 +229,7 @@
     {
         bool? result = await DialogService.ShowMessageBoxAsync(
             "Warning",
-            $"Are you sure you want to delete {slot.Equipment.Name}?",
+            L["Are you sure you want to delete {0}?", slot.Equipment.DisplayName(L)],
             yesText: "Yes", cancelText: "No");
         if (result is null || result == false)
         {

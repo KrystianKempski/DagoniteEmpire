@@ -103,6 +103,66 @@ namespace DA_Common
 
             public static readonly string[] All = { Fast, Slow, Parrying, ShieldDestructive, ArmorPiercing, Long, Heavy, Devastating,
                 Weak, Stunning, Stumbling, Snatching,Disarming, Armor, ArmorDefenceBonus,ArmorPenalty ,Durability ,ShieldDefenceBonus,Bulky ,Precise,Range,Light,Reload };
+
+            /// <summary>
+            /// Maps a stored weapon-quality name (English key or legacy Polish alias) to the canonical English key.
+            /// Unknown values are returned trimmed, unchanged.
+            /// </summary>
+            public static string Canonical(string? name) => CatalogKey.Resolve(name, CanonicalMap);
+
+            private static readonly Dictionary<string, string> CanonicalMap = CatalogKey.BuildMap(All, new Dictionary<string, string>
+            {
+                // Wiki „Zasady walki” / Broń — cechy (plus rodzaj żeński z przykładów)
+                ["szybki"] = Fast,
+                ["szybka"] = Fast,
+                ["powolny"] = Slow,
+                ["powolna"] = Slow,
+                ["parujący"] = Parrying,
+                ["parująca"] = Parrying,
+                ["niszczący tarczę"] = ShieldDestructive,
+                ["niszcząca tarcze"] = ShieldDestructive,
+                ["przebijający"] = ArmorPiercing,
+                ["przebijająca"] = ArmorPiercing,
+                ["przebijająca pancerz"] = ArmorPiercing,
+                ["długi"] = Long,
+                ["długa"] = Long,
+                ["ciężki"] = Heavy,
+                ["ciężka"] = Heavy,
+                ["druzgocący"] = Devastating,
+                ["druzgocąca"] = Devastating,
+                ["niszczycielska"] = Devastating,
+                ["słaby"] = Weak,
+                ["słaba"] = Weak,
+                ["ogłuszający"] = Stunning,
+                ["ogłuszająca"] = Stunning,
+                ["potykający"] = Stumbling,
+                ["potykająca"] = Stumbling,
+                ["przewracająca"] = Stumbling,
+                ["pochwycająca"] = Snatching,
+                ["pochwycający"] = Snatching,
+                ["szarpiąca"] = Snatching,
+                ["rozbrajająca"] = Disarming,
+                ["rozbrajający"] = Disarming,
+                ["pancerz"] = Armor,
+                ["ochrona"] = Armor,
+                ["bonus obrony pancerzem"] = ArmorDefenceBonus,
+                ["premia do obrony pancerza"] = ArmorDefenceBonus,
+                ["kara (akrobatyka)"] = ArmorPenalty,
+                ["kara do akrobatyki"] = ArmorPenalty,
+                ["kara pancerza"] = ArmorPenalty,
+                ["trwałość"] = Durability,
+                ["bonus obrony"] = ShieldDefenceBonus,
+                ["premia do obrony tarczą"] = ShieldDefenceBonus,
+                ["niewygodny"] = Bulky,
+                ["niewygodna"] = Bulky,
+                ["nieporęczna"] = Bulky,
+                ["celny"] = Precise,
+                ["celna"] = Precise,
+                ["precyzyjna"] = Precise,
+                ["zasięg"] = Range,
+                ["lekka"] = Light,
+                ["przeładowanie"] = Reload,
+            });
         }
 
         public readonly struct BattleProperty
@@ -131,6 +191,20 @@ namespace DA_Common
             public const string Targeted = "Targeted";
             public const string Charge = "Charge";
             public static readonly string[] All = { Normal, Cautious, Raging, Strong, Targeted, Charge };
+
+            public static string Canonical(string? name) => CatalogKey.Resolve(name, CanonicalMap);
+
+            private static readonly Dictionary<string, string> CanonicalMap = CatalogKey.BuildMap(All, new Dictionary<string, string>
+            {
+                ["normalny"] = Normal,
+                ["ostrozny"] = Cautious,
+                ["ostrożny"] = Cautious,
+                ["szalony"] = Raging,
+                ["silny"] = Strong,
+                ["celowany"] = Targeted,
+                ["szarza"] = Charge,
+                ["szarża"] = Charge,
+            });
         }
 
         public readonly struct FightModifiers
@@ -235,6 +309,7 @@ namespace DA_Common
                 ["strzelectwo"] = Shooting,
                 ["akrobatyka"] = Acrobatics,
                 ["zręczność rąk"] = SleightOfHands,
+                ["zwinne dłonie"] = SleightOfHands,
                 ["atletyka"] = Athletics,
                 ["rozmowa"] = Talk,
                 ["oszustwo"] = Deceit,
@@ -513,6 +588,32 @@ namespace DA_Common
             public const string Arms = "Arms";
             public const string Rings = "Rings";
             public static readonly string[] All = { Other, WeaponMelee, WeaponRanged, Shield, Face, Throat, Body, Hands, Waist, Feet, Head, Shoulders, Torso, Arms, Rings };
+
+            /// <summary>
+            /// Maps a stored equipment-type name (English key or legacy Polish alias) to the canonical English key.
+            /// Unknown values are returned trimmed, unchanged.
+            /// </summary>
+            public static string Canonical(string? name) => CatalogKey.Resolve(name, CanonicalMap);
+
+            private static readonly Dictionary<string, string> CanonicalMap = CatalogKey.BuildMap(All, new Dictionary<string, string>
+            {
+                ["inne"] = Other,
+                ["broń wręcz"] = WeaponMelee,
+                ["bron wrecz"] = WeaponMelee,
+                ["broń dystansowa"] = WeaponRanged,
+                ["tarcza"] = Shield,
+                ["twarz"] = Face,
+                ["szyja"] = Throat,
+                ["ciało"] = Body,
+                ["dłonie"] = Hands,
+                ["pas"] = Waist,
+                ["stopy"] = Feet,
+                ["głowa"] = Head,
+                ["ramiona"] = Shoulders,
+                ["tułów"] = Torso,
+                ["ręce"] = Arms,
+                ["pierścienie"] = Rings,
+            });
         }
         public readonly struct SlotType
         {
@@ -630,6 +731,139 @@ namespace DA_Common
             {
                 EquipmentType.WeaponMelee, EquipmentType.WeaponRanged, EquipmentType.Shield, EquipmentType.Body,
             };
+
+            /// <summary>Catalog item names including Unarmed and seeded gear (templates in <see cref="All"/> omit Unarmed).</summary>
+            public static readonly string[] Names = BasicWeaponsMelee.All
+                .Concat(BasicWeaponsShooting.All)
+                .Concat(BasicShields.All)
+                .Concat(BasicArmors.All)
+                .Concat(new[] { "Bandage", "Wound balm", "Rope" })
+                .Distinct()
+                .ToArray();
+
+            /// <summary>Seeded English description / short-description strings (display keys).</summary>
+            public static readonly string[] CatalogDescriptions =
+            {
+                "20 feet of strong rope",
+                "A truly devastating weapon",
+                "Axe head on long pole",
+                "Basic weapon of all soldiers",
+                "Best protection there is",
+                "Bigger for better protection",
+                "Black powder firearm",
+                "Common tool of hunters",
+                "Curved exotic blade",
+                "Easy to use and slow to reload",
+                "Fast and elegant weapon",
+                "Flexible reach weapon",
+                "For dressing wounds",
+                "Good for penetrating armor",
+                "Good protection of solid steel",
+                "Heavy and slow, but easy to knock down an opponent",
+                "Heavy bludgeoning weapon",
+                "Heavy infantry lance",
+                "Heavy pole axe with long reach",
+                "Helps with healing wounds. 20 doses, +2 to tending wounds. 1 dose for light and medium wounds, 2 for heavy, and 4 for critical",
+                "Hooked polearm for pulling and tripping",
+                "Lance designed for mounted combat",
+                "Large stationary shield",
+                "Large stationary shield. −2 to fight tests; can provide full cover in some situations",
+                "Large two-handed sword",
+                "Light but sturdy",
+                "Main tool of all adventurers",
+                "Military archers' primary weapon",
+                "Offers good protection and mobility",
+                "One handed and good way to stun opponent",
+                "Parrying dagger for off-hand use",
+                "Powerful but slow",
+                "Powerful weapon that can easily stun the enemy",
+                "Punches, kicks, bites, and other unarmed attacks",
+                "Simple and deadly",
+                "Simple but effective",
+                "Simple wooden staff",
+                "Simple, wooden shield",
+                "Small and deadly",
+                "Small, but better than nothing",
+                "Strong, metal shield",
+                "Thrown spear",
+                "Versatile polearm with axe blade",
+                "Very long spear",
+                "Weapon of heavily armed knights",
+            };
+
+            /// <summary>
+            /// Maps a stored catalog item name (English key or legacy Polish alias) to the canonical English key.
+            /// Unknown values (custom player names) are returned trimmed, unchanged.
+            /// </summary>
+            public static string Canonical(string? name) => CatalogKey.Resolve(name, CanonicalMap);
+
+            /// <summary>Canonical English key when <paramref name="name"/> is a catalog item; otherwise the trimmed original.</summary>
+            public static string CanonicalNameOrRaw(string? name)
+            {
+                var canonical = Canonical(name);
+                return Names.Contains(canonical) ? canonical : (name?.Trim() ?? string.Empty);
+            }
+
+            private static readonly Dictionary<string, string> CanonicalMap = CatalogKey.BuildMap(Names, new Dictionary<string, string>
+            {
+                ["bez broni"] = BasicWeaponsMelee.Unarmed,
+                ["pięści"] = BasicWeaponsMelee.Unarmed,
+                ["sztylet"] = BasicWeaponsMelee.Dagger,
+                ["długi miecz"] = BasicWeaponsMelee.LongSword,
+                ["miecz długi"] = BasicWeaponsMelee.LongSword,
+                ["topór bojowy"] = BasicWeaponsMelee.BattleAxe,
+                ["kilof"] = BasicWeaponsMelee.Pickaxe,
+                ["buława"] = BasicWeaponsMelee.Mace,
+                ["morgenstern"] = BasicWeaponsMelee.Morningstar,
+                ["krótka włócznia"] = BasicWeaponsMelee.ShorSpear,
+                ["rapier"] = BasicWeaponsMelee.Rapier,
+                ["cep dwuręczny"] = BasicWeaponsMelee.TwoHandedFlail,
+                ["młot bojowy"] = BasicWeaponsMelee.Warhammer,
+                ["wielki topór"] = BasicWeaponsMelee.Greataxe,
+                ["nadziak"] = BasicWeaponsMelee.Poleaxe,
+                ["sarissa"] = BasicWeaponsMelee.Sarissa,
+                ["chopesz"] = BasicWeaponsMelee.Khopesh,
+                ["bicz"] = BasicWeaponsMelee.Whip,
+                ["maczuga bojowa"] = BasicWeaponsMelee.WarClub,
+                ["berdysz"] = BasicWeaponsMelee.Bardiche,
+                ["lanca kawaleryjska"] = BasicWeaponsMelee.LanceCavalry,
+                ["lanca piechoty"] = BasicWeaponsMelee.LanceInfantry,
+                ["miecz dwuręczny"] = BasicWeaponsMelee.Greatsword,
+                ["halabarda"] = BasicWeaponsMelee.Halberd,
+                ["gizarma"] = BasicWeaponsMelee.Billhook,
+                ["lewak"] = BasicWeaponsMelee.MainGauche,
+                ["kostur"] = BasicWeaponsMelee.Staff,
+                ["kusza lekka"] = BasicWeaponsShooting.CrossbowLight,
+                ["lekka kusza"] = BasicWeaponsShooting.CrossbowLight,
+                ["kusza ciężka"] = BasicWeaponsShooting.CrossbowHeavy,
+                ["ciężka kusza"] = BasicWeaponsShooting.CrossbowHeavy,
+                ["łuk prosty"] = BasicWeaponsShooting.BowSimple,
+                ["długi łuk"] = BasicWeaponsShooting.Longbow,
+                ["proca"] = BasicWeaponsShooting.Slingshot,
+                ["muszkiet"] = BasicWeaponsShooting.Musket,
+                ["oszczep"] = BasicWeaponsShooting.Javelin,
+                ["puklerz drewniany"] = BasicShields.WoodenBuckler,
+                ["drewniany puklerz"] = BasicShields.WoodenBuckler,
+                ["puklerz metalowy"] = BasicShields.MetalBuckler,
+                ["metalowy puklerz"] = BasicShields.MetalBuckler,
+                ["tarcza drewniana"] = BasicShields.WoodenShield,
+                ["drewniana tarcza"] = BasicShields.WoodenShield,
+                ["tarcza metalowa"] = BasicShields.MetalShield,
+                ["metalowa tarcza"] = BasicShields.MetalShield,
+                ["duża tarcza drewniana"] = BasicShields.BigWoodenShield,
+                ["duża tarcza metalowa"] = BasicShields.BigMetalShield,
+                ["pawęż"] = BasicShields.Pavise,
+                ["lekka zbroja skórzana"] = BasicArmors.LightLeatherArmor,
+                ["lekka skórzana zbroja"] = BasicArmors.LightLeatherArmor,
+                ["zbroja z łusek skórzanych"] = BasicArmors.LeatherScaleArmor,
+                ["zbroja z łusek stalowych"] = BasicArmors.SteelScaleArmor,
+                ["półpancerz"] = BasicArmors.HalfPlate,
+                ["pełna zbroja płytowa"] = BasicArmors.FullPlate,
+                ["bandaż"] = "Bandage",
+                ["balsam na rany"] = "Wound balm",
+                ["maść na rany"] = "Wound balm",
+                ["lina"] = "Rope",
+            });
         }
 
 
@@ -1077,6 +1311,29 @@ namespace DA_Common
             public const string Face = "Face";
             public const string Body = "Body";
             public static readonly string[] All = { Head, Neck, MainArm, OffArm, MainHand, OffHand, Back, LeftLeg, RightLeg, Face, Body };
+
+            public static string Canonical(string? name) => CatalogKey.Resolve(name, CanonicalMap);
+
+            private static readonly Dictionary<string, string> CanonicalMap = CatalogKey.BuildMap(All, new Dictionary<string, string>
+            {
+                ["glowa"] = Head,
+                ["głowa"] = Head,
+                ["szyja"] = Neck,
+                ["reka glowna"] = MainArm,
+                ["ręka główna"] = MainArm,
+                ["reka pomocnicza"] = OffArm,
+                ["ręka pomocnicza"] = OffArm,
+                ["dlon glowna"] = MainHand,
+                ["dłoń główna"] = MainHand,
+                ["dlon pomocnicza"] = OffHand,
+                ["dłoń pomocnicza"] = OffHand,
+                ["plecy"] = Back,
+                ["noga lewa"] = LeftLeg,
+                ["noga prawa"] = RightLeg,
+                ["twarz"] = Face,
+                ["cialo"] = Body,
+                ["ciało"] = Body,
+            });
         }
         public enum LocationEnum
         {
@@ -1270,7 +1527,60 @@ namespace DA_Common
             public const string NoTurn = "No turn";
             public const string HalfTurn = "Half turn";
             public static readonly string[] All = { Stunned, Stumbled, Snatched, Disarmed, Blinded, Unaware, Invisible, Surrounded, Unbalanced, Cautious, FullDefence, Bleeding, Unconscious, Dead, NoTurn ,HalfTurn};
+
+            /// <summary>Maps a stored state name (English key or legacy Polish alias) to the canonical English key.</summary>
+            public static string Canonical(string? name) => CatalogKey.Resolve(name, CanonicalMap);
+
+            private static readonly Dictionary<string, string> CanonicalMap = CatalogKey.BuildMap(All, new Dictionary<string, string>
+            {
+                ["ogluszony"] = Stunned,
+                ["ogłuszony"] = Stunned,
+                ["potkniety"] = Stumbled,
+                ["potknięty"] = Stumbled,
+                ["pochwycony"] = Snatched,
+                ["rozbrojony"] = Disarmed,
+                ["oslepiony"] = Blinded,
+                ["oślepiony"] = Blinded,
+                ["nieswiadomy"] = Unaware,
+                ["nieświadomy"] = Unaware,
+                ["niewidzialny"] = Invisible,
+                ["otoczony"] = Surrounded,
+                ["niezrownowazony"] = Unbalanced,
+                ["niezrównoważony"] = Unbalanced,
+                ["ostrozny"] = Cautious,
+                ["ostrożny"] = Cautious,
+                ["pelna obrona"] = FullDefence,
+                ["pełna obrona"] = FullDefence,
+                ["krwawiacy"] = Bleeding,
+                ["krwawiący"] = Bleeding,
+                ["nieprzytomny"] = Unconscious,
+                ["martwy"] = Dead,
+                ["brak tury"] = NoTurn,
+                ["pol tury"] = HalfTurn,
+                ["pół tury"] = HalfTurn,
+            });
         }
+
+        /// <summary>Seeded English temporary-state descriptions (display keys).</summary>
+        public static readonly string[] CatalogDescriptions =
+        {
+            "This character can't do anything this turn",
+            "This character is dazed, it cannot perform any actions and its defence is impaired",
+            "This character is dead...",
+            "This character is excluded from any fight",
+            "This character is seriously bleeding. It gets one wound every turn, untill 10 round or the wound is taken care of",
+            "This character is surrounded by enemies. For every other enemy attacking this character there is added penalty to defence equal to 2",
+            "This character is unaware of it's enemies. This causes penalty to defence equal to 10. Unaware characters become aware after first attack",
+            "This character lost its balance. For remainging turn he have penalty of 7 to defence",
+            "This character lost its balance, and lies on the ground. To get up it needs to use action (or two if in heavy armor)",
+            "This character lost its sight. This causes penalty to defence equal 8, unless there is other way to see incoming attacks. This character can attack with penalty equal to 5",
+            "This character lost it primary weapon",
+            "This character still have one action this turn",
+            "This character was captured. It cannot move or use captured limb until it gets free",
+            "This character went in full defence. It gets bonus to all kinds of defence equal to 5, but it cannot attack or make any actions",
+            "This character went in semi-defencive state. It gets bonus to all kinds of defence equal to 2",
+            "This character cannot be seen, but enemies are aware of its presence. This causes bonus to attack equal to 5, and bonus defence equal to 5",
+        };
         public static int GetLevel(string name)
         {
             switch (name)

@@ -49,14 +49,14 @@
                     <div class="bonuses-columns">
                             <div class="bonus-cell">
                             <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="@(L["Select a feature type"])" @bind-Value="@obj.FeatureType" Variant="Variant.Outlined" Margin="Margin.Dense">
-                                @foreach (var __ft in FeatureData) { <MudSelectItem Value="@__ft">@__ft</MudSelectItem> }
+                                @foreach (var __ft in FeatureData) { <MudSelectItem Value="@__ft">@LocCatalog.Name(__ft, L)</MudSelectItem> }
                             </MudSelect>
                             </div>
                         @if (obj.FeatureType == SD.FeatureAttribute)
                         {
                             <div class="bonus-cell">
                                 <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select an Attribute " @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense">
-                                    @foreach (var __a in AllParams.Attributes.GetAllArray()) { <MudSelectItem Value="@__a.Name">@__a.Name</MudSelectItem> }
+                                    @foreach (var __a in AllParams.Attributes.GetAllArray()) { <MudSelectItem Value="@__a.Name">@__a.DisplayName(L)</MudSelectItem> }
                                 </MudSelect>
                             </div>
                         }
@@ -64,7 +64,7 @@
                         {
                             <div class="bonus-cell">
                                 <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select base skill " @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense">
-                                    @foreach (var __b in AllParams.BaseSkills) { <MudSelectItem Value="@__b.Name">@__b.Name</MudSelectItem> }
+                                    @foreach (var __b in AllParams.BaseSkills) { <MudSelectItem Value="@__b.Name">@__b.DisplayName(L)</MudSelectItem> }
                                 </MudSelect>
                             </div>
                         }
@@ -72,7 +72,7 @@
                         {
                             <div class="bonus-cell">
                                 <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="Select special skill " @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense">
-                                    @foreach (var __s in AllParams.SpecialSkills.GetAllArray()) { <MudSelectItem Value="@__s.Name">@__s.Name</MudSelectItem> }
+                                    @foreach (var __s in AllParams.SpecialSkills.GetAllArray()) { <MudSelectItem Value="@__s.Name">@__s.DisplayName(L)</MudSelectItem> }
                                 </MudSelect>
                             </div>
                         }
@@ -80,7 +80,7 @@
                         {
                             <div class="bonus-cell">
                                 <MudSelect ReadOnly="IsInfoMode" T="string" Style="width:100%" Placeholder="@(L["Select weapon quality"])" @bind-Value="@obj.FeatureName" Variant="Variant.Outlined" Margin="Margin.Dense">
-                                    @foreach (var __w in WeaponQualityList) { <MudSelectItem Value="@__w">@__w</MudSelectItem> }
+                                    @foreach (var __w in WeaponQualityList) { <MudSelectItem Value="@__w">@LocCatalog.Name(__w, L)</MudSelectItem> }
                                 </MudSelect>
                             </div>
                         }

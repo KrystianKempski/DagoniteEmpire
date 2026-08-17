@@ -67,14 +67,14 @@
                                                Variant="Variant.Text"
                                                OnClick="@(() => GoToLastPost(camp))"
                                                OnClickStopPropagation="true"
-                                               aria-label="@(L["last post"])"
+                                               aria-label="@(L["Last post"])"
                                                Title="@(L["Last post"])">
                                         <img src="@MyIcon.ScrollWhite" alt="@(L["Last post"])" width="20" height="20" />
                                     </MudButton>
                                     @if (UserInfo?.HasGlobalCharacterAccess == true)
                                     {
-                                        <MudIconButton Class="pa-1" Style="color: white;" Icon="@Icons.Material.Filled.Edit" aria-label="@(L["edit"])" OnClick="@(()=>EditCampaign(camp))" OnClickStopPropagation="true"></MudIconButton>
-                                        <MudIconButton Class="pa-1" Style="color: white;" Icon="@Icons.Material.Filled.Delete" aria-label="@(L["delete"])" OnClick="@(()=>DeleteCampaign(camp.Id))" OnClickStopPropagation="true"></MudIconButton>
+                                        <MudIconButton Class="pa-1" Style="color: white;" Icon="@Icons.Material.Filled.Edit" aria-label="@(L["Edit"])" OnClick="@(()=>EditCampaign(camp))" OnClickStopPropagation="true"></MudIconButton>
+                                        <MudIconButton Class="pa-1" Style="color: white;" Icon="@Icons.Material.Filled.Delete" aria-label="@(L["Delete"])" OnClick="@(()=>DeleteCampaign(camp.Id))" OnClickStopPropagation="true"></MudIconButton>
                                     }
                                 </MudStack>
                                 <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.8);">@camp.CreatedDate.ToString("dd-MM-yyyy")</MudText>

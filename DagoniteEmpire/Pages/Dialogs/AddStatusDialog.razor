@@ -47,7 +47,7 @@
                         {
                             @foreach (TraitDTO trait in Traits)
                             {
-                                <MudSelectItem Value="@trait">@trait.Name</MudSelectItem>
+                                <MudSelectItem Value="@trait">@trait.DisplayName(L)</MudSelectItem>
                             }
                         }
 
@@ -130,7 +130,7 @@
                 StateDuration,
                 !IsCharacter);
             MudDialog.Close(DialogResult.Ok(snapshot));
-            Snackbar.Add(L["{0} added to:{1}", SelectedTrait.Name, SelectedCharacterName], Severity.Success);
+            Snackbar.Add(L["{0} added to:{1}", SelectedTrait.DisplayName(L), SelectedCharacterName], Severity.Success);
         }
         catch(Exception ex)
         {

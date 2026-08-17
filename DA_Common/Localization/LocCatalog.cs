@@ -40,6 +40,46 @@ public static class LocCatalog
         if (SD.SpecialSkills.All.Contains(specialSkill))
             return specialSkill;
 
+        var quality = SD.WeaponQuality.Canonical(trimmed);
+        if (SD.WeaponQuality.All.Contains(quality))
+            return quality;
+
+        var equipmentType = SD.EquipmentType.Canonical(trimmed);
+        if (SD.EquipmentType.All.Contains(equipmentType))
+            return equipmentType;
+
+        var itemName = SD.BasicEquipment.Canonical(trimmed);
+        if (SD.BasicEquipment.Names.Contains(itemName))
+            return itemName;
+
+        var state = States.Names.Canonical(trimmed);
+        if (States.Names.All.Contains(state))
+            return state;
+
+        var location = Wounds.Location.Canonical(trimmed);
+        if (Wounds.Location.All.Contains(location))
+            return location;
+
+        var attackAction = SD.AttackAction.Canonical(trimmed);
+        if (SD.AttackAction.All.Contains(attackAction))
+            return attackAction;
+
+        foreach (var month in SD.Calendar.Months)
+        {
+            if (string.Equals(trimmed, month.Name, StringComparison.Ordinal))
+                return month.Name;
+        }
+
+        foreach (var weekday in SD.Calendar.AllWeek)
+        {
+            if (string.Equals(trimmed, weekday, StringComparison.Ordinal))
+                return weekday;
+        }
+
+        var folded = CatalogKey.Fold(trimmed);
+        if (folded == CatalogKey.Fold(SD.WeaponParametersDescr) || folded == "parametry broni")
+            return SD.WeaponParametersDescr;
+
         return trimmed;
     }
 
@@ -75,13 +115,16 @@ public static class LocCatalog
     /// or free-text user input).
     /// </summary>
     public static string NameOrRaw(string? value, IReadOnlyCollection<string> knownKeys)
+        => NameOrRaw(value, knownKeys, localizer: null);
+
+    public static string NameOrRaw(string? value, IReadOnlyCollection<string> knownKeys, IStringLocalizer? localizer)
     {
         if (string.IsNullOrWhiteSpace(value))
             return string.Empty;
 
         var canonical = CanonicalKey(value);
         if (knownKeys.Contains(canonical) || knownKeys.Contains(value.Trim()))
-            return Loc.T(canonical);
+            return localizer is null ? Loc.T(canonical) : localizer[canonical].Value;
 
         return value;
     }

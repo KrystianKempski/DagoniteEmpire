@@ -221,10 +221,13 @@ namespace DA_Models.ComponentModels
             {
                 foreach (var bonus in trait.Bonuses)
                 {
-                    if (bonus.FeatureType == SD.FeatureWeaponQuality && bonus.FeatureName.IsNullOrEmpty() == false && SD.WeaponQuality.All.Contains(bonus.FeatureName))
+                    if (bonus.FeatureType == SD.FeatureWeaponQuality && bonus.FeatureName.IsNullOrEmpty() == false)
                     {
+                        var quality = SD.WeaponQuality.Canonical(bonus.FeatureName);
+                        if (!SD.WeaponQuality.All.Contains(quality))
+                            continue;
                         battleProp = new();
-                        battleProp.Name = bonus.FeatureName;
+                        battleProp.Name = quality;
                         battleProp.GearBonus = bonus.BonusValue;
                         weapons.Add(battleProp);
                     }

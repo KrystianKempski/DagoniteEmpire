@@ -11,6 +11,7 @@ public class LocCatalogSkillAliasTests
     [InlineData("walka wrecz", SD.BaseSkills.Melee)]
     [InlineData("Sleight of hands", SD.BaseSkills.SleightOfHands)]
     [InlineData("Zręczność rąk", SD.BaseSkills.SleightOfHands)]
+    [InlineData("Zwinne dłonie", SD.BaseSkills.SleightOfHands)]
     [InlineData("Animal handle", SD.BaseSkills.AnimalHandle)]
     [InlineData("Obchodzenie się ze zwierzętami", SD.BaseSkills.AnimalHandle)]
     [InlineData("Spostrzegawczość", SD.BaseSkills.Perception)]

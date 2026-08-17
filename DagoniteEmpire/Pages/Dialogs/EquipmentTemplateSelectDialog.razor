@@ -28,19 +28,22 @@
                                  Size="Size.Medium" />
                     </CellTemplate>
                 </TemplateColumn>
-                <PropertyColumn Filterable="false" Property="x => x.Name" Title="@(L["Name"])" />
+                <PropertyColumn Filterable="false" Property="x => x.Name" Title="@(L["Name"])">
+                    <CellTemplate>@context.Item.DisplayName(L)</CellTemplate>
+                </PropertyColumn>
                 <PropertyColumn Property="x => x.EquipmentType" Title="@(L["Type"])">
+                    <CellTemplate>@context.Item.DisplayType(L)</CellTemplate>
                     <FilterTemplate>
                         <MudIconButton OnClick="@OpenFilter" Icon="@_icon" Size="@Size.Small" />
                         <MudOverlay Visible="@_filterOpen" OnClick="@(() => _filterOpen = false)" />
                         <MudPopover Open="@_filterOpen" AnchorOrigin="Origin.BottomCenter" TransformOrigin="Origin.TopCenter"
                                     Style="width:180px">
                             <MudStack Spacing="0">
-                                <MudCheckBox T="bool" Label="@(L["Select all"])" Size="@Size.Small" Value="@_selectAll" ValueChanged="@SelectAll" />
+                                <MudCheckBox T="bool" Label="@(L["Select All"])" Size="@Size.Small" Value="@_selectAll" ValueChanged="@SelectAll" />
                                 <MudStack Spacing="0" Style="overflow-y:auto;max-height:250px">
                                     @foreach (var itemType in SD.BasicEquipment.TemplateTypes)
                                     {
-                                        <MudCheckBox T="bool" Label="@itemType" Size="@Size.Small"
+                                        <MudCheckBox T="bool" Label="@LocCatalog.Name(itemType, L)" Size="@Size.Small"
                                                      Value="@_selectedTypes.Contains(itemType)"
                                                      ValueChanged="@(value => SelectedTypeChanged(value, itemType))" />
                                     }
@@ -53,7 +56,9 @@
                         </MudPopover>
                     </FilterTemplate>
                 </PropertyColumn>
-                <PropertyColumn Filterable="false" Property="x => x.Description" Title="@(L["Description"])" />
+                <PropertyColumn Filterable="false" Property="x => x.Description" Title="@(L["Description"])">
+                    <CellTemplate>@context.Item.DisplayDescription(L)</CellTemplate>
+                </PropertyColumn>
             </Columns>
         </MudDataGrid>
     </DialogContent>
@@ -84,11 +89,17 @@
 
         if (x.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
             return true;
+        if (x.DisplayName().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
 
         if (x.EquipmentType.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
             return true;
+        if (x.DisplayType().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
 
-        if (x.Description.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrEmpty(x.Description) && x.Description.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+        if (x.DisplayDescription().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
             return true;
 
         return false;
