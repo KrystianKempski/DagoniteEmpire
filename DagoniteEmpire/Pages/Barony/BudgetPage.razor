@@ -108,8 +108,8 @@ else if (_overview is not null)
                                 {
                                     <tr>
                                         <td class="ppb-row-label">
-                                            <BaronyTooltip Title="@line.Source" Text="@line.Formula">
-                                                <span>@line.Source</span>
+                                            <BaronyTooltip Title="@L[line.Source]" Text="@line.Formula">
+                                                <span>@L[line.Source]</span>
                                             </BaronyTooltip>
                                         </td>
                                         <td class="@ValueClass(line.Gold)"><b>@Fmt(line.Gold)</b></td>
@@ -133,8 +133,8 @@ else if (_overview is not null)
                                 {
                                     <tr>
                                         <td class="ppb-row-label">
-                                            <BaronyTooltip Title="@line.Source" Text="@line.Formula">
-                                                <span>@line.Source</span>
+                                            <BaronyTooltip Title="@L[line.Source]" Text="@line.Formula">
+                                                <span>@L[line.Source]</span>
                                             </BaronyTooltip>
                                         </td>
                                         <td class="@ExpenseValueClass(line.Gold)"><b>@Fmt(line.Gold)</b></td>
@@ -565,7 +565,7 @@ else if (_overview is not null)
         };
 
         var dialog = await _dialogService.ShowAsync<BaronPurseSourceEditDialog>(
-            isNew ? "Add Purse Source" : "Edit Purse Source",
+            isNew ? L["Add Purse Source"] : L["Edit Purse Source"],
             parameters,
             new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true });
 

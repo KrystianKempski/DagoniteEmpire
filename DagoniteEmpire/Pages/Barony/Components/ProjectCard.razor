@@ -323,15 +323,8 @@
     private static string OutputLabel(string kind) =>
         ProjectOutputKind.All.Contains(kind) ? kind : kind;
 
-    private static string StatusLabel(string status) => status switch
-    {
-        ProjectStatus.Draft => "Draft",
-        ProjectStatus.ResourceAllocation => "Resource allocation",
-        ProjectStatus.InProgress => "In progress",
-        ProjectStatus.Completed => "Completed",
-        ProjectStatus.Cancelled => "Cancelled",
-        _ => status,
-    };
+    private static string StatusLabel(string status) =>
+        LocCatalog.NameOrRaw(status, ProjectStatus.All);
 
     private static string Fmt(decimal v) => v == 0m ? "·" : PpbFormat.Number(v);
     private static string FmtAdd(decimal v) => v == 0m ? "·" : PpbFormat.Additive(v);

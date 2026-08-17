@@ -19,7 +19,7 @@
                 <MudSelectItem Value="@((int?)null)">@L["(none)"]</MudSelectItem>
                 @foreach (var t in EligibleTemplates)
                 {
-                    <MudSelectItem Value="@((int?)t.Id)">@t.Name</MudSelectItem>
+                    <MudSelectItem Value="@((int?)t.Id)">@t.DisplayName()</MudSelectItem>
                 }
             </MudSelect>
             @if (_purposeId is not null)
@@ -60,7 +60,7 @@
             @if (_selected is not null)
             {
                 <MudPaper Class="pa-3 mt-2" Elevation="0" Style="background:var(--barony-surface-2);">
-                    <MudText Typo="Typo.subtitle2">@_selected.Name</MudText>
+                    <MudText Typo="Typo.subtitle2">@_selected.DisplayName()</MudText>
                     @if (!string.IsNullOrWhiteSpace(_selected.Description))
                     {
                         <MudText Typo="Typo.body2" Class="mt-1">@_selected.Description</MudText>

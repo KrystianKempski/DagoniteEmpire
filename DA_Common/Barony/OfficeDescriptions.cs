@@ -1,5 +1,7 @@
 namespace DA_Common.Barony
 {
+    using DA_Common.Localization;
+
     /// <summary>Flavor text for core offices (Domain Panel / Offices page).</summary>
     public static class OfficeDescriptions
     {
@@ -22,9 +24,9 @@ namespace DA_Common.Barony
         /// <summary>Catalog text for a core office; null for Baron / Custom.</summary>
         public static string? For(string? officeType) => officeType switch
         {
-            OfficeType.Chancellor => Chancellor,
-            OfficeType.GuardCaptain => GuardCaptain,
-            OfficeType.Steward => Steward,
+            OfficeType.Chancellor => Loc.T(Chancellor),
+            OfficeType.GuardCaptain => Loc.T(GuardCaptain),
+            OfficeType.Steward => Loc.T(Steward),
             _ => null,
         };
     }

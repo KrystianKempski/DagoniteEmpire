@@ -66,13 +66,13 @@ namespace DA_Common.Barony
         public static IEnumerable<UnitWeaponDef> ByCategory(string category) =>
             All.Where(x => string.Equals(x.Category, category, StringComparison.OrdinalIgnoreCase));
 
-        public static string CategoryLabel(string category) => category switch
+        public static string CategoryLabel(string category) => DA_Common.Localization.Loc.T(category switch
         {
             "simple" => "Simple weapons",
             "military" => "Military weapons",
             "powder" => "Powder weapons",
             _ => category,
-        };
+        });
     }
 
     public sealed record UnitArmorDef(

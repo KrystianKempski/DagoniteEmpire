@@ -78,29 +78,11 @@
             : ExcludeTreasury ? "ppb-editor-grid--compact-12" : "ppb-editor-grid--compact";
 
     private string FieldLabel(PpbInfo info) =>
-        Compact ? PpbShort(info.Key) : (UseEnglishLabels ? info.NameEn : info.NamePl) + (Percent ? " %" : "");
+        Compact ? (UseEnglishLabels ? info.ShortEn : info.ShortPl) : (UseEnglishLabels ? info.NameEn : info.NamePl) + (Percent ? " %" : "");
 
     private async Task OnChanged(Ppb key, decimal v)
     {
         Value.Set(key, v);
         await ValueChanged.InvokeAsync(Value);
     }
-
-    private static string PpbShort(Ppb p) => p switch
-    {
-        Ppb.Food => "Food",
-        Ppb.Economy => "Econ",
-        Ppb.Production => "Prod",
-        Ppb.Loyalty => "Loy",
-        Ppb.Stability => "Stab",
-        Ppb.Law => "Law",
-        Ppb.Corruption => "Corr",
-        Ppb.Science => "Sci",
-        Ppb.Magic => "Mag",
-        Ppb.Culture => "Cult",
-        Ppb.Intelligence => "Intel",
-        Ppb.Defense => "Def",
-        Ppb.Treasury => "Gold",
-        _ => p.ToString(),
-    };
 }

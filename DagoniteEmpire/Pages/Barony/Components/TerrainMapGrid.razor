@@ -132,11 +132,11 @@
                             {
                                 <span class="barony-terrain-cell__layer barony-terrain-cell__improvement">
                                     <img src="@MapImprovement.ResolveIconUrl(improvement.Name, improvement.IconUrl)"
-                                         alt="@(string.IsNullOrWhiteSpace(improvement.Description) ? MapImprovement.DisplayName(improvement.Name) : improvement.Description)"
+                                         alt="@(string.IsNullOrWhiteSpace(improvement.Description) ? MapImprovement.DisplayName(improvement.Name) : BaronyCalc.ImprovementDisplayLabelLocalized(improvement))"
                                          class="@($"barony-terrain-cell__improvement-icon barony-terrain-cell__improvement-icon--{ImprovementIconCss(improvement.Name)}")" />
                                     @if (!string.IsNullOrWhiteSpace(improvement.Description))
                                     {
-                                        <span class="@($"barony-terrain-cell__improvement-name barony-terrain-cell__improvement-name--{ImprovementIconCss(improvement.Name)}")">@improvement.Description</span>
+                                        <span class="@($"barony-terrain-cell__improvement-name barony-terrain-cell__improvement-name--{ImprovementIconCss(improvement.Name)}")">@BaronyCalc.ImprovementDisplayLabelLocalized(improvement)</span>
                                     }
                                 </span>
                             }

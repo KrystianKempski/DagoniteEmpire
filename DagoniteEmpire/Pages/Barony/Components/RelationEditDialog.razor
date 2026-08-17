@@ -15,7 +15,7 @@
                        Class="baron-influence-field">
                 @foreach (var cat in RelationCategory.All)
                 {
-                    <MudSelectItem Value="@cat">@cat</MudSelectItem>
+                    <MudSelectItem Value="@cat">@L[cat]</MudSelectItem>
                 }
             </MudSelect>
             @if (ExistingGroups.Count > 0)
@@ -38,7 +38,7 @@
             @if (_groupPick == NewGroupValue || ExistingGroups.Count == 0)
             {
                 <MudTextField @bind-Value="_groupName"
-                              Label="@(ExistingGroups.Count > 0 ? "New group name" : "Group")"
+                              Label="@(ExistingGroups.Count > 0 ? L["New group name"] : L["Group"] )"
                               HelperText="@(L["House or organization name (shared across people for rowspan)."])"
                               Variant="Variant.Outlined"
                               Margin="Margin.Dense"

@@ -3,15 +3,15 @@
 @inject ISnackbar _snackBar
 @inject IDialogService _dialogService
 
-<BaronySection Title="@Category">
+<BaronySection Title="@(L[Category])">
     <Summary>
-        <span class="projects-summary__item">@Ordered.Count contact@(Ordered.Count == 1 ? "" : "s")</span>
+        <span class="projects-summary__item">@(Ordered.Count == 1 ? L["{0} contact", Ordered.Count] : L["{0} contacts", Ordered.Count])</span>
     </Summary>
     <ChildContent>
         @if (Ordered.Count == 0)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                No contacts in this section.
+                @L["No contacts in this section."]
                 @if (CanManage)
                 {
                     <text> @L["Add one below."]</text>
@@ -202,7 +202,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<RelationEditDialog>(
-            isNew ? "Add Relation" : "Edit Relation",
+            isNew ? L["Add Relation"] : L["Edit Relation"],
             parameters,
             new DialogOptions
             {
@@ -218,7 +218,7 @@
         try
         {
             await _baronyRepo.SaveRelation(saved);
-            _snackBar.Add(isNew ? "Relation added." : "Relation updated.", Severity.Success);
+            _snackBar.Add(isNew ? L["Relation added."] : L["Relation updated."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
@@ -233,7 +233,7 @@
         {
             var normalized = BaronyCharacterMarkDTO.NormalizeList(marks);
             await _baronyRepo.SaveRelationMarks(item.Id, normalized);
-            _snackBar.Add(normalized.Count > 0 ? "Marks updated." : "Marks cleared.", Severity.Success);
+            _snackBar.Add(normalized.Count > 0 ? L["Marks updated."] : L["Marks cleared."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
@@ -252,7 +252,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<RelationNotesDialog>(
-            "Edit Notes",
+            L["Edit Notes"],
             parameters,
             new DialogOptions
             {
@@ -287,7 +287,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<RelationModifiersDialog>(
-            "Edit Modifiers",
+            L["Edit Modifiers"],
             parameters,
             new DialogOptions
             {
@@ -317,10 +317,10 @@
     private async Task DeleteAsync(BaronyRelationDTO item)
     {
         var confirm = await _dialogService.ShowMessageBoxAsync(
-            "Remove relation",
-            $"Remove “{item.Name}”?",
-            yesText: "Remove",
-            cancelText: "Cancel");
+            L["Remove relation"],
+            L["Remove “{0}”?", item.Name],
+            yesText: L["Remove"],
+            cancelText: L["Cancel"]);
         if (confirm != true)
             return;
 
@@ -336,17 +336,17 @@
         }
     }
 
-    private static string ModifiersTooltip(BaronyRelationDTO item)
+    private string ModifiersTooltip(BaronyRelationDTO item)
     {
         if (item.Modifiers is null || item.Modifiers.Count == 0)
-            return "No modifiers.";
+            return L["No modifiers."];
 
         return string.Join("\n", item.Modifiers
             .OrderBy(m => m.SortOrder)
             .Select(m =>
             {
                 var sign = m.Value > 0 ? "+" : "";
-                var desc = string.IsNullOrWhiteSpace(m.Description) ? "(unnamed)" : m.Description.Trim();
+                var desc = string.IsNullOrWhiteSpace(m.Description) ? L["(unnamed)"] : m.Description.Trim();
                 return $"{desc}: {sign}{m.Value}";
             }));
     }
@@ -359,8 +359,8 @@
     private static string FormatAttitude(int attitude) =>
         attitude > 0 ? $"+{attitude}" : attitude.ToString();
 
-    private static string NotesTooltip(string? notes) =>
-        string.IsNullOrWhiteSpace(notes) ? "Edit notes" : notes;
+    private string NotesTooltip(string? notes) =>
+        string.IsNullOrWhiteSpace(notes) ? L["Edit notes"] : notes;
 
     private static string NotesButtonClass(string? notes) =>
         string.IsNullOrWhiteSpace(notes)

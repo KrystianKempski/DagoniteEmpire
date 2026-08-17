@@ -4,10 +4,10 @@ namespace DA_Common.Barony
     public readonly struct OfficeType
     {
         public const string Baron = "Baron";
-        public const string Chancellor = "Kanclerz";
-        public const string GuardCaptain = "Kapitan Straży";
-        public const string Steward = "Ekonom";
-        public const string Custom = "Inny";
+        public const string Chancellor = "Chancellor";
+        public const string GuardCaptain = "Guard Captain";
+        public const string Steward = "Steward";
+        public const string Custom = "Custom";
 
         public static readonly string[] Core = { Chancellor, GuardCaptain, Steward };
         public static readonly string[] All = { Baron, Chancellor, GuardCaptain, Steward, Custom };
@@ -64,14 +64,14 @@ namespace DA_Common.Barony
     {
         public static string Label(int score) => score switch
         {
-            <= -60 => "Rebellion",
-            <= -30 => "Discontent",
-            <= -10 => "Hostile",
-            <= 20 => "Indifferent",
-            <= 40 => "Satisfied",
-            <= 70 => "Friendly",
-            < 100 => "Adored",
-            _ => "Error",
+            <= -60 => DA_Common.Localization.Loc.T("Rebellion"),
+            <= -30 => DA_Common.Localization.Loc.T("Discontent"),
+            <= -10 => DA_Common.Localization.Loc.T("Hostile"),
+            <= 20 => DA_Common.Localization.Loc.T("Indifferent"),
+            <= 40 => DA_Common.Localization.Loc.T("Satisfied"),
+            <= 70 => DA_Common.Localization.Loc.T("Friendly"),
+            < 100 => DA_Common.Localization.Loc.T("Adored"),
+            _ => DA_Common.Localization.Loc.T("Error"),
         };
     }
 
@@ -101,10 +101,10 @@ namespace DA_Common.Barony
     /// <summary>Bazowy rodzaj terenu pola baronii.</summary>
     public readonly struct TerrainBaseType
     {
-        public const string Water = "Woda";
-        public const string Plains = "Równiny";
-        public const string Hills = "Wzgórza";
-        public const string Mountains = "Góry";
+        public const string Water = "Water";
+        public const string Plains = "Plains";
+        public const string Hills = "Hills";
+        public const string Mountains = "Mountains";
 
         public static readonly string[] All = { Water, Plains, Hills, Mountains };
 
@@ -117,14 +117,10 @@ namespace DA_Common.Barony
         public static bool IsWater(string? baseType) =>
             string.Equals(baseType, Water, StringComparison.OrdinalIgnoreCase);
 
-        public static string DisplayName(string? baseType) => baseType switch
-        {
-            Water => "Water",
-            Plains => "Plains",
-            Hills => "Hills",
-            Mountains => "Mountains",
-            _ => baseType ?? "Plains",
-        };
+        public static string DisplayName(string? baseType) =>
+            string.IsNullOrWhiteSpace(baseType) ? DA_Common.Localization.Loc.T(Plains)
+            : All.Contains(baseType) ? DA_Common.Localization.Loc.T(baseType)
+            : baseType;
     }
 
     /// <summary>Soil fertility on a terrain tile (0–5, or unknown).</summary>
@@ -425,14 +421,14 @@ namespace DA_Common.Barony
 
         public static string DisplayName(string? key) => key switch
         {
-            Town => "Town",
-            Village => "Village",
-            HuntersLodge => "Hunter's lodge",
-            FishingHarbor => "Fishing harbor",
-            Mine => "Mine",
-            Sawmill => "Sawmill",
-            Farm => "Farm",
-            Custom => "Custom",
+            Town => DA_Common.Localization.Loc.T(Town),
+            Village => DA_Common.Localization.Loc.T(Village),
+            HuntersLodge => DA_Common.Localization.Loc.T(HuntersLodge),
+            FishingHarbor => DA_Common.Localization.Loc.T(FishingHarbor),
+            Mine => DA_Common.Localization.Loc.T(Mine),
+            Sawmill => DA_Common.Localization.Loc.T(Sawmill),
+            Farm => DA_Common.Localization.Loc.T(Farm),
+            Custom => DA_Common.Localization.Loc.T(Custom),
             _ => key ?? "None",
         };
 
@@ -493,13 +489,13 @@ namespace DA_Common.Barony
     public readonly struct ProjectStatus
     {
         /// <summary>Player proposal / unfinished setup — not accepted by MG yet.</summary>
-        public const string Draft = "Szkic";
+        public const string Draft = "Draft";
         /// <summary>Accepted by MG (or auto-created); waiting for resource allocation. Turns do not tick.</summary>
-        public const string ResourceAllocation = "Alokacja zasobów";
+        public const string ResourceAllocation = "Resource allocation";
         /// <summary>Fully funded (or past allocation); turns tick on Resolve when still funded.</summary>
-        public const string InProgress = "W trakcie";
-        public const string Completed = "Zakończony";
-        public const string Cancelled = "Anulowany";
+        public const string InProgress = "In progress";
+        public const string Completed = "Completed";
+        public const string Cancelled = "Cancelled";
 
         public static readonly string[] All =
         {
@@ -589,13 +585,13 @@ namespace DA_Common.Barony
             var v = Math.Clamp(attitude, -200, 200);
             return v switch
             {
-                <= -150 => "Mortal enemy",
-                <= -80 => "Hostile",
-                <= -30 => "Cold",
-                < 30 => "Neutral",
-                < 80 => "Friendly",
-                < 150 => "Ally",
-                _ => "Best friend",
+                <= -150 => DA_Common.Localization.Loc.T("Mortal enemy"),
+                <= -80 => DA_Common.Localization.Loc.T("Hostile"),
+                <= -30 => DA_Common.Localization.Loc.T("Cold"),
+                < 30 => DA_Common.Localization.Loc.T("Neutral"),
+                < 80 => DA_Common.Localization.Loc.T("Friendly"),
+                < 150 => DA_Common.Localization.Loc.T("Ally"),
+                _ => DA_Common.Localization.Loc.T("Best friend"),
             };
         }
     }

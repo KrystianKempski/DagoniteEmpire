@@ -34,9 +34,9 @@
                            Margin="Margin.Dense"
                            Class="baron-influence-field"
                            Required="true">
-                    @foreach (var template in Templates.OrderBy(t => t.Name))
+                    @foreach (var template in Templates.OrderBy(t => t.DisplayName(), StringComparer.CurrentCultureIgnoreCase))
                     {
-                        <MudSelectItem Value="@template.Id">@($"{template.Name} ({Fmt(template.GoldCost)} gold / {Fmt(template.ProductionCost)} prod)")</MudSelectItem>
+                        <MudSelectItem Value="@template.Id">@($"{template.DisplayName()} ({Fmt(template.GoldCost)} gold / {Fmt(template.ProductionCost)} prod)")</MudSelectItem>
                     }
                 </MudSelect>
 

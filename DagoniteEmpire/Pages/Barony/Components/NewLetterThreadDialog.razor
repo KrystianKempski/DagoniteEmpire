@@ -14,7 +14,7 @@
             <MudSelect T="string"
                        Value="_recipientKey"
                        ValueChanged="OnRecipientChanged"
-                       Label="@(IsInbound ? "Sender" : "Recipient")"
+                       Label="@(IsInbound ? L["Sender"] : L["Recipient"])"
                        HelperText="@(L["Pick from Relations or Lords, or choose Other to type a name and title"])"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
@@ -28,7 +28,7 @@
             </MudSelect>
 
             <MudTextField @bind-Value="_correspondentName"
-                          Label="@(IsInbound ? "Sender name" : "Recipient name")"
+                          Label="@(IsInbound ? L["Sender name"] : L["Recipient name"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Class="baron-influence-field"
@@ -98,7 +98,7 @@
     private bool IsCustomRecipient => string.Equals(_recipientKey, OtherRecipientKey, StringComparison.Ordinal);
 
     private string RegionHelperText =>
-        $"Max {BaronLetterRules.MaxInboundFromCorrespondent(_replyRegion)} inbound letter(s)/turn from this person (to the baron)";
+        L["Max {0} inbound letter(s)/turn from this person (to the baron)", BaronLetterRules.MaxInboundFromCorrespondent(_replyRegion)];
 
     protected override void OnParametersSet() => BuildRecipientOptions();
 
@@ -184,7 +184,7 @@
 
         if (string.IsNullOrWhiteSpace(_correspondentName))
         {
-            _snackBar.Add(IsInbound ? "Sender name is required." : "Recipient name is required.", Severity.Warning);
+            _snackBar.Add(IsInbound ? L["Sender name is required."] : L["Recipient name is required."], Severity.Warning);
             return;
         }
 

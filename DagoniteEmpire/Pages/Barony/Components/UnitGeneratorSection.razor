@@ -393,16 +393,16 @@
                             <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" /> Def (2×Mkt)
                         </MudText>
                         <div class="unit-gear-pay">
-                            @GearPayRow("W1", _w1?.Name, _w1?.ProductionCost, _w1?.GoldCost, _w1?.MarketGold,
+                            @GearPayRow("W1", _w1?.DisplayName(), _w1?.ProductionCost, _w1?.GoldCost, _w1?.MarketGold,
                                 _payW1, OnPayW1Changed, required: true)
-                            @GearPayRow("W2", UnitWeaponCatalog.Find(_weapon2)?.Name,
+                            @GearPayRow("W2", UnitWeaponCatalog.Find(_weapon2)?.DisplayName(),
                                 UnitWeaponCatalog.Find(_weapon2)?.ProductionCost,
                                 UnitWeaponCatalog.Find(_weapon2)?.GoldCost,
                                 UnitWeaponCatalog.Find(_weapon2)?.MarketGold,
                                 _payW2, OnPayW2Changed, required: false)
-                            @GearPayRow("Arm", _armorDef?.Name, _armorDef?.ProductionCost, _armorDef?.GoldCost, _armorDef?.MarketGold,
+                            @GearPayRow("Arm", _armorDef?.DisplayName(), _armorDef?.ProductionCost, _armorDef?.GoldCost, _armorDef?.MarketGold,
                                 _payArmor, OnPayArmorChanged, required: false)
-                            @GearPayRow("Shd", _shieldDef?.Name, _shieldDef?.ProductionCost, _shieldDef?.GoldCost, _shieldDef?.MarketGold,
+                            @GearPayRow("Shd", _shieldDef?.DisplayName(), _shieldDef?.ProductionCost, _shieldDef?.GoldCost, _shieldDef?.MarketGold,
                                 _payShield, OnPayShieldChanged, required: false)
                             @GearPayRow("Mnt", _mountDef?.Name, _mountDef?.ProductionCost, _mountDef?.GoldCost, _mountDef?.MarketGold,
                                 _payMount, OnPayMountChanged, required: false)

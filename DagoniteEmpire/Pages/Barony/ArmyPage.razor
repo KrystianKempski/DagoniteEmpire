@@ -30,7 +30,7 @@ else if (Barony is not null)
     @if (_battleInProgress)
     {
         <MudAlert Severity="Severity.Warning" Class="my-2" Dense="true">
-            A battle is in progress. Unit cards are locked — HP and roster updates apply when the Game Master presses <b>@L["End battle"]</b> on the Battle Map.
+            @((MarkupString)L["A battle is in progress. Unit cards are locked — HP and roster updates apply when the Game Master presses <b>{0}</b> on the Battle Map.", L["End battle"]].Value)
         </MudAlert>
     }
 

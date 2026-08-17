@@ -35,12 +35,10 @@ else if (_overview is not null)
         </Summary>
         <ChildContent>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Domain Panel grand total for cumulative resources.
-                Gold already subtracts liege tribute (Budget Fief expense: gross income × tribute %).
-                Applied to stocks on Resolve Turn. Audience grants land immediately under Resource Balance.
+                @L["Domain Panel grand total for cumulative resources. Gold already subtracts liege tribute (Budget Fief expense: gross income × tribute %). Applied to stocks on Resolve Turn. Audience grants land immediately under Resource Balance."]
             </MudText>
             <div style="overflow-x:auto;">
-                <ResourceVectorTable Rows="@_expectedRows" NameHeader="Source" />
+                <ResourceVectorTable Rows="@_expectedRows" NameHeader="@(L["Source"])" />
             </div>
         </ChildContent>
     </BaronySection>
@@ -51,16 +49,13 @@ else if (_overview is not null)
         </Summary>
         <ChildContent>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Σ is the sum of every row below and must match Current Resource Stocks / HUD.
-                Audience grants are added to stocks as soon as they are awarded.
-                On Resolve Turn the ledger is cleared: opening stock + Domain Panel income + grants from projects
-                completed that resolve; mid-turn allocations and Add Source rows live only until the next Resolve.
+                @L["Σ is the sum of every row below and must match Current Resource Stocks / HUD. Audience grants are added to stocks as soon as they are awarded. On Resolve Turn the ledger is cleared: opening stock + Domain Panel income + grants from projects completed that resolve; mid-turn allocations and Add Source rows live only until the next Resolve."]
             </MudText>
             <div style="overflow-x:auto;">
                 <ResourceVectorTable Rows="@_balanceRows"
                                     Summary="@_balanceSum"
                                     SummaryLabel="Σ balance"
-                                    NameHeader="Source"
+                                    NameHeader="@(L["Source"])"
                                     OnEdit="EditBalanceRowAsync"
                                     OnDelete="DeleteBalanceRowAsync" />
             </div>
@@ -344,7 +339,7 @@ else if (_overview is not null)
         };
 
         var dialog = await _dialogService.ShowAsync<PreviousTurnIncomeEditDialog>(
-            "Edit stock from previous turn",
+            L["Edit stock from previous turn"],
             parameters,
             new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true });
 
@@ -390,7 +385,7 @@ else if (_overview is not null)
         };
 
         var dialog = await _dialogService.ShowAsync<ResourceSourceEditDialog>(
-            isNew ? "Add Source" : "Edit Source",
+            isNew ? L["Add Source"] : L["Edit Source"],
             parameters,
             new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Medium, FullWidth = true });
 

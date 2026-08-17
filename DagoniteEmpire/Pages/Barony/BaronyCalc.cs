@@ -1,5 +1,6 @@
 using DA_Common;
 using DA_Common.Barony;
+using DA_Common.Localization;
 using DA_Models.BaronyModels;
 using DA_Models.CharacterModels;
 
@@ -35,15 +36,15 @@ namespace DagoniteEmpire.Pages.Barony
         public static string AdvisorRoleLabel(AdvisorDTO advisor)
         {
             if (!string.IsNullOrWhiteSpace(advisor.Title))
-                return advisor.Title;
+                return LocCatalog.NameOrRaw(advisor.Title, OfficeType.All);
 
             return advisor.OfficeType switch
             {
-                OfficeType.Baron => "Baron",
-                OfficeType.Chancellor => "Chancellor",
-                OfficeType.GuardCaptain => "Guard Captain",
-                OfficeType.Steward => "Steward",
-                _ => "Advisor",
+                OfficeType.Baron => Loc.T("Baron"),
+                OfficeType.Chancellor => Loc.T("Chancellor"),
+                OfficeType.GuardCaptain => Loc.T("Guard Captain"),
+                OfficeType.Steward => Loc.T("Steward"),
+                _ => Loc.T("Advisor"),
             };
         }
 
@@ -500,7 +501,7 @@ namespace DagoniteEmpire.Pages.Barony
                             continue;
                         formula = string.IsNullOrWhiteSpace(formula) ? extra : $"{formula}\n\n{extra}";
                     }
-                    return Row(ImprovementDisplayLabel(i), additive, i.Percent, formula, i.Description);
+                    return Row(ImprovementDisplayLabelLocalized(i), additive, i.Percent, formula, i.Description);
                 })
                 .ToList();
         }
@@ -596,6 +597,21 @@ namespace DagoniteEmpire.Pages.Barony
                 return improvement.Description.Trim();
 
             return improvement.Name;
+        }
+
+        /// <summary>
+        /// Display-only label: translates catalog-kind names (Farm/Mine/Sawmill/…) to the UI culture.
+        /// Village/Town place names and custom user names are returned unchanged.
+        /// Do NOT use for edit round-trips — the stored value must remain the English key.
+        /// </summary>
+        public static string ImprovementDisplayLabelLocalized(TerrainImprovementDTO improvement)
+        {
+            var raw = ImprovementDisplayLabel(improvement);
+            return MapImprovement.IsKnown(improvement.Name)
+                   && !MapImprovement.RequiresPlaceName(improvement.Name)
+                   && !MapImprovement.IsCustom(improvement.Name)
+                ? DA_Common.Localization.LocCatalog.Name(raw)
+                : raw;
         }
 
         /// <summary>
@@ -1648,7 +1664,7 @@ namespace DagoniteEmpire.Pages.Barony
             => advisor.UpkeepGold + (customModifiers?.Sum(m => m.CostGold) ?? 0m);
 
         public static string OfficeSectionTitle(AdvisorDTO advisor)
-            => $"{AdvisorRoleLabel(advisor)} - Skills";
+            => Loc.T("{0} - Skills", AdvisorRoleLabel(advisor));
 
         public static bool IsCoreOffice(AdvisorDTO advisor)
             => !advisor.IsBaron && OfficeType.Core.Contains(advisor.OfficeType);

@@ -36,11 +36,11 @@
                 @L["Craft · Buy (Mkt) · Defense (2×Mkt). Costs below already include troop scale."]
             </MudText>
             <div class="unit-gear-pay mb-3">
-                @PayRow("W1", _w1?.Name, _w1?.ProductionCost, _w1?.GoldCost, _w1?.MarketGold, _payW1, v => { _payW1 = v; Recalc(); }, required: true)
-                @PayRow("W2", _w2?.Name, _w2?.ProductionCost, _w2?.GoldCost, _w2?.MarketGold, _payW2, v => { _payW2 = v; Recalc(); }, required: false)
-                @PayRow("Armor", _armorDef?.Name, _armorDef?.ProductionCost, _armorDef?.GoldCost, _armorDef?.MarketGold, _payArmor, v => { _payArmor = v; Recalc(); }, required: false)
-                @PayRow("Shield", _shieldDef?.Name, _shieldDef?.ProductionCost, _shieldDef?.GoldCost, _shieldDef?.MarketGold, _payShield, v => { _payShield = v; Recalc(); }, required: false)
-                @PayRow("Mount", _mountDef?.Name, _mountDef?.ProductionCost, _mountDef?.GoldCost, _mountDef?.MarketGold, _payMount, v => { _payMount = v; Recalc(); }, required: false)
+                @PayRow("W1", _w1?.DisplayName(), _w1?.ProductionCost, _w1?.GoldCost, _w1?.MarketGold, _payW1, v => { _payW1 = v; Recalc(); }, required: true)
+                @PayRow("W2", _w2?.DisplayName(), _w2?.ProductionCost, _w2?.GoldCost, _w2?.MarketGold, _payW2, v => { _payW2 = v; Recalc(); }, required: false)
+                @PayRow("Armor", _armorDef?.DisplayName(), _armorDef?.ProductionCost, _armorDef?.GoldCost, _armorDef?.MarketGold, _payArmor, v => { _payArmor = v; Recalc(); }, required: false)
+                @PayRow("Shield", _shieldDef?.DisplayName(), _shieldDef?.ProductionCost, _shieldDef?.GoldCost, _shieldDef?.MarketGold, _payShield, v => { _payShield = v; Recalc(); }, required: false)
+                @PayRow("Mount", _mountDef?.DisplayName(), _mountDef?.ProductionCost, _mountDef?.GoldCost, _mountDef?.MarketGold, _payMount, v => { _payMount = v; Recalc(); }, required: false)
             </div>
 
             <MudText Typo="Typo.subtitle2" Class="mb-1">@L["Project cost"]</MudText>

@@ -27,7 +27,7 @@
                                    Class="baron-influence-field">
                             @foreach (var template in Catalog)
                             {
-                                <MudSelectItem T="int?" Value="@template.Id">@template.Name</MudSelectItem>
+                                <MudSelectItem T="int?" Value="@template.Id">@template.DisplayName()</MudSelectItem>
                             }
                         </MudSelect>
                         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">

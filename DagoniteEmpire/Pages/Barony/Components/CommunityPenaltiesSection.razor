@@ -47,13 +47,13 @@
                                 <td class="ppb-row-label community-col-source">
                                     @if (!string.IsNullOrWhiteSpace(row.Formula) || !string.IsNullOrWhiteSpace(row.Note))
                                     {
-                                        <BaronyTooltip Title="@row.Label" Text="@(row.Note is null ? row.Formula! : $"{row.Note}\n\n{row.Formula}")">
-                                            <span>@row.Label</span>
+                                        <BaronyTooltip Title="@L[row.Label]" Text="@(row.Note is null ? row.Formula! : $"{row.Note}\n\n{row.Formula}")">
+                                            <span>@L[row.Label]</span>
                                         </BaronyTooltip>
                                     }
                                     else
                                     {
-                                        @row.Label
+                                        @L[row.Label]
                                     }
                                 </td>
                                 @foreach (var info in PpbCatalog.All)

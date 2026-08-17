@@ -25,7 +25,7 @@ else
         </BaronyPageHeader>
 
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="buildings-page__intro">
-            Catalog of buildings and terrain improvements. PPB columns use separate additive (+) and percent (%) subcolumns. Click headers to sort.
+            @L["Catalog of buildings and terrain improvements. PPB columns use separate additive (+) and percent (%) subcolumns. Click headers to sort."]
             @if (CanEdit)
             {
                 <text> @L["Use the hammer on a city building to start a construction project (adds to Domain Panel when finished)."]</text>
@@ -116,7 +116,8 @@ else
 
     private bool MatchesNameFilter(BuildingTemplateDTO item)
         => string.IsNullOrWhiteSpace(_nameFilter)
-           || item.Name.Contains(_nameFilter, StringComparison.OrdinalIgnoreCase);
+           || item.Name.Contains(_nameFilter, StringComparison.OrdinalIgnoreCase)
+           || item.DisplayName().Contains(_nameFilter, StringComparison.OrdinalIgnoreCase);
 
     private bool MatchesKindFilter(BuildingTemplateDTO item)
         => string.IsNullOrEmpty(_kindFilter) || item.Kind == _kindFilter;

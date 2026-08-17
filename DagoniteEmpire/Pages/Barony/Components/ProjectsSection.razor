@@ -19,10 +19,10 @@
     </Summary>
     <ChildContent>
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
-            Fund projects by allocating Gold, Production, and other cumulative stocks from your barony.
-            Auto-created projects start in <strong>@L["Resource allocation"]</strong> — turns do not tick until they are fully funded.
-            Spent allocations appear on the Resources balance.
-            Click a project title row to expand or collapse details.
+            @L["Fund projects by allocating Gold, Production, and other cumulative stocks from your barony."]
+            @((MarkupString)L["Auto-created projects start in <strong>{0}</strong> — turns do not tick until they are fully funded.", L["Resource allocation"]].Value)
+            @L["Spent allocations appear on the Resources balance."]
+            @L["Click a project title row to expand or collapse details."]
         </MudText>
 
         @if (CanEdit)
@@ -233,7 +233,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<ProjectEditDialog>(
-            isNew ? "Add Project" : "Edit Project",
+            isNew ? L["Add Project"] : L["Edit Project"],
             parameters,
             new DialogOptions
             {

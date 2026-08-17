@@ -27,7 +27,7 @@
                        Class="baron-influence-field">
                 @foreach (var kind in ProjectOutputKind.All)
                 {
-                    <MudSelectItem Value="@kind">@kind</MudSelectItem>
+                    <MudSelectItem Value="@kind">@L[kind]</MudSelectItem>
                 }
             </MudSelect>
             <MudTextField @bind-Value="_resultDescription"
@@ -49,7 +49,7 @@
                     @L["Baron still sees the project description, but result resources and output summary stay hidden until the project is completed."]
                 </MudText>
                 <MudSelect @bind-Value="_status"
-                           Label="Status"
+                           Label="@(L["Status"])"
                            Variant="Variant.Outlined"
                            Margin="Margin.Dense"
                            Class="baron-influence-field">
@@ -226,20 +226,13 @@
 
     private static string AllowedCostModesLabel(string option) => option switch
     {
-        ProjectAllowedCostModes.GoldProductionOnly => "Gold & Production only",
-        ProjectAllowedCostModes.MaterialsOnly => "Materials only",
-        ProjectAllowedCostModes.PlayerChoice => "Player choice (both tracks)",
-        ProjectAllowedCostModes.Combined => "Combined (Gold, Production & Materials together)",
+        ProjectAllowedCostModes.GoldProductionOnly => DA_Common.Localization.Loc.T("Gold & Production only"),
+        ProjectAllowedCostModes.MaterialsOnly => DA_Common.Localization.Loc.T("Materials only"),
+        ProjectAllowedCostModes.PlayerChoice => DA_Common.Localization.Loc.T("Player choice (both tracks)"),
+        ProjectAllowedCostModes.Combined => DA_Common.Localization.Loc.T("Combined (Gold, Production & Materials together)"),
         _ => option,
     };
 
-    private static string StatusLabel(string status) => status switch
-    {
-        ProjectStatus.Draft => "Draft",
-        ProjectStatus.ResourceAllocation => "Resource allocation",
-        ProjectStatus.InProgress => "In progress",
-        ProjectStatus.Completed => "Completed",
-        ProjectStatus.Cancelled => "Cancelled",
-        _ => status,
-    };
+    private static string StatusLabel(string status) =>
+        LocCatalog.NameOrRaw(status, ProjectStatus.All);
 }

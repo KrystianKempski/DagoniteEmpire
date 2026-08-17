@@ -182,7 +182,7 @@ else if (Barony is not null)
                             && post.Id == LastDelivered(_selected)?.Id;
                         <article class="baron-mail__post @(post.IsInbound ? "baron-mail__post--inbound" : "baron-mail__post--outbound") @(post.IsDraft ? "baron-mail__post--draft" : "")">
                             <header class="baron-mail__post-head">
-                                <span class="baron-mail__post-dir">@(post.IsInbound ? "→ Baron" : "Baron →")</span>
+                                <span class="baron-mail__post-dir">@(post.IsInbound ? L["→ Baron"] : L["Baron →"])</span>
                                 <span class="baron-mail__post-when">
                                     @if (post.IsDraft)
                                     {
@@ -746,7 +746,7 @@ else if (Barony is not null)
         };
 
         var dialog = await _dialogService.ShowAsync<NewLetterThreadDialog>(
-            isInbound ? "New thread to baron" : "New thread",
+            isInbound ? L["New thread to baron"] : L["New thread"],
             parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
 
@@ -864,7 +864,7 @@ else if (Barony is not null)
             if (_receivedThisTurn >= maxInbound)
             {
                 _snackBar.Add(
-                    $"This correspondent already sent {_receivedThisTurn}/{maxInbound} letters this turn.",
+                    L["This correspondent already sent {0}/{1} letters this turn.", _receivedThisTurn, maxInbound],
                     Severity.Warning);
                 return;
             }

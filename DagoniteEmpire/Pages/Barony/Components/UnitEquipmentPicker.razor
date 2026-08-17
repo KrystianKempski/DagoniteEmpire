@@ -80,8 +80,8 @@
                                                     @onclick="@(() => ToggleWeapon2(w))">@(isW2 ? "●" : "○")</button>
                                         </BaronyTooltip>
                                     </td>
-                                    <td class="ppb-row-label">@w.Name</td>
-                                    <td>@w.WeaponType</td>
+                                    <td class="ppb-row-label">@w.DisplayName()</td>
+                                    <td>@UnitEquipmentDisplay.WeaponTypeLabel(w.WeaponType)</td>
                                     <td>@w.Attack</td>
                                     <td>@w.Damage</td>
                                     <td>@w.Defense</td>
@@ -133,7 +133,7 @@
                             var shields = items.Where(x => x.IsShield).ToList();
                             var bodies = items.Where(x => !x.IsShield).ToList();
                             <tr class="unit-equip-table__group">
-                                <td colspan="12">@title</td>
+                                <td colspan="12">@UnitEquipmentDisplay.ArmorTierLabel(title)</td>
                             </tr>
                             @if (shields.Count > 0)
                             {
@@ -194,7 +194,7 @@
                                             @onclick="@(() => PickMount(m))">@(selected ? "●" : "○")</button>
                                 </BaronyTooltip>
                             </td>
-                            <td class="ppb-row-label">@m.Name</td>
+                            <td class="ppb-row-label">@m.DisplayName()</td>
                             <td>@m.Attack</td>
                             <td>@m.Defense</td>
                             <td>@m.Damage</td>
@@ -370,8 +370,8 @@
                             @onclick="@(() => PickArmor(a))">@(selected ? "●" : "○")</button>
                 </BaronyTooltip>
             </td>
-            <td class="ppb-row-label">@a.Name</td>
-            <td>@(a.IsShield ? "Shields" : a.ArmorClass)</td>
+            <td class="ppb-row-label">@a.DisplayName()</td>
+            <td>@(a.IsShield ? L["Shields"] : L[a.ArmorClass])</td>
             <td>@a.Defense</td>
             <td>@(a.IsShield ? "—" : a.ArmorValue.ToString())</td>
             <td>@(a.AgilityPenalty == 0 ? "—" : a.AgilityPenalty.ToString())</td>

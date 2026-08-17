@@ -210,16 +210,16 @@
             <tbody>
                 <tr class="unit-draft-equip__names">
                     <td>
-                        @(_w1?.Name ?? "—")
+                        @(_w1?.DisplayName() ?? "—")
                         @if (_w1 is not null && Unit.Weapon1Quality != UnitWeaponQuality.Normal)
                         {
                             <span class="unit-draft-equip__qual">@Unit.Weapon1Quality</span>
                         }
                     </td>
-                    <td>@(_w2?.Name ?? "—")</td>
-                    <td>@(_armor?.Name ?? "—")</td>
-                    <td>@(_shield?.Name ?? "—")</td>
-                    <td>@(_mount?.Name ?? "—")</td>
+                    <td>@(_w2?.DisplayName() ?? "—")</td>
+                    <td>@(_armor?.DisplayName() ?? "—")</td>
+                    <td>@(_shield?.DisplayName() ?? "—")</td>
+                    <td>@(_mount?.DisplayName() ?? "—")</td>
                 </tr>
                 <tr class="unit-draft-equip__stats">
                     <td>

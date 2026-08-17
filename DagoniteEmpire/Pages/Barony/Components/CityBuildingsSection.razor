@@ -46,7 +46,7 @@
                             <td class="city-building-col-name">
                                 <div class="city-building-name-cell">
                                     <BaronyTooltip Title="@(L["Description"])" Text="@core.Description">
-                                        <span class="city-building-name-text">@(string.IsNullOrWhiteSpace(core.Name) ? "—" : core.Name)</span>
+                                        <span class="city-building-name-text">@(string.IsNullOrWhiteSpace(core.Name) ? "—" : core.DisplayName())</span>
                                     </BaronyTooltip>
                                     @if (CanManage)
                                     {
@@ -143,7 +143,7 @@
                             <td class="city-building-col-name">
                                 <div class="city-building-name-cell">
                                     <BaronyTooltip Title="@(L["Description"])" Text="@building.Description">
-                                        <span class="city-building-name-text">@(string.IsNullOrWhiteSpace(building.Name) ? "—" : building.Name)</span>
+                                        <span class="city-building-name-text">@(string.IsNullOrWhiteSpace(building.Name) ? "—" : building.DisplayName())</span>
                                     </BaronyTooltip>
                                     @if (CanManage)
                                     {

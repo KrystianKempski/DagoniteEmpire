@@ -653,7 +653,7 @@
     private string PurposeNameOnly(SeatRoomDTO room)
     {
         if (room.PurposeTemplateId is int pid && PurposeLookup.TryGetValue(pid, out var p))
-            return p.Name;
+            return p.DisplayName();
         return string.Empty;
     }
 
@@ -661,7 +661,7 @@
     {
         if (room.PurposeTemplateId is not int pid || !PurposeLookup.TryGetValue(pid, out var p))
             return "—";
-        return p.Name;
+        return p.DisplayName();
     }
 
     private string? OccupantNameOnly(SeatRoomDTO room)
