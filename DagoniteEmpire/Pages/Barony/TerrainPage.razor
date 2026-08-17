@@ -269,7 +269,7 @@ else
             Barony.TerrainMapWidth = width;
             Barony.TerrainMapHeight = height;
             await LoadMapDataAsync();
-            _snackBar.Add($"Map resized to {width}×{height}.", Severity.Success);
+            _snackBar.Add(L["Map resized to {0}×{1}.", width, height], Severity.Success);
             StateHasChanged();
         }
         catch (Exception ex)
@@ -336,7 +336,7 @@ else
 
         if (_constructionByTileId.TryGetValue(tile.Id, out var existing))
         {
-            _snackBar.Add($"A construction project is already planned here: {existing.Name}.", Severity.Info);
+            _snackBar.Add(L["A construction project is already planned here: {0}.", existing.Name], Severity.Info);
             return;
         }
 
@@ -1206,7 +1206,7 @@ else
             string.Equals(t.Name, templateName, StringComparison.OrdinalIgnoreCase));
         if (template is null)
         {
-            _snackBar.Add($"Catalog entry “{templateName}” not found. Restart the app to reseed Buildings.", Severity.Error);
+            _snackBar.Add(L["Catalog entry “{0}” not found. Restart the app to reseed Buildings.", templateName], Severity.Error);
             return false;
         }
 

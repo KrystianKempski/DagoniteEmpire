@@ -564,7 +564,7 @@
             if (barony is null) return;
             barony.DefaultUnitWeaponQuality = _quality;
             await _baronyRepo.UpdateBarony(barony);
-            _snackBar.Add($"Default gear quality set to {_quality}.", Severity.Success);
+            _snackBar.Add(L["Default gear quality set to {0}.", _quality], Severity.Success);
         }
         catch (Exception ex)
         {

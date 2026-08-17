@@ -1340,7 +1340,7 @@ else
         }
         catch (Exception ex)
         {
-            SnackBar.Add($"Error while loading mobs: " + ex.Message, Severity.Error);
+            SnackBar.Add(L["Error while loading mobs: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -1505,7 +1505,7 @@ else
             {
                 BattlePhase.CurrentTurn++;
                 BattlePhase = await _battlePhaseRepository.Update(BattlePhase);
-                SnackBar.Add($"Turn {BattlePhase.CurrentTurn} started", Severity.Info);
+                SnackBar.Add(L["Turn {0} started", BattlePhase.CurrentTurn], Severity.Info);
             }
 
             await RefreshBattleParticipantsAsync();
@@ -1514,7 +1514,7 @@ else
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error in Next turn action for chapter {ChapterId}", Id);
-            SnackBar.Add($"Error in Next turn action: " + ex.Message, Severity.Error);
+            SnackBar.Add(L["Error in Next turn action: "] + ex.Message, Severity.Error);
         }
     }
 
@@ -1689,7 +1689,7 @@ else
             BattlePhase = null;
             await LoadMobs();
             await LoadChapter(goToLastPage: true);
-            SnackBar.Add($"Battle Ended", Severity.Normal);
+            SnackBar.Add(L["Battle Ended"], Severity.Normal);
         }
     }
 
@@ -1717,7 +1717,7 @@ else
             await AppendRollToPostEditorAsync(fightResult.RichHtml, fightResult.WrapForThread, fightFormat: true);
 
             if (!string.IsNullOrEmpty(fightResult.AttackerName))
-                SnackBar.Add($"Fight sequence performed. {fightResult.AttackerName} attacks {fightResult.DefenderName}", Severity.Success);
+                SnackBar.Add(L["Fight sequence performed. {0} attacks {1}", fightResult.AttackerName, fightResult.DefenderName], Severity.Success);
 
             if (UserInfo?.CharacterMG != true)
             {
@@ -2104,7 +2104,7 @@ else
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to apply barony adventure grants for chapter {ChapterId}", Id);
-            SnackBar.Add($"Post saved, but barony update failed: {ex.Message}", Severity.Warning);
+            SnackBar.Add(L["Post saved, but barony update failed: {0}", ex.Message], Severity.Warning);
         }
 
         if (_hubConnection is not null)

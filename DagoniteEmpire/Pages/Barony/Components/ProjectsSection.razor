@@ -194,7 +194,7 @@
         try
         {
             await _baronyRepo.SetProjectCostMode(item.Id, mode);
-            _snackBar.Add($"Payment method set to {mode}.", Severity.Success);
+            _snackBar.Add(L["Payment method set to {0}.", mode], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)

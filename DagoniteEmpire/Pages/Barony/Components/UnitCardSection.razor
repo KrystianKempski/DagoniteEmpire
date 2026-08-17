@@ -371,7 +371,7 @@
             Unit.TrainingTurnsRemaining = created.Project.TurnsRemaining;
             Unit.OpenProjectOutputKind = created.Project.OutputKind;
             Unit.OpenProjectStatus = created.Project.Status;
-            _snackBar.Add($"Reinforce project “{created.Project.Name}” created — fund it on Projects.", Severity.Success);
+            _snackBar.Add(L["Reinforce project “{0}” created — fund it on Projects.", created.Project.Name], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
@@ -478,7 +478,7 @@
             Unit.OpenProjectStatus = null;
             _baseline = null;
             _xpDirty = false;
-            _snackBar.Add($"Unit “{Unit.Name}” is now Active.", Severity.Success);
+            _snackBar.Add(L["Unit “{0}” is now Active.", Unit.Name], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
@@ -508,7 +508,7 @@
         try
         {
             await _baronyRepo.DeleteUnit(Unit.Id);
-            _snackBar.Add($"Unit “{Unit.Name}” deleted.", Severity.Success);
+            _snackBar.Add(L["Unit “{0}” deleted.", Unit.Name], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)

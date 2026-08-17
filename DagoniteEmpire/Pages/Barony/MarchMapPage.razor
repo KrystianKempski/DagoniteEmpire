@@ -300,7 +300,7 @@ else
 
             changed = true;
             if (CanManageAsMg)
-                _snackBar.Add($"Removed {missingLord.Count} place(s) without a linked lord ({string.Join(", ", missingLord.Select(n => n.Label))}).", Severity.Info);
+                _snackBar.Add(L["Removed {0} place(s) without a linked lord ({1}).", missingLord.Count, string.Join(", ", missingLord.Select(n => n.Label))], Severity.Info);
         }
 
         if (changed && CanManageAsMg)
@@ -483,7 +483,7 @@ else
 
         if (string.IsNullOrWhiteSpace(node.LordKey))
         {
-            _snackBar.Add($"“{node.Label}” has no linked lord — ask the MG to fix the map.", Severity.Error);
+            _snackBar.Add(L["“{0}” has no linked lord — ask the MG to fix the map.", node.Label], Severity.Error);
             return;
         }
 

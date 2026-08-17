@@ -158,7 +158,7 @@ else
         {
             var saved = await _baronyRepo.SaveBuildingTemplate(template);
             await ReloadTemplatesAsync();
-            _snackBar.Add($"Catalog entry “{saved.Name}” created.", Severity.Success);
+            _snackBar.Add(L["Catalog entry “{0}” created.", saved.Name], Severity.Success);
         }
         catch (Exception ex)
         {
@@ -232,7 +232,7 @@ else
         {
             var saved = await _baronyRepo.SaveBuildingTemplate(edited);
             await ReloadTemplatesAsync();
-            _snackBar.Add($"Catalog entry “{saved.Name}” updated.", Severity.Success);
+            _snackBar.Add(L["Catalog entry “{0}” updated.", saved.Name], Severity.Success);
         }
         catch (Exception ex)
         {
@@ -256,7 +256,7 @@ else
         {
             await _baronyRepo.DeleteBuildingTemplate(template.Id);
             await ReloadTemplatesAsync();
-            _snackBar.Add($"Catalog entry “{template.Name}” deleted.", Severity.Success);
+            _snackBar.Add(L["Catalog entry “{0}” deleted.", template.Name], Severity.Success);
         }
         catch (Exception ex)
         {

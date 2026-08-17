@@ -997,7 +997,7 @@
             if (issue == SeatRoomLayoutIssue.None)
                 _snackBar.Add(L["Chamber moved."], Severity.Success);
             else
-                _snackBar.Add($"Chamber moved — {SeatRoomLayout.IssueLabel(issue)}.", Severity.Warning);
+                _snackBar.Add(L["Chamber moved — {0}.", SeatRoomLayout.IssueLabel(issue)], Severity.Warning);
 
             await OnChanged.InvokeAsync();
         }
@@ -1108,7 +1108,7 @@
             await _baronyRepo.SaveSeatActiveLevels(Seat.Id, next);
             Seat.ActiveLevels = next;
             _currentLevel = level;
-            _snackBar.Add($"Added {SeatFloorLevel.Label(level)}.", Severity.Success);
+            _snackBar.Add(L["Added {0}.", SeatFloorLevel.Label(level)], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)

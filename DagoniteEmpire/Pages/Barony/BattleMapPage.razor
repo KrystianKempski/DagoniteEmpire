@@ -1140,7 +1140,7 @@ else
                     if (!CanTarget(attacker, planClicked))
                     {
                         if (attacker.Range > 0 && IsPinned(attacker) && !AreAdjacent(attacker, planClicked))
-                            _snackBar.Add($"{attacker.Label} is engaged — can only fight adjacent enemies.", Severity.Warning);
+                            _snackBar.Add(L["{0} is engaged — can only fight adjacent enemies.", attacker.Label], Severity.Warning);
                         else if (attacker.Range > 0)
                             _snackBar.Add(L["Target is out of range."], Severity.Warning);
                         else
@@ -3494,7 +3494,7 @@ else
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to mark fled unit {UnitId} as 0 HP for barony {BaronyId}", uid, BaronyId);
-            _snackBar.Add($"Failed to update Army HP for {fled.Label}.", Severity.Error);
+            _snackBar.Add(L["Failed to update Army HP for {0}.", fled.Label], Severity.Error);
         }
     }
 

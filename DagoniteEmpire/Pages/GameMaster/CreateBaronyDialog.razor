@@ -119,7 +119,7 @@
                 _description,
                 _seedProfile);
 
-            _snackBar.Add($"Barony \"{barony.Name}\" created (with campaign).", Severity.Success);
+            _snackBar.Add(L["Barony \"{0}\" created (with campaign).", barony.Name], Severity.Success);
             MudDialog.Close(DialogResult.Ok(barony));
         }
         catch (RepositoryErrorException ex)

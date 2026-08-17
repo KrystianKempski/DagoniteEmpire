@@ -191,7 +191,7 @@
                 continue;
             if (add > row.MaxAdd)
             {
-                _snackBar.Add($"Amount for {row.Name} exceeds available stock or remaining cost.", Severity.Warning);
+                _snackBar.Add(L["Amount for {0} exceeds available stock or remaining cost.", row.Name], Severity.Warning);
                 return;
             }
             amounts[row.Key] = add;
