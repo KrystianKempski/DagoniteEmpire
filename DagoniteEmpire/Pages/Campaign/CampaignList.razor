@@ -24,7 +24,7 @@
         <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Bookmark" width="40px" height="40px" class="pr-2" />Avalible campaigns for: @UserInfo?.SelectedCharacter?.NPCName</MudText>
         
        
-        @if (UserInfo?.IsAdminOrMG == true)
+        @if (UserInfo?.HasGlobalCharacterAccess == true)
         {
             <div class="camp">
                 <MudPaper Height="100px" Width="100%" Class="pa-3 mb-3 justify-content-center align-content-center" Style="cursor: pointer;" @onclick="CreateCampaign">
@@ -71,7 +71,7 @@
                                                Title="Last post">
                                         <img src="@MyIcon.ScrollWhite" alt="Last post" width="20" height="20" />
                                     </MudButton>
-                                    @if (UserInfo?.IsAdminOrMG == true)
+                                    @if (UserInfo?.HasGlobalCharacterAccess == true)
                                     {
                                         <MudIconButton Class="pa-1" Style="color: white;" Icon="@Icons.Material.Filled.Edit" aria-label="edit" OnClick="@(()=>EditCampaign(camp))" OnClickStopPropagation="true"></MudIconButton>
                                         <MudIconButton Class="pa-1" Style="color: white;" Icon="@Icons.Material.Filled.Delete" aria-label="delete" OnClick="@(()=>DeleteCampaign(camp.Id))" OnClickStopPropagation="true"></MudIconButton>
@@ -153,7 +153,7 @@
         UserInfo = await _userService.GetUserInfo();
         IsLoading = true;
         StateHasChanged();
-        if (UserInfo?.IsAdminOrMG == true)
+        if (UserInfo?.HasGlobalCharacterAccess == true)
         {
             Characters = await _characterRepository.GetAllApproved();
             
@@ -170,7 +170,15 @@
         }
         else
         {
-            Characters = await _characterRepository.GetAllApproved(UserInfo?.UserName);
+            if (UserInfo?.IsDemoSession == true && UserInfo.SelectedCharacterId > 0)
+            {
+                var demo = await _characterRepository.GetById(UserInfo.SelectedCharacterId);
+                Characters = demo.Id > 0 ? new[] { demo } : Array.Empty<CharacterDTO>();
+            }
+            else
+            {
+                Characters = await _characterRepository.GetAllApproved(UserInfo?.UserName);
+            }
             if (UserInfo?.SelectedCharacter is not null && UserInfo?.SelectedCharacter.Id > 0 )
             {
                 Campaigns = (await _campaignRepository.GetAll(UserInfo?.SelectedCharacter?.Id)).ToList();

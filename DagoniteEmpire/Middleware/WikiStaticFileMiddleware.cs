@@ -530,5 +530,7 @@ public class WikiStaticFileMiddleware : IMiddleware
     }
 
     private static bool IsAdminOrMg(ClaimsPrincipal user) =>
-        user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster);
+        SD.HasGlobalCharacterAccess(
+            user.Identity?.Name,
+            user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster));
 }

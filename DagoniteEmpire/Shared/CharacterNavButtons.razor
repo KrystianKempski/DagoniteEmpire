@@ -46,7 +46,7 @@
             Baronia
         </MudButton>
     }
-    @if (UserInfo?.IsAdminOrMG == true)
+    @if (UserInfo?.HasGlobalCharacterAccess == true)
     {
         <MudButton FullWidth="@(IsRow==false)" OnClick="GoToGmPanel" Style="@($" color:{Color};justify-content: start; background:transparent;")" Variant="Variant.Text" DropShadow="true">
             <MudIcon Style="width:25px; height: 24px; padding: 2px; padding-bottom: 5px;" Icon="@Icons.Material.Filled.AdminPanelSettings" aria-label="Panel MG"></MudIcon>
@@ -96,7 +96,7 @@
         try
         {
             UserInfo = await _userService.GetUserInfo();
-            if (UserInfo?.IsAdminOrMG != true)
+            if (UserInfo?.HasGlobalCharacterAccess != true)
             {
                 _snackBar.Add("Panel MG jest dostępny wyłącznie dla Mistrza Gry.", Severity.Warning);
                 return;

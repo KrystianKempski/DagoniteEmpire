@@ -303,7 +303,10 @@ public class WikiAccessService : IWikiAccessService
         var userInfo = await TryGetUserInfoSafeAsync();
 
         // MG/Admin always see everything — even when a player character is selected in the UI.
-        if (userInfo?.CharacterMG == true || isAdminOrMg)
+        // Hidden demo accounts keep the GameMaster role for the throwaway barony, but must not
+        // inherit global wiki / character access.
+        var actingName = userInfo?.UserName ?? userName;
+        if ((userInfo?.CharacterMG == true || isAdminOrMg) && !SD.IsDemoUserName(actingName))
         {
             return new WikiAccessContext { TreatAsAdmin = true };
         }

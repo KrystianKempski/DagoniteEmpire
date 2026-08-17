@@ -48,6 +48,13 @@ namespace DA_Common
         public static bool IsDemoUserName(string? userName) =>
             userName == DemoBaronUserName || userName == DemoGmUserName;
 
+        /// <summary>
+        /// Real Admin/GM who may list and open every character. Hidden demo accounts never qualify —
+        /// they may only use the throwaway baron cloned for their browser session.
+        /// </summary>
+        public static bool HasGlobalCharacterAccess(string? userName, bool isAdminOrMg) =>
+            isAdminOrMg && !IsDemoUserName(userName);
+
         /// <summary>HttpOnly cookie so wiki static middleware can read the active hero (Blazor session storage is not available there).</summary>
         public const string WikiSelectedCharacterCookie = "dagonite_wiki_character_id";
 

@@ -22,7 +22,7 @@
                 </ActivatorContent>
                 <ChildContent >
                     <MudMenuItem  Disabled>Select character</MudMenuItem>
-                    @if (UserInfo?.IsAdminOrMG == true && !SD.IsDemoUserName(UserInfo?.UserName))
+                    @if (UserInfo?.HasGlobalCharacterAccess == true)
                     {
                         <MudMenuItem OnClick="@(e => SelectCharacter())">
                             <div class="d-flex flex-row">
@@ -96,14 +96,7 @@
         if (UserInfo is null || UserInfo?.UserName is null)
             return;
 
-        if (UserInfo?.IsAdminOrMG == true)
-        {
-            Characters = RestrictForDemo(await _characterRepository.GetAllApproved());
-        }
-        else
-        {
-            Characters = RestrictForDemo(await _characterRepository.GetAllApproved(UserInfo?.UserName));
-        }
+        Characters = await LoadVisibleCharacters();
 
         if(UserInfo.SelectedCharacterId > 0)
         {
@@ -117,7 +110,7 @@
             await _userService.SetSelectedCharId(UserInfo.SelectedCharacter.Id);         
             UserInfo = await _userService.GetUserInfo();
         }
-        else if (UserInfo.IsAdminOrMG == true && !SD.IsDemoUserName(UserInfo.UserName)){
+        else if (UserInfo.HasGlobalCharacterAccess){
             await _userService.SetSelectedCharId(-1);
             UserInfo = await _userService.GetUserInfo();
         }
@@ -169,24 +162,24 @@
         if (UserInfo is null|| UserInfo?.UserName is null)
             return;
 
-        if (UserInfo?.IsAdminOrMG == true)
-        {
-            Characters = RestrictForDemo(await _characterRepository.GetAllApproved());
-        }
-        else
-        {
-            Characters = RestrictForDemo(await _characterRepository.GetAllApproved(UserInfo?.UserName));
-        }     
+        Characters = await LoadVisibleCharacters();
     }
 
-    // Demo baron sessions share one hidden Identity user, so hide every other session's clone:
-    // only the character selected for this browser session may be seen/switched to.
-    private IEnumerable<CharacterDTO> RestrictForDemo(IEnumerable<CharacterDTO> characters)
+    private async Task<IEnumerable<CharacterDTO>> LoadVisibleCharacters()
     {
-        if (!SD.IsDemoUserName(UserInfo?.UserName))
-            return characters;
-        var selectedId = UserInfo?.SelectedCharacterId ?? 0;
-        return characters.Where(c => c.Id == selectedId).ToList();
+        if (UserInfo?.HasGlobalCharacterAccess == true)
+            return await _characterRepository.GetAllApproved();
+
+        if (UserInfo?.IsDemoSession == true)
+        {
+            var id = UserInfo.SelectedCharacterId;
+            if (id <= 0)
+                return Array.Empty<CharacterDTO>();
+            var character = await _characterRepository.GetById(id);
+            return character.Id > 0 ? new[] { character } : Array.Empty<CharacterDTO>();
+        }
+
+        return await _characterRepository.GetAllApproved(UserInfo?.UserName);
     }
 
     private async Task LogoutAsync()

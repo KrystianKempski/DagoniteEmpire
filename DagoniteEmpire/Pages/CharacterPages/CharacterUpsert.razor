@@ -384,9 +384,17 @@
             var uri = new Uri(_navigationManager.Uri);
             _navigationManager.NavigateTo($"/account/login?returnUrl={uri.LocalPath}", forceLoad: true);
         }
-        if (Id > 0 && UserInfo?.UserName is not null && UserInfo.IsAdminOrMG == false)
+        if (UserInfo?.IsDemoSession == true && Id == 0)
         {
-            if (await _characterRepository.CheckIfCharacterBelongToUser(UserInfo.UserName, Id) == false)
+            _navigationManager.NavigateTo("/character", forceLoad: true);
+            return;
+        }
+        if (Id > 0 && UserInfo?.UserName is not null && !UserInfo.HasGlobalCharacterAccess)
+        {
+            var allowed = UserInfo.IsDemoSession
+                ? UserInfo.CanAccessCharacter(Id)
+                : await _characterRepository.CheckIfCharacterBelongToUser(UserInfo.UserName, Id);
+            if (!allowed)
             {
                 _navigationManager.NavigateTo($"/character", forceLoad: true);
             }

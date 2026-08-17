@@ -120,7 +120,9 @@
         var user = state.User;
         return (
             user.Identity?.Name,
-            user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster));
+            SD.HasGlobalCharacterAccess(
+                user.Identity?.Name,
+                user.IsInRole(SD.Role_Admin) || user.IsInRole(SD.Role_GameMaster)));
     }
 
     private static string AppendCacheBuster(string path)
