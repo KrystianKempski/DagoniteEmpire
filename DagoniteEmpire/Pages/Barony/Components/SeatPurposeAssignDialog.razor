@@ -7,7 +7,7 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudText Typo="Typo.body2" Class="mb-2">
-                Chamber: <strong>@Room.Name</strong> — @Room.SizeCategory (@Room.TileCount tiles)
+                @L["Chamber:"] <strong>@Room.Name</strong> — @Room.SizeCategory @L["({0} tiles)", Room.TileCount]
             </MudText>
             <MudSelect T="int?"
                        @bind-Value="_purposeId"
@@ -66,14 +66,14 @@
                         <MudText Typo="Typo.body2" Class="mt-1">@_selected.Description</MudText>
                     }
                     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-1">
-                        Min size: @_selected.MinSizeCategory
+                        @L["Min size:"] @_selected.MinSizeCategory
                         @if (!string.IsNullOrWhiteSpace(_selected.WhoOccupies))
                         {
-                            <text> · Typical occupant: @_selected.WhoOccupies</text>
+                            <text> · @L["Typical occupant:"] @_selected.WhoOccupies</text>
                         }
                         @if (_selected.SleepCapacity > 0)
                         {
-                            <text> · Sleep: @_selected.SleepCapacity</text>
+                            <text> · @L["Sleep:"] @_selected.SleepCapacity</text>
                         }
                     </MudText>
                 </MudPaper>
@@ -81,7 +81,7 @@
             @if (IneligibleTemplates.Any())
             {
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-2">
-                    @IneligibleTemplates.Count() purpose(s) require a larger chamber.
+                    @L["{0} purpose(s) require a larger chamber.", IneligibleTemplates.Count()]
                 </MudText>
             }
         </div>

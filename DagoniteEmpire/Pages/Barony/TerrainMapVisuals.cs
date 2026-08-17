@@ -136,15 +136,16 @@ public static class TerrainMapVisuals
 
     public static string HexToRgba(string hex, decimal alpha)
     {
+        var a = alpha.ToString(System.Globalization.CultureInfo.InvariantCulture);
         var normalized = (hex ?? "#888888").Trim();
         if (!normalized.StartsWith('#'))
             normalized = "#" + normalized;
         if (normalized.Length != 7)
-            return $"rgba(136, 136, 136, {alpha})";
+            return $"rgba(136, 136, 136, {a})";
 
         var r = Convert.ToInt32(normalized[1..3], 16);
         var g = Convert.ToInt32(normalized[3..5], 16);
         var b = Convert.ToInt32(normalized[5..7], 16);
-        return $"rgba({r}, {g}, {b}, {alpha})";
+        return $"rgba({r}, {g}, {b}, {a})";
     }
 }

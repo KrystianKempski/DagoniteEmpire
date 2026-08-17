@@ -9,7 +9,7 @@
 @inject IDialogService _dialogService
 @inject IJSRuntime _js
 
-<PageTitle>Dagonite Empire | Barony Notes</PageTitle>
+<PageTitle>Dagonite Empire | @L["Barony Notes"]</PageTitle>
 
 @if (IsLoading)
 {
@@ -210,7 +210,7 @@ else if (Barony is not null)
                 </div>
 
                 <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
-                    Current turn: <b>T@(CurrentTurn)</b>. Reminders light up when your barony reaches the target turn.
+                    @((MarkupString)L["Current turn: <b>T{0}</b>. Reminders light up when your barony reaches the target turn.", CurrentTurn].Value)
                 </MudText>
 
                 @if (_reminders.Count == 0)

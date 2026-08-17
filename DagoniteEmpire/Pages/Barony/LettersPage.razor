@@ -5,7 +5,7 @@
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 @inject IDialogService _dialogService
 
-<PageTitle>Dagonite Empire | Letters</PageTitle>
+<PageTitle>Dagonite Empire | @L["Letters"]</PageTitle>
 
 @if (IsLoading)
 {
@@ -20,9 +20,9 @@ else if (Barony is not null)
     <BaronyPageHeader Title="@(L["Letters"])" HelpKey="letters">
         <Summary>
             <span class="projects-summary">
-                <span class="projects-summary__item">@_threads.Count thread@(_threads.Count == 1 ? "" : "s")</span>
+                <span class="projects-summary__item">@_threads.Count @(_threads.Count == 1 ? L["thread"] : L["threads"])</span>
                 <span class="projects-summary__item">
-                    Inbound / turn: Eastern March @BaronLetterRules.MaxInboundEasternMarchPerTurn · Empire/Other @BaronLetterRules.MaxInboundEmpirePerTurn
+                    @L["Inbound / turn: Eastern March {0} · Empire/Other {1}", BaronLetterRules.MaxInboundEasternMarchPerTurn, BaronLetterRules.MaxInboundEmpirePerTurn]
                 </span>
             </span>
         </Summary>
@@ -149,7 +149,7 @@ else if (Barony is not null)
                             {
                                 <text> · @_selected.CorrespondentTitle</text>
                             }
-                            · @_receivedThisTurn/@MaxInboundForSelected from this person this turn
+                            · @L["{0}/{1} from this person this turn", _receivedThisTurn, MaxInboundForSelected]
                         </div>
                     </div>
                     <div class="baron-mail__header-actions">
@@ -190,7 +190,7 @@ else if (Barony is not null)
                                     }
                                     else
                                     {
-                                        <text>@post.FormatInWorldDate() · Turn @post.TurnNumber</text>
+                                        <text>@post.FormatInWorldDate() · @L["Turn {0}", post.TurnNumber]</text>
                                     }
                                 </span>
                                 @if (isLastOutbound && !_editingLastLetter)

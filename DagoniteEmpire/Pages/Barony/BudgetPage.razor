@@ -5,7 +5,7 @@
 @inject ICharacterRepository _characterRepo
 @inject IDialogService _dialogService
 
-<PageTitle>Dagonite Empire | Barony Budget</PageTitle>
+<PageTitle>Dagonite Empire | @L["Barony Budget"]</PageTitle>
 
 @if (IsLoading)
 {
@@ -41,7 +41,7 @@ else if (_overview is not null)
                         <span class="barony-stat__value" style="color:@(_turnBalance >= 0 ? "var(--barony-pos)" : "var(--barony-neg)")">@Num(_turnBalance)</span>
                     </div>
                     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                        Domain Panel Gold (@Num(_domainPanelGold)) − liege tribute (@Num(_liegeTribute))
+                        @L["Domain Panel Gold ({0}) − liege tribute ({1})", Num(_domainPanelGold), Num(_liegeTribute)]
                     </MudText>
                 </MudItem>
             </MudGrid>
@@ -93,9 +93,9 @@ else if (_overview is not null)
         </Summary>
         <ChildContent>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Gold income/expenses from Domain Panel section totals (Final Gold already includes %).
-                Fief income is village gold (moved out of Improvements); Fief expense is liege tribute.
-                Turn balance = Domain Panel Final Gold − liege tribute.
+                @L["Gold income/expenses from Domain Panel section totals (Final Gold already includes %)."]
+                @L["Fief income is village gold (moved out of Improvements); Fief expense is liege tribute."]
+                @L["Turn balance = Domain Panel Final Gold − liege tribute."]
             </MudText>
             <MudGrid>
                 <MudItem xs="12" md="6">

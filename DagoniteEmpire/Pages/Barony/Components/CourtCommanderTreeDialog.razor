@@ -7,7 +7,7 @@
         <div class="barony-dialog-theme court-commander-tree">
             <div class="court-commander-tree__header">
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                    CX @_available available · @_spent spent · pool @_sheet.CommanderXp
+                    CX @L["{0} available · {1} spent · pool {2}", _available, _spent, _sheet.CommanderXp]
                 </MudText>
                 <div class="court-commander-tree__legend">
                     <span class="court-commander-node court-commander-node--unlocked court-commander-node--legend">@L["Unlocked"]</span>
@@ -80,7 +80,7 @@
                     <div class="court-commander-tree__detail-head">
                         <strong>@L[_selected.NameEn]</strong>
                         <span class="court-commander-tree__detail-meta">
-                            @BranchTitle(_selected.Branch) · Tier @(_selected.Tier) · @_selected.CxCost CX
+                            @BranchTitle(_selected.Branch) · @L["Tier {0} · {1} CX", _selected.Tier, _selected.CxCost]
                         </span>
                         @if (CanSpendCx && IsReady(_selected))
                         {
@@ -90,7 +90,7 @@
                                        StartIcon="@Icons.Material.Filled.LockOpen"
                                        ButtonType="ButtonType.Button"
                                        OnClick="UnlockSelectedAsync">
-                                Unlock (@_selected.CxCost CX)
+                                @L["Unlock ({0} CX)", _selected.CxCost]
                             </MudButton>
                         }
                     </div>

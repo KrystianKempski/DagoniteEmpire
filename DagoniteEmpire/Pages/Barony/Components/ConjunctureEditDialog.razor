@@ -8,8 +8,8 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudText Typo="Typo.body2" Class="mb-2" Style="color:var(--barony-muted);">
-                Conjuncture = 2d6 + MG modifier. Rolled at turn start.
-                Net Gold profit = (Economy + Conjuncture) × 2; also shifts Community Economy %.
+                @L["Conjuncture = 2d6 + MG modifier. Rolled at turn start."]
+                @L["Net Gold profit = (Economy + Conjuncture) × 2; also shifts Community Economy %."]
             </MudText>
             <MudNumericField @bind-Value="_dice"
                              Label="@(L["2d6 roll"])"
@@ -21,13 +21,13 @@
                              Class="baron-influence-field" />
             <MudNumericField @bind-Value="_modifier"
                              Label="@(L["MG modifier"])"
-                             HelperText="Only MG. War −3, good harvest +2, etc."
+                             HelperText="@(L["Only MG. War −3, good harvest +2, etc."])"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Class="baron-influence-field" />
             <MudText Typo="Typo.subtitle2" Class="mt-2">
-                Effective: @_dice + @_modifier = <b>@(_dice + _modifier)</b>
-                (Gold uses Economy + Conjuncture; % uses Conjuncture − 7 = @(_dice + _modifier - 7))
+                @L["Effective:"] @_dice + @_modifier = <b>@(_dice + _modifier)</b>
+                @L["(Gold uses Economy + Conjuncture; % uses Conjuncture − 7 = {0})", _dice + _modifier - 7]
             </MudText>
         </div>
     </DialogContent>

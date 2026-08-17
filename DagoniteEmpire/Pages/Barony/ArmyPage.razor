@@ -5,7 +5,7 @@
 @inject ISnackbar _snackBar
 @inject IBaronyBattleMapRepository _battleMapRepo
 
-<PageTitle>Dagonite Empire | Army</PageTitle>
+<PageTitle>Dagonite Empire | @L["Army"]</PageTitle>
 
 @if (IsLoading)
 {
@@ -91,7 +91,7 @@ else if (Barony is not null)
                 {
                     <MudText Typo="Typo.caption" Class="army-roster-summary__note">
                         Upkeep totals count Active units only
-                        (@_units.Count(u => u.IsActive) active · @_units.Count(u => u.IsTraining) still training).
+                        @L["({0} active · {1} still training).", _units.Count(u => u.IsActive), _units.Count(u => u.IsTraining)]
                     </MudText>
                 }
             </div>

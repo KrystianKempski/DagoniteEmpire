@@ -11,10 +11,10 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog unit-change-equip-dialog">
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Pick a new loadout and how to pay for each piece (Craft / Buy / Defense), same as the unit generator.
-                Creates a <b>@L["Unit Change Equipment"]</b> project in Resource allocation — fund it on Projects.
-                Cost is scaled by current troops (@Unit.TroopCount/@UnitRules.DefaultTroopCount).
-                Gear quality stays as set by the GM (@CurrentQuality).
+                @L["Pick a new loadout and how to pay for each piece (Craft / Buy / Defense), same as the unit generator."]
+                @((MarkupString)L["Creates a <b>{0}</b> project in Resource allocation — fund it on Projects.", L["Unit Change Equipment"]].Value)
+                @L["Cost is scaled by current troops ({0}/{1}).", Unit.TroopCount, UnitRules.DefaultTroopCount]
+                @L["Gear quality stays as set by the GM ({0}).", CurrentQuality]
             </MudText>
 
             <UnitEquipmentPicker Unit="@Unit"
@@ -33,7 +33,7 @@
 
             <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">@L["Gear acquire"]</MudText>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Craft · Buy (Mkt) · Defense (2×Mkt). Costs below already include troop scale.
+                @L["Craft · Buy (Mkt) · Defense (2×Mkt). Costs below already include troop scale."]
             </MudText>
             <div class="unit-gear-pay mb-3">
                 @PayRow("W1", _w1?.Name, _w1?.ProductionCost, _w1?.GoldCost, _w1?.MarketGold, _payW1, v => { _payW1 = v; Recalc(); }, required: true)

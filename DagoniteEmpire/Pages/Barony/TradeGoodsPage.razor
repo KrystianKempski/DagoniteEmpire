@@ -3,7 +3,7 @@
 @inherits BaronyPageBase
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 
-<PageTitle>Dagonite Empire | Trade</PageTitle>
+<PageTitle>Dagonite Empire | @L["Trade"]</PageTitle>
 
 @if (IsLoading)
 {
@@ -56,7 +56,7 @@ else
             continue;
 
         <TradeGoodsSection SectionKey="@tradeSection.Key"
-                           SectionLabel="@tradeSection.LabelEn"
+                           SectionLabel="@L[tradeSection.LabelEn]"
                            Items="@items"
                            Availability="@_availability"
                            CanOverride="@CanManageAsMg"

@@ -14,7 +14,7 @@
 @inject ILogger<BattleMapPage> Logger
 @implements IAsyncDisposable
 
-<PageTitle>Dagonite Empire | Battle</PageTitle>
+<PageTitle>Dagonite Empire | @L["Battle"]</PageTitle>
 
 @if (IsLoading)
 {
@@ -43,9 +43,9 @@ else
                 @if (IsMovementPhase && ActiveToken is not null)
                 {
                     <span class="bbm-turn-chip bbm-turn-chip--@(ActiveToken.IsEnemy ? "enemy" : "ally")">
-                        @(ActiveToken.IsEnemy ? "Enemy order" : "Baron's order")
+                        @(ActiveToken.IsEnemy ? L["Enemy order"] : L["Baron's order"])
                         · @ActiveToken.Label
-                        · @GetPlanBudget(ActiveToken) move left
+                        · @L["{0} move left", GetPlanBudget(ActiveToken)]
                         @if (ActiveToken.HasPath)
                         {
                             var end = ActiveToken.PlannedEnd();
@@ -189,7 +189,7 @@ else
                         @if (WaitingForOpponentOrder)
                         {
                             <span class="bbm-map-wait">
-                                Enemy order: @ActiveToken!.Label — waiting for the Game Master.
+                                @L["Enemy order: {0} — waiting for the Game Master.", ActiveToken!.Label]
                             </span>
                         }
                         else if (WaitingForMovementResolve)
@@ -429,7 +429,7 @@ else
                                     <span class="@(allyIronclad ? "bbm-force-stat--boost" : null)">Arm @(allyIronclad ? $"{allyArmEff} (+2)" : allyArmEff.ToString())</span>@(unitPierce > 0 ? $" · Prc {unitPierce}" : "") ·
                                     Disc @(onMap?.Discipline ?? unit.Discipline) ·
                                     <span class="@(allyFullDef ? "bbm-force-stat--down" : null)">Mv @allyMvEff</span> ·
-                                    @(onMap?.TroopCount ?? unit.TroopCount) men
+                                    @L["{0} men", onMap?.TroopCount ?? unit.TroopCount]
                                 </div>
                                 @if (onMap is not null)
                                 {
@@ -501,7 +501,7 @@ else
                                     <span class="@(enemy.IroncladActive ? "bbm-force-stat--boost" : null)">Arm @(enemy.IroncladActive ? $"{enemyArmEff} (+2)" : enemyArmEff.ToString())</span>@(enemy.Pierce > 0 ? $" · Prc {enemy.Pierce}" : "") ·
                                     Disc @enemy.Discipline ·
                                     <span class="@(enemy.FullDefense ? "bbm-force-stat--down" : null)">Mv @enemyMvEff</span> ·
-                                    @enemy.TroopCount men
+                                    @L["{0} men", enemy.TroopCount]
                                 </div>
                                 @CommanderAbilityBadges(enemy)
                             </div>

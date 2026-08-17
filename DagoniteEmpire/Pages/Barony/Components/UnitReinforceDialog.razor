@@ -11,15 +11,15 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                People cost = Selected volunteers + Standard training, scaled by troops / @UnitRules.DefaultTroopCount (floor).
-                Gear = current loadout at @UnitRules.ReinforceGearSalvagePercent% salvage, then the same scale.
+                @L["People cost = Selected volunteers + Standard training, scaled by troops / {0} (floor).", UnitRules.DefaultTroopCount]
+                @L["Gear = current loadout at {0}% salvage, then the same scale.", UnitRules.ReinforceGearSalvagePercent]
             </MudText>
 
             <MudNumericField T="int"
                              @bind-Value="_troopCount"
                              @bind-Value:after="Recalc"
                              Label="@(L["Troops to add"])"
-                             HelperText="@($"Missing {_missing}. Current {Unit.TroopCount}/{UnitRules.DefaultTroopCount}.")"
+                             HelperText="@(L["Missing {0}. Current {1}/{2}.", _missing, Unit.TroopCount, UnitRules.DefaultTroopCount])"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="1"
@@ -28,7 +28,7 @@
 
             <MudText Typo="Typo.subtitle2" Class="mb-1">@L["Gear acquire"]</MudText>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Craft · Buy (Mkt) · Defense (2×Mkt) — same as the unit generator. Costs below already include salvage + troop scale.
+                @L["Craft · Buy (Mkt) · Defense (2×Mkt) — same as the unit generator. Costs below already include salvage + troop scale."]
             </MudText>
             <div class="unit-gear-pay mb-3">
                 @PayRow("W1", _w1?.Name, _w1?.ProductionCost, _w1?.GoldCost, _w1?.MarketGold, _payW1, v => { _payW1 = v; Recalc(); }, required: true)
@@ -42,14 +42,14 @@
             <div class="d-flex flex-wrap gap-3 mb-1">
                 <span>
                     @L["Gold"] <b>@_costs.GoldTotal</b>
-                    <span style="color:var(--barony-muted);">(people @_costs.GoldPeople · gear @_costs.GoldGear)</span>
+                    <span style="color:var(--barony-muted);">@L["(people {0} · gear {1})", _costs.GoldPeople, _costs.GoldGear]</span>
                 </span>
                 <span>
-                    Prod <b>@_costs.Production</b>
+                    @L["Prod"] <b>@_costs.Production</b>
                 </span>
                 <span>
                     @L["Defense"] <b>@_costs.DefenseTotal</b>
-                    <span style="color:var(--barony-muted);">(people @_costs.DefensePeople · gear @_costs.DefenseGear)</span>
+                    <span style="color:var(--barony-muted);">@L["(people {0} · gear {1})", _costs.DefensePeople, _costs.DefenseGear]</span>
                 </span>
                 <span>@L["Turns"] <b>@_costs.Turns</b></span>
             </div>

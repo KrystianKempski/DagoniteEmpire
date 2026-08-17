@@ -5,7 +5,7 @@
 <div class="march-map-canvas">
     @if (_hoverTipVisible)
     {
-        <div class="march-map-hover-tip" style="@($"left:{_hoverTipX}px;top:{_hoverTipY}px;")">
+        <div class="march-map-hover-tip" style="@($"left:{Fmt(_hoverTipX)}px;top:{Fmt(_hoverTipY)}px;")">
             <MarchMapLordTipBody Lord="@_hoverTipLord"
                                  PlaceLabel="@_hoverTipLabel"
                                  IsPlayerSeat="@_hoverTipIsPlayerSeat"
@@ -40,11 +40,11 @@
 
                         var isRiver = string.Equals(route.Kind, MarchRouteKind.River, StringComparison.OrdinalIgnoreCase);
                         var active = IsRouteHighlighted(route);
-                        <line x1="@from.X" y1="@from.Y" x2="@to.X" y2="@to.Y"
+                        <line x1="@Fmt(from.X)" y1="@Fmt(from.Y)" x2="@Fmt(to.X)" y2="@Fmt(to.Y)"
                               class="march-map-route-hit"
                               @onclick:stopPropagation="true"
                               @onclick="() => OnRouteClick(route)" />
-                        <line x1="@from.X" y1="@from.Y" x2="@to.X" y2="@to.Y"
+                        <line x1="@Fmt(from.X)" y1="@Fmt(from.Y)" x2="@Fmt(to.X)" y2="@Fmt(to.Y)"
                               class="march-map-route @(isRiver ? "march-map-route--river" : "march-map-route--road") @(active ? "march-map-route--active" : "")"
                               pointer-events="none" />
                     }
@@ -68,7 +68,7 @@
                                 continue;
                             var ox = (-dy / len) * offset * 2.2;
                             var oy = (dx / len) * offset * 2.2;
-                            <line x1="@(from.X + ox)" y1="@(from.Y + oy)" x2="@(to.X + ox)" y2="@(to.Y + oy)"
+                            <line x1="@Fmt(from.X + ox)" y1="@Fmt(from.Y + oy)" x2="@Fmt(to.X + ox)" y2="@Fmt(to.Y + oy)"
                                   class="march-map-trade-overlay"
                                   style="@($"stroke:{overlay.Color}")"
                                   pointer-events="none" />
@@ -82,7 +82,7 @@
                             var to = NodeById(DesignPathNodeIds[i + 1]);
                             if (from is null || to is null)
                                 continue;
-                            <line x1="@from.X" y1="@from.Y" x2="@to.X" y2="@to.Y"
+                            <line x1="@Fmt(from.X)" y1="@Fmt(from.Y)" x2="@Fmt(to.X)" y2="@Fmt(to.Y)"
                                   class="march-map-route march-map-route--design"
                                   pointer-events="none" />
                         }
@@ -177,7 +177,7 @@
     {
         <div class="march-map-missing-image">
             <MudAlert Severity="Severity.Info" Dense="true">
-                Map image not found at <code>@Document.ImageUrl</code>.
+                @L["Map image not found at"] <code>@Document.ImageUrl</code>.
             </MudAlert>
         </div>
     }
@@ -192,7 +192,7 @@
             @if (linked is not null)
             {
                 <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
-                    @linked.Name @linked.House · @linked.Title · Wealth @linked.Wealth
+                    @linked.Name @linked.House · @linked.Title · @L["Wealth {0}", linked.Wealth]
                 </MudText>
             }
             <MudTextField @bind-Value="_selectedNode.Label"
@@ -263,7 +263,7 @@
             @if (mgLord is not null)
             {
                 <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
-                    @mgLord.Name @mgLord.House · Wealth @mgLord.Wealth
+                    @mgLord.Name @mgLord.House · @L["Wealth {0}", mgLord.Wealth]
                 </MudText>
             }
             <MudNumericField T="decimal?"

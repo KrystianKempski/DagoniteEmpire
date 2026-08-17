@@ -50,9 +50,13 @@ public sealed class CourtSkillInfo
     public string NameEn { get; init; } = string.Empty;
     public string NamePl { get; init; } = string.Empty;
     public string ShortEn { get; init; } = string.Empty;
+    public string ShortPl { get; init; } = string.Empty;
 
     /// <summary>Nazwa zależna od bieżącej kultury UI (PL/EN, EN = fallback).</summary>
     public string Name => BaronyCulture.IsPolish && !string.IsNullOrEmpty(NamePl) ? NamePl : NameEn;
+
+    /// <summary>Skrót zależny od bieżącej kultury UI (PL/EN, EN = fallback).</summary>
+    public string Short => BaronyCulture.IsPolish && !string.IsNullOrEmpty(ShortPl) ? ShortPl : ShortEn;
 }
 
 /// <summary>Catalog + value ranges for court character sheets.</summary>
@@ -69,16 +73,16 @@ public static class CourtSkillCatalog
 
     public static readonly IReadOnlyList<CourtSkillInfo> Main = new List<CourtSkillInfo>
     {
-            new() { Key = CourtMainSkill.Melee, NameEn = "Melee", NamePl = "Walka wręcz", ShortEn = "Melee" },
-        new() { Key = CourtMainSkill.Shooting, NameEn = "Shooting", NamePl = "Strzelectwo", ShortEn = "Shoot" },
-        new() { Key = CourtMainSkill.Magic, NameEn = "Magic", NamePl = "Magia", ShortEn = "Magic" },
-        new() { Key = CourtMainSkill.Knowledge, NameEn = "Knowledge", NamePl = "Wiedza", ShortEn = "Know" },
-        new() { Key = CourtMainSkill.Command, NameEn = "Command", NamePl = "Dowodzenie", ShortEn = "Cmd" },
-        new() { Key = CourtMainSkill.Diplomacy, NameEn = "Diplomacy", NamePl = "Dyplomacja", ShortEn = "Dipl" },
-        new() { Key = CourtMainSkill.Intimidation, NameEn = "Intimidation", NamePl = "Zastraszanie", ShortEn = "Intim" },
-        new() { Key = CourtMainSkill.Administration, NameEn = "Administration", NamePl = "Administracja", ShortEn = "Admin" },
-        new() { Key = CourtMainSkill.Deceit, NameEn = "Deceit", NamePl = "Podstęp", ShortEn = "Deceit" },
-        new() { Key = CourtMainSkill.Craft, NameEn = "Craft", NamePl = "Rzemiosło", ShortEn = "Craft" },
+            new() { Key = CourtMainSkill.Melee, NameEn = "Melee", NamePl = "Walka wręcz", ShortEn = "Melee", ShortPl = "Wręcz" },
+        new() { Key = CourtMainSkill.Shooting, NameEn = "Shooting", NamePl = "Strzelectwo", ShortEn = "Shoot", ShortPl = "Strzel" },
+        new() { Key = CourtMainSkill.Magic, NameEn = "Magic", NamePl = "Magia", ShortEn = "Magic", ShortPl = "Magia" },
+        new() { Key = CourtMainSkill.Knowledge, NameEn = "Knowledge", NamePl = "Wiedza", ShortEn = "Know", ShortPl = "Wiedza" },
+        new() { Key = CourtMainSkill.Command, NameEn = "Command", NamePl = "Dowodzenie", ShortEn = "Cmd", ShortPl = "Dow" },
+        new() { Key = CourtMainSkill.Diplomacy, NameEn = "Diplomacy", NamePl = "Dyplomacja", ShortEn = "Dipl", ShortPl = "Dypl" },
+        new() { Key = CourtMainSkill.Intimidation, NameEn = "Intimidation", NamePl = "Zastraszanie", ShortEn = "Intim", ShortPl = "Zastr" },
+        new() { Key = CourtMainSkill.Administration, NameEn = "Administration", NamePl = "Administracja", ShortEn = "Admin", ShortPl = "Admin" },
+        new() { Key = CourtMainSkill.Deceit, NameEn = "Deceit", NamePl = "Podstęp", ShortEn = "Deceit", ShortPl = "Podst" },
+        new() { Key = CourtMainSkill.Craft, NameEn = "Craft", NamePl = "Rzemiosło", ShortEn = "Craft", ShortPl = "Rzem" },
     };
 
     public static readonly IReadOnlyList<CourtSkillInfo> Secondary = new List<CourtSkillInfo>

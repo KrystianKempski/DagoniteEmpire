@@ -46,7 +46,7 @@
                                         <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
                                     </span>
                                     <span class="unit-workshop__cost-sub">
-                                        Rec @_costs.GoldRecruit · Gear @_costs.GoldEquipment · Trn @_costs.GoldTraining
+                                        @L["Rec {0} · Gear {1} · Trn {2}", _costs.GoldRecruit, _costs.GoldEquipment, _costs.GoldTraining]
                                     </span>
                                 </div>
                             </BaronyTooltip>
@@ -59,7 +59,7 @@
                                         <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" />
                                     </span>
                                     <span class="unit-workshop__cost-sub">
-                                        Rec @_costs.DefenseRecruit · Gear @_costs.DefenseEquipment · Acc @_costs.DefenseAccelerate
+                                        @L["Rec {0} · Gear {1} · Acc {2}", _costs.DefenseRecruit, _costs.DefenseEquipment, _costs.DefenseAccelerate]
                                     </span>
                                 </div>
                             </BaronyTooltip>
@@ -72,8 +72,7 @@
                                         <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
                                     </span>
                                     <span class="unit-workshop__cost-sub">
-                                        Base @_previewUpkeep.BaseWage · Gear @_previewUpkeep.GearGold
-                                        · Def/t @_previewUpkeep.Defense
+                                        @L["Base {0} · Gear {1} · Def/t {2}", _previewUpkeep.BaseWage, _previewUpkeep.GearGold, _previewUpkeep.Defense]
                                     </span>
                                 </div>
                             </BaronyTooltip>
@@ -95,7 +94,7 @@
                                 </div>
                             </BaronyTooltip>
                             <BaronyTooltip Title="@(L["Gold (training)"])"
-                                           Text="Recruit hire gold (e.g. mercenaries) plus the one-time training fee (Express 10 · Accelerated 20 · Standard 40 · Elite 75). Paid when the project starts — not per turn.">
+                                           Text="@(L["Recruit hire gold (e.g. mercenaries) plus the one-time training fee (Express 10 · Accelerated 20 · Standard 40 · Elite 75). Paid when the project starts — not per turn."])">
                                 <div class="unit-workshop__cost">
                                     <span class="unit-workshop__cost-label">@L["Gold (training)"]</span>
                                     <span class="unit-workshop__cost-value unit-workshop__cost-value--gold">
@@ -103,12 +102,12 @@
                                         <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
                                     </span>
                                     <span class="unit-workshop__cost-sub">
-                                        Rec @_costs.GoldRecruit · Trn @_costs.GoldTraining
+                                        @L["Rec {0} · Trn {1}", _costs.GoldRecruit, _costs.GoldTraining]
                                     </span>
                                 </div>
                             </BaronyTooltip>
                             <BaronyTooltip Title="@(L["Experience points"])"
-                                           Text="Experience points (XP) to spend after training finishes. Attribute raise = target level × 10; base skill = level × 3; specialization = level × 1 (cannot exceed parent); discipline raise = current level.">
+                                           Text="@(L["Experience points (XP) to spend after training finishes. Attribute raise = target level × 10; base skill = level × 3; specialization = level × 1 (cannot exceed parent); discipline raise = current level."])">
                                 <div class="unit-workshop__cost">
                                     <span class="unit-workshop__cost-label">XP</span>
                                     <span class="unit-workshop__cost-value">@_costs.Pd</span>
@@ -116,7 +115,7 @@
                             </BaronyTooltip>
                         </div>
                         <MudText Typo="Typo.caption" Class="unit-workshop__howto">
-                            Recruit → training → gear. Per item: Craft (Prod+Gold), Buy (Mkt), or Defense (2×Mkt). Max units ≈ Society; each unit is 50 troops.
+                            @L["Recruit → training → gear. Per item: Craft (Prod+Gold), Buy (Mkt), or Defense (2×Mkt). Max units ≈ Society; each unit is 50 troops."]
                         </MudText>
                     </div>
 
@@ -351,7 +350,7 @@
                                 </MudSelect>
                             </div>
                             <MudText Typo="Typo.caption" Class="unit-workshop__note unit-workshop__note--tight">
-                                Cap max base skill: <b>@_costs.MaxBaseSkill</b>
+                                @L["Cap max base skill:"] <b>@_costs.MaxBaseSkill</b>
                                 @L["(lower of recruit/training Skl)"]
                             </MudText>
                         </section>
@@ -360,7 +359,7 @@
                     <section class="unit-workshop__block unit-workshop__block--compact">
                         <div class="unit-workshop__gear-head">
                             <BaronyTooltip Title="@(L["Gear"])"
-                                           Text="How each item is acquired: Craft = Production + catalog gold; Buy = market gold (Mkt) only, no Production; Defense = 2× Mkt as Defense. Weapon 1 quality (Good +1 / Poor −1 Atk &amp; Dmg) is set by the GM for the whole barony.">
+                                           Text="@(L["How each item is acquired: Craft = Production + catalog gold; Buy = market gold (Mkt) only, no Production; Defense = 2× Mkt as Defense. Weapon 1 quality (Good +1 / Poor −1 Atk & Dmg) is set by the GM for the whole barony."])">
                                 <h3 class="unit-workshop__heading">@L["Gear"]</h3>
                             </BaronyTooltip>
                             @if (CanManageAsMg)
@@ -382,7 +381,7 @@
                             else
                             {
                                 <MudText Typo="Typo.caption" Class="unit-workshop__quality-ro">
-                                    Quality: <b>@_quality</b>
+                                    @L["Quality:"] <b>@_quality</b>
                                     <span style="color:var(--barony-muted);"> @L["(GM)"]</span>
                                 </MudText>
                             }
@@ -427,11 +426,11 @@
                     {
                         <div class="unit-xp-bar">
                             <span class="unit-xp-bar__text">
-                                Pending XP: <b>@XpSpentPending</b>
-                                · left <b>@_draft.RemainingPd</b>
+                                @L["Pending XP:"] <b>@XpSpentPending</b>
+                                · @L["left"] <b>@_draft.RemainingPd</b>
                                 @if (FreeAttrsSpentPending > 0)
                                 {
-                                    <text> · free attrs <b>@FreeAttrsSpentPending</b></text>
+                                    <text> · @L["free attrs"] <b>@FreeAttrsSpentPending</b></text>
                                 }
                             </span>
                             <div class="unit-xp-bar__actions">

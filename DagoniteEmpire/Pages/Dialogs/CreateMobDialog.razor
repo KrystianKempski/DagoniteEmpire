@@ -9,7 +9,7 @@
     <TitleContent>
         <MudText Typo="Typo.h6">
             <img src="@MyIcon.Helm" width="40x" height="40px" class="helm-icon" />
-            @Title mob character
+            @L[Title] @L["mob character"]
         </MudText>
     </TitleContent>
     <DialogContent>
@@ -129,7 +129,7 @@
                     <MudNumericField Required="true" Min="0" @bind-Value="@NewMob.Speed" Label="@(L["Speed (cells)"])" />
                 </MudStack>
 
-                <MudText>Current status: @NewMob.States</MudText>
+                <MudText>@L["Current status:"] @NewMob.States</MudText>
                 <MudStack Row="true" Justify="Justify.SpaceBetween">
                     <MudButton OnClick="ClearStates">@L["Clear states"]</MudButton>
                     <MudSelect Value="SelectedState" T="string" ValueChanged="AddState" Label="@(L["AddState"])" AnchorOrigin="Origin.BottomCenter">
@@ -161,7 +161,7 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
-        <MudButton Color="Color.Error" Disabled="@(!success)" OnClick="SaveMobBtn">@Title</MudButton>
+        <MudButton Color="Color.Error" Disabled="@(!success)" OnClick="SaveMobBtn">@L[Title]</MudButton>
     </DialogActions>
 </MudDialog>
 

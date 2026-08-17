@@ -7,7 +7,7 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog project-edit-dialog">
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Tile (@Tile.X, @Tile.Y) — map construction project (Improvement), paid with Gold &amp; Production only.
+                @L["Tile ({0}, {1}) — map construction project (Improvement), paid with Gold &amp; Production only.", Tile.X, Tile.Y]
             </MudText>
 
             @if (Templates.Count == 0)
@@ -59,7 +59,7 @@
                     <span>@L["Production:"] <b>@Fmt(_productionCost)</b></span>
                 </div>
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-1">
-                    Output type: @ProjectOutputKind.Improvement · Payment: Gold &amp; Production only
+                    @L["Output type: {0} · Payment: Gold &amp; Production only", ProjectOutputKind.Improvement]
                 </MudText>
             }
         </div>

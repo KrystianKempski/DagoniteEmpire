@@ -8,7 +8,7 @@
 @using DA_DataAccess.Chat
 @using DA_Models.CharacterModels
 
-<PageTitle>Dagonite Empire | Audiences</PageTitle>
+<PageTitle>Dagonite Empire | @L["Audiences"]</PageTitle>
 
 @if (IsLoading)
 {
@@ -55,7 +55,7 @@ else if (Barony is not null)
             </Summary>
             <ChildContent>
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                    Additive PPB → Domain Panel Events · cumulative resources → Resource Balance (stocks immediately) · PHP → Baron Card (From Adventures).
+                    @L["Additive PPB → Domain Panel Events · cumulative resources → Resource Balance (stocks immediately) · PHP → Baron Card (From Adventures)."]
                 </MudText>
                 @if (AudienceSummaryRows.Count == 0 && CouncilSummary is null)
                 {
@@ -161,8 +161,8 @@ else if (Barony is not null)
             </Summary>
             <ChildContent>
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
-                    Council topics for this turn. At Resolve Turn, open topics move to archive and a new blank session opens.
-                    MG Speak as lists all courtiers from Court.
+                    @L["Council topics for this turn. At Resolve Turn, open topics move to archive and a new blank session opens."]
+                    @L["MG Speak as lists all courtiers from Court."]
                 </MudText>
 
                 @if (CurrentCouncilTopics.Count == 0)
@@ -312,7 +312,7 @@ else if (Barony is not null)
                                     class="baron-audience__folder-summary"
                                     @onclick="@(() => ToggleArchiveFolder(folder.Turn))">
                                 <span>@(open ? "▾" : "▸")</span>
-                                <span>Turn @folder.Turn</span>
+                                <span>@L["Turn {0}", folder.Turn]</span>
                                 <span class="baron-audience__folder-count">@folder.Items.Count</span>
                             </button>
                             @if (open)

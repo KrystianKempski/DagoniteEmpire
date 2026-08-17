@@ -4,10 +4,10 @@
 <BaronySection Title="@(L["Baron's Time"])">
     <Summary>
         <div class="baron-php-summary">
-            <span class="baron-php-chip">Pool @_budget.TotalJc BT</span>
-            <span class="baron-php-chip">Spent @_budget.SpentJc</span>
+            <span class="baron-php-chip">@L["Pool"] @_budget.TotalJc BT</span>
+            <span class="baron-php-chip">@L["Spent"] @_budget.SpentJc</span>
             <span class="baron-php-chip @(_budget.RemainingJc < 0 ? "baron-time-chip--warn" : "")">
-                Left @_budget.RemainingJc
+                @L["Left"] @_budget.RemainingJc
             </span>
         </div>
     </Summary>
@@ -17,11 +17,10 @@
                 <BaronyTooltip Title="@(L["BT pool"])"
                                Text="@PoolTooltip()">
                     <span>
-                        (Endurance @_budget.Endurance + Willpower @_budget.Willpower) × @BaronTimeRules.AttributeFactor
-                        = @_budget.BaseJc BT
+                        @L["(Endurance {0} + Willpower {1}) × {2} = {3} BT", _budget.Endurance, _budget.Willpower, BaronTimeRules.AttributeFactor, _budget.BaseJc]
                         @if (_budget.ModifierPercent != 0m)
                         {
-                            <text> · modifiers @BaronyCalc.FormatPercent(_budget.ModifierPercent) → <b>@_budget.TotalJc BT</b></text>
+                            <text> · @L["modifiers"] @BaronyCalc.FormatPercent(_budget.ModifierPercent) → <b>@_budget.TotalJc BT</b></text>
                         }
                         else
                         {
@@ -39,7 +38,7 @@
                     </div>
                     <div class="baron-time-bar__track">
                         <div class="baron-time-bar__fill @UsedBarClass()"
-                             style="@($"width:{UsedWidth()}%")"></div>
+                             style="@($"width:{UsedWidth().ToString(System.Globalization.CultureInfo.InvariantCulture)}%")"></div>
                     </div>
                 </div>
                 <div class="baron-time-bar">
@@ -49,7 +48,7 @@
                     </div>
                     <div class="baron-time-bar__track">
                         <div class="baron-time-bar__fill @ManagementBarClass()"
-                             style="@($"width:{ManagementWidth()}%")"></div>
+                             style="@($"width:{ManagementWidth().ToString(System.Globalization.CultureInfo.InvariantCulture)}%")"></div>
                         <BaronyTooltip Text="@($"Required {BaronTimeRules.RequiredManagementJc} BT")">
                             <div class="baron-time-bar__marker"
                                  style="left:100%;"></div>
@@ -64,22 +63,20 @@
                     @if (_budget.IsManagementShort)
                     {
                         <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-1">
-                            Management shortfall: @_budget.ManagementJc / @BaronTimeRules.RequiredManagementJc BT.
-                            Expect penalties to stability, loyalty, income, etc.
+                            @L["Management shortfall: {0} / {1} BT.", _budget.ManagementJc, BaronTimeRules.RequiredManagementJc]
+                            @L["Expect penalties to stability, loyalty, income, etc."]
                         </MudAlert>
                     }
                     @if (_budget.IsExpeditionOverLimit)
                     {
                         <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-1">
-                            Expeditions: @_budget.ExpeditionWeeks.ToString("0.##") weeks
-                            (@_budget.AdventureJc BT). Safe limit is @BaronTimeRules.MaxSafeExpeditionWeeks weeks
-                            (@BaronTimeRules.MaxSafeExpeditionJc BT) without extra management penalties.
+                            @L["Expeditions: {0} weeks ({1} BT). Safe limit is {2} weeks ({3} BT) without extra management penalties.", _budget.ExpeditionWeeks.ToString("0.##"), _budget.AdventureJc, BaronTimeRules.MaxSafeExpeditionWeeks, BaronTimeRules.MaxSafeExpeditionJc]
                         </MudAlert>
                     }
                     @if (_budget.IsOverspent)
                     {
                         <MudAlert Severity="Severity.Error" Dense="true" Class="mb-1">
-                            Overspent by @Math.Abs(_budget.RemainingJc) BT this turn.
+                            @L["Overspent by {0} BT this turn.", Math.Abs(_budget.RemainingJc)]
                         </MudAlert>
                     }
                 </div>
@@ -206,11 +203,9 @@
         </div>
 
         <MudText Typo="Typo.caption" Class="mt-3" Style="color:var(--barony-muted);">
-            One turn = one quarter. Weekly expedition / adventure = @BaronTimeRules.WeeklyExpeditionJc BT
-            (up to @BaronTimeRules.MaxSafeExpeditionWeeks weeks / @BaronTimeRules.MaxSafeExpeditionJc BT without extra management penalties).
-            Great Hunt: @BaronTimeSuggestedCosts.GreatHuntJc BT (baron or officer) + @BaronTimeSuggestedCosts.GreatHuntProduction Production + @BaronTimeSuggestedCosts.GreatHuntGold gold;
-            food from the lead hunter’s Tracking, at a cost to forest fauna.
-            Other costs are set during play.
+            @L["One turn = one quarter. Weekly expedition / adventure = {0} BT (up to {1} weeks / {2} BT without extra management penalties).", BaronTimeRules.WeeklyExpeditionJc, BaronTimeRules.MaxSafeExpeditionWeeks, BaronTimeRules.MaxSafeExpeditionJc]
+            @L["Great Hunt: {0} BT (baron or officer) + {1} Production + {2} gold; food from the lead hunter’s Tracking, at a cost to forest fauna.", BaronTimeSuggestedCosts.GreatHuntJc, BaronTimeSuggestedCosts.GreatHuntProduction, BaronTimeSuggestedCosts.GreatHuntGold]
+            @L["Other costs are set during play."]
         </MudText>
     </ChildContent>
 </BaronySection>

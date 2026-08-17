@@ -43,7 +43,7 @@
             <div class="project-card__progress">
                 <div class="project-card__progress-bar" style="width:@($"{Project.AllocationPercent}%")"></div>
                 <span class="project-card__progress-label">
-                    @Project.AllocationPercent% funded · @CostModeShort(Project.EffectiveCostMode)
+                    @L["{0}% funded · {1}", Project.AllocationPercent, CostModeShort(Project.EffectiveCostMode)]
                 </span>
             </div>
 
@@ -128,7 +128,7 @@
             @if (_costRows.Count == 0)
             {
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                    No cost defined for @CostModeShort(Project.EffectiveCostMode).
+                    @L["No cost defined for {0}.", CostModeShort(Project.EffectiveCostMode)]
                 </MudText>
             }
             else
@@ -308,10 +308,17 @@
     private bool HasNotes => !string.IsNullOrWhiteSpace(Project.Notes);
     private string? NotesTooltip => Project.Notes?.Trim();
 
-    private string TurnsLabel => Project.Status == ProjectStatus.Draft
-        || ProjectStatus.IsResourceAllocation(Project.Status)
-        ? $"{Project.TurnsRemaining} turn{(Project.TurnsRemaining == 1 ? "" : "s")} to complete (clock starts after full funding)"
-        : $"{Project.TurnsRemaining} turn{(Project.TurnsRemaining == 1 ? "" : "s")} left";
+    private string TurnsLabel
+    {
+        get
+        {
+            var word = Project.TurnsRemaining == 1 ? L["turn"] : L["turns"];
+            return Project.Status == ProjectStatus.Draft
+                || ProjectStatus.IsResourceAllocation(Project.Status)
+                ? L["{0} {1} to complete (clock starts after full funding)", Project.TurnsRemaining, word]
+                : L["{0} {1} left", Project.TurnsRemaining, word];
+        }
+    }
 
     private static string OutputLabel(string kind) =>
         ProjectOutputKind.All.Contains(kind) ? kind : kind;

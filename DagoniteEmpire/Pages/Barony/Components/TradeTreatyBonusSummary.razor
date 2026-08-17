@@ -2,7 +2,7 @@
 
 <BaronySection Title="@(L["Treaty trade bonuses"])" DefaultOpen="true">
     <Summary>
-        <span class="projects-summary__item">@_receivedCount good@(_receivedCount == 1 ? "" : "s") from treaties</span>
+        <span class="projects-summary__item">@L[_receivedCount == 1 ? "{0} good from treaties" : "{0} goods from treaties", _receivedCount]</span>
     </Summary>
     <ChildContent>
         @if (_receivedCount == 0 && !_hasTreatyPpb)

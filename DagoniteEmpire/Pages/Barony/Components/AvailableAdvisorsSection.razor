@@ -97,7 +97,7 @@
                                                     @foreach (var skill in CourtSkillCatalog.Main)
                                                     {
                                                         <th>
-                                                            <BaronyTooltip Text="@skill.Name">@(string.IsNullOrEmpty(skill.ShortEn) ? skill.Name : skill.ShortEn)</BaronyTooltip>
+                                                            <BaronyTooltip Text="@skill.Name">@(string.IsNullOrEmpty(skill.Short) ? skill.Name : skill.Short)</BaronyTooltip>
                                                         </th>
                                                     }
                                                 </tr>
@@ -193,11 +193,11 @@
                                                             }
                                                             @if (!string.IsNullOrEmpty(combatFormula))
                                                             {
-                                                                <BaronyTooltip Title="@skill.Name" Text="@combatFormula">@skill.ShortEn</BaronyTooltip>
+                                                                <BaronyTooltip Title="@skill.Name" Text="@combatFormula">@skill.Short</BaronyTooltip>
                                                             }
                                                             else
                                                             {
-                                                                <BaronyTooltip Text="@skill.Name">@skill.ShortEn</BaronyTooltip>
+                                                                <BaronyTooltip Text="@skill.Name">@skill.Short</BaronyTooltip>
                                                             }
                                                         </th>
                                                     }
@@ -300,7 +300,7 @@
                                             @foreach (var key in sheet.UnlockedCommanderAbilities)
                                             {
                                                 var ability = CourtCommanderCatalog.Find(key);
-                                                <BaronyTooltip Text="@(ability?.DescriptionEn)">
+                                                <BaronyTooltip Text="@(ability is null ? null : L[ability.DescriptionEn].Value)">
                                                     <span class="ppb-chip">
                                                         <span class="ppb-chip__label">@(L[ability?.NameEn ?? key])</span>
                                                         <span class="ppb-chip__value">T@(ability?.Tier ?? 0)</span>

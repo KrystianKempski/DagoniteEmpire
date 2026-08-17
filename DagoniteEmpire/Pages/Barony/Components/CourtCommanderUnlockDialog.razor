@@ -5,7 +5,7 @@
     <DialogContent>
         <div class="barony-dialog-theme">
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-            Available CX: @_available. Trunk + branch gates apply (model B).
+            @L["Available CX: {0}. Trunk + branch gates apply (model B).", _available]
         </MudText>
         <MudSelect T="string"
                    Value="_selectedKey"
@@ -23,7 +23,7 @@
         </MudSelect>
         @if (Selected is not null)
         {
-            <MudText Typo="Typo.body2" Class="mt-2">@Selected.DescriptionEn</MudText>
+            <MudText Typo="Typo.body2" Class="mt-2">@L[Selected.DescriptionEn]</MudText>
             @if (!string.IsNullOrWhiteSpace(_gateHint))
             {
                 <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-2">@_gateHint</MudAlert>

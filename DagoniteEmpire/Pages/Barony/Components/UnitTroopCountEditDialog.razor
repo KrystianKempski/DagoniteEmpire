@@ -16,9 +16,7 @@
                 </MudText>
             }
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                Full strength is @FullStrength. Each 10% lost → −1 Attack/Defense, −4 Max HP
-                (floors: Atk/Def ≥ 1, Max HP ≥ 10). Understrength units regenerate
-                +@UnitRules.TroopRegenPerTurn troops per turn.
+                @L["Full strength is {0}. Each 10% lost → −1 Attack/Defense, −4 Max HP (floors: Atk/Def ≥ 1, Max HP ≥ 10). Understrength units regenerate +{1} troops per turn.", FullStrength, UnitRules.TroopRegenPerTurn]
             </MudText>
             <MudNumericField T="int"
                              @bind-Value="_value"

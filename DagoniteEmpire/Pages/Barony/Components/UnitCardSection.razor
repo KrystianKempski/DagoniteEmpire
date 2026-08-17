@@ -10,11 +10,11 @@
     {
         <div class="unit-xp-bar">
             <span class="unit-xp-bar__text">
-                Pending XP: <b>@XpSpentPending</b>
-                · left <b>@Unit.RemainingPd</b>
+                @L["Pending XP:"] <b>@XpSpentPending</b>
+                · @L["left"] <b>@Unit.RemainingPd</b>
                 @if (FreeAttrsSpentPending > 0)
                 {
-                    <text> · free attrs <b>@FreeAttrsSpentPending</b></text>
+                    <text> · @L["free attrs"] <b>@FreeAttrsSpentPending</b></text>
                 }
             </span>
             <div class="unit-xp-bar__actions">
@@ -54,7 +54,7 @@
                     }
                     else
                     {
-                        <text>@TurnsLeftLabel left</text>
+                        <text>@TurnsLeftLabel @L["left"]</text>
                     }
                     @if (Unit.TrainingProjectId is int trainPid)
                     {
@@ -75,14 +75,14 @@
             else if (HasOpenChangeEquipmentProject)
             {
                 <span class="unit-draft-card__title-status">
-                    @(IsChangeEquipmentAwaitingResources ? "re-equip · awaiting resources" : $"re-equip · {TurnsLeftLabel} left")
+                    @(IsChangeEquipmentAwaitingResources ? L["re-equip · awaiting resources"] : L["re-equip · {0} left", TurnsLeftLabel])
                     · <a href="/barony/projects">#@Unit.TrainingProjectId</a>
                 </span>
             }
             else if (HasOpenReinforceProject)
             {
                 <span class="unit-draft-card__title-status">
-                    @(IsReinforceAwaitingResources ? "reinforce · awaiting resources" : $"reinforce · {TurnsLeftLabel} left")
+                    @(IsReinforceAwaitingResources ? L["reinforce · awaiting resources"] : L["reinforce · {0} left", TurnsLeftLabel])
                     · <a href="/barony/projects">#@Unit.TrainingProjectId</a>
                 </span>
             }

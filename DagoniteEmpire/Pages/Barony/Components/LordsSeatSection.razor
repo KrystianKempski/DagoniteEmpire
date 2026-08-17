@@ -15,7 +15,7 @@
                            Size="Size.Small"
                            StartIcon="@Icons.Material.Filled.GridOn"
                            OnClick="EditGridAsync">
-                    Grid (@Seat.GridWidth×@Seat.GridHeight)
+                    @L["Grid ({0}×{1})", Seat.GridWidth, Seat.GridHeight]
                 </MudButton>
                 <MudButton Variant="Variant.Outlined"
                            Size="Size.Small"
@@ -105,20 +105,20 @@
                 @if (CanManage && _placementMode)
                 {
                     <MudText Typo="Typo.caption" Class="lords-seat-placement-hint">
-                        Click a grid cell on @SeatFloorLevel.Label(_currentLevel) to place a new chamber (2×2).
+                        @L["Click a grid cell on {0} to place a new chamber (2×2).", SeatFloorLevel.Label(_currentLevel)]
                         <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="CancelPlacementMode">@L["Cancel"]</MudButton>
                     </MudText>
                 }
                 else if (CanManage && _paintKind is not null)
                 {
                     <MudText Typo="Typo.caption" Class="lords-seat-placement-hint">
-                        Painting @PaintModeLabel() on @SeatFloorLevel.Label(_currentLevel). Click or drag across cells.
+                        @L["Painting {0} on {1}. Click or drag across cells.", PaintModeLabel(), SeatFloorLevel.Label(_currentLevel)]
                     </MudText>
                 }
                 else if (CanManage)
                 {
                     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="lords-seat-placement-hint">
-                        @SeatFloorLevel.Label(_currentLevel). Click a chamber to assign purpose. Drag to reposition. Use paint for walls, ground, and water.
+                        @L["{0}. Click a chamber to assign purpose. Drag to reposition. Use paint for walls, ground, and water.", SeatFloorLevel.Label(_currentLevel)]
                     </MudText>
                 }
                 <div class="@PlanClass()"
@@ -201,10 +201,10 @@
         @if (Seat.Rooms.Count == 0)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                No chambers yet.
+                @L["No chambers yet."]
                 @if (CanManage)
                 {
-                    <text> Use “Add chamber” to create the lord's seat layout.</text>
+                    <text> @L["Use “Add chamber” to create the lord's seat layout."]</text>
                 }
             </MudText>
         }
