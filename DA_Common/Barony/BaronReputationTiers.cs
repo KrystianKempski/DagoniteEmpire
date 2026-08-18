@@ -49,7 +49,7 @@ namespace DA_Common.Barony
                 return string.Join(", ", SkillBonuses.Select(s =>
                 {
                     var sign = s.Value > 0 ? "+" : "";
-                    return $"{sign}{s.Value} {s.Skill}";
+                    return $"{sign}{s.Value} {LocCatalog.Name(s.Skill)}";
                 }));
             }
         }

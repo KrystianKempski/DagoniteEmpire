@@ -1,6 +1,7 @@
 using DA_Business.Repository.CharacterReps.IRepository;
 using DA_Common;
 using DA_Common.Barony;
+using DA_Common.Localization;
 using DA_Models.BaronyModels;
 using DA_Models.CharacterModels;
 using DA_Models.ComponentModels;
@@ -46,9 +47,9 @@ namespace DagoniteEmpire.Pages.Barony
         public static IReadOnlyList<TraitCharacterDTO> BuildTraits(int prestige, int honor, int fear)
         {
             var list = new List<TraitCharacterDTO>();
-            TryAdd(list, BaronReputationTiers.ResolvePrestige(prestige), "Prestige");
-            TryAdd(list, BaronReputationTiers.ResolveHonor(honor), "Honor");
-            TryAdd(list, BaronReputationTiers.ResolveFear(fear), "Fear");
+            TryAdd(list, BaronReputationTiers.ResolvePrestige(prestige), Loc.T("Prestige"));
+            TryAdd(list, BaronReputationTiers.ResolveHonor(honor), Loc.T("Honor"));
+            TryAdd(list, BaronReputationTiers.ResolveFear(fear), Loc.T("Fear"));
             return list;
         }
 

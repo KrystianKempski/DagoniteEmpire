@@ -4,12 +4,12 @@
     <TitleContent>
         <div class="barony-help-dialog__title">
             <MudIcon Icon="@Icons.Material.Filled.HelpOutline" Size="Size.Small" />
-            <span>@L["{0} — Help", Entry.Title]</span>
+            <span>@L["{0} — Help", L[Entry.Title]]</span>
         </div>
     </TitleContent>
     <DialogContent>
         <div class="barony-dialog-theme barony-help-dialog__body">
-            <p class="barony-help-dialog__short">@Entry.Short</p>
+            <p class="barony-help-dialog__short">@L[Entry.Short]</p>
 
             @if (Entry.PlayerSections.Count > 0)
             {
@@ -47,13 +47,13 @@
     private RenderFragment Panels(IReadOnlyList<BaronyHelpSection> sections) => @<MudExpansionPanels Elevation="0" Class="barony-help-dialog__details">
         @foreach (var sec in sections)
         {
-            <MudExpansionPanel Text="@sec.Heading">
+            <MudExpansionPanel Text="@L[sec.Heading].Value">
                 @if (sec.Kind == BaronyHelpBlockKind.Bullet)
                 {
                     <ul class="barony-help-dialog__list">
                         @foreach (var item in sec.Items)
                         {
-                            <li>@item</li>
+                            <li>@L[item]</li>
                         }
                     </ul>
                 }
@@ -61,7 +61,7 @@
                 {
                     @foreach (var item in sec.Items)
                     {
-                        <p class="barony-help-dialog__para">@item</p>
+                        <p class="barony-help-dialog__para">@L[item]</p>
                     }
                 }
             </MudExpansionPanel>

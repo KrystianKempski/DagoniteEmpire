@@ -56,14 +56,14 @@
             </div>
 
             <div class="baron-reputation-bonuses">
-                <div class="baron-reputation-bonuses__label">Barony bonuses</div>
+                <div class="baron-reputation-bonuses__label">@L["Barony bonuses"]</div>
                 <div class="baron-reputation-bonuses__text">@BaronReputationTiers.FormatBaronyBonus(current.BaronyBonus)</div>
                 @if (!string.IsNullOrWhiteSpace(current.SkillBonusText))
                 {
                     <div class="baron-reputation-bonuses__skills">
-                        <div class="baron-reputation-bonuses__label">Character traits</div>
+                        <div class="baron-reputation-bonuses__label">@L["Character traits"]</div>
                         @current.SkillBonusText
-                        <span class="baron-reputation-bonuses__note">Applied on the Character sheet as “@TraitLabel(current)”</span>
+                        <span class="baron-reputation-bonuses__note">@L["Applied on the Character sheet as “{0}”", TraitLabel(current)]</span>
                     </div>
                 }
             </div>

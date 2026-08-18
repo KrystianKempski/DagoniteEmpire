@@ -47,7 +47,7 @@
                                  Margin="Margin.Dense"
                                  Class="baron-influence-field php-field php-field--prestige" />
                 <MudNumericField @bind-Value="_honor"
-                                 Label="Honor"
+                                 Label="@(L["Honor"])"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Class="baron-influence-field php-field php-field--honor" />
@@ -114,7 +114,8 @@
     private int? _seatRoomId;
     private string? _description;
     private List<SeatRoomDTO> _rooms = new();
-    private string _roomHelper = "Chamber where the item is displayed (applies prestige multiplier).";
+    private string _roomHelper =>
+        L["Chamber where the item is displayed (applies prestige multiplier)."].Value;
 
     private SeatRoomDTO? _selectedRoom =>
         _seatRoomId is int id ? _rooms.FirstOrDefault(r => r.Id == id) : null;

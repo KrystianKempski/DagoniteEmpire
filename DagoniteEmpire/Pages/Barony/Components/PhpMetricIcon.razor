@@ -21,7 +21,7 @@ else
     [Parameter] public string? Title { get; set; }
 
     private string? TipText =>
-        Title is null ? BaronPhpVisuals.Name(Metric)
+        Title is null ? L[BaronPhpVisuals.Name(Metric)].Value
         : string.IsNullOrWhiteSpace(Title) ? null
         : Title;
 

@@ -7,11 +7,13 @@
             <h1 class="barony-page-title mb-0">@Title</h1>
             @if (BaronyHelpCatalog.TryGet(HelpKey, out var _helpEntry))
             {
-                <MudIconButton Icon="@Icons.Material.Filled.HelpOutline"
-                               Size="Size.Small"
-                               Class="barony-page-header__help-btn"
-                               aria-label="@($"Help: {Title}")"
-                               OnClick="@(() => OpenHelpAsync(_helpEntry))" />
+                <BaronyTooltip Text="@(L["Help"])">
+                    <MudIconButton Icon="@Icons.Material.Filled.HelpOutline"
+                                   Size="Size.Small"
+                                   Class="barony-page-header__help-btn"
+                                   aria-label="@(L["Help: {0}", Title])"
+                                   OnClick="@(() => OpenHelpAsync(_helpEntry))" />
+                </BaronyTooltip>
             }
         </div>
         @if (Summary is not null)

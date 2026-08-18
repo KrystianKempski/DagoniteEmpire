@@ -25,11 +25,13 @@ else
             <aside class="march-map-legend-panel barony-panel">
                 <div class="march-map-legend-stack">
                     <div class="march-map-legend-help">
-                        <MudIconButton Icon="@Icons.Material.Filled.HelpOutline"
-                                       Size="Size.Small"
-                                       Class="barony-page-header__help-btn"
-                                       aria-label="@(L["Help: March map"])"
-                                       OnClick="OpenMarchHelpAsync" />
+                        <BaronyTooltip Text="@(L["Help"])">
+                            <MudIconButton Icon="@Icons.Material.Filled.HelpOutline"
+                                           Size="Size.Small"
+                                           Class="barony-page-header__help-btn"
+                                           aria-label="@(L["Help: {0}", L["March map"]])"
+                                           OnClick="OpenMarchHelpAsync" />
+                        </BaronyTooltip>
                     </div>
                     <span class="march-map-legend">
                         <span class="march-map-legend__item"><i class="march-map-legend__swatch march-map-legend__swatch--road"></i> @L["Road"]</span>
