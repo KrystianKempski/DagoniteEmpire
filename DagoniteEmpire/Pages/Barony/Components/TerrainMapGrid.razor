@@ -49,7 +49,7 @@
                                     @if (TerrainMapVisuals.CustomBaseTypeIconUrl(tile?.BaseType) is string customIconUrl)
                                     {
                                         <img src="@customIconUrl"
-                                             alt="@TerrainBaseType.DisplayName(tile?.BaseType)"
+                                             alt="@TerrainBaseType.DisplayName(tile?.BaseType, L)"
                                              class="@($"barony-terrain-cell__base-icon barony-terrain-cell__base-icon--img barony-terrain-cell__base-icon--{BaseTypeCss(tile?.BaseType)}")" />
                                     }
                                     else
@@ -75,7 +75,7 @@
                                                         @foreach (var iconUrl in iconUrls)
                                                         {
                                                             <img src="@iconUrl"
-                                                                 alt="@TerrainFeature.DisplayName(feature)"
+                                                                 alt="@TerrainFeature.DisplayName(feature, L)"
                                                                  class="@($"barony-terrain-cell__feature-icon barony-terrain-cell__feature-icon--{css}")" />
                                                         }
                                                     </span>
@@ -83,7 +83,7 @@
                                                 else
                                                 {
                                                     <img src="@iconUrls[0]"
-                                                         alt="@TerrainFeature.DisplayName(feature)"
+                                                         alt="@TerrainFeature.DisplayName(feature, L)"
                                                          class="@($"barony-terrain-cell__feature-icon barony-terrain-cell__feature-icon--{css}")" />
                                                 }
                                             }

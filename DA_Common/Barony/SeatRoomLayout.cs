@@ -1,3 +1,6 @@
+using DA_Common.Localization;
+using Microsoft.Extensions.Localization;
+
 namespace DA_Common.Barony
 {
     public enum SeatRoomLayoutIssue
@@ -61,10 +64,16 @@ namespace DA_Common.Barony
             return SeatRoomLayoutIssue.None;
         }
 
-        public static string IssueLabel(SeatRoomLayoutIssue issue) => issue switch
+        public static string IssueLabel(SeatRoomLayoutIssue issue) => IssueLabel(issue, localizer: null);
+
+        public static string IssueLabel(SeatRoomLayoutIssue issue, IStringLocalizer? localizer) => issue switch
         {
-            SeatRoomLayoutIssue.OutOfBounds => "Outside grid or zero size",
-            SeatRoomLayoutIssue.Overlap => "Overlaps another chamber",
+            SeatRoomLayoutIssue.OutOfBounds => localizer is null
+                ? Loc.T("Outside grid or zero size")
+                : localizer["Outside grid or zero size"].Value,
+            SeatRoomLayoutIssue.Overlap => localizer is null
+                ? Loc.T("Overlaps another chamber")
+                : localizer["Overlaps another chamber"].Value,
             _ => string.Empty,
         };
     }

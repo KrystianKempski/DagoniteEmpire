@@ -5267,8 +5267,10 @@ namespace DA_Business.Repository.BaronyRepos
         // ---------------- Mapping: Tile ----------------
         private static TerrainTileDTO ToDTO(TerrainTile e) => new()
         {
-            Id = e.Id, BaronyId = e.BaronyId, MapId = e.MapId, X = e.X, Y = e.Y, BaseType = e.BaseType,
-            FeaturesMask = e.FeaturesMask, Fertility = e.Fertility, Resource = e.Resource,
+            Id = e.Id, BaronyId = e.BaronyId, MapId = e.MapId, X = e.X, Y = e.Y,
+            BaseType = TerrainBaseType.CanonicalNameOrRaw(e.BaseType),
+            FeaturesMask = e.FeaturesMask, Fertility = e.Fertility,
+            Resource = string.IsNullOrWhiteSpace(e.Resource) ? e.Resource : TerrainResource.CanonicalNameOrRaw(e.Resource),
             FiefId = e.FiefId, MapDomainId = e.MapDomainId, Comment = e.Comment,
         };
 
@@ -5276,8 +5278,10 @@ namespace DA_Business.Repository.BaronyRepos
 
         private static void ApplyTile(TerrainTile e, TerrainTileDTO d)
         {
-            e.BaronyId = d.BaronyId; e.MapId = d.MapId; e.X = d.X; e.Y = d.Y; e.BaseType = d.BaseType;
-            e.FeaturesMask = d.FeaturesMask; e.Fertility = d.Fertility; e.Resource = d.Resource;
+            e.BaronyId = d.BaronyId; e.MapId = d.MapId; e.X = d.X; e.Y = d.Y;
+            e.BaseType = TerrainBaseType.CanonicalNameOrRaw(d.BaseType);
+            e.FeaturesMask = d.FeaturesMask; e.Fertility = d.Fertility;
+            e.Resource = string.IsNullOrWhiteSpace(d.Resource) ? d.Resource : TerrainResource.CanonicalNameOrRaw(d.Resource);
             e.FiefId = d.FiefId; e.MapDomainId = d.MapDomainId; e.Comment = d.Comment;
         }
 

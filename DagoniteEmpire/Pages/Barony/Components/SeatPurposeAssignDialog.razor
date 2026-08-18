@@ -7,7 +7,7 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudText Typo="Typo.body2" Class="mb-2">
-                @L["Chamber:"] <strong>@Room.Name</strong> — @Room.SizeCategory @L["({0} tiles)", Room.TileCount]
+                @L["Chamber:"] <strong>@Room.Name</strong> — @SeatRoomSizeCategory.DisplayName(Room.SizeCategory, L) @L["({0} tiles)", Room.TileCount]
             </MudText>
             <MudSelect T="int?"
                        @bind-Value="_purposeId"
@@ -19,7 +19,7 @@
                 <MudSelectItem Value="@((int?)null)">@L["(none)"]</MudSelectItem>
                 @foreach (var t in EligibleTemplates)
                 {
-                    <MudSelectItem Value="@((int?)t.Id)">@t.DisplayName()</MudSelectItem>
+                    <MudSelectItem Value="@((int?)t.Id)">@t.DisplayName(L)</MudSelectItem>
                 }
             </MudSelect>
             @if (_purposeId is not null)
@@ -60,16 +60,16 @@
             @if (_selected is not null)
             {
                 <MudPaper Class="pa-3 mt-2" Elevation="0" Style="background:var(--barony-surface-2);">
-                    <MudText Typo="Typo.subtitle2">@_selected.DisplayName()</MudText>
+                    <MudText Typo="Typo.subtitle2">@_selected.DisplayName(L)</MudText>
                     @if (!string.IsNullOrWhiteSpace(_selected.Description))
                     {
-                        <MudText Typo="Typo.body2" Class="mt-1">@_selected.Description</MudText>
+                        <MudText Typo="Typo.body2" Class="mt-1">@_selected.DisplayDescription(L)</MudText>
                     }
                     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-1">
-                        @L["Min size:"] @_selected.MinSizeCategory
+                        @L["Min size:"] @SeatRoomSizeCategory.DisplayName(_selected.MinSizeCategory, L)
                         @if (!string.IsNullOrWhiteSpace(_selected.WhoOccupies))
                         {
-                            <text> · @L["Typical occupant:"] @_selected.WhoOccupies</text>
+                            <text> · @L["Typical occupant:"] @_selected.DisplayWhoOccupies(L)</text>
                         }
                         @if (_selected.SleepCapacity > 0)
                         {

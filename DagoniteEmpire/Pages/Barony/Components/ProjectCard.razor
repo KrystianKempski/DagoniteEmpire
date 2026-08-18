@@ -320,8 +320,8 @@
         }
     }
 
-    private static string OutputLabel(string kind) =>
-        ProjectOutputKind.All.Contains(kind) ? kind : kind;
+    private string OutputLabel(string kind) =>
+        LocCatalog.NameOrRaw(kind, ProjectOutputKind.All, L);
 
     private static string StatusLabel(string status) =>
         LocCatalog.NameOrRaw(status, ProjectStatus.All);

@@ -49,7 +49,7 @@
             <tr>
                 <td class="catalog-col-name catalog-cell-name">
                     <div class="catalog-name-cell">
-                        <span class="catalog-name-cell__text">@item.DisplayName()</span>
+                        <span class="catalog-name-cell__text">@item.DisplayName(L)</span>
                         <span class="catalog-name-cell__actions">
                             @if (CanProposeBuild && IsCityBuilding(item))
                             {
@@ -95,14 +95,15 @@
                     }
                     else
                     {
-                        <BaronyTooltip Text="@item.Description" Class="catalog-desc">
-                            @foreach (var line in DescriptionLines(item.Description))
+                        var description = item.DisplayDescription(L);
+                        <BaronyTooltip Text="@description" Class="catalog-desc">
+                            @foreach (var line in DescriptionLines(description))
                             {
-                                if (line.StartsWith("Produces ", StringComparison.Ordinal))
+                                if (IsProducesLine(line))
                                 {
                                     <div class="catalog-desc__produces"><strong>@line</strong></div>
                                 }
-                                else if (line.StartsWith("Requires trade access", StringComparison.Ordinal))
+                                else if (IsRequiresTradeLine(line))
                                 {
                                     <div class="catalog-desc__requires"><strong>@line</strong></div>
                                 }
@@ -222,8 +223,16 @@
         }
     }
 
-    private static string TypeLabel(string? kind)
-        => string.IsNullOrWhiteSpace(kind) ? "·" : kind;
+    private string TypeLabel(string? kind)
+        => string.IsNullOrWhiteSpace(kind) ? "·" : BuildingKind.DisplayName(kind, L);
+
+    private bool IsProducesLine(string line)
+        => line.StartsWith(L["Produces "].Value, StringComparison.Ordinal)
+           || line.StartsWith("Produces ", StringComparison.Ordinal);
+
+    private bool IsRequiresTradeLine(string line)
+        => line.StartsWith(L["Requires trade access"].Value, StringComparison.Ordinal)
+           || line.StartsWith("Requires trade access", StringComparison.Ordinal);
 
     private static string FmtLevel(int level)
         => level <= 0 ? "·" : level.ToString();

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using DA_Common;
+using DA_Common.Barony;
 using Microsoft.Extensions.Localization;
 
 namespace DA_Common.Localization;
@@ -51,6 +52,18 @@ public static class LocCatalog
         var itemName = SD.BasicEquipment.Canonical(trimmed);
         if (SD.BasicEquipment.Names.Contains(itemName))
             return itemName;
+
+        var terrainResource = TerrainResource.Canonical(trimmed);
+        if (TerrainResource.All.Contains(terrainResource))
+            return terrainResource;
+
+        var terrainBase = TerrainBaseType.Canonical(trimmed);
+        if (TerrainBaseType.All.Contains(terrainBase))
+            return terrainBase;
+
+        var terrainFeature = TerrainFeature.Canonical(trimmed);
+        if (TerrainFeature.AllNames.Contains(terrainFeature))
+            return terrainFeature;
 
         var state = States.Names.Canonical(trimmed);
         if (States.Names.All.Contains(state))

@@ -138,27 +138,27 @@
     private RenderFragment SkillLegend() => __builder =>
     {
         <div class="unit-draft-skills__legend unit-draft-skill-tile__cols unit-draft-skill-tile__cols--legend">
-            <span>Skill</span>
-            <BaronyTooltip Title="Attribute" Text="Linked attribute for specializations only: B Build, A Agility, W Will, P Perception." Placement="Placement.Top">
-                <span>Attr</span>
+            <span>@L["Skill"]</span>
+            <BaronyTooltip Title="@(L["Attribute"])" Text="@(L["Linked attribute for specializations only: B Build, A Agility, W Will, P Perception."])" Placement="Placement.Top">
+                <span>@L["Attr"]</span>
             </BaronyTooltip>
-            <BaronyTooltip Title="From attribute" Text="Value contributed by the linked attribute (specializations and Riding)." Placement="Placement.Top">
-                <span>From</span>
+            <BaronyTooltip Title="@(L["From attribute"])" Text="@(L["Value contributed by the linked attribute (specializations and Riding)."])" Placement="Placement.Top">
+                <span>@L["From"]</span>
             </BaronyTooltip>
-            <BaronyTooltip Title="Base"
-                           Text="Base rank. Baron spends XP after graduation (base skills and Riding = level × 3; specialization = level × 1). MG can set freely."
+            <BaronyTooltip Title="@(L["Base"])"
+                           Text="@(L["Base rank. Baron spends XP after graduation (base skills and Riding = level × 3; specialization = level × 1). MG can set freely."])"
                            Placement="Placement.Top">
-                <span>Base</span>
+                <span>@L["Base"]</span>
             </BaronyTooltip>
-            <BaronyTooltip Title="Other"
-                           Text="Named Other sources (MG). Click a cell to add name + value; the sum fills this column. Hover for the source list."
+            <BaronyTooltip Title="@(L["Other"])"
+                           Text="@(L["Named Other sources (MG). Click a cell to add name + value; the sum fills this column. Hover for the source list."])"
                            Placement="Placement.Top">
-                <span>Other</span>
+                <span>@L["Other"]</span>
             </BaronyTooltip>
-            <BaronyTooltip Title="Total"
-                           Text="Base skills: Base + Other. Specializations: parent Total + From + Base + Other."
+            <BaronyTooltip Title="@(L["Total"])"
+                           Text="@(L["Base skills: Base + Other. Specializations: parent Total + From + Base + Other."])"
                            Placement="Placement.Top">
-                <span>Total</span>
+                <span>@L["Total"]</span>
             </BaronyTooltip>
         </div>
     };
@@ -176,8 +176,8 @@
         _ => "?",
     };
 
-    private static string AttrTitle(string linkedAttr) =>
-        $"{AttrLetter(linkedAttr)} — {UnitAttr.Label(linkedAttr)}";
+    private string AttrTitle(string linkedAttr) =>
+        $"{AttrLetter(linkedAttr)} — {UnitCatalogDisplay.AttrLabel(linkedAttr, L)}";
 
     private RenderFragment SkillTile(UnitSkillDef baseDef, IReadOnlyList<UnitSkillDef> children) => __builder =>
     {
@@ -205,26 +205,27 @@
         var fromAttr = usesAttr ? UnitStatHelper.SkillAttrContribution(Unit, def) : 0;
         var rowHot = IsHighlighted(def.Key);
 
+        var skillName = def.DisplayName(L);
         var canEditBase = CanManageAsMg;
-        var baseTitle = CanManageAsMg ? "Edit base (MG)" : "Base";
+        var baseTitle = CanManageAsMg ? L["Edit base (MG)"].Value : L["Base"].Value;
 
         <div class="unit-draft-skill-tile__cols @(isHeader ? "unit-draft-skill-tile__cols--head" : null) @(rowHot ? "unit-draft-skill-tile__row--hot" : null)">
             <span class="unit-draft-skill-tile__name-row">
-                <BaronyTooltip Title="@def.Name"
-                               Text="@(usesAttr ? AttrTitle(def.LinkedAttr) : (isHeader ? "Base skill — Total = Base + Other (no attribute)." : "Specialization — Total = parent + From + Base + Other."))"
+                <BaronyTooltip Title="@skillName"
+                               Text="@(usesAttr ? AttrTitle(def.LinkedAttr) : (isHeader ? L["Base skill — Total = Base + Other (no attribute)."] : L["Specialization — Total = parent + From + Base + Other."]))"
                                Placement="Placement.Right">
                     <span class="@(isHeader ? "unit-draft-skill-tile__name" : "unit-draft-skill-tile__child")">
-                        @def.Name
+                        @skillName
                     </span>
                 </BaronyTooltip>
                 @XpPlusSkill(def, bas)
             </span>
             @if (usesAttr)
             {
-                <BaronyTooltip Title="Attribute" Text="@AttrTitle(def.LinkedAttr)" Placement="Placement.Top">
+                <BaronyTooltip Title="@(L["Attribute"])" Text="@AttrTitle(def.LinkedAttr)" Placement="Placement.Top">
                     <span class="unit-draft-skill-tile__col unit-draft-skill-tile__col--muted">@AttrLetter(def.LinkedAttr)</span>
                 </BaronyTooltip>
-                <BaronyTooltip Title="From attribute" Text="@($"From {UnitAttr.Label(def.LinkedAttr)}")" Placement="Placement.Top">
+                <BaronyTooltip Title="@(L["From attribute"])" Text="@($"{L["From"]} {UnitCatalogDisplay.AttrLabel(def.LinkedAttr, L)}")" Placement="Placement.Top">
                     <span class="unit-draft-skill-tile__col unit-draft-skill-tile__col--muted">@fromAttr</span>
                 </BaronyTooltip>
             }
@@ -252,7 +253,7 @@
             if (!UnitPdFormulas.CanRaiseBaseSkill(currentBase, maxBase, Unit.RemainingPd, out cost))
                 return;
             canRaise = true;
-            tip = $"Raise {def.Name} base to {currentBase + 1} — costs {cost} XP"
+            tip = L["Raise {0} base to {1} — costs {2} XP", def.DisplayName(L), currentBase + 1, cost].Value
                 + (maxBase < int.MaxValue ? $" (cap {maxBase})." : ".");
         }
         else
@@ -262,8 +263,8 @@
             cost = UnitRules.SpecialSkillRaiseCost(currentBase + 1);
             canRaise = currentBase + 1 <= parentBase && Unit.RemainingPd >= cost;
             tip = currentBase + 1 > parentBase
-                ? $"{def.Name} cannot exceed parent base ({parentBase})."
-                : $"Raise {def.Name} base to {currentBase + 1} — costs {cost} XP.";
+                ? L["{0} cannot exceed parent base ({1}).", def.DisplayName(L), parentBase].Value
+                : L["Raise {0} base to {1} — costs {2} XP", def.DisplayName(L), currentBase + 1, cost].Value + ".";
         }
 
         if (!canRaise) return;
@@ -312,7 +313,7 @@
     private RenderFragment OtherCell(UnitSkillDef def, int value) => __builder =>
     {
         var tip = OtherTip(def.Key);
-        <BaronyTooltip Title="Other" Text="@tip" Placement="Placement.Top">
+        <BaronyTooltip Title="@(L["Other"])" Text="@tip" Placement="Placement.Top">
             @if (CanManageAsMg)
             {
                 <button type="button"
@@ -328,10 +329,25 @@
 
     private string OtherTip(string skillKey)
     {
-        var lines = UnitCombatOtherFormulas.TooltipLines(
-            UnitCombatOtherFormulas.Get(Unit.SkillOtherSources, skillKey));
+        var entries = UnitCombatOtherFormulas.Get(Unit.SkillOtherSources, skillKey);
+        var list = entries.Where(e => !string.IsNullOrWhiteSpace(e.Label) || e.Value != 0).ToList();
+        string lines;
+        if (list.Count == 0)
+        {
+            lines = L["No other modifiers."];
+        }
+        else
+        {
+            lines = string.Join("\n", list.Select(e =>
+            {
+                var name = UnitCatalogDisplay.ModifierLabel(e.Label, L);
+                var sign = e.Value > 0 ? "+" : "";
+                return $"{name}: {sign}{e.Value}";
+            }));
+        }
+
         return CanManageAsMg
-            ? $"{lines}\n\nClick to edit named sources."
+            ? $"{lines}\n\n{L["Click to edit named sources."]}"
             : lines;
     }
 
@@ -357,16 +373,17 @@
         if (existing.Count == 0 && Unit.SkillOther.TryGetValue(def.Key, out var legacy) && legacy != 0)
             existing.Add(new UnitCombatModifierEntry { Label = "Other", Value = legacy });
 
+        var skillName = def.DisplayName(L);
         var parameters = new DialogParameters
         {
-            [nameof(UnitNamedModifiersDialog.Title)] = $"{def.Name} — other",
+            [nameof(UnitNamedModifiersDialog.Title)] = L["{0} — other", skillName].Value,
             [nameof(UnitNamedModifiersDialog.Hint)] =
-                "Each row is a named source (e.g. blessing, magic, training). The sum fills the Other column and appears in the tooltip.",
+                L["Each row is a named source (e.g. blessing, magic, training). The sum fills the Other column and appears in the tooltip."].Value,
             [nameof(UnitNamedModifiersDialog.Modifiers)] = existing,
         };
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
         var dialog = await _dialogService.ShowAsync<UnitNamedModifiersDialog>(
-            $"{def.Name} — other",
+            L["{0} — other", skillName],
             parameters,
             options);
         var result = await dialog.Result;
@@ -401,7 +418,7 @@
     private void BeginEditBase(UnitSkillDef def)
     {
         _editKey = def.Key;
-        _editName = def.Name;
+        _editName = def.DisplayName(L);
         _editField = "Base";
         Unit.SkillBase.TryGetValue(def.Key, out _editValue);
     }

@@ -20,9 +20,9 @@ else if (Barony is not null)
     <BaronyPageHeader Title="@(L["Army"])" HelpKey="army">
         <Summary>
             <span class="projects-summary">
-                <span class="projects-summary__item">@_units.Count unit@(_units.Count == 1 ? "" : "s")</span>
-                <span class="projects-summary__item">@_units.Count(u => u.IsTraining) in training</span>
-                <span class="projects-summary__item">@_units.Count(u => u.IsActive) active</span>
+                <span class="projects-summary__item">@L["{0} units", _units.Count]</span>
+                <span class="projects-summary__item">@L["{0} in training", _units.Count(u => u.IsTraining)]</span>
+                <span class="projects-summary__item">@L["{0} active", _units.Count(u => u.IsActive)]</span>
             </span>
         </Summary>
     </BaronyPageHeader>
@@ -36,7 +36,7 @@ else if (Barony is not null)
 
     <BaronySection Title="@(L["Units"])">
         <Summary>
-            <span class="projects-summary__item">Two cards per row · same layout as the generator preview</span>
+            <span class="projects-summary__item">@L["Two cards per row · same layout as the generator preview"]</span>
         </Summary>
         <ChildContent>
             <div class="army-roster-summary">

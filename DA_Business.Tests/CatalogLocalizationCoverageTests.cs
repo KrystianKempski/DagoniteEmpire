@@ -65,7 +65,42 @@ public class CatalogLocalizationCoverageTests
     public static IEnumerable<object[]> SpecialSkillKeys() => SD.SpecialSkills.All.Select(k => new object[] { k });
     public static IEnumerable<object[]> TerrainBaseTypeKeys() => DA_Common.Barony.TerrainBaseType.All.Select(k => new object[] { k });
     public static IEnumerable<object[]> ProjectStatusKeys() => DA_Common.Barony.ProjectStatus.All.Select(k => new object[] { k });
+    public static IEnumerable<object[]> ProjectOutputKindKeys() => DA_Common.Barony.ProjectOutputKind.All.Select(k => new object[] { k });
     public static IEnumerable<object[]> DifficultyLevelKeys() => DifficultyDisplay.ResxKeys.Select(k => new object[] { k });
+    public static IEnumerable<object[]> CommunitySourceKeys() => DA_Common.Barony.CommunitySource.All.Select(k => new object[] { k });
+    public static IEnumerable<object[]> TerrainResourceKeys() => DA_Common.Barony.TerrainResource.All.Select(k => new object[] { k });
+    public static IEnumerable<object[]> TerrainFeatureNameKeys() => DA_Common.Barony.TerrainFeature.AllNames.Select(k => new object[] { k });
+    public static IEnumerable<object[]> UnitSkillNameKeys() =>
+        DA_Common.Barony.UnitSkillTree.All.Select(s => s.Name).Distinct().Select(k => new object[] { k });
+    public static IEnumerable<object[]> UnitRecruitNameKeys() =>
+        DA_Common.Barony.UnitRecruitSelectionCatalog.All.Select(r => r.Name).Select(k => new object[] { k });
+    public static IEnumerable<object[]> UnitTrainingNameKeys() =>
+        DA_Common.Barony.UnitTrainingTypeCatalog.All.Select(t => t.Name).Select(k => new object[] { k });
+    public static IEnumerable<object[]> UnitRaceNameKeys() =>
+        DA_Common.Barony.UnitRaceCatalog.All.Select(r => r.Name).Select(k => new object[] { k });
+    public static IEnumerable<object[]> SeatRoomSizeKeys() =>
+        DA_Common.Barony.SeatRoomSizeCategory.All.Select(k => new object[] { k });
+    public static IEnumerable<object[]> SeatRoomMaterialDisplayKeys() =>
+        DA_Common.Barony.SeatRoomMaterial.All
+            .Select(m => m == DA_Common.Barony.SeatRoomMaterial.WeakWood ? "Wood" : m)
+            .Distinct()
+            .Select(k => new object[] { k });
+    public static IEnumerable<object[]> SeatRoomStatusKeys() =>
+        DA_Common.Barony.SeatRoomStatus.All.Select(k => new object[] { k });
+    public static IEnumerable<object[]> SeatRoomTraitKindKeys() =>
+        DA_Common.Barony.SeatRoomTraitKind.All.Select(k => new object[] { k });
+    public static IEnumerable<object[]> TradeGoodCoverageKeys() =>
+        DA_Common.Barony.TradeGoodsDisplay.CoverageKeys().Distinct().Select(k => new object[] { k });
+    public static IEnumerable<object[]> KnownLordCoverageKeys() =>
+        DA_Common.Barony.KnownLordsDisplay.CoverageKeys().Distinct().Select(k => new object[] { k });
+    public static IEnumerable<object[]> SeatPurposeTemplateKeys() =>
+        DA_Business.Repository.BaronyRepos.SeatPurposeTemplatesSeeder.LocalizationKeys()
+            .Distinct()
+            .Select(k => new object[] { k });
+    public static IEnumerable<object[]> TerrainFertilityKeys() =>
+        DA_Common.Barony.TerrainFertility.LocalizationKeys().Distinct().Select(k => new object[] { k });
+    public static IEnumerable<object[]> BuildingTemplateDescriptionKeys() =>
+        DagoniteEmpire.Service.BuildingTemplateSeeder.LocalizationKeys().Distinct().Select(k => new object[] { k });
 
     [Fact]
     public void CatalogKeys_AreNotShadowedByDifferentCasing()
@@ -91,7 +126,33 @@ public class CatalogLocalizationCoverageTests
             .Append("{0}, {1}. {2}, year {3}")
             .Append(SD.WeaponParametersDescr)
             .Concat(DifficultyDisplay.ResxKeys)
-            .Append("Difficulty level: {0}");
+            .Append("Difficulty level: {0}")
+            .Concat(DA_Common.Barony.ProjectOutputKind.All)
+            .Concat(DA_Common.Barony.CommunitySource.All)
+            .Concat(DA_Common.Barony.TerrainResource.All)
+            .Concat(DA_Common.Barony.TerrainFeature.AllNames)
+            .Append("{0} deposit")
+            .Concat(DA_Common.Barony.UnitSkillTree.All.Select(s => s.Name))
+            .Concat(DA_Common.Barony.UnitRecruitSelectionCatalog.All.Select(r => r.Name))
+            .Concat(DA_Common.Barony.UnitTrainingTypeCatalog.All.Select(t => t.Name))
+            .Concat(DA_Common.Barony.UnitRaceCatalog.All.Select(r => r.Name))
+            .Concat(DA_Common.Barony.SeatRoomSizeCategory.All)
+            .Concat(DA_Common.Barony.SeatRoomMaterial.All.Select(m =>
+                m == DA_Common.Barony.SeatRoomMaterial.WeakWood ? "Wood" : m))
+            .Concat(DA_Common.Barony.SeatRoomStatus.All)
+            .Concat(DA_Common.Barony.SeatRoomTraitKind.All)
+            .Concat(DA_Common.Barony.TradeGoodsDisplay.CoverageKeys())
+            .Concat(DA_Common.Barony.KnownLordsDisplay.CoverageKeys())
+            .Concat(DA_Business.Repository.BaronyRepos.SeatPurposeTemplatesSeeder.LocalizationKeys())
+            .Concat(DA_Common.Barony.TerrainFertility.LocalizationKeys())
+            .Concat(DagoniteEmpire.Service.BuildingTemplateSeeder.LocalizationKeys())
+            .Append("Produces ")
+            .Append("Requires trade access")
+            .Append("{0} with {1}")
+            .Append("{0} and {1}")
+            .Append("{0} (lord {1})")
+            .Append("fief of {0}")
+            .Append("[{0}, {1}] Under construction: {2}");
         var collisions = catalog
             .Select(key => (key, group: byIgnoreCase[key].Distinct(StringComparer.Ordinal).ToList()))
             .Where(x => x.group.Count > 1 || (x.group.Count == 1 && !string.Equals(x.group[0], x.key, StringComparison.Ordinal)))
@@ -131,6 +192,13 @@ public class CatalogLocalizationCoverageTests
     [Theory]
     [MemberData(nameof(ProjectStatusKeys))]
     public void EveryProjectStatus_HasPolishTranslation(string key)
+    {
+        Assert.Contains(key, LoadPolishKeys());
+    }
+
+    [Theory]
+    [MemberData(nameof(ProjectOutputKindKeys))]
+    public void EveryProjectOutputKind_HasPolishTranslation(string key)
     {
         Assert.Contains(key, LoadPolishKeys());
     }
@@ -256,6 +324,118 @@ public class CatalogLocalizationCoverageTests
     [Theory]
     [MemberData(nameof(DifficultyLevelKeys))]
     public void EveryDifficultyLevel_HasPolishTranslation(string key)
+    {
+        Assert.Contains(key, LoadPolishKeys());
+    }
+
+    [Theory]
+    [MemberData(nameof(CommunitySourceKeys))]
+    public void EveryCommunitySource_HasPolishTranslation(string key)
+    {
+        Assert.Contains(key, LoadPolishKeys());
+    }
+
+    [Theory]
+    [MemberData(nameof(TerrainResourceKeys))]
+    public void EveryTerrainResource_HasPolishTranslation(string key)
+    {
+        Assert.Contains(key, LoadPolishKeys());
+    }
+
+    [Theory]
+    [MemberData(nameof(TerrainFeatureNameKeys))]
+    public void EveryTerrainFeatureName_HasPolishTranslation(string key)
+    {
+        Assert.Contains(key, LoadPolishKeys());
+    }
+
+    [Theory]
+    [MemberData(nameof(UnitSkillNameKeys))]
+    public void EveryUnitSkillName_HasPolishTranslation(string key)
+    {
+        Assert.Contains(key, LoadPolishKeys());
+    }
+
+    [Theory]
+    [MemberData(nameof(UnitRecruitNameKeys))]
+    public void EveryUnitRecruitName_HasPolishTranslation(string key)
+    {
+        Assert.Contains(key, LoadPolishKeys());
+    }
+
+    [Theory]
+    [MemberData(nameof(UnitTrainingNameKeys))]
+    public void EveryUnitTrainingName_HasPolishTranslation(string key)
+    {
+        Assert.Contains(key, LoadPolishKeys());
+    }
+
+    [Theory]
+    [MemberData(nameof(UnitRaceNameKeys))]
+    public void EveryUnitRaceName_HasPolishTranslation(string key)
+    {
+        Assert.Contains(key, LoadPolishKeys());
+    }
+
+    [Theory]
+    [MemberData(nameof(SeatRoomSizeKeys))]
+    public void EverySeatRoomSize_HasPolishTranslation(string key)
+    {
+        Assert.Contains(key, LoadPolishKeys());
+    }
+
+    [Theory]
+    [MemberData(nameof(SeatRoomMaterialDisplayKeys))]
+    public void EverySeatRoomMaterialDisplayName_HasPolishTranslation(string key)
+    {
+        Assert.Contains(key, LoadPolishKeys());
+    }
+
+    [Theory]
+    [MemberData(nameof(SeatRoomStatusKeys))]
+    public void EverySeatRoomStatus_HasPolishTranslation(string key)
+    {
+        Assert.Contains(key, LoadPolishKeys());
+    }
+
+    [Theory]
+    [MemberData(nameof(SeatRoomTraitKindKeys))]
+    public void EverySeatRoomTraitKind_HasPolishTranslation(string key)
+    {
+        Assert.Contains(key, LoadPolishKeys());
+    }
+
+    [Theory]
+    [MemberData(nameof(TradeGoodCoverageKeys))]
+    public void EveryTradeGoodDisplayKey_HasPolishTranslation(string key)
+    {
+        Assert.Contains(key, LoadPolishKeys());
+    }
+
+    [Theory]
+    [MemberData(nameof(KnownLordCoverageKeys))]
+    public void EveryKnownLordDisplayKey_HasPolishTranslation(string key)
+    {
+        Assert.Contains(key, LoadPolishKeys());
+    }
+
+    [Theory]
+    [MemberData(nameof(SeatPurposeTemplateKeys))]
+    public void EverySeatPurposeTemplate_HasPolishTranslation(string key)
+    {
+        Assert.Contains(key, LoadPolishKeys());
+    }
+
+    [Theory]
+    [MemberData(nameof(TerrainFertilityKeys))]
+    public void EveryTerrainFertilityKey_HasPolishTranslation(string key)
+    {
+        Assert.Contains(key, LoadPolishKeys());
+    }
+
+    [Theory]
+    [MemberData(nameof(BuildingTemplateDescriptionKeys))]
+    public void EveryBuildingTemplateDescription_HasPolishTranslation(string key)
     {
         Assert.Contains(key, LoadPolishKeys());
     }

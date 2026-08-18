@@ -1,3 +1,5 @@
+using DA_Common.Localization;
+
 namespace DA_Common.Barony
 {
     public sealed record MarchMapTradeRouteOverlay(
@@ -45,12 +47,12 @@ namespace DA_Common.Barony
             {
                 var lord = KnownLordsCatalog.FindByKey(treaty.CounterpartyLordKey);
                 name = lord is not null
-                    ? $"Route to {lord.Holdings}"
-                    : "Trade route";
+                    ? Loc.T("Route to {0}", lord.Holdings)
+                    : Loc.T("Trade route");
             }
 
             if (TradeTreatyApproval.IsPending(treaty))
-                return $"{name} (pending)";
+                return Loc.T("{0} (pending)", name);
 
             return name;
         }

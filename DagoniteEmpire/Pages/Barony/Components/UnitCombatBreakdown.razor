@@ -22,13 +22,13 @@
         Combat.Defense)
 
     @Block("Damage",
-        $"Weapon damage (± quality) + {UnitAttr.Label(Combat.DamageAttrKey ?? UnitAttr.Build)} (from primary weapon skill) + other.",
+        $"Weapon damage (± quality) + {UnitCatalogDisplay.AttrLabel(Combat.DamageAttrKey ?? UnitAttr.Build, L)} (from primary weapon skill) + other.",
         UnitCombatStatKey.Damage,
         lossValue: null,
         (UnitAttr.Letter(Combat.DamageAttrKey ?? UnitAttr.Build),
-            UnitAttr.Label(Combat.DamageAttrKey ?? UnitAttr.Build),
+            UnitCatalogDisplay.AttrLabel(Combat.DamageAttrKey ?? UnitAttr.Build, L),
             Combat.AttrDamageBonus,
-            $"{UnitAttr.Label(Combat.DamageAttrKey ?? UnitAttr.Build)} linked to the equipped weapon's skill"),
+            $"{UnitCatalogDisplay.AttrLabel(Combat.DamageAttrKey ?? UnitAttr.Build, L)} linked to the equipped weapon's skill"),
         ("Gear", "Gear", Combat.WeaponDamageBonus, "Weapon damage including quality"),
         Combat.Damage)
 
@@ -59,17 +59,17 @@
     [Parameter] public EventCallback OtherChanged { get; set; }
 
     private string AttackSkillName =>
-        UnitSkillTree.Find(Combat.AttackSkillKey)?.Name ?? Combat.AttackSkillKey ?? "—";
+        UnitSkillTree.Find(Combat.AttackSkillKey) is { } d ? d.DisplayName(L) : Combat.AttackSkillKey ?? "—";
 
     private string DefenseSkillName =>
-        UnitSkillTree.Find(Combat.DefenseSkillKeyUsed)?.Name ?? Combat.DefenseSkillKeyUsed ?? "—";
+        UnitSkillTree.Find(Combat.DefenseSkillKeyUsed) is { } d ? d.DisplayName(L) : Combat.DefenseSkillKeyUsed ?? "—";
 
     private string RaceMoveTip
     {
         get
         {
             var race = UnitRaceCatalog.Find(Unit?.RaceKey);
-            return $"{race.Name}: Move +{race.MoveBonus}.";
+            return $"{race.DisplayName(L)}: {L["Move"]} +{race.MoveBonus}.";
         }
     }
 
@@ -96,7 +96,7 @@
     {
         <div class="unit-combat-break__block">
             <BaronyTooltip Title="@title" Text="@tipText" Placement="Placement.Bottom">
-                <div class="unit-combat-break__title">@title</div>
+                <div class="unit-combat-break__title">@L[title]</div>
             </BaronyTooltip>
             <div class="unit-combat-break__cols">
                 @Col(a.Label, a.TipTitle, a.Value, a.ColTip)
@@ -121,7 +121,7 @@
     {
         <div class="unit-combat-break__block">
             <BaronyTooltip Title="@title" Text="@tipText" Placement="Placement.Bottom">
-                <div class="unit-combat-break__title">@title</div>
+                <div class="unit-combat-break__title">@L[title]</div>
             </BaronyTooltip>
             <div class="unit-combat-break__cols">
                 @Col(a.Label, a.TipTitle, a.Value, a.ColTip)
@@ -148,7 +148,7 @@
     {
         <div class="unit-combat-break__block unit-combat-break__block--wide">
             <BaronyTooltip Title="@title" Text="@tipText" Placement="Placement.Bottom">
-                <div class="unit-combat-break__title">@title</div>
+                <div class="unit-combat-break__title">@L[title]</div>
             </BaronyTooltip>
             <div class="unit-combat-break__cols">
                 @Col(a.Label, a.TipTitle, a.Value, a.ColTip)

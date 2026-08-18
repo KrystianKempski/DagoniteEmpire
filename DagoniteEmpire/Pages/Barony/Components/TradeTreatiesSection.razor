@@ -108,7 +108,7 @@
                         @if (lord is not null)
                         {
                             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                                @lord.Title · @lord.Holdings · @L["Wealth {0}", lord.Wealth]
+                                @lord.DisplayTitle(L) · @lord.Holdings · @L["Wealth {0}", lord.Wealth]
                             </MudText>
                         }
                         <MudText Typo="Typo.body2" Class="mt-2">
@@ -127,7 +127,7 @@
                         {
                             <MudText Typo="Typo.body2" Class="mt-1">
                                 <strong>@L["Goods received:"]</strong>
-                                @string.Join(", ", previewReceived.Select(g => g.Name))
+                                @string.Join(", ", previewReceived.Select(g => g.DisplayName(L)))
                                 @if (pending)
                                 {
                                     <span style="color:var(--barony-muted);"> @L["(after approval)"]</span>
@@ -197,8 +197,8 @@
     private bool _hasTreatyPpb =>
         PpbCatalog.All.Any(info => _treatyPpbGlance[info.Key] != 0m);
 
-    private static string FormatGoods(IEnumerable<string> keys) =>
-        string.Join(", ", keys.Select(k => TradeGoodsCatalog.Find(k)?.Name ?? k));
+    private string FormatGoods(IEnumerable<string> keys) =>
+        string.Join(", ", keys.Select(k => TradeGoodsDisplay.DisplayName(k, L)));
 
     private static BaronyTradeTreaty PreviewAsApproved(BaronyTradeTreaty treaty) => new()
     {

@@ -18,7 +18,7 @@
     {
         <div class="barony-tip__title">@Lord.Name @Lord.House</div>
         <div class="march-map-lord-tip__meta">
-            @Lord.Title · @Lord.Holdings · @L["Wealth {0}", Lord.Wealth]
+            @Lord.DisplayTitle(L) · @Lord.Holdings · @L["Wealth {0}", Lord.Wealth]
         </div>
         @if (!string.IsNullOrWhiteSpace(Lord.ProducedGoods))
         {
@@ -32,7 +32,7 @@
                             continue;
                         <span class="trade-good-chip">
                             <TradeGoodIcon Good="@good" />
-                            <span>@good.Name</span>
+                            <span>@good.DisplayName(L)</span>
                         </span>
                     }
                 </div>
@@ -42,7 +42,7 @@
         {
             <div class="march-map-lord-tip__section">
                 <div class="march-map-lord-tip__label">@L["Description"]</div>
-                <div class="barony-tip__body">@Lord.Description</div>
+                <div class="barony-tip__body">@Lord.DisplayDescription(L)</div>
             </div>
         }
     }

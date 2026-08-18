@@ -87,8 +87,8 @@
                 }
             </span>
         </BaronyTooltip>
-        <BaronyTooltip Title="@(L["Race"])" Text="@_race.Description" Placement="Placement.Bottom">
-            <span class="unit-draft-card__meta-item"><em>@L["Race"]</em> <b>@_race.Name</b></span>
+        <BaronyTooltip Title="@(L["Race"])" Text="@_race.DisplayDescription(L)" Placement="Placement.Bottom">
+            <span class="unit-draft-card__meta-item"><em>@L["Race"]</em> <b>@_race.DisplayName(L)</b></span>
         </BaronyTooltip>
         @if (ShowCurrentHp)
         {
@@ -139,17 +139,17 @@
             }
         </div>
         <div class="unit-card__attrs unit-card__attrs--compact">
-            @AttrChip(UnitAttr.Build, "Build",
-                "Strength, endurance and size of the people in the unit.",
+            @AttrChip(UnitAttr.Build, L["Build"],
+                L["Strength, endurance and size of the people in the unit."],
                 Unit.Build, Unit.EffectiveBuild)
-            @AttrChip(UnitAttr.Agility, "Agility",
-                "Dexterity, quickness and mobility. Gear may apply an agility penalty.",
+            @AttrChip(UnitAttr.Agility, L["Agility"],
+                L["Dexterity, quickness and mobility. Gear may apply an agility penalty."],
                 Unit.Agility, Unit.EffectiveAgility)
-            @AttrChip(UnitAttr.Will, "Will",
-                "Willpower, courage and mental grit under pressure.",
+            @AttrChip(UnitAttr.Will, L["Will"],
+                L["Willpower, courage and mental grit under pressure."],
                 Unit.Will, Unit.EffectiveWill)
-            @AttrChip(UnitAttr.Perception, "Perception",
-                "Awareness, senses and intuition.",
+            @AttrChip(UnitAttr.Perception, L["Perception"],
+                L["Awareness, senses and intuition."],
                 Unit.Perception, Unit.EffectivePerception)
             @DisciplineChip()
         </div>
@@ -324,9 +324,9 @@
     private string ResolvedTitleEyebrow =>
         !string.IsNullOrWhiteSpace(TitleEyebrow)
             ? TitleEyebrow!
-            : Unit.IsActive ? "Active unit"
-            : Unit.IsTraining ? "In training"
-            : Unit.Status;
+            : Unit.IsActive ? L["Active unit"]
+            : Unit.IsTraining ? L["In training"]
+            : L[Unit.Status];
 
     private void Toggle()
     {

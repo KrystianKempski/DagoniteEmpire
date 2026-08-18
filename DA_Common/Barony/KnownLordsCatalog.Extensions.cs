@@ -62,7 +62,7 @@ namespace DA_Common.Barony
     }
 
     public static string DisplayName(KnownLordEntry lord) =>
-      $"{lord.Name} {lord.House} — {lord.Title} ({lord.Holdings})";
+      lord.DisplayFullName();
 
     public static IReadOnlyList<string> ProducedGoodKeys(KnownLordEntry lord) =>
       TradeGoodLordNames.ParseLordGoodsList(lord.ProducedGoods);

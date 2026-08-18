@@ -1,3 +1,5 @@
+using DA_Common.Localization;
+
 namespace DA_Common.Barony
 {
     /// <summary>
@@ -77,23 +79,24 @@ namespace DA_Common.Barony
         public static string LackReason(UnitArmorDef a)
         {
             var key = RequiredGoodKey(a);
-            var label = TradeGoodsCatalog.Find(key)?.Name
-                ?? key
-                ?? "armor access";
-            return $"{a.Name}: need trade access to {label}.";
+            var label = TradeGoodsDisplay.DisplayName(key);
+            if (string.IsNullOrWhiteSpace(label))
+                label = Loc.T("armor access");
+            return Loc.T("{0}: need trade access to {1}.", Loc.T(a.Name), label);
         }
 
         public static string LackReason(UnitMountDef m)
         {
-            var label = TradeGoodsCatalog.Find(m.RequiredTradeGoodKey)?.Name
-                ?? m.RequiredTradeGoodKey;
-            return $"{m.Name}: need trade access to {label}.";
+            var label = TradeGoodsDisplay.DisplayName(m.RequiredTradeGoodKey);
+            return Loc.T("{0}: need trade access to {1}.", Loc.T(m.Name), label);
         }
 
         private static string LackReason(string? goodKey, string fallbackLabel)
         {
-            var label = TradeGoodsCatalog.Find(goodKey)?.Name ?? fallbackLabel;
-            return $"Need trade access to {label}.";
+            var label = TradeGoodsDisplay.DisplayName(goodKey);
+            if (string.IsNullOrWhiteSpace(label))
+                label = Loc.T(fallbackLabel);
+            return Loc.T("Need trade access to {0}.", label);
         }
 
         public static bool MeetsWeapon(

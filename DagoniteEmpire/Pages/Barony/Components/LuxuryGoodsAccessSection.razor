@@ -2,7 +2,7 @@
 
 <BaronySection Title="@(L["Luxury goods access"])" DefaultOpen="true">
     <Summary>
-        <span class="projects-summary__item">@L[CurrentTier.NameEn]</span>
+        <span class="projects-summary__item">@CurrentTier.DisplayName(L)</span>
     </Summary>
     <ChildContent>
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
@@ -36,9 +36,9 @@
                             <td class="luxury-goods-col-radio">
                                 <MudRadio T="string" Value="@tier.Key" Dense="true" />
                             </td>
-                            <td class="luxury-goods-col-name">@L[tier.NameEn]</td>
-                            <td class="luxury-goods-col-bonus">@tier.BonusDisplay</td>
-                            <td class="luxury-goods-col-desc">@tier.Description</td>
+                            <td class="luxury-goods-col-name">@tier.DisplayName(L)</td>
+                            <td class="luxury-goods-col-bonus">@tier.DisplayBonus(L)</td>
+                            <td class="luxury-goods-col-desc">@tier.DisplayDescription(L)</td>
                         </tr>
                     }
                 </tbody>

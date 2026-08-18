@@ -3,7 +3,7 @@
 @inject ISnackbar _snackBar
 @inject IDialogService _dialogService
 
-<BaronySection Title="@Region">
+<BaronySection Title="@(L[Region])">
     <Summary>
         <span class="projects-summary__item">@Filtered.Count lord@(Filtered.Count == 1 ? "" : "s")</span>
     </Summary>
@@ -124,14 +124,14 @@
                                     </div>
                                 </td>
                                 <td class="known-lords-col-house known-lords-wrap">@(DashIfEmpty(lord.House))</td>
-                                <td class="known-lords-col-title known-lords-wrap">@(DashIfEmpty(lord.Title))</td>
+                                <td class="known-lords-col-title known-lords-wrap">@(DashIfEmpty(lord.DisplayTitle(L)))</td>
                                 <td class="known-lords-col-holdings known-lords-wrap">@(DashIfEmpty(lord.Holdings))</td>
                                 <td class="known-lords-col-wealth">@lord.Wealth</td>
                                 <td class="known-lords-col-desc">
                                     @if (!string.IsNullOrWhiteSpace(lord.Description))
                                     {
-                                        <BaronyTooltip Title="@(L["Description"])" Text="@lord.Description">
-                                            <span class="known-lords-desc-text">@lord.Description</span>
+                                        <BaronyTooltip Title="@(L["Description"])" Text="@lord.DisplayDescription(L)">
+                                            <span class="known-lords-desc-text">@lord.DisplayDescription(L)</span>
                                         </BaronyTooltip>
                                     }
                                     else
@@ -148,10 +148,10 @@
                                                 var good = TradeGoodsCatalog.Find(key);
                                                 if (good is null)
                                                     continue;
-                                                <BaronyTooltip Title="@good.Name" Text="@good.Description">
+                                                <BaronyTooltip Title="@good.DisplayName(L)" Text="@good.DisplayDescription(L)">
                                                     <span class="trade-good-chip">
                                                         <TradeGoodIcon Good="@good" />
-                                                        <span>@good.Name</span>
+                                                        <span>@good.DisplayName(L)</span>
                                                     </span>
                                                 </BaronyTooltip>
                                             }
@@ -210,8 +210,10 @@
         return Contains(lord.Name)
                || Contains(lord.House)
                || Contains(lord.Title)
+               || Contains(lord.DisplayTitle(L))
                || Contains(lord.Holdings)
                || Contains(lord.Description)
+               || Contains(lord.DisplayDescription(L))
                || Contains(lord.ProducedGoods)
                || Contains(notes);
 
@@ -297,7 +299,7 @@
         var parameters = new DialogParameters<RelationNotesDialog>
         {
             { x => x.RelationId, 0 },
-            { x => x.PersonName, KnownLordsCatalog.DisplayName(lord) },
+            { x => x.PersonName, lord.DisplayFullName(L) },
             { x => x.Notes, notes },
         };
 

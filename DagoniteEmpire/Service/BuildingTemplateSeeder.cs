@@ -462,5 +462,12 @@ namespace DagoniteEmpire.Service
 
             return list;
         }
+
+        /// <summary>English description strings used as resx keys for Polish UI copy.</summary>
+        public static IEnumerable<string> LocalizationKeys() =>
+            CreateAll()
+                .Select(t => t.Description)
+                .Where(d => !string.IsNullOrWhiteSpace(d))
+                .Select(d => d!);
     }
 }

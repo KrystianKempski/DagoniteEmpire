@@ -18,9 +18,9 @@ else
     <BaronyPageHeader Title="@(L["Trade"])" HelpKey="trade-goods">
         <Summary>
             <span class="projects-summary">
-                <span class="projects-summary__item">@_availability.AvailableKeys.Count / @TradeGoodsCatalog.All.Count available</span>
-                <span class="projects-summary__item">@_availability.ProducedKeys.Count produced</span>
-                <span class="projects-summary__item">@_availability.TreatyReceivedKeys.Count from trade</span>
+                <span class="projects-summary__item">@L["{0} / {1} available", _availability.AvailableKeys.Count, TradeGoodsCatalog.All.Count]</span>
+                <span class="projects-summary__item">@L["{0} produced", _availability.ProducedKeys.Count]</span>
+                <span class="projects-summary__item">@L["{0} from trade", _availability.TreatyReceivedKeys.Count]</span>
             </span>
         </Summary>
     </BaronyPageHeader>

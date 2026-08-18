@@ -11,7 +11,7 @@
         @if (OrderedEvents.Count == 0 && !HasAudienceRow && !HasAdventureRow)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                No events yet.
+                @L["No events yet."]
                 @if (CanManage)
                 {
                     <text> @L["Add one below."]</text>
@@ -259,7 +259,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<EventEditDialog>(
-            isNew ? "Add Event" : "Edit Event",
+            isNew ? L["Add Event"] : L["Edit event"],
             parameters,
             new DialogOptions
             {

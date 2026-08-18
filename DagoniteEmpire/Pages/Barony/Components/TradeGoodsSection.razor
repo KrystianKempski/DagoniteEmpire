@@ -2,7 +2,7 @@
 
 <BaronySection Title="@SectionLabel">
     <Summary>
-        <span class="projects-summary__item">@AvailableCount / @Items.Count available</span>
+        <span class="projects-summary__item">@L["{0} / {1} available", AvailableCount, Items.Count]</span>
     </Summary>
     <ChildContent>
         <div style="overflow-x:auto;">
@@ -54,8 +54,8 @@
                             </td>
                             <td class="trade-goods-col-name">
                                 <span class="trade-good-name">
-                                    <TradeGoodIcon Good="@item" Title="@item.Name" />
-                                    <span>@item.Name</span>
+                                    <TradeGoodIcon Good="@item" Title="@item.DisplayName(L)" />
+                                    <span>@item.DisplayName(L)</span>
                                 </span>
                                 @if (available && !grantable)
                                 {
@@ -66,16 +66,16 @@
                                 @(available ? Availability.SourceLabel(item.Key) : "—")
                             </td>
                             <td class="trade-goods-col-desc">
-                                <BaronyTooltip Title="@item.Name" Text="@item.Description">
-                                    <span class="relations-ellipsis">@item.Description</span>
+                                <BaronyTooltip Title="@item.DisplayName(L)" Text="@item.DisplayDescription(L)">
+                                    <span class="relations-ellipsis">@item.DisplayDescription(L)</span>
                                 </BaronyTooltip>
                             </td>
-                            <td class="trade-goods-col-bonus">@item.BonusDisplay</td>
+                            <td class="trade-goods-col-bonus">@item.DisplayBonus(L)</td>
                             <td class="trade-goods-col-unlock">
                                 @if (!string.IsNullOrWhiteSpace(item.Unlocks))
                                 {
-                                    <BaronyTooltip Title="@(L["Unlocks"])" Text="@item.Unlocks">
-                                        <span class="relations-ellipsis">@item.Unlocks</span>
+                                    <BaronyTooltip Title="@(L["Unlocks"])" Text="@item.DisplayUnlocks(L)">
+                                        <span class="relations-ellipsis">@item.DisplayUnlocks(L)</span>
                                     </BaronyTooltip>
                                 }
                                 else
@@ -83,12 +83,12 @@
                                     <span>—</span>
                                 }
                             </td>
-                            <td class="trade-goods-col-building">@(string.IsNullOrWhiteSpace(item.ProductionBuilding) ? "—" : item.ProductionBuilding)</td>
+                            <td class="trade-goods-col-building">@(string.IsNullOrWhiteSpace(item.ProductionBuilding) ? "—" : item.DisplayProductionBuilding(L))</td>
                             <td class="trade-goods-col-req">
                                 @if (!string.IsNullOrWhiteSpace(item.Requirements))
                                 {
-                                    <BaronyTooltip Title="@(L["Requires"])" Text="@item.Requirements">
-                                        <span class="relations-ellipsis">@item.Requirements</span>
+                                    <BaronyTooltip Title="@(L["Requires"])" Text="@item.DisplayRequirements(L)">
+                                        <span class="relations-ellipsis">@item.DisplayRequirements(L)</span>
                                     </BaronyTooltip>
                                 }
                                 else

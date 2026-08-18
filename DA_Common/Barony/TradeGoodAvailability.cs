@@ -176,7 +176,7 @@ namespace DA_Common.Barony
             if (PpbCatalog.All.Any(info => luxury.BonusAdditive[info.Key] != 0m))
             {
                 additive.AddInPlace(luxury.BonusAdditive);
-                noteParts.Add(Loc.T("luxury — {0}", luxury.NameEn));
+                noteParts.Add(Loc.T("luxury — {0}", Loc.T(luxury.NameEn)));
             }
 
             var routeEconomy = TradeTreatyCalculator.TotalRouteEconomyBonus(treatyList);

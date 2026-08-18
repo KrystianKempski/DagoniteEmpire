@@ -29,12 +29,12 @@
                                     @if (!string.IsNullOrWhiteSpace(row.Description))
                                     {
                                         <BaronyTooltip Title="@(L["Description"])" Text="@row.Description">
-                                            <span class="source-cell__name">@row.Source</span>
+                                            <span class="source-cell__name">@DisplaySource(row)</span>
                                         </BaronyTooltip>
                                     }
                                     else
                                     {
-                                        <span class="source-cell__name">@row.Source</span>
+                                        <span class="source-cell__name">@DisplaySource(row)</span>
                                     }
                                     @if (!row.IsSystem && CanEdit)
                                     {
@@ -162,6 +162,9 @@
         _snackBar.Add(L["Source removed."], Severity.Success);
         await OnChanged.InvokeAsync();
     }
+
+    private string DisplaySource(BaronPhpRow row)
+        => row.IsSystem ? L[row.Source].Value : row.Source;
 
     private static string FormatScore(int value) =>
         value > 0 ? $"+{value}" : value.ToString();

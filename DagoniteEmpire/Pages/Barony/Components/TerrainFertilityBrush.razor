@@ -17,11 +17,11 @@
             @for (var value = TerrainFertility.Min; value <= TerrainFertility.Max; value++)
             {
                 var v = value;
-                <BaronyTooltip Title="@v.ToString()" Text="@TerrainFertility.DisplayName(v)">
+                <BaronyTooltip Title="@v.ToString()" Text="@TerrainFertility.DisplayName(v, L)">
                     <button type="button"
                             class="terrain-fertility-swatch @(v == Value ? "terrain-fertility-swatch--selected" : "")"
                             style="background-color: @TerrainMapVisuals.FertilityColorForValue(v)"
-                            aria-label="@($"{v} — {TerrainFertility.DisplayName(v)}")"
+                            aria-label="@($"{v} — {TerrainFertility.DisplayName(v, L)}")"
                             @onclick="() => SelectValue(v)">
                         @v
                     </button>

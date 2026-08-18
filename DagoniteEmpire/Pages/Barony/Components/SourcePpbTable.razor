@@ -19,13 +19,13 @@
                         @if (!string.IsNullOrWhiteSpace(row.Description))
                         {
                             <BaronyTooltip Title="@(L["Description"])" Text="@row.Description">
-                                <span class="source-cell__name">@row.Source</span>
+                                <span class="source-cell__name">@DisplaySource(row)</span>
                             </BaronyTooltip>
                         }
                         else
                         {
                             <BaronyTooltip Text="@RowTitle(row)">
-                                <span class="source-cell__name">@row.Source</span>
+                                <span class="source-cell__name">@DisplaySource(row)</span>
                             </BaronyTooltip>
                         }
                         @if (!string.IsNullOrWhiteSpace(row.Formula))
@@ -84,11 +84,15 @@
     private static IEnumerable<PpbInfo> SkillColumns
         => PpbCatalog.All.Where(p => p.Key != Ppb.Treasury);
 
-    private static string RowTitle(BaronInfluenceRow row)
+    private string DisplaySource(BaronInfluenceRow row)
+        => row.IsSystem ? L[row.Source].Value : row.Source;
+
+    private string RowTitle(BaronInfluenceRow row)
     {
+        var source = DisplaySource(row);
         if (string.IsNullOrWhiteSpace(row.Formula))
-            return row.Source;
-        return $"{row.Source} | {row.Formula}";
+            return source;
+        return $"{source} | {row.Formula}";
     }
 
     private static string PpbShort(Ppb p) => PpbCatalog.Short(p);

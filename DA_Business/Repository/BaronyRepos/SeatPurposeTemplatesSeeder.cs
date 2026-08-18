@@ -236,6 +236,18 @@ namespace DA_Business.Repository.BaronyRepos
                 SortOrder: 16),
         ];
 
+        public static IEnumerable<string> LocalizationKeys()
+        {
+            foreach (var entry in Defaults)
+            {
+                yield return entry.Name;
+                if (!string.IsNullOrWhiteSpace(entry.Description))
+                    yield return entry.Description;
+                if (!string.IsNullOrWhiteSpace(entry.WhoOccupies))
+                    yield return entry.WhoOccupies;
+            }
+        }
+
         public static void EnsureDefaults(ApplicationDbContext ctx)
         {
             var existing = ctx.SeatPurposeTemplates

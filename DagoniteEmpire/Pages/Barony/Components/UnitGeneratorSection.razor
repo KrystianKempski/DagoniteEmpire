@@ -182,10 +182,10 @@
                                                 @onclick="() => SelectRecruit(r.Key)">
                                                 <td><MudRadio T="string" Value="@r.Key" Dense="true" /></td>
                                                 <td class="ppb-row-label">
-                                                    <BaronyTooltip Title="@r.Name"
+                                                    <BaronyTooltip Title="@r.DisplayName(L)"
                                                                    Text="@RecruitTip(r)"
                                                                    Placement="Placement.Right">
-                                                        <span>@r.Name</span>
+                                                        <span>@r.DisplayName(L)</span>
                                                     </BaronyTooltip>
                                                 </td>
                                                 <td>@r.AttributeScore</td>
@@ -263,15 +263,17 @@
                                     <tbody>
                                         @foreach (var t in UnitTrainingTypeCatalog.All)
                                         {
-                                            var trainTip = string.IsNullOrWhiteSpace(t.Notes)
-                                                ? $"{t.Name}: {t.Pd} XP · {t.GoldCost} Gld · {t.Turns} Trn · Dis {t.StartingDiscipline}"
-                                                : $"{t.Name}: {t.Notes}. {t.Pd} XP · {t.GoldCost} Gld · {t.Turns} Trn · Dis {t.StartingDiscipline}";
+                                            var trainName = t.DisplayName(L);
+                                            var trainNotes = t.DisplayNotes(L);
+                                            var trainTip = string.IsNullOrWhiteSpace(trainNotes)
+                                                ? $"{trainName}: {t.Pd} XP · {t.GoldCost} Gld · {t.Turns} Trn · Dis {t.StartingDiscipline}"
+                                                : $"{trainName}: {trainNotes}. {t.Pd} XP · {t.GoldCost} Gld · {t.Turns} Trn · Dis {t.StartingDiscipline}";
                                             <tr class="@(_trainingKey == t.Key ? "unit-workshop__row--active" : null)"
                                                 @onclick="() => SelectTraining(t.Key)">
                                                 <td><MudRadio T="string" Value="@t.Key" Dense="true" /></td>
                                                 <td class="ppb-row-label">
-                                                    <BaronyTooltip Title="@t.Name" Text="@trainTip" Placement="Placement.Right">
-                                                        <span>@t.Name</span>
+                                                    <BaronyTooltip Title="@trainName" Text="@trainTip" Placement="Placement.Right">
+                                                        <span>@trainName</span>
                                                     </BaronyTooltip>
                                                 </td>
                                                 <td>@t.Pd</td>
@@ -311,9 +313,9 @@
                     @if (_race.BonusBaseSkillPicks > 0)
                     {
                         <section class="unit-workshop__block unit-workshop__block--compact">
-                            <BaronyTooltip Title="@($"{_race.Name} race bonus")"
-                                           Text="@($"Humans get +{_race.BonusBaseSkillAmount} Other on {_race.BonusBaseSkillPicks} base skills of your choice (shown in the Other skill column).")">
-                                <h3 class="unit-workshop__heading">Race bonus — @_race.Name</h3>
+                            <BaronyTooltip Title="@(L["Race bonus — {0}", _race.DisplayName(L)])"
+                                           Text="@(L["{0} get +{1} Other on {2} base skills of your choice (shown in the Other skill column).", _race.DisplayName(L), _race.BonusBaseSkillAmount, _race.BonusBaseSkillPicks])">
+                                <h3 class="unit-workshop__heading">@L["Race bonus — {0}", _race.DisplayName(L)]</h3>
                             </BaronyTooltip>
                             <div class="unit-workshop__race-picks">
                                 <MudSelect T="string"
@@ -329,7 +331,7 @@
                                     @foreach (var s in UnitRaceSkillBonus.EligibleBaseSkills
                                                   .Where(x => !string.Equals(x.Key, _raceBonus2, StringComparison.OrdinalIgnoreCase)))
                                     {
-                                        <MudSelectItem Value="@s.Key">@s.Name</MudSelectItem>
+                                        <MudSelectItem Value="@s.Key">@s.DisplayName(L)</MudSelectItem>
                                     }
                                 </MudSelect>
                                 <MudSelect T="string"
@@ -345,7 +347,7 @@
                                     @foreach (var s in UnitRaceSkillBonus.EligibleBaseSkills
                                                   .Where(x => !string.Equals(x.Key, _raceBonus1, StringComparison.OrdinalIgnoreCase)))
                                     {
-                                        <MudSelectItem Value="@s.Key">@s.Name</MudSelectItem>
+                                        <MudSelectItem Value="@s.Key">@s.DisplayName(L)</MudSelectItem>
                                     }
                                 </MudSelect>
                             </div>
@@ -404,7 +406,7 @@
                                 _payArmor, OnPayArmorChanged, required: false)
                             @GearPayRow("Shd", _shieldDef?.DisplayName(), _shieldDef?.ProductionCost, _shieldDef?.GoldCost, _shieldDef?.MarketGold,
                                 _payShield, OnPayShieldChanged, required: false)
-                            @GearPayRow("Mnt", _mountDef?.Name, _mountDef?.ProductionCost, _mountDef?.GoldCost, _mountDef?.MarketGold,
+                            @GearPayRow("Mnt", _mountDef?.DisplayName(), _mountDef?.ProductionCost, _mountDef?.GoldCost, _mountDef?.MarketGold,
                                 _payMount, OnPayMountChanged, required: false)
                         </div>
                     </section>
@@ -588,11 +590,12 @@
 
     private Task OnRecruitChanged(string v) { _recruitKey = v; Recalc(); return Task.CompletedTask; }
 
-    private static string RecruitTip(UnitRecruitSelection r)
+    private string RecruitTip(UnitRecruitSelection r)
     {
         var tip = $"Att {r.AttributeScore} · Def {r.DefenseCost} · Gold {r.GoldCost} · Skl {r.MaxBaseSkill} · Wag {r.Wage}";
-        if (!string.IsNullOrWhiteSpace(r.Notes))
-            tip += $"\n\n{r.Notes}";
+        var notes = r.DisplayNotes(L);
+        if (!string.IsNullOrWhiteSpace(notes))
+            tip += $"\n\n{notes}";
         return tip;
     }
 

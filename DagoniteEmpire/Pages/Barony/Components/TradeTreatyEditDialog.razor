@@ -17,7 +17,7 @@
             <MudText Typo="Typo.body2" Class="mb-3" Style="color:var(--barony-muted);">
                 @(Counterparty is null
                     ? "—"
-                    : $"{Counterparty.Title} {Counterparty.Name} {Counterparty.House} · {Counterparty.Holdings}")
+                    : $"{Counterparty.DisplayTitle(L)} {Counterparty.Name} {Counterparty.House} · {Counterparty.Holdings}")
             </MudText>
 
             @if (LockRoute)
@@ -52,7 +52,7 @@
                 var lordGoods = addressee is null
                     ? (IReadOnlyList<string>)Array.Empty<string>()
                     : KnownLordsCatalog.ProducedGoodKeys(addressee)
-                        .OrderBy(k => TradeGoodsCatalog.Find(k)?.Name ?? k, StringComparer.OrdinalIgnoreCase)
+                        .OrderBy(k => TradeGoodsDisplay.DisplayName(k, L), StringComparer.CurrentCultureIgnoreCase)
                         .ToList();
                 <div class="trade-treaty-edit-paragraph barony-panel mb-3 pa-3">
                     <MudText Typo="Typo.subtitle2" Class="mb-1">
@@ -220,7 +220,7 @@
     private KnownLordEntry? Counterparty => KnownLordsCatalog.FindByKey(_counterpartyLordKey);
 
     private IReadOnlyList<string> _baronyGoodOptions =>
-        BaronyAvailableGoodKeys.OrderBy(k => TradeGoodsCatalog.Find(k)?.Name ?? k, StringComparer.OrdinalIgnoreCase).ToList();
+        BaronyAvailableGoodKeys.OrderBy(k => TradeGoodsDisplay.DisplayName(k, L), StringComparer.CurrentCultureIgnoreCase).ToList();
 
     private BaronyTradeTreaty Draft => BuildDraft();
 
@@ -323,7 +323,7 @@
             .ToList();
     }
 
-    private static string GoodLabel(string key) => TradeGoodsCatalog.Find(key)?.Name ?? key;
+    private string GoodLabel(string key) => TradeGoodsDisplay.DisplayName(key, L);
 
     private void Cancel() => MudDialog.Cancel();
 

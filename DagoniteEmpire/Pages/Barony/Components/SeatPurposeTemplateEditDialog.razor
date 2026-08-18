@@ -21,7 +21,7 @@
             <MudSelect T="string" @bind-Value="_template.MinSizeCategory" Label="@(L["Minimum chamber size"])" Variant="Variant.Outlined" Margin="Margin.Dense" Class="baron-influence-field">
                 @foreach (var s in SeatRoomSizeCategory.All)
                 {
-                    <MudSelectItem Value="@s">@s</MudSelectItem>
+                    <MudSelectItem Value="@s">@SeatRoomSizeCategory.DisplayName(s, L)</MudSelectItem>
                 }
             </MudSelect>
             <MudTextField @bind-Value="_template.WhoOccupies"

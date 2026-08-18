@@ -135,7 +135,7 @@
                                                 var good = TradeGoodsCatalog.Find(goodKey);
                                                 <TradeGoodIcon GoodKey="@goodKey"
                                                                Good="@good"
-                                                               Title="@(good?.Name ?? goodKey)"
+                                                               Title="@(good is null ? goodKey : good.DisplayName(L))"
                                                                Class="march-map-marker__good-icon" />
                                             }
                                         </div>
@@ -192,7 +192,7 @@
             @if (linked is not null)
             {
                 <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
-                    @linked.Name @linked.House · @linked.Title · @L["Wealth {0}", linked.Wealth]
+                    @linked.Name @linked.House · @linked.DisplayTitle(L) · @L["Wealth {0}", linked.Wealth]
                 </MudText>
             }
             <MudTextField @bind-Value="_selectedNode.Label"

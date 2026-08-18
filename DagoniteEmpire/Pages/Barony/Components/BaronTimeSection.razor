@@ -107,7 +107,7 @@
                             <tr class="@(action.IsSystem ? "source-row--system" : "")">
                                 <td class="ppb-row-label source-col">
                                     <div class="source-cell">
-                                        <span class="source-cell__name">@action.Name</span>
+                                        <span class="source-cell__name">@DisplayActionName(action)</span>
                                         @if (CanEdit)
                                         {
                                             <span class="source-cell__actions">
@@ -120,7 +120,7 @@
                                         }
                                     </div>
                                 </td>
-                                <td class="baron-time-col-kind">@action.Kind</td>
+                                <td class="baron-time-col-kind">@L[action.Kind]</td>
                                 <td class="baron-time-cost">@action.CostJc BT</td>
                                 <td class="baron-time-col-desc">@(action.Description ?? "")</td>
                             </tr>
@@ -238,6 +238,9 @@
             .ToList();
         _budget = BaronyCalc.BuildTimeBudget(Character, _modifiers, _actions);
     }
+
+    private string DisplayActionName(BaronTimeActionDTO action)
+        => action.IsSystem ? L[action.Name].Value : action.Name;
 
     private string PoolTooltip() =>
         $"Base BT = (Endurance + Willpower) × {BaronTimeRules.AttributeFactor}.\n"

@@ -29,7 +29,7 @@ namespace DA_Common.Barony
         {
             if (!TryGetRequiredGoodKey(templateName, out var key))
                 return null;
-            return TradeGoodsCatalog.Find(key)?.Name ?? key;
+            return TradeGoodsDisplay.DisplayName(key);
         }
 
         public static bool HasAccess(string? templateName, TradeGoodAvailabilitySnapshot? availability)

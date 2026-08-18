@@ -37,14 +37,14 @@
 
     private bool IsVisible(TerrainMapLayer layer) => VisibleLayers.Contains(layer);
 
-    private static string Label(TerrainMapLayer layer) => layer switch
+    private string Label(TerrainMapLayer layer) => layer switch
     {
-        TerrainMapLayer.Fertility => "Fertility",
-        TerrainMapLayer.TerrainType => "Terrain type",
-        TerrainMapLayer.Domain => "Domain",
-        TerrainMapLayer.Fief => "Fief",
-        TerrainMapLayer.Resources => "Resources",
-        TerrainMapLayer.Improvements => "Improvements",
+        TerrainMapLayer.Fertility => L["Fertility"],
+        TerrainMapLayer.TerrainType => L["Terrain type"],
+        TerrainMapLayer.Domain => L["Domain"],
+        TerrainMapLayer.Fief => L["Fief"],
+        TerrainMapLayer.Resources => L["Resources"],
+        TerrainMapLayer.Improvements => L["Improvements"],
         _ => layer.ToString(),
     };
 }

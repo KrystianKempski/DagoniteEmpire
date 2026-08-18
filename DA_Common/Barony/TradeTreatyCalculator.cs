@@ -270,6 +270,6 @@ namespace DA_Common.Barony
     }
 
     private static string GoodName(string key) =>
-      TradeGoodsCatalog.Find(key)?.Name ?? key;
+      TradeGoodsDisplay.DisplayName(key);
   }
 }

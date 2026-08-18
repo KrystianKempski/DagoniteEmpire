@@ -161,7 +161,7 @@ public sealed class CourtDomainOtherSource
 /// <summary>Simplified court / retainer character sheet (mains always present, secondaries optional).</summary>
 public sealed class CourtCharacterSheet
 {
-    public const string FromSkillLabel = "From skill";
+    public const string FromSkillLabel = "From Skills";
     public const string OtherLabel = "Other";
 
     public Dictionary<string, int> Main { get; set; } = new(StringComparer.OrdinalIgnoreCase);

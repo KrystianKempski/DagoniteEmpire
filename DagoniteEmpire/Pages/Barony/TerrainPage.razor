@@ -169,7 +169,7 @@ else
 
     private int? _hoverX;
     private int? _hoverY;
-    private string _hoverTileInfo = "Hover a tile for details.";
+    private string _hoverTileInfo = string.Empty;
     private IReadOnlyList<string> _hoverTileLines = Array.Empty<string>();
     private int _brushTabIndex;
     private int _brushFertility = 3;
@@ -357,8 +357,8 @@ else
                 placeable.Add(t);
             else if (HerdStockRequirements.TryGetRequiredGoodKey(t.Name, out _))
             {
-                var good = HerdStockRequirements.RequiredGoodDisplayName(t.Name) ?? "stock";
-                lockedHerd.Add($"{t.Name} (needs {good})");
+                var good = HerdStockRequirements.RequiredGoodDisplayName(t.Name) ?? L["stock"];
+                lockedHerd.Add(L["{0} (needs {1})", LocCatalog.Name(t.Name, L), good]);
             }
         }
 
@@ -793,7 +793,7 @@ else
         else
         {
             _hoverTileLines = Array.Empty<string>();
-            _hoverTileInfo = "Hover a tile for details.";
+            _hoverTileInfo = L["Hover a tile for details."].Value;
         }
         StateHasChanged();
         return Task.CompletedTask;
@@ -938,7 +938,9 @@ else
 
         var key = (cell.X, cell.Y);
         var tile = GetOrCreateTile(cell.X, cell.Y);
-        var next = string.IsNullOrWhiteSpace(_brushResource) ? null : _brushResource;
+        var next = string.IsNullOrWhiteSpace(_brushResource)
+            ? null
+            : TerrainResource.CanonicalNameOrRaw(_brushResource);
         if (tile.Resource == next)
             return;
 
@@ -1455,7 +1457,7 @@ else
             return new[]
             {
                 $"[{x}, {y}]",
-                "Plains with unknown fertility",
+                L["Plains with unknown fertility"].Value,
             };
         }
 
@@ -1473,7 +1475,7 @@ else
         }
         else if (tile.Id > 0 && _constructionByTileId.TryGetValue(tile.Id, out var construction))
         {
-            title = $"[{x}, {y}] Under construction: {construction.Name}";
+            title = L["[{0}, {1}] Under construction: {2}", x, y, construction.Name].Value;
         }
 
         return new[] { title, BuildTileProse(tile) };
@@ -1483,38 +1485,38 @@ else
     {
         var chunks = new List<string>();
 
-        var terrain = TerrainBaseType.DisplayName(tile.BaseType);
+        var terrain = TerrainBaseType.DisplayName(tile.BaseType, L);
         var features = TerrainFeature.Paintable
             .Where(f => tile.HasFeature(f))
-            .Select(f => TerrainFeature.DisplayName(f).ToLowerInvariant())
+            .Select(f => TerrainFeature.DisplayName(f, L))
             .ToList();
         if (features.Count > 0)
-            chunks.Add($"{terrain} with {JoinFeatureNames(features)}");
+            chunks.Add(L["{0} with {1}", terrain, JoinFeatureNames(features)].Value);
         else
             chunks.Add(terrain);
 
         if (TerrainBaseType.SupportsFertility(tile.BaseType))
-            chunks.Add(TerrainFertility.Phrase(tile.Fertility));
+            chunks.Add(TerrainFertility.Phrase(tile.Fertility, L));
 
         if (tile.MapDomainId is int domainId && _domainsById.TryGetValue(domainId, out var domain))
-            chunks.Add($"{domain.Name} (lord {domain.LordName})");
+            chunks.Add(L["{0} (lord {1})", domain.Name, domain.LordName].Value);
 
         if (tile.FiefId is int fiefId && _fiefIndex.TryGetValue(fiefId, out var fief))
-            chunks.Add($"fief of {TerrainMapVisuals.FiefChipTitle(fief)}");
+            chunks.Add(L["fief of {0}", TerrainMapVisuals.FiefChipTitle(fief)].Value);
 
         if (!string.IsNullOrWhiteSpace(tile.Resource))
-            chunks.Add($"{TerrainResource.DisplayName(tile.Resource).ToLowerInvariant()} deposit");
+            chunks.Add(L["{0} deposit", TerrainResource.DisplayName(tile.Resource, L)].Value);
 
         return string.Join(", ", chunks);
     }
 
-    private static string JoinFeatureNames(IReadOnlyList<string> names)
+    private string JoinFeatureNames(IReadOnlyList<string> names)
     {
         if (names.Count == 1)
             return names[0];
         if (names.Count == 2)
-            return $"{names[0]} and {names[1]}";
-        return string.Join(", ", names.Take(names.Count - 1)) + " and " + names[^1];
+            return L["{0} and {1}", names[0], names[1]].Value;
+        return L["{0} and {1}", string.Join(", ", names.Take(names.Count - 1)), names[^1]].Value;
     }
 
     private string TileDetailText(int x, int y) => string.Join("; ", TileDetailLines(x, y));

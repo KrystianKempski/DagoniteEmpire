@@ -22,7 +22,7 @@
                        Dense="true">
                 @foreach (var kind in BaronArtifactKind.All)
                 {
-                    <MudSelectItem Value="@kind">@kind</MudSelectItem>
+                    <MudSelectItem Value="@kind">@L[kind]</MudSelectItem>
                 }
             </MudSelect>
 
@@ -36,7 +36,7 @@
                        Dense="true">
                 @foreach (var origin in BaronArtifactOrigin.All)
                 {
-                    <MudSelectItem Value="@origin">@origin</MudSelectItem>
+                    <MudSelectItem Value="@origin">@L[origin]</MudSelectItem>
                 }
             </MudSelect>
 
@@ -77,9 +77,9 @@
             @if (_selectedRoom is not null)
             {
                 <MudText Typo="Typo.caption" Class="mt-1" Style="color:var(--barony-muted);">
-                    Chamber bonus: ×@_selectedRoom.PrestigeMultiplier.ToString("0.##")
+                    @L["Chamber bonus: ×{0}", _selectedRoom.PrestigeMultiplier.ToString("0.##")]
                     · @L["Capacity: {0} / {1}", _capacityUsed, BaronArtifactCapacity.LimitLabel(_selectedRoom.SizeCategory)]
-                    (@_selectedRoom.SizeCategory)
+                    (@SeatRoomSizeCategory.DisplayName(_selectedRoom.SizeCategory, L))
                 </MudText>
             }
 

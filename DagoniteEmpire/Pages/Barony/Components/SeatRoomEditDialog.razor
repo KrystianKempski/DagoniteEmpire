@@ -20,7 +20,7 @@
                        Class="baron-influence-field">
                 @foreach (var level in LevelOptions)
                 {
-                    <MudSelectItem Value="@level">@SeatFloorLevel.Label(level)</MudSelectItem>
+                    <MudSelectItem Value="@level">@SeatFloorLevel.Label(level, L)</MudSelectItem>
                 }
             </MudSelect>
             <div class="seat-room-edit-dialog__grid-fields">
@@ -30,7 +30,7 @@
                 <MudNumericField T="int" Value="_room.GridH" ValueChanged="OnGridHChanged" Label="@(L["Height (tiles)"])" Variant="Variant.Outlined" Margin="Margin.Dense" Min="0" Class="baron-influence-field" />
             </div>
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                @L["Size:"] @SeatRoomSizeCategory.OptionLabel(_room.SizeCategory) @L["({0} tiles)", _room.TileCount]
+                @L["Size:"] @SeatRoomSizeCategory.OptionLabel(_room.SizeCategory, L) @L["({0} tiles)", _room.TileCount]
             </MudText>
             <MudSelect T="string"
                        Value="_room.Material"
@@ -41,19 +41,19 @@
                        Class="baron-influence-field">
                 @foreach (var m in SeatRoomMaterial.All)
                 {
-                    <MudSelectItem Value="@m">@SeatRoomMaterial.OptionLabel(m)</MudSelectItem>
+                    <MudSelectItem Value="@m">@SeatRoomMaterial.OptionLabel(m, L)</MudSelectItem>
                 }
             </MudSelect>
             <MudText Typo="Typo.caption" Class="seat-room-prestige-hint">
                 @L["Prestige multiplier = material bonus + size bonus (added, not multiplied)."]
                 @L["Example: Bricks (1.3) + Large (1.5) = 2.8."]
-                @L["Current suggestion:"] <strong>@SeatRoomPrestige.FormulaHint(_room.Material, _room.TileCount)</strong>.
+                @L["Current suggestion:"] <strong>@SeatRoomPrestige.FormulaHint(_room.Material, _room.TileCount, L)</strong>.
                 @L["Changing material or chamber size updates the field; you can still override it manually."]
             </MudText>
-            <MudSelect T="string" @bind-Value="_room.Status" Label="Status" Variant="Variant.Outlined" Margin="Margin.Dense" Class="baron-influence-field">
+            <MudSelect T="string" @bind-Value="_room.Status" Label="@(L["Status"])" Variant="Variant.Outlined" Margin="Margin.Dense" Class="baron-influence-field">
                 @foreach (var s in SeatRoomStatus.All)
                 {
-                    <MudSelectItem Value="@s">@s</MudSelectItem>
+                    <MudSelectItem Value="@s">@L[s]</MudSelectItem>
                 }
             </MudSelect>
             <MudNumericField T="decimal"
@@ -64,7 +64,7 @@
                              Min="0.1m"
                              Step="0.1m"
                              Class="baron-influence-field"
-                             HelperText="@($"Suggested from material + size: {_suggested:0.##}")" />
+                             HelperText="@(L["Suggested from material + size: {0}", _suggested.ToString("0.##")])" />
             <MudNumericField T="int"
                              @bind-Value="_room.SortOrder"
                              Label="@(L["Sort order"])"
@@ -82,7 +82,7 @@
                        Class="baron-influence-field">
                 @foreach (var t in EligiblePurposes)
                 {
-                    <MudSelectItem Value="@((int?)t.Id)">@t.DisplayName() (@t.MinSizeCategory+)</MudSelectItem>
+                    <MudSelectItem Value="@((int?)t.Id)">@t.DisplayName(L) (@SeatRoomSizeCategory.DisplayName(t.MinSizeCategory, L)+)</MudSelectItem>
                 }
             </MudSelect>
 
@@ -105,7 +105,7 @@
                         <MudSelect T="string" @bind-Value="_room.Traits[index].Kind" Label="@(L["Kind"])" Variant="Variant.Outlined" Margin="Margin.Dense" Class="baron-influence-field seat-room-traits__kind">
                             @foreach (var k in SeatRoomTraitKind.All)
                             {
-                                <MudSelectItem Value="@k">@k</MudSelectItem>
+                                <MudSelectItem Value="@k">@L[k]</MudSelectItem>
                             }
                         </MudSelect>
                         <MudTextField @bind-Value="_room.Traits[index].Text"

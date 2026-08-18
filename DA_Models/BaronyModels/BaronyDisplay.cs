@@ -1,5 +1,6 @@
 using DA_Common.Barony;
 using DA_Common.Localization;
+using Microsoft.Extensions.Localization;
 
 namespace DA_Models.BaronyModels
 {
@@ -11,9 +12,28 @@ namespace DA_Models.BaronyModels
     {
         /// <summary>Localized template name (custom templates keep their user-entered name).</summary>
         public static string DisplayName(this BuildingTemplateDTO template)
-            => template is null ? string.Empty
-             : template.IsCustom ? template.Name
-             : LocCatalog.Name(template.Name);
+            => DisplayName(template, localizer: null);
+
+        public static string DisplayName(this BuildingTemplateDTO template, IStringLocalizer? localizer)
+        {
+            if (template is null)
+                return string.Empty;
+            if (template.IsCustom)
+                return template.Name;
+            return localizer is null
+                ? LocCatalog.Name(template.Name)
+                : LocCatalog.Name(template.Name, localizer);
+        }
+
+        /// <summary>Localized catalog description; custom entries keep user-entered text.</summary>
+        public static string DisplayDescription(this BuildingTemplateDTO template, IStringLocalizer? localizer = null)
+        {
+            if (template is null || string.IsNullOrWhiteSpace(template.Description))
+                return string.Empty;
+            if (template.IsCustom)
+                return template.Description.Trim();
+            return Phrase(template.Description, localizer);
+        }
 
         /// <summary>
         /// Localized building name. Buildings linked to a catalog template or core-city key are
@@ -40,6 +60,28 @@ namespace DA_Models.BaronyModels
         /// user-entered custom names (absent from resx) are returned unchanged.
         /// </summary>
         public static string DisplayName(this SeatPurposeTemplateDTO template)
-            => template is null ? string.Empty : LocCatalog.Name(template.Name);
+            => DisplayName(template, localizer: null);
+
+        public static string DisplayName(this SeatPurposeTemplateDTO template, IStringLocalizer? localizer)
+        {
+            if (template is null)
+                return string.Empty;
+            return localizer is null
+                ? LocCatalog.Name(template.Name)
+                : LocCatalog.Name(template.Name, localizer);
+        }
+
+        public static string DisplayDescription(this SeatPurposeTemplateDTO template, IStringLocalizer? localizer = null)
+            => Phrase(template?.Description, localizer);
+
+        public static string DisplayWhoOccupies(this SeatPurposeTemplateDTO template, IStringLocalizer? localizer = null)
+            => Phrase(template?.WhoOccupies, localizer);
+
+        private static string Phrase(string? english, IStringLocalizer? localizer)
+        {
+            if (string.IsNullOrWhiteSpace(english))
+                return string.Empty;
+            return localizer is null ? Loc.T(english) : localizer[english].Value;
+        }
     }
 }

@@ -1,3 +1,6 @@
+using DA_Common.Localization;
+using Microsoft.Extensions.Localization;
+
 namespace DA_Common.Barony
 {
     /// <summary>Rodzaje urzędów baronii.</summary>
@@ -108,19 +111,47 @@ namespace DA_Common.Barony
 
         public static readonly string[] All = { Water, Plains, Hills, Mountains };
 
-        public static bool SupportsFertility(string? baseType) =>
-            baseType == Plains || baseType == Hills;
+        public static bool SupportsFertility(string? baseType)
+        {
+            var canonical = Canonical(baseType);
+            return canonical == Plains || canonical == Hills;
+        }
 
         public static bool IsKnown(string? baseType) =>
-            baseType == Water || baseType == Plains || baseType == Hills || baseType == Mountains;
+            All.Contains(Canonical(baseType));
 
         public static bool IsWater(string? baseType) =>
-            string.Equals(baseType, Water, StringComparison.OrdinalIgnoreCase);
+            string.Equals(Canonical(baseType), Water, StringComparison.Ordinal);
 
-        public static string DisplayName(string? baseType) =>
-            string.IsNullOrWhiteSpace(baseType) ? DA_Common.Localization.Loc.T(Plains)
-            : All.Contains(baseType) ? DA_Common.Localization.Loc.T(baseType)
-            : baseType;
+        public static string Canonical(string? name) => CatalogKey.Resolve(name, CanonicalMap);
+
+        public static string CanonicalNameOrRaw(string? name)
+        {
+            var canonical = Canonical(name);
+            return All.Contains(canonical) ? canonical : (name?.Trim() ?? string.Empty);
+        }
+
+        public static string DisplayName(string? baseType) => DisplayName(baseType, localizer: null);
+
+        public static string DisplayName(string? baseType, IStringLocalizer? localizer)
+        {
+            if (string.IsNullOrWhiteSpace(baseType))
+                return localizer is null ? Loc.T(Plains) : localizer[Plains].Value;
+
+            var canonical = Canonical(baseType);
+            if (All.Contains(canonical))
+                return localizer is null ? Loc.T(canonical) : localizer[canonical].Value;
+
+            return baseType.Trim();
+        }
+
+        private static readonly Dictionary<string, string> CanonicalMap = CatalogKey.BuildMap(All, new Dictionary<string, string>
+        {
+            ["woda"] = Water,
+            ["równiny"] = Plains,
+            ["wzgórza"] = Hills,
+            ["góry"] = Mountains,
+        });
     }
 
     /// <summary>Soil fertility on a terrain tile (0–5, or unknown).</summary>
@@ -133,7 +164,36 @@ namespace DA_Common.Barony
         public static bool IsKnown(int fertility) => fertility >= Min && fertility <= Max;
 
         /// <summary>Short label (0 wasteland … 5 exceptionally fertile).</summary>
-        public static string DisplayName(int fertility) => fertility switch
+        public static string DisplayName(int fertility) => DisplayName(fertility, localizer: null);
+
+        public static string DisplayName(int fertility, IStringLocalizer? localizer)
+        {
+            var key = DisplayNameKey(fertility);
+            return localizer is null ? Loc.T(key) : localizer[key].Value;
+        }
+
+        /// <summary>Phrase used in tile descriptions, e.g. "very good fertility".</summary>
+        public static string Phrase(int fertility) => Phrase(fertility, localizer: null);
+
+        public static string Phrase(int fertility, IStringLocalizer? localizer)
+        {
+            var key = PhraseKey(fertility);
+            return localizer is null ? Loc.T(key) : localizer[key].Value;
+        }
+
+        public static IEnumerable<string> LocalizationKeys()
+        {
+            for (var value = Min; value <= Max; value++)
+            {
+                yield return DisplayNameKey(value);
+                yield return PhraseKey(value);
+            }
+
+            yield return DisplayNameKey(Unknown);
+            yield return PhraseKey(Unknown);
+        }
+
+        private static string DisplayNameKey(int fertility) => fertility switch
         {
             0 => "Wasteland",
             1 => "Very poorly fertile",
@@ -144,16 +204,15 @@ namespace DA_Common.Barony
             _ => "Unknown fertility",
         };
 
-        /// <summary>Phrase used in tile descriptions, e.g. "very good fertility".</summary>
-        public static string Phrase(int fertility) => fertility switch
+        private static string PhraseKey(int fertility) => fertility switch
         {
-            0 => "wasteland",
-            1 => "very poor fertility",
-            2 => "poor fertility",
-            3 => "good fertility",
-            4 => "very good fertility",
-            5 => "exceptional fertility",
-            _ => "unknown fertility",
+            0 => "Fertility (wasteland)",
+            1 => "Fertility (very poor)",
+            2 => "Fertility (poor)",
+            3 => "Fertility (good)",
+            4 => "Fertility (very good)",
+            5 => "Fertility (exceptional)",
+            _ => "Fertility (unknown)",
         };
 
         /// <summary>Farms require fertility 2–5; unknown / wasteland / very poor soil cannot host a farm.</summary>
@@ -205,16 +264,53 @@ namespace DA_Common.Barony
             return next;
         }
 
-        public static string DisplayName(int flag) => flag switch
+        public const string ForestName = "Forest";
+        public const string DenseForestName = "Dense forest";
+        public const string CoastName = "Coast";
+        public const string RiverName = "River";
+        public const string SwampName = "Swamp";
+        public const string WastelandName = "Wasteland";
+
+        public static readonly string[] AllNames =
         {
-            Forest => "Forest",
-            DenseForest => "Dense forest",
-            Coast => "Coast",
-            River => "River",
-            Swamp => "Swamp",
-            Wasteland => "Wasteland",
+            ForestName, DenseForestName, CoastName, RiverName, SwampName, WastelandName,
+        };
+
+        public static string NameKey(int flag) => flag switch
+        {
+            Forest => ForestName,
+            DenseForest => DenseForestName,
+            Coast => CoastName,
+            River => RiverName,
+            Swamp => SwampName,
+            Wasteland => WastelandName,
             _ => flag.ToString(),
         };
+
+        public static string Canonical(string? name) => CatalogKey.Resolve(name, CanonicalMap);
+
+        public static string DisplayName(int flag) => DisplayName(flag, localizer: null);
+
+        public static string DisplayName(int flag, IStringLocalizer? localizer)
+        {
+            var key = NameKey(flag);
+            if (AllNames.Contains(key))
+                return localizer is null ? Loc.T(key) : localizer[key].Value;
+            return key;
+        }
+
+        private static readonly Dictionary<string, string> CanonicalMap = CatalogKey.BuildMap(AllNames, new Dictionary<string, string>
+        {
+            ["las"] = ForestName,
+            ["gęsty las"] = DenseForestName,
+            ["gesty las"] = DenseForestName,
+            ["wybrzeże"] = CoastName,
+            ["rzeka"] = RiverName,
+            ["bagna"] = SwampName,
+            ["bagno"] = SwampName,
+            ["pustkowie"] = WastelandName,
+            ["pustynia"] = WastelandName,
+        });
 
         public static string? LegacyName(int flag) => flag switch
         {
@@ -285,39 +381,75 @@ namespace DA_Common.Barony
             Furs,
         };
 
-        public static bool IsKnown(string? key) =>
-            !string.IsNullOrWhiteSpace(key) && All.Contains(key);
+        public static bool IsKnown(string? key) => All.Contains(Canonical(key));
 
-        public static bool IsDyePlant(string? key) =>
-            string.Equals(key, Woad, StringComparison.Ordinal)
-            || string.Equals(key, Madder, StringComparison.Ordinal)
-            || string.Equals(key, Weld, StringComparison.Ordinal);
-
-        public static string DisplayName(string? key) => key switch
+        public static bool IsDyePlant(string? key)
         {
-            SoftMetals => "Soft metals",
-            Iron => "Iron",
-            Silver => "Silver",
-            Gold => "Gold",
-            Dagoferryt => "Dagoferryt",
-            Fishery => "Fishery",
-            Stone => "Stone",
-            Granite => "Granite",
-            Tarnit => "Tarnit",
-            Obsidian => "Obsidian",
-            Clay => "Clay",
-            Ironwood => "Ironwood",
-            ElvenAlder => "Elven alder",
-            ShipbuildingWood => "Shipbuilding wood",
-            Salt => "Salt",
-            Sulfur => "Sulfur",
-            Gemstones => "Gemstones",
-            Woad => "Woad",
-            Madder => "Madder",
-            Weld => "Weld",
-            Furs => "Furs",
-            _ => key ?? "None",
-        };
+            var canonical = Canonical(key);
+            return string.Equals(canonical, Woad, StringComparison.Ordinal)
+                || string.Equals(canonical, Madder, StringComparison.Ordinal)
+                || string.Equals(canonical, Weld, StringComparison.Ordinal);
+        }
+
+        public static string Canonical(string? name) => CatalogKey.Resolve(name, CanonicalMap);
+
+        public static string CanonicalNameOrRaw(string? name)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                return string.Empty;
+            var canonical = Canonical(name);
+            return All.Contains(canonical) ? canonical : name.Trim();
+        }
+
+        public static string DisplayName(string? key) => DisplayName(key, localizer: null);
+
+        public static string DisplayName(string? key, IStringLocalizer? localizer)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+                return localizer is null ? Loc.T("None") : localizer["None"].Value;
+
+            var canonical = Canonical(key);
+            if (All.Contains(canonical))
+                return localizer is null ? Loc.T(canonical) : localizer[canonical].Value;
+
+            return key.Trim();
+        }
+
+        private static readonly Dictionary<string, string> CanonicalMap = CatalogKey.BuildMap(All, new Dictionary<string, string>
+        {
+            ["metale miękkie"] = SoftMetals,
+            ["metale miekkie"] = SoftMetals,
+            ["żelazo"] = Iron,
+            ["zelazo"] = Iron,
+            ["srebro"] = Silver,
+            ["złoto"] = Gold,
+            ["zloto"] = Gold,
+            ["dagoferryt"] = Dagoferryt,
+            ["łowisko"] = Fishery,
+            ["lowisko"] = Fishery,
+            ["rybołówstwo"] = Fishery,
+            ["kamień"] = Stone,
+            ["kamien"] = Stone,
+            ["granit"] = Granite,
+            ["tarnit"] = Tarnit,
+            ["obsydian"] = Obsidian,
+            ["glina"] = Clay,
+            ["żelazne drewno"] = Ironwood,
+            ["zelazne drewno"] = Ironwood,
+            ["żelazodrzew"] = Ironwood,
+            ["elfia olcha"] = ElvenAlder,
+            ["drewno okrętowe"] = ShipbuildingWood,
+            ["drewno okretowe"] = ShipbuildingWood,
+            ["sól"] = Salt,
+            ["sol"] = Salt,
+            ["siarka"] = Sulfur,
+            ["kamienie szlachetne"] = Gemstones,
+            ["klejnoty"] = Gemstones,
+            ["futra"] = Furs,
+            ["urzet"] = Woad,
+            ["marzana"] = Madder,
+            ["rezeda"] = Weld,
+        });
 
         public static string IconUrl(string? key) => key switch
         {
@@ -462,6 +594,17 @@ namespace DA_Common.Barony
         public const string Improvement = "Improvement";
 
         public static readonly string[] All = { Building, Improvement };
+
+        public static string DisplayName(string? kind) => DisplayName(kind, localizer: null);
+
+        public static string DisplayName(string? kind, IStringLocalizer? localizer)
+        {
+            if (string.IsNullOrWhiteSpace(kind))
+                return string.Empty;
+            if (All.Contains(kind))
+                return localizer is null ? Loc.T(kind) : localizer[kind].Value;
+            return kind;
+        }
     }
 
     /// <summary>Stable keys for fixed starter city buildings (seeded from Buildings catalog).</summary>
@@ -709,11 +852,14 @@ namespace DA_Common.Barony
             WeakWood, HardWood, Bricks, Stone, Granite, Tarnit,
         };
 
-        public static string DisplayName(string material) => material switch
+        /// <summary>Stored key <see cref="WeakWood"/> is shown as “Wood”.</summary>
+        public static string DisplayName(string material) => DisplayName(material, localizer: null);
+
+        public static string DisplayName(string material, IStringLocalizer? localizer)
         {
-            WeakWood => "Wood",
-            _ => material,
-        };
+            var key = string.Equals(material, WeakWood, StringComparison.Ordinal) ? "Wood" : material;
+            return localizer is null ? Loc.T(key) : localizer[key].Value;
+        }
 
         public static decimal PrestigeBonus(string? material) => material switch
         {
@@ -726,8 +872,16 @@ namespace DA_Common.Barony
             _ => 1.0m,
         };
 
-        public static string OptionLabel(string material) =>
-            $"{DisplayName(material)} ({PrestigeBonus(material):0.#} prestige multiplier)";
+        public static string OptionLabel(string material) => OptionLabel(material, localizer: null);
+
+        public static string OptionLabel(string material, IStringLocalizer? localizer)
+        {
+            var name = DisplayName(material, localizer);
+            var bonus = PrestigeBonus(material).ToString("0.#");
+            return localizer is null
+                ? Loc.T("{0} ({1} prestige multiplier)", name, bonus)
+                : localizer["{0} ({1} prestige multiplier)", name, bonus].Value;
+        }
     }
 
     /// <summary>Room size tier derived from tile count (thresholds may change).</summary>
@@ -771,8 +925,25 @@ namespace DA_Common.Barony
         public static decimal PrestigeBonusFromTiles(int tiles) =>
             PrestigeBonus(FromTileCount(tiles));
 
-        public static string OptionLabel(string category) =>
-            $"{category} ({PrestigeBonus(category):0.#} prestige multiplier)";
+        public static string DisplayName(string? category) => DisplayName(category, localizer: null);
+
+        public static string DisplayName(string? category, IStringLocalizer? localizer)
+        {
+            if (string.IsNullOrWhiteSpace(category))
+                return string.Empty;
+            return localizer is null ? Loc.T(category) : localizer[category].Value;
+        }
+
+        public static string OptionLabel(string category) => OptionLabel(category, localizer: null);
+
+        public static string OptionLabel(string category, IStringLocalizer? localizer)
+        {
+            var name = DisplayName(category, localizer);
+            var bonus = PrestigeBonus(category).ToString("0.#");
+            return localizer is null
+                ? Loc.T("{0} ({1} prestige multiplier)", name, bonus)
+                : localizer["{0} ({1} prestige multiplier)", name, bonus].Value;
+        }
 
         /// <summary>Compact table label: S / M / L / H.</summary>
         public static string Letter(string? category) => category switch
@@ -797,13 +968,18 @@ namespace DA_Common.Barony
         public static decimal Suggested(string? material, int tileCount) =>
             Suggested(material, SeatRoomSizeCategory.FromTileCount(tileCount));
 
-        public static string FormulaHint(string? material, int tileCount)
+        public static string FormulaHint(string? material, int tileCount) =>
+            FormulaHint(material, tileCount, localizer: null);
+
+        public static string FormulaHint(string? material, int tileCount, IStringLocalizer? localizer)
         {
             var size = SeatRoomSizeCategory.FromTileCount(tileCount);
             var matBonus = SeatRoomMaterial.PrestigeBonus(material);
             var sizeBonus = SeatRoomSizeCategory.PrestigeBonus(size);
             var total = matBonus + sizeBonus;
-            return $"{SeatRoomMaterial.DisplayName(material ?? SeatRoomMaterial.WeakWood)} {matBonus:0.#} + {size} {sizeBonus:0.#} = {total:0.#}";
+            var matName = SeatRoomMaterial.DisplayName(material ?? SeatRoomMaterial.WeakWood, localizer);
+            var sizeName = SeatRoomSizeCategory.DisplayName(size, localizer);
+            return $"{matName} {matBonus:0.#} + {sizeName} {sizeBonus:0.#} = {total:0.#}";
         }
     }
 
@@ -827,11 +1003,19 @@ namespace DA_Common.Barony
 
         public static int Clamp(int level) => Math.Clamp(level, Min, Max);
 
-        public static string Label(int level) => level switch
+        public static string Label(int level) => Label(level, localizer: null);
+
+        public static string Label(int level, IStringLocalizer? localizer) => level switch
         {
-            < Ground => $"Level {level} (below)",
-            Ground => "Level 0 (ground)",
-            _ => $"Level {level} (above)",
+            < Ground => localizer is null
+                ? Loc.T("Level {0} (below)", level)
+                : localizer["Level {0} (below)", level].Value,
+            Ground => localizer is null
+                ? Loc.T("Level 0 (ground)")
+                : localizer["Level 0 (ground)"].Value,
+            _ => localizer is null
+                ? Loc.T("Level {0} (above)", level)
+                : localizer["Level {0} (above)", level].Value,
         };
     }
 

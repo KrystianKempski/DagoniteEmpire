@@ -40,7 +40,7 @@
                     @foreach (var level in AvailableLevelsToAdd)
                     {
                         var levelToAdd = level;
-                        <BaronyTooltip Text="@($"Add {SeatFloorLevel.Label(levelToAdd)}")">
+                        <BaronyTooltip Text="@(L["Add {0}", SeatFloorLevel.Label(levelToAdd, L)])">
                             <button type="button"
                                     class="lords-seat-levelchip lords-seat-levelchip--add"
                                     @onclick="() => AddLevelAsync(levelToAdd)">
@@ -105,20 +105,20 @@
                 @if (CanManage && _placementMode)
                 {
                     <MudText Typo="Typo.caption" Class="lords-seat-placement-hint">
-                        @L["Click a grid cell on {0} to place a new chamber (2×2).", SeatFloorLevel.Label(_currentLevel)]
+                        @L["Click a grid cell on {0} to place a new chamber (2×2).", SeatFloorLevel.Label(_currentLevel, L)]
                         <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="CancelPlacementMode">@L["Cancel"]</MudButton>
                     </MudText>
                 }
                 else if (CanManage && _paintKind is not null)
                 {
                     <MudText Typo="Typo.caption" Class="lords-seat-placement-hint">
-                        @L["Painting {0} on {1}. Click or drag across cells.", PaintModeLabel(), SeatFloorLevel.Label(_currentLevel)]
+                        @L["Painting {0} on {1}. Click or drag across cells.", PaintModeLabel(), SeatFloorLevel.Label(_currentLevel, L)]
                     </MudText>
                 }
                 else if (CanManage)
                 {
                     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="lords-seat-placement-hint">
-                        @L["{0}. Click a chamber to assign purpose. Drag to reposition. Use paint for walls, ground, and water.", SeatFloorLevel.Label(_currentLevel)]
+                        @L["{0}. Click a chamber to assign purpose. Drag to reposition. Use paint for walls, ground, and water.", SeatFloorLevel.Label(_currentLevel, L)]
                     </MudText>
                 }
                 <div class="@PlanClass()"
@@ -182,7 +182,7 @@
                                         <span class="lords-seat-plan__room-purpose">@purposeName</span>
                                     }
                                     <span class="lords-seat-plan__room-name">@room.Name</span>
-                                    <span class="lords-seat-plan__room-meta">@room.SizeCategory</span>
+                                    <span class="lords-seat-plan__room-meta">@SeatRoomSizeCategory.DisplayName(room.SizeCategory, L)</span>
                                 </div>
                             </BaronyTooltip>
                         </div>
@@ -308,12 +308,12 @@
                                     </div>
                                 </td>
                                 <td class="lords-seat-col-level">
-                                    <BaronyTooltip Text="@SeatFloorLevel.Label(room.Level)">
+                                    <BaronyTooltip Text="@SeatFloorLevel.Label(room.Level, L)">
                                         <span>@room.Level</span>
                                     </BaronyTooltip>
                                 </td>
                                 <td class="lords-seat-col-size">
-                                    <BaronyTooltip Text="@($"{room.SizeCategory} · {room.TileCount} tiles")">
+                                    <BaronyTooltip Text="@(L["{0} · {1} tiles", SeatRoomSizeCategory.DisplayName(room.SizeCategory, L), room.TileCount])">
                                         <span>@(SeatRoomSizeCategory.Letter(room.SizeCategory))(@room.TileCount)</span>
                                     </BaronyTooltip>
                                 </td>
@@ -653,7 +653,7 @@
     private string PurposeNameOnly(SeatRoomDTO room)
     {
         if (room.PurposeTemplateId is int pid && PurposeLookup.TryGetValue(pid, out var p))
-            return p.DisplayName();
+            return p.DisplayName(L);
         return string.Empty;
     }
 
@@ -661,7 +661,7 @@
     {
         if (room.PurposeTemplateId is not int pid || !PurposeLookup.TryGetValue(pid, out var p))
             return "—";
-        return p.DisplayName();
+        return p.DisplayName(L);
     }
 
     private string? OccupantNameOnly(SeatRoomDTO room)
@@ -707,18 +707,18 @@
     private string PurposeTooltip(SeatRoomDTO room)
     {
         if (room.PurposeTemplateId is not int pid || !PurposeLookup.TryGetValue(pid, out var p))
-            return "No purpose assigned.";
+            return L["No purpose assigned."];
 
-        var lines = new List<string> { p.Name };
+        var lines = new List<string> { p.DisplayName(L) };
         var occupant = OccupantSubtitle(room);
         if (!string.IsNullOrWhiteSpace(occupant))
-            lines.Add($"Assigned: {occupant}");
+            lines.Add(L["Assigned: {0}", occupant]);
         else if (!string.IsNullOrWhiteSpace(p.WhoOccupies))
-            lines.Add($"Typical occupant: {p.WhoOccupies}");
+            lines.Add(L["Typical occupant: {0}", p.DisplayWhoOccupies(L)]);
         if (p.SleepCapacity > 0)
-            lines.Add($"Sleep capacity: {p.SleepCapacity}");
+            lines.Add(L["Sleep capacity: {0}", p.SleepCapacity]);
         if (!string.IsNullOrWhiteSpace(p.Description))
-            lines.Add(p.Description);
+            lines.Add(p.DisplayDescription(L));
         return string.Join("\n", lines);
     }
 
@@ -728,11 +728,11 @@
         if (room.PurposeTemplateId is int pid && PurposeLookup.TryGetValue(pid, out var p)
             && !string.IsNullOrWhiteSpace(p.Description))
         {
-            parts.Add(p.Description);
+            parts.Add(p.DisplayDescription(L));
         }
 
         foreach (var trait in room.Traits.OrderBy(t => t.SortOrder))
-            parts.Add($"[{trait.Kind}] {trait.Text}");
+            parts.Add($"[{L[trait.Kind]}] {trait.Text}");
 
         return string.Join(" ", parts);
     }
@@ -771,53 +771,53 @@
 
         var purpose = PurposeNameOnly(room);
         if (!string.IsNullOrWhiteSpace(purpose))
-            lines.Add($"Purpose: {purpose}");
+            lines.Add(L["Purpose: {0}", purpose]);
         else
-            lines.Add("Purpose: —");
+            lines.Add(L["Purpose: —"]);
 
         var occupant = OccupantSubtitle(room);
         if (!string.IsNullOrWhiteSpace(occupant))
-            lines.Add($"Occupant: {occupant}");
+            lines.Add(L["Occupant: {0}", occupant]);
 
-        lines.Add(SeatFloorLevel.Label(room.Level));
-        lines.Add($"Size: {SeatRoomSizeCategory.OptionLabel(room.SizeCategory)} ({room.TileCount} tiles)");
-        lines.Add($"Material: {SeatRoomMaterial.OptionLabel(room.Material)}");
-        lines.Add($"Prestige multiplier: ×{room.PrestigeMultiplier:0.##} ({SeatRoomPrestige.FormulaHint(room.Material, room.TileCount)})");
+        lines.Add(SeatFloorLevel.Label(room.Level, L));
+        lines.Add($"{L["Size:"]} {SeatRoomSizeCategory.OptionLabel(room.SizeCategory, L)} {L["({0} tiles)", room.TileCount]}");
+        lines.Add(L["Material: {0}", SeatRoomMaterial.OptionLabel(room.Material, L)]);
+        lines.Add($"{L["Prestige multiplier"]}: ×{room.PrestigeMultiplier:0.##} ({SeatRoomPrestige.FormulaHint(room.Material, room.TileCount, L)})");
 
         if (RoomPhpTotals(room) is { } php)
             lines.Add($"P/H/F: {FmtPhp(php.Prestige)} / {FmtPhp(php.Honor)} / {FmtPhp(php.Fear)}");
 
-        lines.Add(room.IsRuin ? "Status: Ruin (excluded from totals)" : "Status: Active");
+        lines.Add(room.IsRuin ? L["Status: Ruin (excluded from totals)"] : L["Status: Active"]);
 
         if (room.GridW > 0 && room.GridH > 0)
             lines.Add($"Grid: ({room.GridX},{room.GridY}) {room.GridW}×{room.GridH}");
 
         if (layoutIssue != SeatRoomLayoutIssue.None)
-            lines.Add($"Layout: {SeatRoomLayout.IssueLabel(layoutIssue)}");
+            lines.Add(L["Layout: {0}", SeatRoomLayout.IssueLabel(layoutIssue, L)]);
 
         foreach (var trait in room.Traits.OrderBy(t => t.SortOrder))
         {
             if (!string.IsNullOrWhiteSpace(trait.Text))
-                lines.Add($"[{trait.Kind}] {trait.Text}");
+                lines.Add($"[{L[trait.Kind]}] {trait.Text}");
         }
 
         return string.Join("\n", lines);
     }
 
-    private static string RoomTooltip(SeatRoomDTO room, SeatRoomLayoutIssue layoutIssue = SeatRoomLayoutIssue.None)
+    private string RoomTooltip(SeatRoomDTO room, SeatRoomLayoutIssue layoutIssue = SeatRoomLayoutIssue.None)
     {
         var lines = new List<string>
         {
-            $"Tiles: {room.TileCount} ({room.SizeCategory})",
-            SeatFloorLevel.Label(room.Level),
-            $"Material: {SeatRoomMaterial.DisplayName(room.Material)}",
-            room.IsRuin ? "Inactive (ruin) — excluded from totals." : "Active",
-            $"Prestige multiplier: ×{room.PrestigeMultiplier:0.##}",
+            L["Tiles: {0} ({1})", room.TileCount, SeatRoomSizeCategory.DisplayName(room.SizeCategory, L)],
+            SeatFloorLevel.Label(room.Level, L),
+            L["Material: {0}", SeatRoomMaterial.DisplayName(room.Material, L)],
+            room.IsRuin ? L["Inactive (ruin) — excluded from totals."] : L["Active"],
+            $"{L["Prestige multiplier"]}: ×{room.PrestigeMultiplier:0.##}",
         };
         if (room.GridW > 0 && room.GridH > 0)
             lines.Add($"Grid: ({room.GridX},{room.GridY}) {room.GridW}×{room.GridH}");
         if (layoutIssue != SeatRoomLayoutIssue.None)
-            lines.Add($"Layout: {SeatRoomLayout.IssueLabel(layoutIssue)}");
+            lines.Add(L["Layout: {0}", SeatRoomLayout.IssueLabel(layoutIssue, L)]);
         return string.Join("\n", lines);
     }
 
@@ -997,7 +997,7 @@
             if (issue == SeatRoomLayoutIssue.None)
                 _snackBar.Add(L["Chamber moved."], Severity.Success);
             else
-                _snackBar.Add(L["Chamber moved — {0}.", SeatRoomLayout.IssueLabel(issue)], Severity.Warning);
+                _snackBar.Add(L["Chamber moved — {0}.", SeatRoomLayout.IssueLabel(issue, L)], Severity.Warning);
 
             await OnChanged.InvokeAsync();
         }
@@ -1108,7 +1108,7 @@
             await _baronyRepo.SaveSeatActiveLevels(Seat.Id, next);
             Seat.ActiveLevels = next;
             _currentLevel = level;
-            _snackBar.Add(L["Added {0}.", SeatFloorLevel.Label(level)], Severity.Success);
+            _snackBar.Add(L["Added {0}.", SeatFloorLevel.Label(level, L)], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)
@@ -1232,7 +1232,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<SeatRoomEditDialog>(
-            isNew ? "Add chamber" : "Edit chamber",
+            isNew ? L["Add chamber"] : L["Edit chamber"],
             parameters,
             DialogOptions());
 
@@ -1252,7 +1252,7 @@
         try
         {
             await _baronyRepo.SaveSeatRoom(saved);
-            _snackBar.Add(isNew ? "Chamber added." : "Chamber updated.", Severity.Success);
+            _snackBar.Add(isNew ? L["Chamber added."] : L["Chamber updated."], Severity.Success);
             await OnChanged.InvokeAsync();
         }
         catch (Exception ex)

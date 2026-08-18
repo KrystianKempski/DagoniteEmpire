@@ -19,10 +19,10 @@
             {
                 var r = resource;
                 var selected = Value == r;
-                <BaronyTooltip Text="@TerrainResource.DisplayName(r)">
+                <BaronyTooltip Text="@TerrainResource.DisplayName(r, L)">
                     <button type="button"
                             class="terrain-type-option terrain-resource-option @(selected ? "terrain-type-option--selected" : "")"
-                            aria-label="@TerrainResource.DisplayName(r)"
+                            aria-label="@TerrainResource.DisplayName(r, L)"
                             @onclick="() => SelectAsync(r)">
                     @if (TerrainResource.UsesBakedStrokeIcon(r))
                     {
@@ -37,7 +37,7 @@
                               style="@IconStyle(r)"
                               aria-hidden="true"></span>
                     }
-                    <span class="terrain-resource-option__label">@TerrainResource.DisplayName(r)</span>
+                    <span class="terrain-resource-option__label">@TerrainResource.DisplayName(r, L)</span>
                     </button>
                 </BaronyTooltip>
             }

@@ -2,8 +2,8 @@
 
 <BaronySection Title="@(L["Trade good bonus summary"])" DefaultOpen="true">
     <Summary>
-        <span class="projects-summary__item">@SelectedCount good@(SelectedCount == 1 ? "" : "s")</span>
-        <span class="projects-summary__item">@L[LuxuryTier.NameEn]</span>
+        <span class="projects-summary__item">@(SelectedCount == 1 ? L["{0} available good", SelectedCount] : L["{0} available goods", SelectedCount])</span>
+        <span class="projects-summary__item">@LuxuryTier.DisplayName(L)</span>
         <PpbSummaryChips Vector="@GlanceAdditive" />
     </Summary>
     <ChildContent>
@@ -19,7 +19,7 @@
                 <table class="ppb-table ppb-table--lined trade-goods-ppb-table">
                     <thead>
                         <tr>
-                            <th>PPB</th>
+                            <th>@L["PPB"]</th>
                             <th>@L["Additive"]</th>
                             <th>@L["Percent"]</th>
                         </tr>
