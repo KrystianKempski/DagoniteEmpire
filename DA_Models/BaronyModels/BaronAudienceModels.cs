@@ -8,6 +8,12 @@ namespace DA_Models.BaronyModels
         public string Title { get; set; } = string.Empty;
         public string PetitionerName { get; set; } = string.Empty;
 
+        /// <summary>wwwroot-relative icon path for the petitioner (e.g. icons/farmer.svg).</summary>
+        public string? PetitionerIcon { get; set; }
+
+        /// <summary>Council only: display name of the advisor who owns this topic. Null for plain Audience kind.</summary>
+        public string? AssignedAdvisorName { get; set; }
+
         /// <summary><see cref="DA_Common.Barony.BaronAudienceKind"/>.</summary>
         public string Kind { get; set; } = DA_Common.Barony.BaronAudienceKind.Audience;
 

@@ -1,4 +1,6 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Common.Barony
+@inject IDialogService _dialogService
 
 <MudDialog Class="barony-dialog">
     <TitleContent>
@@ -6,27 +8,36 @@
     </TitleContent>
     <DialogContent>
         <div class="barony-dialog-theme">
-        <MudTextField @bind-Value="_petitionerName"
-                      Label="@(L["Petitioner"])"
-                      Variant="Variant.Outlined"
-                      Margin="Margin.Dense"
-                      Immediate="true"
-                      HelperText="@(L["Name of the person seeking audience"])"
-                      Class="mb-2" />
-        <MudTextField @bind-Value="_title"
-                      Label="@(L["Audience title"])"
-                      Variant="Variant.Outlined"
-                      Margin="Margin.Dense"
-                      Immediate="true"
-                      HelperText="@(L["e.g. Plea for harvest help"])"
-                      Class="mb-2" />
-        <MudTextField @bind-Value="_opening"
-                      Label="@(L["Opening words"])"
-                      Variant="Variant.Outlined"
-                      Margin="Margin.Dense"
-                      Lines="5"
-                      Immediate="true"
-                      HelperText="@(L["What the petitioner says first"])" />
+            <div class="new-audience-icon-row">
+                <button type="button"
+                        class="new-audience-icon-row__pick"
+                        title="@L["Petitioner icon"]"
+                        @onclick="PickIconAsync">
+                    <img src="@("/" + IconPath)" alt="" />
+                    <span>@L["Choose icon"]</span>
+                </button>
+                <MudTextField @bind-Value="_petitionerName"
+                              Label="@(L["Petitioner"])"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Immediate="true"
+                              HelperText="@(L["Name of the person seeking audience"])"
+                              Class="flex-grow-1" />
+            </div>
+            <MudTextField @bind-Value="_title"
+                          Label="@(L["Audience title"])"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Immediate="true"
+                          HelperText="@(L["e.g. Plea for harvest help"])"
+                          Class="mb-2" />
+            <MudTextField @bind-Value="_opening"
+                          Label="@(L["Opening words"])"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="5"
+                          Immediate="true"
+                          HelperText="@(L["What the petitioner says first"])" />
         </div>
     </DialogContent>
     <DialogActions>
@@ -43,12 +54,27 @@
     private string _petitionerName = "";
     private string _title = "";
     private string _opening = "";
+    private string _iconPath = PetitionerIconCatalog.DefaultPath;
     private bool _busy;
+
+    private string IconPath => PetitionerIconCatalog.PathFor(_iconPath);
 
     private bool CanSubmit =>
         !string.IsNullOrWhiteSpace(_petitionerName)
         && !string.IsNullOrWhiteSpace(_title)
         && !string.IsNullOrWhiteSpace(_opening);
+
+    private async Task PickIconAsync()
+    {
+        var dialog = await _dialogService.ShowAsync<PetitionerIconPickerDialog>(
+            "Choose icon",
+            new DialogParameters<PetitionerIconPickerDialog> { { x => x.SelectedPath, _iconPath } },
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not string path || string.IsNullOrWhiteSpace(path))
+            return;
+        _iconPath = path;
+    }
 
     private void Cancel() => MudDialog.Cancel();
 
@@ -59,8 +85,9 @@
         MudDialog.Close(DialogResult.Ok(new NewAudienceResult(
             _petitionerName.Trim(),
             _title.Trim(),
-            _opening.Trim())));
+            _opening.Trim(),
+            IconPath)));
     }
 
-    public sealed record NewAudienceResult(string PetitionerName, string Title, string OpeningBody);
+    public sealed record NewAudienceResult(string PetitionerName, string Title, string OpeningBody, string PetitionerIcon);
 }

@@ -55,6 +55,7 @@
     {
         new("domain", "Domain Panel", "/barony", Icons.Material.Filled.Dashboard),
         new("audiences", "Audiences", "/barony/audiences", SvgIcon: "/" + MyIcon.TiedScroll),
+        new("audience-hall", "Audience Hall", "/barony/audience-hall", SvgIcon: "/" + MyIcon.StoneThrone),
         new("offices", "Court", "/barony/offices", SvgIcon: "/" + MyIcon.People),
         new("terrain", "Terrain", "/barony/terrain", SvgIcon: "/" + MyIcon.WindmillBlack),
         new("lords-seat", "Lord's Seat", "/barony/lords-seat", Icons.Material.Filled.Castle),
@@ -80,6 +81,7 @@
     private bool _suppressNextClick;
     private bool _showBattleMapTab = true;
     private bool _showNotesTab;
+    private bool _showAudienceHallTab;
     private HubConnection? _hubConnection;
     private int _baronyId;
 
@@ -133,6 +135,8 @@
                 // MG gets its own private Notes scope (separate from the baron's).
                 _showBattleMapTab = true;
                 _showNotesTab = true;
+                // Audience Hall is a baron-only visual view for now.
+                _showAudienceHallTab = false;
                 return;
             }
 
@@ -141,6 +145,7 @@
             {
                 _showBattleMapTab = false;
                 _showNotesTab = false;
+                _showAudienceHallTab = false;
                 return;
             }
 
@@ -149,24 +154,28 @@
             {
                 _showBattleMapTab = false;
                 _showNotesTab = false;
+                _showAudienceHallTab = false;
                 _baronyId = 0;
                 return;
             }
 
             _baronyId = barony.Id;
             _showNotesTab = true;
+            _showAudienceHallTab = true;
             _showBattleMapTab = await _battleMapRepo.IsActive(barony.Id);
         }
         catch
         {
             _showBattleMapTab = false;
             _showNotesTab = false;
+            _showAudienceHallTab = false;
         }
     }
 
     private IEnumerable<TabItem> VisibleDefaultTabs =>
         DefaultTabs.Where(t => (t.Key != "battle-map" || _showBattleMapTab)
-                               && (t.Key != "notes" || _showNotesTab));
+                               && (t.Key != "notes" || _showNotesTab)
+                               && (t.Key != "audience-hall" || _showAudienceHallTab));
 
     private async Task LoadOrderAsync()
     {

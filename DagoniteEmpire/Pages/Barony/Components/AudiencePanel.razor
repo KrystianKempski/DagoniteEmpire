@@ -1,5 +1,121 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
+@if (HallLayout)
+{
+    <div class="audience-scroll">
+        <div class="audience-scroll__sheet">
+            <p class="audience-scroll__meta">
+                @if (IsCouncil)
+                {
+                    <span>@L["Council"]</span>
+                }
+                else
+                {
+                    @if (!string.IsNullOrWhiteSpace(Audience.PetitionerIcon))
+                    {
+                        <img src="@("/" + PetitionerIconSrc)" class="audience-scroll__petitioner-icon" alt="" />
+                    }
+                    <span>@Audience.PetitionerName</span>
+                }
+                <span>· T@(Audience.TurnNumber)</span>
+            </p>
+            <h2 class="audience-scroll__title">@Audience.Title</h2>
+            @foreach (var x in Audience.Exchanges.OrderBy(e => e.SortOrder).ThenBy(e => e.Id))
+            {
+                <div class="audience-scroll__passage @ExchangeThemeClass(x)">
+                    <span class="audience-scroll__speaker">@L[SpeakerLabel(x)]</span>
+                    <div class="audience-scroll__body">
+                        @if (TryGetChapterLink(x, out var chapterId, out var chapterLabel))
+                        {
+                            <span>@chapterLabel </span>
+                            <a href="/chapter/@chapterId">@L["Open chapter"]</a>
+                        }
+                        else
+                        {
+                            @x.Body
+                        }
+                    </div>
+                    @if (x.IsResourceChange
+                        && ((x.Additive is not null && !x.Additive.IsEmpty) || x.HasPhp))
+                    {
+                        <div class="audience-scroll__delta">
+                            @if (x.Additive is not null && !x.Additive.IsEmpty)
+                            {
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    var v = x.Additive[info.Key];
+                                    if (v == 0m)
+                                        continue;
+                                    <span>@PpbFormat.Additive(v) @info.Short</span>
+                                }
+                            }
+                            @if (x.Prestige != 0)
+                            {
+                                <span>@FmtPhp(x.Prestige) @L["Prestige"]</span>
+                            }
+                            @if (x.Honor != 0)
+                            {
+                                <span>@FmtPhp(x.Honor) @L["Honor"]</span>
+                            }
+                            @if (x.Fear != 0)
+                            {
+                                <span>@FmtPhp(x.Fear) @L["Fear"]</span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (CanReply)
+        {
+            <div class="audience-scroll__reply">
+                @if (CanWriteAsBaron)
+                {
+                    <div class="audience-scroll__modes">
+                        <button type="button"
+                                class="audience-hall__ink-btn @(_baronSpeakerMode == SpeakerModeBaron ? "is-on" : "")"
+                                disabled="@Busy"
+                                @onclick="() => _baronSpeakerMode = SpeakerModeBaron">
+                            @BaronLordSpeaker
+                        </button>
+                        <button type="button"
+                                class="audience-hall__ink-btn @(_baronSpeakerMode == BaronCouncilSession.QuestionToGmSpeaker ? "is-on" : "")"
+                                disabled="@Busy"
+                                @onclick="() => _baronSpeakerMode = BaronCouncilSession.QuestionToGmSpeaker">
+                            @L["Question to GM"]
+                        </button>
+                    </div>
+                }
+                <textarea class="audience-scroll__draft"
+                          rows="3"
+                          disabled="@Busy"
+                          placeholder="@ComposerPlaceholder"
+                          @bind="_draft"
+                          @bind:event="oninput"></textarea>
+                <div class="audience-scroll__actions">
+                    <button type="button"
+                            class="audience-hall__ink-btn audience-hall__ink-btn--strong"
+                            disabled="@(Busy || !CanSpeak)"
+                            @onclick="SpeakAsync">
+                        @L["Speak"]
+                    </button>
+                    @if (CanWriteAsBaron)
+                    {
+                        <button type="button"
+                                class="audience-hall__ink-btn"
+                                disabled="@Busy"
+                                @onclick="() => OnDismiss.InvokeAsync()">
+                            @L["Dismiss"]
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
 <article class="project-card @CardClass @(_isOpen ? "project-card--open" : "project-card--collapsed")">
     <header class="project-card__header" @onclick="Toggle" role="button" aria-expanded="@_isOpen">
         <div class="project-card__title-row">
@@ -38,6 +154,10 @@
                 @if (!IsCouncil
                     || !string.Equals(Audience.PetitionerName, BaronCouncilSession.PetitionerLabel, StringComparison.OrdinalIgnoreCase))
                 {
+                    @if (!string.IsNullOrWhiteSpace(Audience.PetitionerIcon))
+                    {
+                        <img src="@("/" + PetitionerIconSrc)" class="baron-audience__petitioner-icon" alt="" />
+                    }
                     <span class="project-output-badge">@Audience.PetitionerName</span>
                 }
                 <span class="baron-audience__status baron-audience__status--@StatusCss">@Audience.StatusDisplay</span>
@@ -288,6 +408,7 @@
         </div>
     }
 </article>
+}
 
 @code {
     public const string SpeakerModePetitioner = "petitioner";
@@ -307,6 +428,10 @@
     [Parameter, EditorRequired] public BaronAudienceDTO Audience { get; set; } = default!;
     [Parameter] public bool ReadOnly { get; set; }
     [Parameter] public bool ShowSummary { get; set; }
+    /// <summary>Renders the card already expanded (Audience Hall single-topic view).</summary>
+    [Parameter] public bool InitiallyOpen { get; set; }
+    /// <summary>Parchment presentation used by Audience Hall (no project-card chrome).</summary>
+    [Parameter] public bool HallLayout { get; set; }
     [Parameter] public bool CanWriteAsGm { get; set; }
     [Parameter] public bool CanWriteAsBaron { get; set; }
     [Parameter] public bool Busy { get; set; }
@@ -323,6 +448,7 @@
     [Parameter] public EventCallback OnDismiss { get; set; }
 
     private bool _isOpen;
+    private bool _initialOpenApplied;
     private string _draft = "";
     private string _speakerMode = SpeakerModePetitioner;
     private string _baronSpeakerMode = SpeakerModeBaron;
@@ -330,6 +456,8 @@
     private bool _speakersInitialized;
 
     private bool IsCouncil => BaronAudienceKind.IsCouncil(Audience.Kind);
+
+    private string PetitionerIconSrc => PetitionerIconCatalog.PathFor(Audience.PetitionerIcon);
 
     private IReadOnlyList<string> CourtSpeakerNames =>
         (CourtSpeakers ?? Array.Empty<string>())
@@ -371,6 +499,13 @@
             || _speakerMode != SpeakerModeOther
             || !string.IsNullOrWhiteSpace(_otherSpeaker));
 
+    private string ComposerPlaceholder =>
+        CanWriteAsGm
+            ? ComposerLabel
+            : (_baronSpeakerMode == BaronCouncilSession.QuestionToGmSpeaker
+                ? L["Question to GM…"].Value
+                : L["Your reply…"].Value);
+
     private string ComposerLabel =>
         CanWriteAsGm
             ? (_speakerMode == SpeakerModeOther
@@ -386,6 +521,12 @@
 
     protected override void OnParametersSet()
     {
+        if (!_initialOpenApplied)
+        {
+            _initialOpenApplied = true;
+            _isOpen = InitiallyOpen;
+        }
+
         if (HasCourtSpeakers
             && (_speakerMode == SpeakerModePetitioner
                 || string.IsNullOrWhiteSpace(_speakerMode)

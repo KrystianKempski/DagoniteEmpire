@@ -1,0 +1,417 @@
+@page "/barony/audience-hall"
+@layout BaronyLayout
+@inherits BaronyPageBase
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+@inject IDialogService _dialogService
+@inject ICampaignRepository _campaignRepository
+
+<PageTitle>Dagonite Empire | @L["Audience Hall"]</PageTitle>
+
+<div class="audience-hall">
+    @if (IsLoading)
+    {
+        <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>@L["Loading..."]</span>
+    }
+    else if (LoadError is not null)
+    {
+        <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
+    }
+    else if (CanManageAsMg)
+    {
+        <MudAlert Severity="Severity.Info" Class="my-4">
+            @L["The Audience Hall is a baron-only view. Manage audiences and Council as Game Master on the Audiences tab."]
+        </MudAlert>
+    }
+    else if (Barony is not null)
+    {
+        <div class="audience-hall__hub">
+            @if (_mode == HallMode.Council)
+            {
+                <div class="audience-hall__council">
+                    <button type="button"
+                            class="audience-hall__ring-core @(_selectedSeatKey == GeneralSeatKey ? "is-on" : "")"
+                            title="@L["General Council"]"
+                            @onclick="SelectGeneralCouncil">
+                        <img src="@("/" + MyIcon.ShakingHands)" class="audience-hall__throne" alt="" />
+                        @if (UnassignedCouncilTopics.Count > 0)
+                        {
+                            <span class="audience-hall__badge">@UnassignedCouncilTopics.Count</span>
+                        }
+                    </button>
+                    <div class="audience-hall__advisors">
+                        @foreach (var seat in CouncilSeats)
+                        {
+                            <button type="button"
+                                    class="audience-hall__advisor @(_selectedSeatKey == seat.Key ? "is-on" : "")"
+                                    title="@seat.Label"
+                                    @onclick="() => SelectSeat(seat)">
+                                @if (seat.Topics.Count > 0)
+                                {
+                                    <span class="audience-hall__badge">@seat.Topics.Count</span>
+                                }
+                                <img src="@("/" + seat.Icon)" alt="" />
+                                <span>@seat.ShortLabel</span>
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <img src="@("/" + MyIcon.StoneThrone)" class="audience-hall__throne" alt="" />
+            }
+
+            <div class="audience-hall__tiles">
+                <button type="button"
+                        class="audience-hall__tile @(_mode == HallMode.Audiences ? "is-on" : "")"
+                        @onclick="ToggleAudiences">
+                    @if (PendingAudiences.Count > 0)
+                    {
+                        <span class="audience-hall__badge">@PendingAudiences.Count</span>
+                    }
+                    <img src="@("/" + MyIcon.TiedScroll)" alt="" />
+                    <span>@L["Audiences"]</span>
+                </button>
+                <button type="button"
+                        class="audience-hall__tile @(_mode == HallMode.Council ? "is-on" : "")"
+                        @onclick="ToggleCouncil">
+                    @if (OpenCouncilTopics.Count > 0)
+                    {
+                        <span class="audience-hall__badge">@OpenCouncilTopics.Count</span>
+                    }
+                    <img src="@("/" + MyIcon.ShakingHands)" alt="" />
+                    <span>@L["Council"]</span>
+                </button>
+                <button type="button"
+                        class="audience-hall__tile"
+                        @onclick="GoToAdventuresAsync"
+                        disabled="@_busy">
+                    <img src="@("/" + MyIcon.Bookmark)" alt="" />
+                    <span>@L["Adventures"]</span>
+                </button>
+            </div>
+
+            @if (_mode == HallMode.Audiences)
+            {
+                <div class="audience-hall__petition">
+                    @if (CurrentAudience is null)
+                    {
+                        <div class="audience-scroll">
+                            <div class="audience-scroll__sheet audience-scroll__sheet--empty">
+                                <p>@L["No pending audiences right now. Well governed!"]</p>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <AudiencePanel @key="CurrentAudience.Id"
+                                       Audience="CurrentAudience"
+                                       HallLayout="true"
+                                       CanWriteAsBaron="true"
+                                       BaronCharacterName="BaronCharacterName"
+                                       Busy="_busy"
+                                       OnSpeak="req => SpeakAsync(CurrentAudience, req)"
+                                       OnDismiss="() => DismissAsync(CurrentAudience)" />
+                        @if (PendingAudiences.Count > 1)
+                        {
+                            <div class="audience-hall__pager">
+                                <button type="button" class="audience-hall__ink-btn" disabled="@(_audienceIndex <= 0)" @onclick="() => StepTopic(-1)">‹</button>
+                                <span>@(_audienceIndex + 1) / @PendingAudiences.Count</span>
+                                <button type="button" class="audience-hall__ink-btn" disabled="@(_audienceIndex >= PendingAudiences.Count - 1)" @onclick="() => StepTopic(1)">›</button>
+                            </div>
+                        }
+                    }
+                </div>
+            }
+            else if (_mode == HallMode.Council && _selectedSeatKey is not null)
+            {
+                <div class="audience-hall__petition">
+                    @if (CurrentCouncilTopic is null)
+                    {
+                        <div class="audience-scroll">
+                            <div class="audience-scroll__sheet audience-scroll__sheet--empty">
+                                <p>@L["No council topics right now."]</p>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <AudiencePanel @key="CurrentCouncilTopic.Id"
+                                       Audience="CurrentCouncilTopic"
+                                       HallLayout="true"
+                                       CanWriteAsBaron="true"
+                                       BaronCharacterName="BaronCharacterName"
+                                       Busy="_busy"
+                                       OnSpeak="req => SpeakAsync(CurrentCouncilTopic, req)"
+                                       OnDismiss="() => DismissAsync(CurrentCouncilTopic)" />
+                        @if (SelectedCouncilTopics.Count > 1)
+                        {
+                            <div class="audience-hall__pager">
+                                <button type="button" class="audience-hall__ink-btn" disabled="@(_councilIndex <= 0)" @onclick="() => StepTopic(-1)">‹</button>
+                                <span>@(_councilIndex + 1) / @SelectedCouncilTopics.Count</span>
+                                <button type="button" class="audience-hall__ink-btn" disabled="@(_councilIndex >= SelectedCouncilTopics.Count - 1)" @onclick="() => StepTopic(1)">›</button>
+                            </div>
+                        }
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private enum HallMode { Idle, Audiences, Council }
+
+    private const string GeneralSeatKey = "";
+
+    private sealed record CouncilSeat(string Key, string Label, string ShortLabel, string Icon, List<BaronAudienceDTO> Topics);
+
+    private HallMode _mode = HallMode.Idle;
+    private List<BaronAudienceDTO> _audiences = new();
+    private List<AdvisorDTO> _advisors = new();
+    private int _audienceIndex;
+    private int _councilIndex;
+    private string? _selectedSeatKey;
+    private bool _busy;
+
+    private string? BaronCharacterName => UserInfo?.SelectedCharacter?.NPCName;
+
+    private IReadOnlyList<BaronAudienceDTO> PendingAudiences =>
+        _audiences
+            .Where(a => BaronAudienceKind.IsAudience(a.Kind)
+                        && a.IsActive
+                        && (a.LastExchange is null || a.LastExchange.IsFromPetitioner))
+            .OrderBy(a => a.TurnNumber)
+            .ThenBy(a => a.Id)
+            .ToList();
+
+    private IReadOnlyList<BaronAudienceDTO> OpenCouncilTopics =>
+        _audiences
+            .Where(a => BaronAudienceKind.IsCouncil(a.Kind) && a.IsActive)
+            .OrderBy(a => a.TurnNumber)
+            .ThenBy(a => a.Id)
+            .ToList();
+
+    private IReadOnlyList<BaronAudienceDTO> UnassignedCouncilTopics =>
+        OpenCouncilTopics.Where(t => CouncilSeats.All(s => !TopicsForAdvisor(s, t))).ToList();
+
+    private List<CouncilSeat> CouncilSeats
+    {
+        get
+        {
+            var topics = OpenCouncilTopics;
+            var seats = new List<CouncilSeat>();
+            foreach (var advisor in BaronyCalc.OrderAdvisors(_advisors.Where(a => !a.IsBaron && !string.IsNullOrWhiteSpace(a.PersonName))))
+            {
+                var role = BaronyCalc.AdvisorRoleLabel(advisor);
+                var name = advisor.PersonName.Trim();
+                var label = $"{role} \u2014 {name}";
+                var matched = topics.Where(t => TopicBelongsTo(t, label, name)).ToList();
+                seats.Add(new CouncilSeat(label, label, role, AdvisorIconCatalog.IconFor(advisor.OfficeType, advisor.Id), matched));
+            }
+
+            return seats;
+        }
+    }
+
+    private static bool TopicBelongsTo(BaronAudienceDTO topic, string label, string personName)
+    {
+        if (MatchesAdvisorText(topic.AssignedAdvisorName, label, personName))
+            return true;
+        if (string.IsNullOrWhiteSpace(topic.AssignedAdvisorName)
+            && MatchesAdvisorText(topic.PetitionerName, label, personName))
+            return true;
+        return false;
+    }
+
+    private static bool MatchesAdvisorText(string? text, string label, string personName)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return false;
+        if (string.Equals(text.Trim(), label, StringComparison.OrdinalIgnoreCase))
+            return true;
+        return !string.IsNullOrWhiteSpace(personName)
+               && text.Contains(personName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool TopicsForAdvisor(CouncilSeat seat, BaronAudienceDTO topic)
+    {
+        var dash = seat.Label.LastIndexOf('\u2014');
+        var person = dash >= 0 ? seat.Label[(dash + 1)..].Trim() : seat.Label;
+        return TopicBelongsTo(topic, seat.Label, person);
+    }
+
+    private IReadOnlyList<BaronAudienceDTO> SelectedCouncilTopics
+    {
+        get
+        {
+            if (_selectedSeatKey is null)
+                return Array.Empty<BaronAudienceDTO>();
+            if (_selectedSeatKey == GeneralSeatKey)
+                return UnassignedCouncilTopics;
+            return CouncilSeats.FirstOrDefault(s => s.Key == _selectedSeatKey)?.Topics
+                   ?? (IReadOnlyList<BaronAudienceDTO>)Array.Empty<BaronAudienceDTO>();
+        }
+    }
+
+    private BaronAudienceDTO? CurrentAudience =>
+        _audienceIndex >= 0 && _audienceIndex < PendingAudiences.Count ? PendingAudiences[_audienceIndex] : null;
+
+    private BaronAudienceDTO? CurrentCouncilTopic =>
+        _councilIndex >= 0 && _councilIndex < SelectedCouncilTopics.Count ? SelectedCouncilTopics[_councilIndex] : null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBaronyAsync();
+        if (Barony is not null && !CanManageAsMg)
+            await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (Barony is null)
+            return;
+        await _baronyRepo.EnsureCouncilSession(Barony.Id, Barony.TurnNumber, Barony.Year, Barony.Season);
+        _audiences = await _baronyRepo.GetAudiences(BaronyId);
+        _advisors = await _baronyRepo.GetAdvisors(Barony.Id);
+        ClampIndexes();
+    }
+
+    private void ClampIndexes()
+    {
+        if (_audienceIndex >= PendingAudiences.Count)
+            _audienceIndex = Math.Max(0, PendingAudiences.Count - 1);
+        if (_councilIndex >= SelectedCouncilTopics.Count)
+            _councilIndex = Math.Max(0, SelectedCouncilTopics.Count - 1);
+        if (_selectedSeatKey is not null
+            && _selectedSeatKey != GeneralSeatKey
+            && CouncilSeats.All(s => s.Key != _selectedSeatKey))
+            _selectedSeatKey = null;
+    }
+
+    private void ToggleAudiences()
+    {
+        _selectedSeatKey = null;
+        _mode = _mode == HallMode.Audiences ? HallMode.Idle : HallMode.Audiences;
+    }
+
+    private void ToggleCouncil()
+    {
+        if (_mode == HallMode.Council)
+        {
+            _mode = HallMode.Idle;
+            _selectedSeatKey = null;
+        }
+        else
+        {
+            _mode = HallMode.Council;
+            _selectedSeatKey = null;
+            _councilIndex = 0;
+        }
+    }
+
+    private void SelectSeat(CouncilSeat seat)
+    {
+        _selectedSeatKey = seat.Key;
+        _councilIndex = 0;
+    }
+
+    private void SelectGeneralCouncil()
+    {
+        _selectedSeatKey = GeneralSeatKey;
+        _councilIndex = 0;
+    }
+
+    private void StepTopic(int delta)
+    {
+        if (_mode == HallMode.Audiences)
+            _audienceIndex = Math.Clamp(_audienceIndex + delta, 0, Math.Max(0, PendingAudiences.Count - 1));
+        else if (_mode == HallMode.Council)
+            _councilIndex = Math.Clamp(_councilIndex + delta, 0, Math.Max(0, SelectedCouncilTopics.Count - 1));
+    }
+
+    private async Task SpeakAsync(BaronAudienceDTO? audience, AudiencePanel.SpeakRequest req)
+    {
+        if (audience is null || string.IsNullOrWhiteSpace(req.Body))
+            return;
+
+        _busy = true;
+        try
+        {
+            await _baronyRepo.SaveAudienceExchange(new BaronAudienceExchangeDTO
+            {
+                AudienceId = audience.Id,
+                Body = req.Body.Trim(),
+                IsFromPetitioner = req.IsGmSide,
+                SpeakerName = req.SpeakerName,
+                TurnNumber = Barony!.TurnNumber,
+            });
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task DismissAsync(BaronAudienceDTO? audience)
+    {
+        if (audience is null)
+            return;
+
+        var ok = await _dialogService.ShowMessageBoxAsync(
+            "Dismiss audience",
+            $"Dismiss \"{audience.Title}\"? It will leave without a resolution.",
+            yesText: "Dismiss", cancelText: "Cancel");
+        if (ok != true)
+            return;
+
+        _busy = true;
+        try
+        {
+            await _baronyRepo.DismissAudience(audience.Id);
+            await ReloadAsync();
+            _snackBar.Add(L["Dismissed."], Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task GoToAdventuresAsync()
+    {
+        if (Barony is null)
+            return;
+
+        _busy = true;
+        try
+        {
+            var campaigns = (await _campaignRepository.GetAll(Barony.CharacterId)).ToList();
+            var campaign = campaigns.FirstOrDefault(c =>
+                               string.Equals(c.Name, Barony.Name, StringComparison.OrdinalIgnoreCase))
+                           ?? campaigns.OrderByDescending(c => c.CreatedDate).FirstOrDefault();
+
+            if (campaign is null || campaign.Id <= 0)
+            {
+                _snackBar.Add(L["No campaign found for this barony yet."], Severity.Info);
+                _navigationManager.NavigateTo("/campaignlist");
+                return;
+            }
+
+            _navigationManager.NavigateTo($"/campaign/{campaign.Id}");
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

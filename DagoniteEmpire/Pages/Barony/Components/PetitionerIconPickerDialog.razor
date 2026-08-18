@@ -1,0 +1,41 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Common.Barony
+
+<MudDialog Class="barony-dialog">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@L["Choose icon"]</MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="barony-dialog-theme">
+            <div class="bbm-icon-picker">
+                @foreach (var icon in PetitionerIconCatalog.All)
+                {
+                    <BaronyTooltip Text="@L[icon.Label]">
+                        <button type="button"
+                                class="bbm-icon-picker__item @(IsSelected(icon) ? "selected" : null)"
+                                @onclick="() => Select(icon.Path)">
+                            <img src="/@icon.Path" alt="@icon.Label" />
+                            <span>@L[icon.Label]</span>
+                        </button>
+                    </BaronyTooltip>
+                }
+            </div>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string? SelectedPath { get; set; }
+
+    private bool IsSelected(PetitionerIcon icon) =>
+        string.Equals(PetitionerIconCatalog.PathFor(SelectedPath), icon.Path, StringComparison.OrdinalIgnoreCase);
+
+    private void Select(string path) => MudDialog.Close(DialogResult.Ok(path));
+
+    private void Cancel() => MudDialog.Cancel();
+}

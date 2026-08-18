@@ -254,6 +254,9 @@ namespace DA_DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("AssignedAdvisorName")
+                        .HasColumnType("text");
+
                     b.Property<int>("BaronyId")
                         .HasColumnType("integer");
 
@@ -290,6 +293,9 @@ namespace DA_DataAccess.Migrations
 
                     b.Property<string>("PetitionerName")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PetitionerIcon")
                         .HasColumnType("text");
 
                     b.Property<int>("Prestige")

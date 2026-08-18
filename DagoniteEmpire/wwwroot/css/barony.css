@@ -9723,6 +9723,59 @@ a.city-building-name-text--link:hover {
     font-size: 0.9em;
 }
 
+.baron-audience__petitioner-icon,
+.audience-scroll__petitioner-icon {
+    width: 1.35rem;
+    height: 1.35rem;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.audience-scroll__meta {
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+}
+
+.new-audience-icon-row {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    margin-bottom: .75rem;
+}
+
+.new-audience-icon-row__pick {
+    appearance: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .2rem;
+    width: 5.4rem;
+    min-height: 5.4rem;
+    padding: .35rem .3rem;
+    flex-shrink: 0;
+    background: var(--barony-surface, #fbf8f1);
+    border: 1px solid var(--barony-border, #d9cfb8);
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--barony-ink);
+    font-family: inherit;
+    font-size: .68rem;
+    line-height: 1.15;
+    text-align: center;
+}
+
+.new-audience-icon-row__pick:hover {
+    border-color: var(--barony-accent, #9c7a33);
+}
+
+.new-audience-icon-row__pick img {
+    width: 2.4rem;
+    height: 2.4rem;
+    object-fit: contain;
+}
+
 .baron-audience__meta {
     margin-left: auto;
     font-size: 0.78rem;
@@ -11867,5 +11920,178 @@ a.city-building-name-text--link:hover {
 
 .seat-php-values--empty .seat-php-value {
     opacity: 0.55;
+}
+
+/* ---- Audience Hall parchment ---- */
+.audience-hall__ink-btn {
+    appearance: none;
+    background: transparent;
+    border: none;
+    padding: .15rem .35rem;
+    color: var(--barony-ink);
+    font-family: 'IM Fell English', 'Times New Roman', serif;
+    font-size: .95rem;
+    letter-spacing: .02em;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: .18em;
+    text-decoration-color: color-mix(in srgb, var(--barony-accent) 55%, transparent);
+}
+
+.audience-hall__ink-btn:hover:not(:disabled) {
+    color: var(--barony-accent);
+}
+
+.audience-hall__ink-btn:disabled {
+    opacity: .4;
+    cursor: default;
+    text-decoration: none;
+}
+
+.audience-hall__ink-btn.is-on,
+.audience-hall__ink-btn--strong {
+    text-decoration-thickness: 2px;
+    font-weight: 600;
+}
+
+.audience-scroll {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: .7rem;
+}
+
+.audience-scroll__sheet {
+    position: relative;
+    padding: 1.35rem 1.4rem 1.5rem;
+    color: #3a2c18;
+    text-align: left;
+    font-family: 'IM Fell English', 'Times New Roman', serif;
+    font-size: 1.08rem;
+    line-height: 1.55;
+    background-color: #ead7ad;
+    background-image:
+        radial-gradient(ellipse at 18% 8%, rgba(255, 248, 230, .7), transparent 42%),
+        radial-gradient(ellipse at 88% 92%, rgba(140, 96, 40, .16), transparent 48%),
+        linear-gradient(180deg, #f3e2ba 0%, #e6cc96 48%, #d9b978 100%);
+    border: 1px solid #c4a46a;
+    box-shadow:
+        0 8px 22px rgba(60, 42, 18, .22),
+        inset 0 0 48px rgba(120, 80, 30, .12);
+}
+
+.audience-scroll__sheet::before,
+.audience-scroll__sheet::after {
+    content: "";
+    position: absolute;
+    left: 8%;
+    right: 8%;
+    height: 10px;
+    pointer-events: none;
+    opacity: .45;
+    background: repeating-linear-gradient(
+        90deg,
+        transparent 0 10px,
+        rgba(90, 60, 20, .12) 10px 11px);
+}
+
+.audience-scroll__sheet::before { top: 7px; }
+.audience-scroll__sheet::after { bottom: 7px; }
+
+.audience-scroll__sheet--empty {
+    text-align: center;
+    color: #6a5636;
+    font-style: italic;
+}
+
+.audience-scroll__sheet--empty p {
+    margin: .35rem 0 0;
+}
+
+.audience-scroll__meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .4rem;
+    margin: 0 0 .35rem;
+    font-size: .82rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: #7a6238;
+}
+
+.audience-scroll__title {
+    margin: 0 0 .9rem;
+    font-family: 'Eagle Lake', serif;
+    font-weight: 400;
+    font-size: 1.28rem;
+    color: #2c2114;
+}
+
+.audience-scroll__passage {
+    margin: 0 0 .85rem;
+}
+
+.audience-scroll__passage:last-child {
+    margin-bottom: 0;
+}
+
+.audience-scroll__speaker {
+    display: block;
+    margin-bottom: .15rem;
+    font-style: italic;
+    font-size: .92rem;
+    color: #6b542e;
+}
+
+.audience-scroll__body {
+    white-space: pre-wrap;
+}
+
+.audience-scroll__delta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem .7rem;
+    margin-top: .35rem;
+    font-size: .85rem;
+    color: #6b542e;
+}
+
+.audience-scroll__reply {
+    display: flex;
+    flex-direction: column;
+    gap: .45rem;
+    width: 100%;
+}
+
+.audience-scroll__modes,
+.audience-scroll__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: .55rem;
+}
+
+.audience-scroll__draft {
+    width: 100%;
+    min-height: 4.4rem;
+    resize: vertical;
+    padding: .55rem .7rem;
+    border: 1px solid #c4a46a;
+    background: color-mix(in srgb, #f7ecd0 88%, white);
+    color: #3a2c18;
+    font-family: 'IM Fell English', 'Times New Roman', serif;
+    font-size: 1.02rem;
+    line-height: 1.45;
+    box-shadow: inset 0 1px 4px rgba(80, 55, 20, .12);
+}
+
+.audience-scroll__draft:focus {
+    outline: 1px solid color-mix(in srgb, var(--barony-accent) 55%, #c4a46a);
+}
+
+.audience-scroll__draft:disabled {
+    opacity: .65;
 }
 

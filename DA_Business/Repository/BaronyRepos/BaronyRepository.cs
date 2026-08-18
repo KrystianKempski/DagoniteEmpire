@@ -3033,6 +3033,7 @@ namespace DA_Business.Repository.BaronyRepos
                     BaronyId = baronyId,
                     Title = old.Title,
                     PetitionerName = old.PetitionerName,
+                    PetitionerIcon = old.PetitionerIcon,
                     Kind = BaronAudienceKind.Normalize(old.Kind),
                     Status = BaronAudienceStatus.Scheduled,
                     TurnNumber = newTurnNumber,
@@ -5131,6 +5132,8 @@ namespace DA_Business.Repository.BaronyRepos
             BaronyId = e.BaronyId,
             Title = e.Title ?? "",
             PetitionerName = e.PetitionerName ?? "",
+            PetitionerIcon = e.PetitionerIcon,
+            AssignedAdvisorName = e.AssignedAdvisorName,
             Kind = BaronAudienceKind.Normalize(e.Kind),
             Status = e.Status ?? BaronAudienceStatus.Scheduled,
             TurnNumber = e.TurnNumber,
@@ -5183,6 +5186,8 @@ namespace DA_Business.Repository.BaronyRepos
             e.BaronyId = d.BaronyId;
             e.Title = (d.Title ?? "").Trim();
             e.PetitionerName = (d.PetitionerName ?? "").Trim();
+            e.PetitionerIcon = string.IsNullOrWhiteSpace(d.PetitionerIcon) ? null : d.PetitionerIcon.Trim();
+            e.AssignedAdvisorName = string.IsNullOrWhiteSpace(d.AssignedAdvisorName) ? null : d.AssignedAdvisorName.Trim();
             e.Kind = BaronAudienceKind.Normalize(d.Kind);
             e.Status = string.IsNullOrWhiteSpace(d.Status)
                 ? BaronAudienceStatus.Scheduled

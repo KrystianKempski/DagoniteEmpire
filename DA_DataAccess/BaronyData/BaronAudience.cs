@@ -15,6 +15,15 @@ namespace DA_DataAccess.BaronyData
         /// <summary>Name of the petitioner (the person seeking audience).</summary>
         public string PetitionerName { get; set; } = string.Empty;
 
+        /// <summary>wwwroot-relative icon path for the petitioner (e.g. icons/farmer.svg).</summary>
+        public string? PetitionerIcon { get; set; }
+
+        /// <summary>
+        /// Council only: display name of the advisor who owns this topic (e.g. "Chancellor - Jane Doe").
+        /// Drives the advisor icon/table view on the Audience Hall page. Null for plain Audience kind.
+        /// </summary>
+        public string? AssignedAdvisorName { get; set; }
+
         /// <summary><see cref="DA_Common.Barony.BaronAudienceKind"/> — Audience (default) or Council.</summary>
         public string Kind { get; set; } = DA_Common.Barony.BaronAudienceKind.Audience;
 

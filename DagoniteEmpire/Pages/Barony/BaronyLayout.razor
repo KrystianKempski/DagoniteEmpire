@@ -3,14 +3,14 @@
 @layout DagoniteEmpire.Shared.MainLayout
 @inject NavigationManager NavigationManager
 
-<div class="barony-mobile-block">
+<div class="barony-mobile-block @(IsAudienceHall ? "barony-mobile-block--hidden" : "")">
     <div class="barony-mobile-block__card">
         <span class="barony-mobile-block__title">@L["Not available on mobile yet"]</span>
         <span class="barony-mobile-block__hint">@L["The Barony view needs a larger screen. Please open it on a desktop."]</span>
     </div>
 </div>
 
-<div class="barony-scope @(IsDomainPanel ? "barony-scope--domain-panel" : "") @(IsBuildingsCatalog ? "barony-scope--buildings-catalog" : "") @(IsMarchMap ? "barony-scope--march-map" : "") @(IsBattleMap ? "barony-scope--battle-map" : "")">
+<div class="barony-scope @(IsDomainPanel ? "barony-scope--domain-panel" : "") @(IsBuildingsCatalog ? "barony-scope--buildings-catalog" : "") @(IsMarchMap ? "barony-scope--march-map" : "") @(IsBattleMap ? "barony-scope--battle-map" : "") @(IsAudienceHall ? "barony-scope--audience-hall" : "")">
     <DemoModeBanner />
     <CascadingValue Value="@_viewOptions">
         @* Fill wrapper only for full-viewport map pages — plain pages stay unwrapped. *@
@@ -77,4 +77,7 @@
     private bool IsMarchMap => CurrentPath == "/barony/march-map";
 
     private bool IsBattleMap => CurrentPath == "/barony/battle-map";
+
+    /// <summary>Only page allowed on mobile — hub is a single-column visual view, works on any screen size.</summary>
+    private bool IsAudienceHall => CurrentPath == "/barony/audience-hall";
 }

@@ -165,6 +165,24 @@ else if (Barony is not null)
                     @L["MG Speak as lists all courtiers from Court."]
                 </MudText>
 
+                @if (CanWriteAsGm)
+                {
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <MudButton Variant="Variant.Outlined"
+                                   StartIcon="@Icons.Material.Filled.Add"
+                                   OnClick="CreateCouncilTopicAsync"
+                                   Disabled="_busy || _councilAdvisorOptions.Count == 0">
+                            @L["New council topic"]
+                        </MudButton>
+                        @if (_councilAdvisorOptions.Count == 0)
+                        {
+                            <MudText Typo="Typo.caption" Style="color:var(--barony-muted); align-self:center;">
+                                @L["Assign advisors on the Court tab first."]
+                            </MudText>
+                        }
+                    </div>
+                }
+
                 @if (CurrentCouncilTopics.Count == 0)
                 {
                     <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
@@ -191,6 +209,7 @@ else if (Barony is not null)
                         }
                     </div>
                 }
+
 
                 @if (CouncilArchive.Count > 0)
                 {
@@ -341,6 +360,7 @@ else if (Barony is not null)
 @code {
     private List<BaronAudienceDTO> _audiences = new();
     private List<string> _courtSpeakers = new();
+    private List<string> _councilAdvisorOptions = new();
     private readonly HashSet<int> _expandedArchiveTurns = new();
     private bool _busy;
 
@@ -484,10 +504,61 @@ else if (Barony is not null)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
                 .ToList();
+
+            var officeAdvisors = await _baronyRepo.GetAdvisors(Barony.Id);
+            _councilAdvisorOptions = officeAdvisors
+                .Where(a => !a.IsBaron && !string.IsNullOrWhiteSpace(a.PersonName))
+                .Select(a => $"{BaronyCalc.AdvisorRoleLabel(a)} \u2014 {a.PersonName.Trim()}")
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
+                .ToList();
         }
 
         _audiences = await _baronyRepo.GetAudiences(BaronyId);
         StateHasChanged();
+    }
+
+    private async Task CreateCouncilTopicAsync()
+    {
+        var dialog = await _dialogService.ShowAsync<NewCouncilTopicDialog>("New council topic",
+            new DialogParameters<NewCouncilTopicDialog> { { x => x.Advisors, _councilAdvisorOptions } },
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not NewCouncilTopicDialog.NewCouncilTopicResult data)
+            return;
+
+        _busy = true;
+        try
+        {
+            var created = await _baronyRepo.SaveAudience(new BaronAudienceDTO
+            {
+                BaronyId = BaronyId,
+                PetitionerName = data.AdvisorLabel,
+                AssignedAdvisorName = data.AdvisorLabel,
+                Title = data.Title,
+                Kind = BaronAudienceKind.Council,
+                Status = BaronAudienceStatus.Scheduled,
+                TurnNumber = Barony!.TurnNumber,
+            });
+            await _baronyRepo.SaveAudienceExchange(new BaronAudienceExchangeDTO
+            {
+                AudienceId = created.Id,
+                Body = data.OpeningBody,
+                IsFromPetitioner = true,
+                SpeakerName = data.AdvisorLabel,
+                TurnNumber = Barony.TurnNumber,
+            });
+            await ReloadAsync();
+            _snackBar.Add(L["Council topic opened."], Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
     }
 
     private void ToggleArchiveFolder(int turn)
@@ -511,6 +582,7 @@ else if (Barony is not null)
             {
                 BaronyId = BaronyId,
                 PetitionerName = data.PetitionerName,
+                PetitionerIcon = data.PetitionerIcon,
                 Title = data.Title,
                 Kind = BaronAudienceKind.Audience,
                 Status = BaronAudienceStatus.Scheduled,
