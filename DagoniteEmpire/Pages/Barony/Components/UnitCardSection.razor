@@ -118,8 +118,8 @@
             }
             @if (CanEdit)
             {
-                <BaronyTooltip Title="@(string.IsNullOrWhiteSpace(Unit.CaptainName) ? "Assign captain" : $"Captain: {Unit.CaptainName}")"
-                               Text="Choose a free courtier as this unit’s captain (1 courtier ↔ 1 unit).">
+                <BaronyTooltip Title="@(string.IsNullOrWhiteSpace(Unit.CaptainName) ? L["Assign captain"].Value : L["Captain: {0}", Unit.CaptainName].Value)"
+                               Text="@(L["Choose a free courtier as this unit’s captain (1 courtier ↔ 1 unit)."])">
                     <button type="button"
                             class="unit-draft-card__icon-btn @(Unit.CaptainAvailableAdvisorId is > 0 ? "unit-draft-card__icon-btn--captain" : null)"
                             disabled="@_busy"
@@ -174,12 +174,12 @@
             if (string.IsNullOrWhiteSpace(name))
                 return string.Empty;
 
-            var lines = new List<string> { name, "Courtier captain of this unit (1 courtier ↔ 1 unit)." };
+            var lines = new List<string> { name, L["Courtier captain of this unit (1 courtier ↔ 1 unit)."].Value };
             var unlocked = CurrentCaptain?.Sheet?.UnlockedCommanderAbilities;
             if (unlocked is { Count: > 0 })
             {
                 lines.Add("");
-                lines.Add("Unlocked abilities:");
+                lines.Add(L["Unlocked abilities:"].Value);
                 foreach (var key in unlocked)
                 {
                     var ability = CourtCommanderCatalog.Find(key);

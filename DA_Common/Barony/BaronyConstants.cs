@@ -551,18 +551,26 @@ namespace DA_Common.Barony
         public static bool IsCustom(string? key) =>
             string.Equals(key, Custom, StringComparison.OrdinalIgnoreCase);
 
-        public static string DisplayName(string? key) => key switch
+        public static string DisplayName(string? key) => DisplayName(key, localizer: null);
+
+        public static string DisplayName(string? key, IStringLocalizer? localizer)
         {
-            Town => DA_Common.Localization.Loc.T(Town),
-            Village => DA_Common.Localization.Loc.T(Village),
-            HuntersLodge => DA_Common.Localization.Loc.T(HuntersLodge),
-            FishingHarbor => DA_Common.Localization.Loc.T(FishingHarbor),
-            Mine => DA_Common.Localization.Loc.T(Mine),
-            Sawmill => DA_Common.Localization.Loc.T(Sawmill),
-            Farm => DA_Common.Localization.Loc.T(Farm),
-            Custom => DA_Common.Localization.Loc.T(Custom),
-            _ => key ?? "None",
-        };
+            var resolved = key switch
+            {
+                Town => Town,
+                Village => Village,
+                HuntersLodge => HuntersLodge,
+                FishingHarbor => FishingHarbor,
+                Mine => Mine,
+                Sawmill => Sawmill,
+                Farm => Farm,
+                Custom => Custom,
+                _ => key ?? "None",
+            };
+            if (resolved == (key ?? "None") && !All.Contains(resolved) && resolved != "None")
+                return resolved;
+            return localizer is null ? Loc.T(resolved) : localizer[resolved].Value;
+        }
 
         public static string IconUrl(string? key) => key switch
         {
@@ -1060,12 +1068,20 @@ namespace DA_Common.Barony
             return Ground;
         }
 
-        public static string Label(string kind) => Normalize(kind) switch
+        public static string Label(string kind) => Label(kind, localizer: null);
+
+        public static string Label(string kind, IStringLocalizer? localizer)
         {
-            Wall => "Wall / fortification",
-            Ground => "Earth / ground",
-            Water => "Water",
-            _ => kind,
-        };
+            var key = Normalize(kind) switch
+            {
+                Wall => "Wall / fortification",
+                Ground => "Earth / ground",
+                Water => "Water",
+                _ => kind,
+            };
+            if (key == kind && Normalize(kind) is not (Wall or Ground or Water))
+                return kind;
+            return localizer is null ? Loc.T(key) : localizer[key].Value;
+        }
     }
 }

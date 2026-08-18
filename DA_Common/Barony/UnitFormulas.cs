@@ -1,3 +1,5 @@
+using DA_Common.Localization;
+
 namespace DA_Common.Barony
 {
     public sealed record UnitTrainingCostSummary(
@@ -343,13 +345,20 @@ namespace DA_Common.Barony
             if (u is null)
                 return string.Empty;
             if (u.MaintenanceExempt)
-                return "Maintenance paid elsewhere (no gold, food, or Defense upkeep).";
+                return Loc.T("Maintenance paid elsewhere (no gold, food, or Defense upkeep).");
 
-            return $"Gold / turn = base wage {u.BaseWage} + gear ({u.GearBlocks} × {UnitRules.GearUpkeepGoldPerBlock} "
-                + $"from {u.GearMarketGold} Mkt) = {u.Gold}. "
-                + $"Defense / turn = {u.GearBlocks} × {UnitRules.GearUpkeepDefensePerBlock} = {u.Defense} "
-                + $"(floor of equipment market gold / {UnitRules.GearUpkeepMarketGoldPerBlock}). "
-                + $"Food / turn = {u.Food.ToString("0.#")}.";
+            return Loc.T(
+                "Gold / turn = base wage {0} + gear ({1} × {2} from {3} Mkt) = {4}. Defense / turn = {5} × {6} = {7} (floor of equipment market gold / {8}). Food / turn = {9}.",
+                u.BaseWage,
+                u.GearBlocks,
+                UnitRules.GearUpkeepGoldPerBlock,
+                u.GearMarketGold,
+                u.Gold,
+                u.GearBlocks,
+                UnitRules.GearUpkeepDefensePerBlock,
+                u.Defense,
+                UnitRules.GearUpkeepMarketGoldPerBlock,
+                u.Food.ToString("0.#"));
         }
     }
 
@@ -440,12 +449,21 @@ namespace DA_Common.Barony
             var p = Compute(troopCount, fullStrength);
             var lostPct = Math.Max(0, fullStrength - Math.Max(0, troopCount)) * 100 / Math.Max(1, fullStrength);
             var regenNote = Math.Max(0, troopCount) < fullStrength
-                ? $" Regenerates +{UnitRules.TroopRegenPerTurn} troops per turn until full."
+                ? " " + Loc.T("Regenerates +{0} troops per turn until full.", UnitRules.TroopRegenPerTurn)
                 : string.Empty;
-            return $"Troops {Math.Max(0, troopCount)}/{fullStrength} ({lostPct}% lost). "
-                + $"Each 10% lost → −{UnitRules.CasualtyAttackPerStep} Atk/Def, −{UnitRules.CasualtyHpPerStep} HP. "
-                + $"Steps {p.Steps}: Atk {p.Attack}, Def {p.Defense}, HP {p.Hp}. "
-                + $"Floors while depleted: Atk/Def ≥ {UnitRules.CasualtyMinAttack}, Max HP ≥ {UnitRules.CasualtyMinMaxHp}."
+            return Loc.T(
+                "Troops {0}/{1} ({2}% lost). Each 10% lost → −{3} Atk/Def, −{4} HP. Steps {5}: Atk {6}, Def {7}, HP {8}. Floors while depleted: Atk/Def ≥ {9}, Max HP ≥ {10}.",
+                Math.Max(0, troopCount),
+                fullStrength,
+                lostPct,
+                UnitRules.CasualtyAttackPerStep,
+                UnitRules.CasualtyHpPerStep,
+                p.Steps,
+                p.Attack,
+                p.Defense,
+                p.Hp,
+                UnitRules.CasualtyMinAttack,
+                UnitRules.CasualtyMinMaxHp)
                 + regenNote;
         }
     }

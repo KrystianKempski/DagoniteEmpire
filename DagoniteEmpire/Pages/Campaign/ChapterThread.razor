@@ -35,7 +35,7 @@
 @inject ICampaignRepository _campaignRepository
 @implements IAsyncDisposable
 
-<PageTitle>Dagonite Empire | @L["Thread"]</PageTitle>
+<PageTitle>Dagonite Empire | @(Chapter is not null ? Chapter.Name : L["Posts"])</PageTitle>
 
 @if (IsLoading && Chapter is null)
 {
@@ -90,7 +90,7 @@ else
                             {
                                 <MudItem xs="12"><MudButton FullWidth OnClick="NextTurn">@L["Next turn"]</MudButton></MudItem>
                                 <MudItem xs="12"><MudButton FullWidth Variant="Variant.Filled" Color="Color.Error" OnClick="SwichBattlePhase">@(OngoingBattle ? L["End battle"] : L["Start battle"])</MudButton></MudItem>
-                                <MudItem xs="12"><MudText Align="Align.Center">Turn: @BattlePhase?.CurrentTurn</MudText></MudItem>
+                                <MudItem xs="12"><MudText Align="Align.Center">@L["Turn: {0}", BattlePhase?.CurrentTurn]</MudText></MudItem>
                                 <MudItem xs="6">
                                     <MudButton FullWidth OnClick="GenerateFightSequence">
                                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
@@ -186,7 +186,7 @@ else
                             {
                                 <MudItem xs="12"><MudButton FullWidth OnClick="NextTurn">@L["Next turn"]</MudButton></MudItem>
                                 <MudItem xs="12"><MudButton FullWidth Variant="Variant.Filled" Color="Color.Error" OnClick="SwichBattlePhase">@(OngoingBattle ? L["End battle"] : L["Start battle"])</MudButton></MudItem>
-                                <MudItem xs="12"><MudText Align="Align.Center">Turn: @BattlePhase?.CurrentTurn</MudText></MudItem>
+                                <MudItem xs="12"><MudText Align="Align.Center">@L["Turn: {0}", BattlePhase?.CurrentTurn]</MudText></MudItem>
                                 <MudItem xs="6">
                                     <MudButton FullWidth OnClick="GenerateFightSequence">
                                         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="1">
@@ -275,11 +275,11 @@ else
         @if (Chapter is not null)
         {
             <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2" Class="flex-wrap">
-                <MudText Typo="Typo.h4">Chapter: @Chapter.Name</MudText>
-                <WikiNavLink ChapterName="@Chapter.Name" Label="Archiwum wiki" />
+                <MudText Typo="Typo.h4">@L["Chapter"]: @Chapter.Name</MudText>
+                <WikiNavLink ChapterName="@Chapter.Name" Label="@(L["Wiki archive"])" />
             </MudStack>
             <MudText Class="py-2 flex-grow-1" Typo="Typo.h6">@Chapter.Date, @Chapter.DayTime, @Chapter.Place</MudText>
-            <MudText Typo="Typo.caption">Started at: @Chapter.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
+            <MudText Typo="Typo.caption">@L["Started at: {0}", Chapter.CreatedDate.ToString("dd-MM-yyyy HH:mm")]</MudText>
 
             @if (_showBackToEnd)
             {
@@ -343,13 +343,13 @@ else
                                                 <MudImage Src="@(post.AlternativeImageUrl ?? post.Character.ImageUrl)" Alt="Avatar" Elevation="25" Class="rounded-lg" Style="max-width:130px;" />
                                                 @if (CharacterAllParams.Any() && CharacterAllParams.ContainsKey(post.CharacterId) && CharacterAllParams[post.CharacterId] is not null)
                                                 {
-                                                    <MudText Align="Align.Center" Class="pt-2" Typo="Typo.caption">Posts: @CharacterAllParams[post.CharacterId]!.Character.NumberOfPosts.ToString()</MudText>
+                                                    <MudText Align="Align.Center" Class="pt-2" Typo="Typo.caption">@L["Posts: {0}", CharacterAllParams[post.CharacterId]!.Character.NumberOfPosts]</MudText>
                                                 }
                                             </MudPaper>
                                         }
                                         <MudPaper Class="d-flex flex-column pa-2 flex-grow-1">
                                             <MudStack Spacing="0" Row="true">
-                                                <MudText Class="flex-grow-1" Typo="Typo.caption">Posted at: @post.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
+                                                <MudText Class="flex-grow-1" Typo="Typo.caption">@L["Posted at: {0}", post.CreatedDate.ToString("dd-MM-yyyy HH:mm")]</MudText>
                                                 @if (UserInfo?.SelectedCharacter is not null && (post.CharacterId == UserInfo.SelectedCharacter.Id || UserInfo.CharacterMG == true))
                                                 {
                                                     <MudIconButton Class="pa-1" Icon="@Icons.Material.Filled.Edit" aria-label="@(L["Edit"])" OnClick="@(()=>EditPost(post))"></MudIconButton>
@@ -426,7 +426,7 @@ else
                                                     @((MarkupString)(post.Content ?? string.Empty))
                                                 </div>
                                             </div>
-                                            <MudText Typo="Typo.caption">Posted at: @post.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
+                                            <MudText Typo="Typo.caption">@L["Posted at: {0}", post.CreatedDate.ToString("dd-MM-yyyy HH:mm")]</MudText>
                                         </MudPaper>
                                     }
                                 }
@@ -503,7 +503,7 @@ else
                         </MudTooltip>
                         @if (IsEditMode)
                         {
-                            <MudButton Variant="Variant.Text" OnClick="CancelEdit">Anuluj</MudButton>
+                            <MudButton Variant="Variant.Text" OnClick="CancelEdit">@L["Cancel"]</MudButton>
                         }
                         @if (UserInfo?.IsAdminOrMG == true)
                         {
@@ -545,7 +545,10 @@ else
     private bool OngoingBattle = false;
     private bool IsEditMode = false;
     private bool _isBaronCampaign;
-    private string SendButtonText { get; set; } = "Send Post";
+    private string SendButtonText =>
+        !IsEditMode ? L["Send Post"]
+        : IsBattleSummaryPost(NewPost) ? L["Save battle summary"]
+        : L["Edit Post"];
     private bool _open = false;
     private int _participantsRenderKey;
     private bool _showDrawerPanelLayout = true;
@@ -1045,9 +1048,9 @@ else
 
                 _items = new List<BreadcrumbItem>
                 {
-                    new BreadcrumbItem("Campaigns", href: $"/campaignlist/"),
-                    new BreadcrumbItem("Chapters", href: $"/campaign/{Chapter.CampaignId}"),
-                    new BreadcrumbItem("Posts", href: $"/chapter/{Id}"),
+                    new BreadcrumbItem(L["Campaigns"], href: $"/campaignlist/"),
+                    new BreadcrumbItem(L["Chapters"], href: $"/campaign/{Chapter.CampaignId}"),
+                    new BreadcrumbItem(L["Posts"], href: $"/chapter/{Id}"),
                 };
             }
         }
@@ -1160,7 +1163,6 @@ else
                     }
                 }
                 IsEditMode = false;
-                SendButtonText = "Send Post";
             }
             else
             {
@@ -1227,7 +1229,6 @@ else
         NewPost = post;
         IsEditMode = true;
         _editorExpanded = true;
-        SendButtonText = IsBattleSummaryPost(post) ? "Save battle summary" : "Edit Post";
         if (PostEditor is not null)
         {
             await PostEditor.LoadHTMLContent(NewPost.Content ?? string.Empty);
@@ -1237,9 +1238,9 @@ else
     private async Task DeletePost(PostDTO post)
     {
         bool? result = await DialogService.ShowMessageBoxAsync(
-            "Warning",
-            "Are you sure you want to delete this post?",
-            yesText: "Yes", cancelText: "No");
+            L["Warning"],
+            L["Are you sure you want to delete this post?"],
+            yesText: L["Yes"], cancelText: L["No"]);
         if (result is null || result == false)
         {
             return;
@@ -1264,7 +1265,6 @@ else
         IsEditMode = false;
         _editorExpanded = false;
         _editorFullScreen = false;
-        SendButtonText = "Send Post";
         _shouldLoadPostEditor = false;
         _pendingPostEditorHtml = null;
         _pendingPostEditorQuote = false;
@@ -1459,7 +1459,7 @@ else
     }
 
     private async Task ShowBattleLogDialogAsync(DialogParameters<BattleLogDialog> parameters) =>
-        await DialogService.ShowAsync<BattleLogDialog>("Battle log", parameters, await SetDialogOptions(MaxWidth.Medium));
+        await DialogService.ShowAsync<BattleLogDialog>(L["Battle log"], parameters, await SetDialogOptions(MaxWidth.Medium));
 
     private async Task NextTurn()
     {
@@ -1467,12 +1467,13 @@ else
         var nextTurn = currentTurn + 1;
         bool? confirmed = await DialogMessageBox.ShowCompactAsync(
             DialogService,
-            "Next turn",
+            L["Next turn"],
             currentTurn > 0
-                ? $"End turn {currentTurn}, start turn {nextTurn}?"
-                : "Advance to next battle turn?",
-            "Temporary states lose 1 turn",
-            yesText: "Next turn");
+                ? L["End turn {0}, start turn {1}?", currentTurn, nextTurn]
+                : L["Advance to next battle turn?"],
+            L["Temporary states lose 1 turn"],
+            yesText: L["Next turn"],
+            cancelText: L["Cancel"]);
         if (confirmed is not true)
             return;
 
@@ -1700,7 +1701,7 @@ else
             { x => x.ChapterId, Id }
         };
 
-        var dialog = await DialogService.ShowAsync<CreateFightSequenceDialog>("Fight sequence", parameters, await SetFightDialogOptions());
+        var dialog = await DialogService.ShowAsync<CreateFightSequenceDialog>(L["Fight sequence"], parameters, await SetFightDialogOptions());
         var result = await dialog.Result;
 
         if (result is not null && !result.Canceled && result.Data is FightSequenceDialogResult fightResult)
@@ -1876,7 +1877,7 @@ else
             { x => x.CampaignId, Chapter.CampaignId }
         };
 
-        var dialog = await DialogService.ShowAsync<ExistingMobsDialog>("Existing mobs", parameters, await SetDialogOptions());
+        var dialog = await DialogService.ShowAsync<ExistingMobsDialog>(L["Existing mobs"], parameters, await SetDialogOptions());
         var result = await dialog.Result;
 
         if (result is not null && result.Data is not null && !result.Canceled)
@@ -2033,7 +2034,7 @@ else
             { x => x.Mobs, Mobs }
         };
 
-        var dialog = await DialogService.ShowAsync<AddStatusDialog>("Add status", parameters, await SetDialogOptions(MaxWidth.ExtraSmall));
+        var dialog = await DialogService.ShowAsync<AddStatusDialog>(L["Add status"], parameters, await SetDialogOptions(MaxWidth.ExtraSmall));
         var result = await dialog.Result;
 
         if (result is not null && !result.Canceled)
@@ -2056,7 +2057,7 @@ else
             return;
 
         var dialog = await DialogService.ShowAsync<AddBaronyResourcesPostDialog>(
-            "Add barony resources",
+            L["Add barony resources"],
             new DialogParameters<AddBaronyResourcesPostDialog>(),
             await SetDialogOptions(MaxWidth.ExtraSmall));
         var result = await dialog.Result;
@@ -2297,7 +2298,7 @@ else
         return UserInfo?.SelectedCharacter ?? Chapter?.Characters.FirstOrDefault();
     }
 
-    private static string BuildBaronyResourcePostHtml(PpbVector ppbDelta, int prestigeDelta, int honorDelta, int fearDelta)
+    private string BuildBaronyResourcePostHtml(PpbVector ppbDelta, int prestigeDelta, int honorDelta, int fearDelta)
     {
         static string FormatDelta(decimal value) => value > 0 ? $"+{value:0.#}" : value.ToString("0.#");
         var payload = System.Text.Json.JsonSerializer.Serialize(new
@@ -2309,21 +2310,21 @@ else
         });
 
         var sb = new System.Text.StringBuilder();
-        sb.Append("<p><strong>Barony resources update</strong><br>");
+        sb.Append("<p><strong>").Append(L["Barony resources update"]).Append("</strong><br>");
         foreach (var info in PpbCatalog.All)
         {
             var value = ppbDelta[info.Key];
             if (value == 0m)
                 continue;
-            AppendColoredResourceLine(sb, info.Name, FormatDelta(value), PpbVisuals.ColorHex(info.Key), PpbVisuals.IconUrl(info.Key));
+            AppendColoredResourceLine(sb, L[info.NameEn], FormatDelta(value), PpbVisuals.ColorHex(info.Key), PpbVisuals.IconUrl(info.Key));
         }
 
         if (prestigeDelta != 0)
-            AppendColoredResourceLine(sb, "Prestige", FormatDelta(prestigeDelta), "#b08a2e", BaronPhpVisuals.PrestigeIconUrl);
+            AppendColoredResourceLine(sb, L["Prestige"], FormatDelta(prestigeDelta), "#b08a2e", BaronPhpVisuals.PrestigeIconUrl);
         if (honorDelta != 0)
-            AppendColoredResourceLine(sb, "Honor", FormatDelta(honorDelta), "#3a5f8a", BaronPhpVisuals.HonorIconUrl);
+            AppendColoredResourceLine(sb, L["Honor"], FormatDelta(honorDelta), "#3a5f8a", BaronPhpVisuals.HonorIconUrl);
         if (fearDelta != 0)
-            AppendColoredResourceLine(sb, "Fear", FormatDelta(fearDelta), "#7a3030", BaronPhpVisuals.FearIconUrl);
+            AppendColoredResourceLine(sb, L["Fear"], FormatDelta(fearDelta), "#7a3030", BaronPhpVisuals.FearIconUrl);
 
         // Trim trailing <br> before closing paragraph.
         if (sb.Length >= 4 && sb.ToString(sb.Length - 4, 4) == "<br>")
@@ -2393,7 +2394,7 @@ else
             FullScreen = isFs,
             CloseButton = true
         };
-        await DialogService.ShowAsync<BattleMapDialog>("Tactical Map", parameters, options);
+        await DialogService.ShowAsync<BattleMapDialog>(L["Tactical map"], parameters, options);
     }
 
     // Incapacitating state for the tactical map (greys the token). Dead takes priority.
@@ -2450,7 +2451,38 @@ else
         return int.TryParse(post.AlternativeName.AsSpan(prefix.Length).Trim(), out phaseId) && phaseId > 0;
     }
 
-    private static string GetBattleSummaryHeader(PostDTO post)
+    private string GetBattleSummaryHeader(PostDTO post)
+    {
+        if (post.AlternativeName?.StartsWith("Battle turn ", StringComparison.Ordinal) == true)
+        {
+            var turn = post.AlternativeName.AsSpan("Battle turn ".Length).Trim().ToString();
+            return L["Battle turn {0} begins", turn];
+        }
+
+        if (IsBattleEndedPost(post))
+            return L["Battle ended"];
+
+        if (post.AlternativeName is "Battle turn")
+        {
+            var match = System.Text.RegularExpressions.Regex.Match(
+                post.Content ?? string.Empty,
+                @"Battle turn (\d+) begins",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (match.Success)
+                return L["Battle turn {0} begins", match.Groups[1].Value];
+
+            return L["Battle turn"];
+        }
+
+        return post.AlternativeName switch
+        {
+            "Battle started" => L["Battle begins"],
+            "Battle ended" => L["Battle ended"],
+            _ => post.AlternativeName ?? L["Battle"].Value
+        };
+    }
+
+    private static string GetBattleSummaryHeaderEnglish(PostDTO post)
     {
         if (post.AlternativeName?.StartsWith("Battle turn ", StringComparison.Ordinal) == true)
             return $"{post.AlternativeName.Trim()} begins";
@@ -2490,7 +2522,7 @@ else
             string.Empty,
             System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.Singleline);
 
-        var headline = GetBattleSummaryHeader(post);
+        var headline = GetBattleSummaryHeaderEnglish(post);
         if (!string.IsNullOrEmpty(headline))
         {
             var escaped = System.Text.RegularExpressions.Regex.Escape(headline);
@@ -2677,16 +2709,16 @@ else
         return RichText.BoldText(description[..stateIdx]) + description[stateIdx..];
     }
 
-    private static string FormatCausedBy(string? causedBy) =>
-        string.IsNullOrEmpty(causedBy) ? string.Empty : $" (by {RichText.BoldText(causedBy)})";
+    private string FormatCausedBy(string? causedBy) =>
+        string.IsNullOrEmpty(causedBy) ? string.Empty : L[" (by {0})", RichText.BoldText(causedBy)].Value;
 
-    private static string FormatWoundLine(BattleTurnEvent e) =>
+    private string FormatWoundLine(BattleTurnEvent e) =>
         $"{BoldWoundDescription(e.Description)}{FormatCausedBy(e.CausedBy)}";
 
-    private static string GetCharacterDisplayName(CharacterDTO character) =>
+    private string GetCharacterDisplayName(CharacterDTO character) =>
         !string.IsNullOrWhiteSpace(character.NPCName) ? character.NPCName.Trim()
         : !string.IsNullOrWhiteSpace(character.UserName) ? character.UserName.Trim()
-        : $"Character #{character.Id}";
+        : L["Character #{0}", character.Id].Value;
 
     private string ResolveCharacterDisplayName(int characterId, CharacterDTO? chapterCharacter = null)
     {
@@ -2699,35 +2731,36 @@ else
         chapterCharacter = Chapter?.Characters.FirstOrDefault(c => c.Id == characterId);
         return chapterCharacter is not null
             ? GetCharacterDisplayName(chapterCharacter)
-            : $"Character #{characterId}";
+            : L["Character #{0}", characterId];
     }
 
     private static string GetEventTargetName(string? targetName) =>
         string.IsNullOrWhiteSpace(targetName) ? "Unknown" : targetName.Trim();
 
-    private static string FormatTurnEvent(BattleTurnEvent e)
+    private string FormatTurnEvent(BattleTurnEvent e)
     {
-        var target = RichText.BoldText(GetEventTargetName(e.TargetName));
+        var rawName = string.IsNullOrWhiteSpace(e.TargetName) ? L["Unknown"].Value : e.TargetName.Trim();
+        var target = RichText.BoldText(rawName);
         var causedBy = FormatCausedBy(e.CausedBy);
         return e.Kind switch
         {
-            BattleTurnEventKind.Wound => $"{target} received {BoldWoundDescription(e.Description)}{causedBy}",
-            BattleTurnEventKind.Unconscious => $"{target} became {RichText.BoldText(States.Names.Unconscious)}{causedBy}",
-            BattleTurnEventKind.Dead => $"{target} died{causedBy}",
+            BattleTurnEventKind.Wound => L["{0} received {1}{2}", target, BoldWoundDescription(e.Description), causedBy],
+            BattleTurnEventKind.Unconscious => L["{0} became {1}{2}", target, RichText.BoldText(LocCatalog.Name(States.Names.Unconscious, L)), causedBy],
+            BattleTurnEventKind.Dead => L["{0} died{1}", target, causedBy],
             BattleTurnEventKind.BleedingPainTest =>
-                $"{target} — pain resistance test ({RichText.BoldText(States.Names.Bleeding)}): {e.Description}",
-            _ => $"{target} gained {BoldStateDescription(e.Description)}{causedBy}",
+                L["{0} — pain resistance test ({1}): {2}", target, RichText.BoldText(LocCatalog.Name(States.Names.Bleeding, L)), e.Description],
+            _ => L["{0} gained {1}{2}", target, BoldStateDescription(e.Description), causedBy],
         };
     }
 
-    private static string FormatRoundCount(int rounds) =>
-        rounds == 1 ? "1 round" : $"{rounds} rounds";
+    private string FormatRoundCount(int rounds) =>
+        rounds == 1 ? L["1 round"].Value : L["{0} rounds", rounds].Value;
 
     private string BuildBattleEndSummaryHtml(int rounds, IReadOnlyList<BattleTurnEvent> events)
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<p>");
-        sb.Append($"The battle lasted {RichText.BoldText(FormatRoundCount(rounds))}.");
+        sb.Append(L["The battle lasted {0}.", RichText.BoldText(FormatRoundCount(rounds))]);
         sb.Append("<br><br>");
 
         var casualties = events
@@ -2736,7 +2769,7 @@ else
 
         if (casualties.Count > 0)
         {
-            sb.Append(RichText.BoldText("Casualties:"));
+            sb.Append(RichText.BoldText(L["Casualties:"]));
             sb.Append("<br>");
             foreach (var e in casualties)
             {
@@ -2756,7 +2789,7 @@ else
         var hasWounds = woundsByTarget.Any();
         if (hasWounds)
         {
-            sb.Append(RichText.BoldText("Wounds:"));
+            sb.Append(RichText.BoldText(L["Wounds:"]));
             sb.Append("<br>");
             foreach (var group in woundsByTarget)
             {
@@ -2773,7 +2806,7 @@ else
         }
 
         if (casualties.Count == 0 && !hasWounds)
-            sb.Append("Nothing notable happened during the battle.");
+            sb.Append(L["Nothing notable happened during the battle."]);
 
         sb.Append("</p>");
         return sb.ToString();
@@ -2804,7 +2837,7 @@ else
             return;
 
         sb.Append("<br><br>");
-        sb.Append($"<a href=\"{CombatRulesWikiPath}\">Zasady walki</a>");
+        sb.Append($"<a href=\"{CombatRulesWikiPath}\">{L["Combat rules"]}</a>");
     }
 
     private string BuildBattleStartSummaryHtml(IReadOnlyList<BattleParticipantSnapshot> participants)
@@ -2822,12 +2855,12 @@ else
         sb.Append("<p>");
         sb.Append("<table style=\"width:100%; border-collapse:collapse;\"><tr>");
         sb.Append("<td style=\"width:50%; vertical-align:top; padding-right:12px;\">");
-        sb.Append(RichText.BoldText("Bohaterowie"));
+        sb.Append(RichText.BoldText(L["Heroes"]));
         sb.Append("<br>");
         AppendParticipantList(sb, heroes);
         sb.Append("</td>");
         sb.Append("<td style=\"width:50%; vertical-align:top; padding-left:12px;\">");
-        sb.Append(RichText.BoldText("Przeciwnicy"));
+        sb.Append(RichText.BoldText(L["Opponents"]));
         sb.Append("<br>");
         AppendParticipantList(sb, opponents);
         sb.Append("</td>");
@@ -2841,11 +2874,11 @@ else
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<p>");
-        sb.Append(RichText.BoldText($"Summary of turn {endingTurn}:"));
+        sb.Append(RichText.BoldText(L["Summary of turn {0}:", endingTurn]));
         sb.Append("<br>");
         if (events.Count == 0)
         {
-            sb.Append("Nothing notable happened.");
+            sb.Append(L["Nothing notable happened."]);
         }
         else
         {

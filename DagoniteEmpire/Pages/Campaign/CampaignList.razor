@@ -21,7 +21,7 @@
     }else{
         <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
               
-        <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Bookmark" width="40px" height="40px" class="pr-2" />Avalible campaigns for: @UserInfo?.SelectedCharacter?.NPCName</MudText>
+        <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Bookmark" width="40px" height="40px" class="pr-2" />@L["Available campaigns for: {0}", UserInfo?.SelectedCharacter?.NPCName]</MudText>
         
        
         @if (UserInfo?.HasGlobalCharacterAccess == true)
@@ -61,7 +61,7 @@
                                 <MudStack Spacing="0" Row="true" AlignItems="AlignItems.Center">
                                     <MudText Class="flex-grow-1 campaign-title" Typo="Typo.h5">@camp.Name</MudText>
                                     <span @onclick:stopPropagation="true" @onmousedown:stopPropagation="true">
-                                        <WikiNavLink CampaignName="@camp.Name" Label="Wiki" Variant="Variant.Text" Color="Color.Info" Class="pa-0 campaign-action-link" />
+                                        <WikiNavLink CampaignName="@camp.Name" Label="@(L["Wiki"])" Variant="Variant.Text" Color="Color.Info" Class="pa-0 campaign-action-link" />
                                     </span>
                                     <MudButton Class="campaign-action-icon"
                                                Variant="Variant.Text"
@@ -194,7 +194,7 @@
         StateHasChanged();
         _items = new List<BreadcrumbItem>
         {
-            new BreadcrumbItem("Campaigns", href: $"/campaignlist/"),
+            new BreadcrumbItem(L["Campaigns"], href: $"/campaignlist/"),
         };
 
         await LoadForSelectedCharacter();
@@ -207,7 +207,7 @@
 
         var parameters = new DialogParameters<CreateCampaignDialog> { { x => x.NewCampaign, NewCampaign } };
 
-        var dialog = await DialogService.ShowAsync<CreateCampaignDialog>("Create Campaign", parameters);
+        var dialog = await DialogService.ShowAsync<CreateCampaignDialog>(L["Create Campaign"], parameters);
         var result = await dialog.Result;
 
         if (!result.Canceled)
@@ -223,7 +223,7 @@
     {
         var parameters = new DialogParameters<CreateCampaignDialog> { { x => x.NewCampaign, camp }, { x => x.IsEdit, true } };
 
-        var dialog = await DialogService.ShowAsync<CreateCampaignDialog>("Edit Campaign", parameters);
+        var dialog = await DialogService.ShowAsync<CreateCampaignDialog>(L["Edit Campaign"], parameters);
         var result = await dialog.Result;
 
 
@@ -241,9 +241,9 @@
     private async Task DeleteCampaign(int id)
     {
         bool? result = await DialogService.ShowMessageBoxAsync(
-          "Warning",
-          "Are you sure you want to delete this campaign?",
-          yesText: "Yes", cancelText: "No");
+          L["Warning"],
+          L["Are you sure you want to delete this campaign?"],
+          yesText: L["Yes"], cancelText: L["No"]);
 
         if (result is null || result == false)
         {

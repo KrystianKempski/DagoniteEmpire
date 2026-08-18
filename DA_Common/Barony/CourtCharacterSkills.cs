@@ -1,3 +1,5 @@
+using DA_Common.Localization;
+
 namespace DA_Common.Barony;
 
 /// <summary>Stable keys for court / retainer main skills.</summary>
@@ -462,18 +464,18 @@ public static class CourtPpbFormulas
     /// <summary>Human-readable formula for what drives each PPB from court skills.</summary>
     public static string? FormulaLabel(Ppb key) => key switch
     {
-        Ppb.Food        => "Knowledge + Farming/husbandry + Animals/riding + Alchemy",
-        Ppb.Economy     => "Administration + Trade + Mathematics + Logistics/management",
-        Ppb.Production  => "Craft + Engineering + Smithing/metallurgy + Geology/mining",
-        Ppb.Loyalty     => "Diplomacy + Performance/acting + Faith/rites + Observation",
-        Ppb.Stability   => "Administration + Law/investigation + Heraldry/etiquette + Medicine",
-        Ppb.Law         => "Intimidation + Law/investigation + Observation + Tracking/survival",
-        Ppb.Corruption  => "−(Deceit + Heraldry/etiquette + Performance/acting + Athletics) / 3",
-        Ppb.Science     => "Knowledge + Mathematics + Alchemy + Geography/nations",
-        Ppb.Magic       => "Magic + Alchemy + Faith/rites + Languages",
-        Ppb.Culture     => "Diplomacy + Fine arts + Languages + Heraldry/etiquette",
-        Ppb.Intelligence => "Deceit + Observation + Tracking/survival + Acrobatics",
-        Ppb.Defense     => "Command + Strategy/tactics + Logistics/management + Smithing/metallurgy",
+        Ppb.Food        => Loc.T("Knowledge + Farming/husbandry + Animals/riding + Alchemy"),
+        Ppb.Economy     => Loc.T("Administration + Trade + Mathematics + Logistics/management"),
+        Ppb.Production  => Loc.T("Craft + Engineering + Smithing/metallurgy + Geology/mining"),
+        Ppb.Loyalty     => Loc.T("Diplomacy + Performance/acting + Faith/rites + Observation"),
+        Ppb.Stability   => Loc.T("Administration + Law/investigation + Heraldry/etiquette + Medicine"),
+        Ppb.Law         => Loc.T("Intimidation + Law/investigation + Observation + Tracking/survival"),
+        Ppb.Corruption  => Loc.T("−(Deceit + Heraldry/etiquette + Performance/acting + Athletics) / 3"),
+        Ppb.Science     => Loc.T("Knowledge + Mathematics + Alchemy + Geography/nations"),
+        Ppb.Magic       => Loc.T("Magic + Alchemy + Faith/rites + Languages"),
+        Ppb.Culture     => Loc.T("Diplomacy + Fine arts + Languages + Heraldry/etiquette"),
+        Ppb.Intelligence => Loc.T("Deceit + Observation + Tracking/survival + Acrobatics"),
+        Ppb.Defense     => Loc.T("Command + Strategy/tactics + Logistics/management + Smithing/metallurgy"),
         _               => null,
     };
 }

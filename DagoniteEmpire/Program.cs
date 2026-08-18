@@ -35,6 +35,8 @@ using MimeKit;
 using DA_Scribe.Extensions;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.Extensions.Caching.Memory;
+using DagoniteEmpire.Localization;
 
 
 public class Program
@@ -86,15 +88,26 @@ public class Program
         builder.Host.UseNLog();
 
         // Localization (i18n): key = English source text, PL values in Resources/**/*.pl.resx.
-        // English needs no resx (falls back to the key). Culture chosen via cookie (switcher).
+        // English needs no resx (falls back to the key).
+        // Culture order: query → cookie (language switcher) → geo country (PL → pl) → Accept-Language → en.
         builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
-        var supportedCultures = new[] { "en", "pl" };
-        builder.Services.Configure<RequestLocalizationOptions>(options =>
+        builder.Services.AddHttpClient(GeoCountryRequestCultureProvider.HttpClientName, client =>
         {
-            options.SetDefaultCulture("en")
-                   .AddSupportedCultures(supportedCultures)
-                   .AddSupportedUICultures(supportedCultures);
+            client.Timeout = TimeSpan.FromMilliseconds(400);
+            client.DefaultRequestHeaders.UserAgent.ParseAdd("DagoniteEmpire");
         });
+        builder.Services.AddOptions<RequestLocalizationOptions>()
+            .Configure<IHttpClientFactory, IMemoryCache, ILoggerFactory>((options, http, cache, logs) =>
+            {
+                var supportedCultures = new[] { "en", "pl" };
+                options.SetDefaultCulture("en")
+                       .AddSupportedCultures(supportedCultures)
+                       .AddSupportedUICultures(supportedCultures);
+                options.RequestCultureProviders.Insert(2, new GeoCountryRequestCultureProvider(
+                    http,
+                    cache,
+                    logs.CreateLogger<GeoCountryRequestCultureProvider>()));
+            });
 
 
         /// DB context 

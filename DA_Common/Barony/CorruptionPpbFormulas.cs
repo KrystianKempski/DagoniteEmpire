@@ -1,3 +1,5 @@
+using DA_Common.Localization;
+
 namespace DA_Common.Barony
 {
     public static class CorruptionPpbFormulas
@@ -34,20 +36,20 @@ namespace DA_Common.Barony
         }
 
         public static string FormulaSummary(decimal corruptionFinal, decimal corruption) =>
-            $"This turn: Final Corruption {PpbFormat.Number(corruptionFinal)}, "
-            + $"input {PpbFormat.Number(corruption)} (= max(0, Corruption)).";
+            Loc.T("This turn: Final Corruption {0}, input {1} (= max(0, Corruption)).",
+                PpbFormat.Number(corruptionFinal), PpbFormat.Number(corruption));
 
         public static string? ExplainAdditive(Ppb key) => key switch
         {
-            Ppb.Loyalty => $"= −{InputLabel} × {LoyaltyPerCorruption:0}",
-            Ppb.Stability => $"= −{InputLabel} × {StabilityPerCorruption:0}",
+            Ppb.Loyalty => Loc.T("= −{0} × {1}", Loc.T(InputLabel), LoyaltyPerCorruption.ToString("0")),
+            Ppb.Stability => Loc.T("= −{0} × {1}", Loc.T(InputLabel), StabilityPerCorruption.ToString("0")),
             _ => null,
         };
 
         public static string? ExplainPercent(Ppb key) => key switch
         {
             Ppb.Economy or Ppb.Production =>
-                $"= max(−{InputLabel} × {EconomyProductionPercentPerCorruption:0}, {EconomyProductionPercentFloor:0})",
+                Loc.T("= max(−{0} × {1}, {2})", Loc.T(InputLabel), EconomyProductionPercentPerCorruption.ToString("0"), EconomyProductionPercentFloor.ToString("0")),
             _ => null,
         };
 

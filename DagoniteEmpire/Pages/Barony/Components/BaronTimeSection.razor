@@ -49,7 +49,7 @@
                     <div class="baron-time-bar__track">
                         <div class="baron-time-bar__fill @ManagementBarClass()"
                              style="@($"width:{ManagementWidth().ToString(System.Globalization.CultureInfo.InvariantCulture)}%")"></div>
-                        <BaronyTooltip Text="@($"Required {BaronTimeRules.RequiredManagementJc} BT")">
+                        <BaronyTooltip Text="@(L["Required {0} BT", BaronTimeRules.RequiredManagementJc])">
                             <div class="baron-time-bar__marker"
                                  style="left:100%;"></div>
                         </BaronyTooltip>
@@ -243,9 +243,11 @@
         => action.IsSystem ? L[action.Name].Value : action.Name;
 
     private string PoolTooltip() =>
-        $"Base BT = (Endurance + Willpower) × {BaronTimeRules.AttributeFactor}.\n"
-        + $"Endurance {_budget.Endurance}, Willpower {_budget.Willpower} → base {_budget.BaseJc}.\n"
-        + $"Percent modifiers: {BaronyCalc.FormatPercent(_budget.ModifierPercent)} → pool {_budget.TotalJc} BT.";
+        L["Base BT = (Endurance + Willpower) × {0}.", BaronTimeRules.AttributeFactor].Value
+        + "\n"
+        + L["Endurance {0}, Willpower {1} → base {2}.", _budget.Endurance, _budget.Willpower, _budget.BaseJc].Value
+        + "\n"
+        + L["Percent modifiers: {0} → pool {1} BT.", BaronyCalc.FormatPercent(_budget.ModifierPercent), _budget.TotalJc].Value;
 
     private double UsedWidth() =>
         _budget.TotalJc <= 0 ? 0 : Math.Min(100d, (double)_budget.SpentJc * 100d / _budget.TotalJc);

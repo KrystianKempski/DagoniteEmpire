@@ -1,3 +1,5 @@
+using DA_Common.Localization;
+
 namespace DA_Common.Barony
 {
     /// <summary>
@@ -106,12 +108,12 @@ namespace DA_Common.Barony
                 return null;
 
             return
-                $"= {RatioScale:0} × (Economy / ({EconomyPerPopulation:0} × Population) − 1) "
-                + $"+ (Conjuncture − {ConjunctureNeutral})\n"
-                + "Economy = Domain Final Economy after Hunger/Crime/Corruption/Unrest; "
-                + "Population = settlement population; "
-                + "Conjuncture = 2d6 turn roll + MG modifier.\n"
-                + "Same % applies to Gold, Production, Loyalty, Stability, Magic, Culture, Science, and Defense.";
+                Loc.T("= {0} × (Economy / ({1} × Population) − 1) + (Conjuncture − {2})",
+                    RatioScale.ToString("0"), EconomyPerPopulation.ToString("0"), ConjunctureNeutral)
+                + "\n"
+                + Loc.T("Economy = Domain Final Economy after Hunger/Crime/Corruption/Unrest; Population = settlement population; Conjuncture = 2d6 turn roll + MG modifier.")
+                + "\n"
+                + Loc.T("Same % applies to Gold, Production, Loyalty, Stability, Magic, Culture, Science, and Defense.");
         }
 
         public static string? ExplainAdditive(Ppb key)
@@ -120,10 +122,11 @@ namespace DA_Common.Barony
                 return null;
 
             return
-                $"= (Economy + Conjuncture) × {NetProfitGoldFactor:0}\n"
-                + "Economy = Domain Final Economy after Hunger/Crime/Corruption/Unrest; "
-                + "Conjuncture = 2d6 turn roll + MG modifier.\n"
-                + "Net gold profit from the economy.";
+                Loc.T("= (Economy + Conjuncture) × {0}", NetProfitGoldFactor.ToString("0"))
+                + "\n"
+                + Loc.T("Economy = Domain Final Economy after Hunger/Crime/Corruption/Unrest; Conjuncture = 2d6 turn roll + MG modifier.")
+                + "\n"
+                + Loc.T("Net gold profit from the economy.");
         }
 
         public static string CatalogDescription =>

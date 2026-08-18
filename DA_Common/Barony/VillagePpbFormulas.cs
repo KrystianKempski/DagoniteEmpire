@@ -1,3 +1,5 @@
+using DA_Common.Localization;
+
 namespace DA_Common.Barony
 {
     public static class VillagePpbFormulas
@@ -53,26 +55,26 @@ namespace DA_Common.Barony
 
         public static string? ExplainAdditive(Ppb key, bool hasPalisade = false, string? season = null)
         {
-            var p = InputLabel;
+            var p = Loc.T(InputLabel);
             return key switch
             {
                 Ppb.Food when !BaronyCalendarFormulas.FarmsProduceFood(season) =>
-                    $"= 0 farm yield (Winter) − {p}",
-                Ppb.Food => $"= farm yield − {p}",
-                Ppb.Economy => $"= {p} / 2",
-                Ppb.Production => $"= {p}",
-                Ppb.Loyalty => $"= −{p}",
-                Ppb.Stability when hasPalisade => $"= −2 × {p} + palisade",
-                Ppb.Stability => $"= −2 × {p}",
-                Ppb.Law when hasPalisade => $"= −{p} / 2 + palisade",
-                Ppb.Law => $"= −{p} / 2",
-                Ppb.Corruption => $"= {p} / 4",
-                Ppb.Science => $"= {p} / 4",
-                Ppb.Culture => $"= {p} / 4",
-                Ppb.Magic => $"= {p} / 8",
-                Ppb.Defense when hasPalisade => $"= {p} + palisade",
-                Ppb.Defense => $"= {p}",
-                Ppb.Treasury => "= taxes% × Population × (5/5/15)",
+                    Loc.T("= 0 farm yield (Winter) − {0}", p),
+                Ppb.Food => Loc.T("= farm yield − {0}", p),
+                Ppb.Economy => Loc.T("= {0} / 2", p),
+                Ppb.Production => Loc.T("= {0}", p),
+                Ppb.Loyalty => Loc.T("= −{0}", p),
+                Ppb.Stability when hasPalisade => Loc.T("= −2 × {0} + palisade", p),
+                Ppb.Stability => Loc.T("= −2 × {0}", p),
+                Ppb.Law when hasPalisade => Loc.T("= −{0} / 2 + palisade", p),
+                Ppb.Law => Loc.T("= −{0} / 2", p),
+                Ppb.Corruption => Loc.T("= {0} / 4", p),
+                Ppb.Science => Loc.T("= {0} / 4", p),
+                Ppb.Culture => Loc.T("= {0} / 4", p),
+                Ppb.Magic => Loc.T("= {0} / 8", p),
+                Ppb.Defense when hasPalisade => Loc.T("= {0} + palisade", p),
+                Ppb.Defense => Loc.T("= {0}", p),
+                Ppb.Treasury => Loc.T("= taxes% × Population × (5/5/15)"),
                 _ => null,
             };
         }

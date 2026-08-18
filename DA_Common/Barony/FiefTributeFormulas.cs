@@ -1,3 +1,5 @@
+using DA_Common.Localization;
+
 namespace DA_Common.Barony
 {
     /// <summary>
@@ -32,14 +34,16 @@ namespace DA_Common.Barony
             => PpbFormat.Round(fullTreasury * ShareFactor(vassalTributePercent));
 
         public static string ExplainLiege(decimal grossIncome, decimal liegeTributePercent, decimal tribute)
-            => $"= Gross income × {ClampPercent(liegeTributePercent):0.#}%\n"
-               + $"Gross income (Domain Panel gold income before expenses) = {PpbFormat.Number(grossIncome)}.\n"
-               + $"Tribute to senior = {PpbFormat.Number(tribute)} gold.";
+            => Loc.T("= Gross income × {0}%", ClampPercent(liegeTributePercent).ToString("0.#"))
+               + "\n"
+               + Loc.T("Gross income (Domain Panel gold income before expenses) = {0}.", PpbFormat.Number(grossIncome))
+               + "\n"
+               + Loc.T("Tribute to senior = {0} gold.", PpbFormat.Number(tribute));
 
         public static string ExplainVassalShare(decimal fullTreasury, decimal vassalTributePercent, decimal kept)
-            => $"= Village gold × {ClampPercent(vassalTributePercent):0.#}%\n"
-               + $"Full village gold = {PpbFormat.Number(fullTreasury)}; baron keeps {PpbFormat.Number(kept)} "
-               + "(vassal fief).";
+            => Loc.T("= Village gold × {0}%", ClampPercent(vassalTributePercent).ToString("0.#"))
+               + "\n"
+               + Loc.T("Full village gold = {0}; baron keeps {1} (vassal fief).", PpbFormat.Number(fullTreasury), PpbFormat.Number(kept));
 
         public static string LiegeCatalogDescription =>
             "Barons pay their senior a share of gross gold income before expenses. "

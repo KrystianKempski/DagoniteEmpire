@@ -36,7 +36,7 @@
                     </div>
                     <div class="baron-reputation-track__tier">@current.Name</div>
                 </div>
-                <BaronyTooltip Text="Current score">
+                <BaronyTooltip Text="@(L["Current score"])">
                     <div class="@($"baron-reputation-track__score {BaronPhpVisuals.CssClass(metric)}")">@FormatScore(score)</div>
                 </BaronyTooltip>
             </header>
@@ -75,8 +75,8 @@
         + (isCurrent ? " baron-reputation-step--current" : "")
         + (reached && !isCurrent ? " baron-reputation-step--reached" : "");
 
-    private static string TierTooltip(ReputationTier tier) =>
-        $"{tier.Name}\nRequired: {tier.ThresholdLabel}\n{tier.BonusSummary}";
+    private string TierTooltip(ReputationTier tier) =>
+        $"{tier.Name}\n{L["Required: {0}", tier.ThresholdLabel]}\n{tier.BonusSummary}";
 
     private static string TraitLabel(ReputationTier tier) => $"{tier.Name}!";
 

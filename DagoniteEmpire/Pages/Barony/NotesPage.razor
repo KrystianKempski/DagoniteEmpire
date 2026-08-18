@@ -87,7 +87,7 @@ else if (Barony is not null)
                                               OnBlur="SaveTitleAsync"
                                               Placeholder="@(L["Untitled note"])"
                                               Class="barony-notes__title-field" />
-                                <MudTooltip Text="@(_isDirty ? "Unsaved changes" : "Saved")">
+                                <MudTooltip Text="@(_isDirty ? L["Unsaved changes"].Value : L["Saved"].Value)">
                                     <MudIcon Icon="@(_isDirty ? Icons.Material.Filled.Sync : Icons.Material.Filled.CloudDone)"
                                              Size="Size.Small"
                                              Class="@($"barony-notes__status {(_isDirty ? "barony-notes__status--pending" : "barony-notes__status--saved")}")" />

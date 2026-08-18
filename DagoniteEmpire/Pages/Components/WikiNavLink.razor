@@ -10,7 +10,7 @@
                        Color="@Color"
                        OnClick="OpenWiki"
                        Class="@Class"
-                       title="Wiki" />
+                       title="@(L["Wiki"])" />
     }
     else
     {
@@ -20,7 +20,7 @@
                    StartIcon="@Icons.Material.Filled.MenuBook"
                    OnClick="OpenWiki"
                    Class="@Class">
-            @Label
+            @(string.IsNullOrWhiteSpace(Label) ? L["Wiki"] : Label)
         </MudButton>
     }
 }
@@ -29,7 +29,7 @@
     [Parameter] public string? CharacterName { get; set; }
     [Parameter] public string? CampaignName { get; set; }
     [Parameter] public string? ChapterName { get; set; }
-    [Parameter] public string Label { get; set; } = "Wiki";
+    [Parameter] public string? Label { get; set; }
     [Parameter] public Variant Variant { get; set; } = Variant.Outlined;
     [Parameter] public Color Color { get; set; } = Color.Info;
     [Parameter] public Size Size { get; set; } = Size.Small;

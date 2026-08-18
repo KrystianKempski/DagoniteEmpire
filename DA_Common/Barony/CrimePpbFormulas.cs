@@ -1,3 +1,5 @@
+using DA_Common.Localization;
+
 namespace DA_Common.Barony
 {
     public static class CrimePpbFormulas
@@ -37,28 +39,29 @@ namespace DA_Common.Barony
         }
 
         public static string FormulaSummary(decimal lawFinal, decimal crime) =>
-            $"This turn: Final Law {PpbFormat.Number(lawFinal)}, "
-            + $"Crime {PpbFormat.Number(crime)} (= max(0, −Law)). "
+            Loc.T("This turn: Final Law {0}, Crime {1} (= max(0, −Law)). ",
+                PpbFormat.Number(lawFinal), PpbFormat.Number(crime))
             + (crime > 0m
-                ? "Law is negative, so Crime equals |Law|."
-                : "Law is not negative, so Crime is 0.");
+                ? Loc.T("Law is negative, so Crime equals |Law|.")
+                : Loc.T("Law is not negative, so Crime is 0."));
 
         public static string? ExplainAdditive(Ppb key) => key switch
         {
-            Ppb.Loyalty => $"= −{InputLabel} × {LoyaltyPerCrime:0}\n"
-                + $"{InputLabel} = max(0, −Final Law).",
-            Ppb.Stability => $"= −{InputLabel} × {StabilityPerCrime:0}\n"
-                + $"{InputLabel} = max(0, −Final Law).",
-            Ppb.Corruption => $"= {InputLabel} / 2\n"
-                + $"{InputLabel} = max(0, −Final Law).",
+            Ppb.Loyalty => Loc.T("= −{0} × {1}", Loc.T(InputLabel), LoyaltyPerCrime.ToString("0"))
+                + "\n" + Loc.T("{0} = max(0, −Final Law).", Loc.T(InputLabel)),
+            Ppb.Stability => Loc.T("= −{0} × {1}", Loc.T(InputLabel), StabilityPerCrime.ToString("0"))
+                + "\n" + Loc.T("{0} = max(0, −Final Law).", Loc.T(InputLabel)),
+            Ppb.Corruption => Loc.T("= {0} / 2", Loc.T(InputLabel))
+                + "\n" + Loc.T("{0} = max(0, −Final Law).", Loc.T(InputLabel)),
             _ => null,
         };
 
         public static string? ExplainPercent(Ppb key) => key switch
         {
             Ppb.Economy or Ppb.Production =>
-                $"= max(−{InputLabel} × {EconomyProductionPercentPerCrime:0}, {EconomyProductionPercentFloor:0})\n"
-                + $"{InputLabel} = max(0, −Final Law). Exists only while Law is negative.",
+                Loc.T("= max(−{0} × {1}, {2})", Loc.T(InputLabel), EconomyProductionPercentPerCrime.ToString("0"), EconomyProductionPercentFloor.ToString("0"))
+                + "\n" + Loc.T("{0} = max(0, −Final Law).", Loc.T(InputLabel))
+                + " " + Loc.T("Exists only while Law is negative."),
             _ => null,
         };
 

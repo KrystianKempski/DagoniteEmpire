@@ -11,7 +11,7 @@
 @inject IUserService _userService
 @inject CallbackService _callbackService
 @implements IDisposable
-<PageTitle>Dagonite Empire | @L["Chapters"]</PageTitle>
+<PageTitle>Dagonite Empire | @(Campaign is not null ? Campaign.Name : L["Chapters"])</PageTitle>
 @using BreadcrumbItem = MudBlazor.BreadcrumbItem;
 
 <MudContainer Class="pr-1" Fixed="false">
@@ -21,7 +21,7 @@
         <MudBreadcrumbs Items="_items"></MudBreadcrumbs>
         @if (Campaign is not null)
         {
-            <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Scroll" width="40px" height="40px" class="pr-2" />Chapter list of @Campaign.Name</MudText>
+            <MudText Typo="Typo.h4" Class="py-3"><img src="@MyIcon.Scroll" width="40px" height="40px" class="pr-2" />@L["Chapter list of {0}", Campaign.Name]</MudText>
         }
         @if (UserInfo?.IsAdminOrMG == true)
         {
@@ -73,7 +73,7 @@
                                         <MudIconButton Class="pa-1" Style="color: white;" Icon="@Icons.Material.Filled.Delete" aria-label="@(L["Delete"])" OnClick="@(()=>DeleteChapter(chap))" OnClickStopPropagation="true"></MudIconButton>
                                     }
                                 </MudStack>
-                                <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.8);">@chap.CreatedDate.ToString("dd-MM-yyyy hh:mm")</MudText>
+                                <MudText Typo="Typo.caption" Style="color: rgba(255,255,255,0.8);">@chap.CreatedDate.ToString("dd-MM-yyyy HH:mm")</MudText>
                                 <MudText Class="py-1 chapter-subtitle" Typo="Typo.subtitle2">@chap.Date, @chap.DayTime, @chap.Place</MudText>
                                 <MudStack Spacing="1" Class="mb-1 chapter-resource-summary">
                                     <PpbSummaryChips Vector="@chap.BaronyPpbTotal" HideZero="true" />
@@ -199,8 +199,8 @@
         Title = Campaign.Name;
         _items = new List<BreadcrumbItem>
         {
-            new BreadcrumbItem("Campaigns", href: $"/campaignlist/"),
-            new BreadcrumbItem("Chapters", href: $"/campaign/{Id}"),
+            new BreadcrumbItem(L["Campaigns"], href: $"/campaignlist/"),
+            new BreadcrumbItem(L["Chapters"], href: $"/campaign/{Id}"),
         };
         
         IsLoading = false;
@@ -214,7 +214,7 @@
 
         var parameters = new DialogParameters<CreateChapterDialog> { { x => x.NewChapter, NewChapter }, { x => x.AllCharacters, AllCharacters } };
 
-        var dialog = await DialogService.ShowAsync<CreateChapterDialog>("Create chapter", parameters);
+        var dialog = await DialogService.ShowAsync<CreateChapterDialog>(L["Create chapter"], parameters);
         var result = await dialog.Result;
 
         if (!result.Canceled)
@@ -234,7 +234,7 @@
 
         var parameters = new DialogParameters<CreateChapterDialog> { { x => x.NewChapter, NewChapter }, { x => x.AllCharacters, AllCharacters }, { x => x.IsEdit, true } };
 
-        var dialog = await DialogService.ShowAsync<CreateChapterDialog>("Edit chapter", parameters);
+        var dialog = await DialogService.ShowAsync<CreateChapterDialog>(L["Edit chapter"], parameters);
         var result = await dialog.Result;
 
         if (!result.Canceled)
@@ -250,9 +250,9 @@
     private async Task DeleteChapter(ChapterDTO chapter)
     {
         bool? result = await DialogService.ShowMessageBoxAsync(
-         "Warning",
-         "Are you sure you want to delete this chapter?",
-         yesText: "Yes", cancelText: "No");
+         L["Warning"],
+         L["Are you sure you want to delete this chapter?"],
+         yesText: L["Yes"], cancelText: L["No"]);
 
         if (result is null || result == false)
         {

@@ -1,3 +1,5 @@
+using DA_Common.Localization;
+
 namespace DA_Common.Barony
 {
     public static class HungerPpbFormulas
@@ -37,22 +39,22 @@ namespace DA_Common.Barony
         }
 
         public static string FormulaSummary(decimal foodFinal, decimal hunger) =>
-            $"This turn: Final Food {PpbFormat.Number(foodFinal)}, "
-            + $"Hunger {PpbFormat.Number(hunger)} (= max(0, −Food)).";
+            Loc.T("This turn: Final Food {0}, Hunger {1} (= max(0, −Food)).",
+                PpbFormat.Number(foodFinal), PpbFormat.Number(hunger));
 
         public static string? ExplainAdditive(Ppb key) => key switch
         {
-            Ppb.Loyalty => $"= −{InputLabel} × {LoyaltyStabilityPerHunger:0}",
-            Ppb.Stability => $"= −{InputLabel} × {LoyaltyStabilityPerHunger:0}",
-            Ppb.Law => $"= −{InputLabel} × {LawPerHunger:0}",
-            Ppb.Corruption => $"= {InputLabel} × {CorruptionPerHunger:0}",
+            Ppb.Loyalty => Loc.T("= −{0} × {1}", Loc.T(InputLabel), LoyaltyStabilityPerHunger.ToString("0")),
+            Ppb.Stability => Loc.T("= −{0} × {1}", Loc.T(InputLabel), LoyaltyStabilityPerHunger.ToString("0")),
+            Ppb.Law => Loc.T("= −{0} × {1}", Loc.T(InputLabel), LawPerHunger.ToString("0")),
+            Ppb.Corruption => Loc.T("= {0} × {1}", Loc.T(InputLabel), CorruptionPerHunger.ToString("0")),
             _ => null,
         };
 
         public static string? ExplainPercent(Ppb key) => key switch
         {
             Ppb.Economy or Ppb.Production =>
-                $"= max(−{InputLabel} × {EconomyProductionPercentPerHunger:0}, {EconomyProductionPercentFloor:0})",
+                Loc.T("= max(−{0} × {1}, {2})", Loc.T(InputLabel), EconomyProductionPercentPerHunger.ToString("0"), EconomyProductionPercentFloor.ToString("0")),
             _ => null,
         };
 

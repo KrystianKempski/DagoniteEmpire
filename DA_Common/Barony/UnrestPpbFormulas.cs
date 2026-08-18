@@ -1,3 +1,5 @@
+using DA_Common.Localization;
+
 namespace DA_Common.Barony
 {
     public static class UnrestPpbFormulas
@@ -33,19 +35,19 @@ namespace DA_Common.Barony
         }
 
         public static string FormulaSummary(decimal unrest) =>
-            $"This turn: Unrest {PpbFormat.Number(unrest)} (barony level, 0–{Max}).";
+            Loc.T("This turn: Unrest {0} (barony level, 0–{1}).", PpbFormat.Number(unrest), Max);
 
         public static string? ExplainAdditive(Ppb key) => key switch
         {
             Ppb.Loyalty or Ppb.Stability or Ppb.Law
-                => $"= −{InputLabel} × {LoyaltyStabilityLawPerUnrest:0}",
+                => Loc.T("= −{0} × {1}", Loc.T(InputLabel), LoyaltyStabilityLawPerUnrest.ToString("0")),
             _ => null,
         };
 
         public static string? ExplainPercent(Ppb key) => key switch
         {
             Ppb.Economy or Ppb.Production
-                => $"= −{InputLabel} × {EconomyProductionPercentPerUnrest:0}",
+                => Loc.T("= −{0} × {1}", Loc.T(InputLabel), EconomyProductionPercentPerUnrest.ToString("0")),
             _ => null,
         };
 

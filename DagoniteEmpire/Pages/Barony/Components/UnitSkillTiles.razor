@@ -254,7 +254,7 @@
                 return;
             canRaise = true;
             tip = L["Raise {0} base to {1} — costs {2} XP", def.DisplayName(L), currentBase + 1, cost].Value
-                + (maxBase < int.MaxValue ? $" (cap {maxBase})." : ".");
+                + (maxBase < int.MaxValue ? " " + L["(cap {0}).", maxBase].Value : ".");
         }
         else
         {
@@ -269,7 +269,7 @@
 
         if (!canRaise) return;
 
-        <BaronyTooltip Title="Spend XP" Text="@tip" Placement="Placement.Top">
+        <BaronyTooltip Title="@(L["Spend XP"])" Text="@tip" Placement="Placement.Top">
             <button type="button"
                     class="unit-xp-plus"
                     @onclick="@(() => RaiseBaseAsync(def))">+</button>
@@ -284,8 +284,8 @@
         var canRaise = Unit.Discipline < UnitRules.DisciplineMax && Unit.RemainingPd >= cost;
         if (!canRaise) return;
 
-        var tip = $"Raise Discipline to {Unit.Discipline + 1} — costs {cost} XP.";
-        <BaronyTooltip Title="Spend XP" Text="@tip" Placement="Placement.Top">
+        var tip = L["Raise {0} to {1} — costs {2} XP.", L["Discipline"], Unit.Discipline + 1, cost].Value;
+        <BaronyTooltip Title="@(L["Spend XP"])" Text="@tip" Placement="Placement.Top">
             <button type="button"
                     class="unit-xp-plus"
                     @onclick="RaiseDisciplineAsync">+</button>

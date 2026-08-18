@@ -19,15 +19,15 @@
             {
                 var i = improvement;
                 var selected = Value == i;
-                <BaronyTooltip Text="@MapImprovement.DisplayName(i)">
+                <BaronyTooltip Text="@MapImprovement.DisplayName(i, L)">
                     <button type="button"
                             class="terrain-type-option @(selected ? "terrain-type-option--selected" : "")"
-                            aria-label="@MapImprovement.DisplayName(i)"
+                            aria-label="@MapImprovement.DisplayName(i, L)"
                             @onclick="() => SelectAsync(i)">
                         <img src="@MapImprovement.IconUrl(i)"
-                             alt="@MapImprovement.DisplayName(i)"
+                             alt="@MapImprovement.DisplayName(i, L)"
                              class="terrain-improvement-option__icon" />
-                        <span>@MapImprovement.DisplayName(i)</span>
+                        <span>@MapImprovement.DisplayName(i, L)</span>
                     </button>
                 </BaronyTooltip>
             }

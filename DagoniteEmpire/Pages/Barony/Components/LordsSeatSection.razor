@@ -58,17 +58,17 @@
             </div>
             <div class="lords-seat-paintbar">
                 <span class="lords-seat-levelbar__label">@L["Paint"]</span>
-                <BaronyTooltip Text="@SeatTileKind.Label(SeatTileKind.Wall)">
+                <BaronyTooltip Text="@SeatTileKind.Label(SeatTileKind.Wall, L)">
                     <button type="button"
                             class="@PaintChipClassWall()"
                             @onclick="PaintWall">@L["Wall"]</button>
                 </BaronyTooltip>
-                <BaronyTooltip Text="@SeatTileKind.Label(SeatTileKind.Ground)">
+                <BaronyTooltip Text="@SeatTileKind.Label(SeatTileKind.Ground, L)">
                     <button type="button"
                             class="@PaintChipClassGround()"
                             @onclick="PaintGround">@L["Ground"]</button>
                 </BaronyTooltip>
-                <BaronyTooltip Text="@SeatTileKind.Label(SeatTileKind.Water)">
+                <BaronyTooltip Text="@SeatTileKind.Label(SeatTileKind.Water, L)">
                     <button type="button"
                             class="@PaintChipClassWater()"
                             @onclick="PaintWater">@L["Water"]</button>
@@ -521,7 +521,7 @@
     private string? CellTitle(int x, int y)
     {
         var kind = TileKindAt(x, y);
-        return kind is null ? null : SeatTileKind.Label(kind);
+        return kind is null ? null : SeatTileKind.Label(kind, L);
     }
 
     private static string PaintLayerClass(string kind) => SeatTileKind.Normalize(kind) switch
@@ -558,7 +558,7 @@
     private void PaintErase() => TogglePaint(string.Empty);
 
     private string PaintModeLabel() =>
-        string.IsNullOrEmpty(_paintKind) ? "erase" : SeatTileKind.Label(_paintKind!);
+        string.IsNullOrEmpty(_paintKind) ? L["Erase"].Value : SeatTileKind.Label(_paintKind!, L);
 
     private string DraggableAttr() => CanManage && !IsPainting ? "true" : "false";
 

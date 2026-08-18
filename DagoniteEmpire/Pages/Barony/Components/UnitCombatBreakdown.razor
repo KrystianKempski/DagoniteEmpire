@@ -82,7 +82,7 @@
     {
         var lines = UnitCombatOtherFormulas.TooltipLines(UnitCombatOtherFormulas.Get(Unit?.CombatOther, statKey));
         return CanEditOther
-            ? $"{tipTitle}\n\n{lines}\n\nClick to edit sources."
+            ? $"{tipTitle}\n\n{lines}\n\n{L["Click to edit sources."]}"
             : $"{tipTitle}\n\n{lines}";
     }
 
@@ -169,8 +169,8 @@
         var baseHp = Combat.MaxHp - Combat.OtherHp - Combat.LossHp;
         var cur = CurrentHp ?? Combat.MaxHp;
         <div class="unit-combat-break__block">
-            <BaronyTooltip Title="Hit points"
-                           Text="Maximum = Build×2 + Will×2 + Endurance + Discipline×3 + other + casualty loss. Current tracks wounds in play."
+            <BaronyTooltip Title="@(L["Hit points"])"
+                           Text="@(L["Maximum = Build×2 + Will×2 + Endurance + Discipline×3 + other + casualty loss. Current tracks wounds in play."])"
                            Placement="Placement.Bottom">
                 <div class="unit-combat-break__title">Hit points</div>
             </BaronyTooltip>
@@ -199,7 +199,7 @@
 
     private RenderFragment LossCol(int value) => __builder =>
     {
-        <BaronyTooltip Title="Casualty loss" Text="@LossTip" Placement="Placement.Top">
+        <BaronyTooltip Title="@(L["Casualty loss"])" Text="@LossTip" Placement="Placement.Top">
             <div class="unit-combat-break__col @(value != 0 ? "unit-combat-break__col--loss" : "unit-combat-break__col--zero")">
                 <span class="unit-combat-break__lab">Loss</span>
                 <b class="unit-combat-break__val">@value</b>
@@ -210,8 +210,8 @@
     private RenderFragment OtherCol(string statKey) => __builder =>
     {
         var value = OtherValue(statKey);
-        var tip = OtherTip("Other modifiers — named sources summed into this column.", statKey);
-        <BaronyTooltip Title="Other" Text="@tip" Placement="Placement.Top">
+        var tip = OtherTip(L["Other modifiers — named sources summed into this column."].Value, statKey);
+        <BaronyTooltip Title="@(L["Other"])" Text="@tip" Placement="Placement.Top">
             @if (CanEditOther && Unit is not null)
             {
                 <button type="button"
@@ -233,7 +233,7 @@
 
     private RenderFragment Tot(int value) => __builder =>
     {
-        <BaronyTooltip Title="Total" Text="Sum of the columns to the left (with casualty floors when depleted)." Placement="Placement.Top">
+        <BaronyTooltip Title="@(L["Total"])" Text="@(L["Sum of the columns to the left (with casualty floors when depleted)."])" Placement="Placement.Top">
             <div class="unit-combat-break__col unit-combat-break__col--tot">
                 <span class="unit-combat-break__lab">Tot</span>
                 <b class="unit-combat-break__val">@value</b>

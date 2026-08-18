@@ -191,19 +191,19 @@ namespace DA_Common.Barony
 
         public static string? ExplainAdditive(Ppb key) => key switch
         {
-            Ppb.Food => $"= {Avg3Formula(Skills.PlantsAndMushrooms, Skills.AnimalsCare, Skills.Beasts)}",
-            Ppb.Economy => $"= {Avg3Formula(Skills.MathematicsAndLogic, Skills.RacesAndNations, Skills.Trade)}",
-            Ppb.Production => $"= {Skills.Craft} + {Attrs.Intelligence} mod",
-            Ppb.Loyalty => $"= {Avg3Formula(Skills.Bluff, Skills.PublicSpeech, Skills.SenseMotives)}",
-            Ppb.Stability => $"= {Avg3Formula(Skills.Intimidate, Skills.HistoryAndReligion, Skills.Persuasion)}",
-            Ppb.Law => $"= {Avg3Formula(Skills.Investigation, Skills.Observation, Skills.Tracking)}",
-            Ppb.Corruption => $"= −({Avg3Formula(Skills.Vigilance, Skills.Gambling, Skills.Acting)}) / 9",
-            Ppb.Science => $"= {Skills.Knowledge} + {Attrs.Intelligence} mod",
-            Ppb.Magic => $"= {Skills.Magic} + {Attrs.Willpower} mod",
-            Ppb.Culture => $"= {Avg3Formula(Skills.FineArts, Skills.Linguistics, Skills.Diplomacy)}",
+            Ppb.Food => Loc.T("= {0}", Avg3Formula(Skills.PlantsAndMushrooms, Skills.AnimalsCare, Skills.Beasts)),
+            Ppb.Economy => Loc.T("= {0}", Avg3Formula(Skills.MathematicsAndLogic, Skills.RacesAndNations, Skills.Trade)),
+            Ppb.Production => Loc.T("= {0} + {1} mod", Loc.T(Skills.Craft), Loc.T(Attrs.Intelligence)),
+            Ppb.Loyalty => Loc.T("= {0}", Avg3Formula(Skills.Bluff, Skills.PublicSpeech, Skills.SenseMotives)),
+            Ppb.Stability => Loc.T("= {0}", Avg3Formula(Skills.Intimidate, Skills.HistoryAndReligion, Skills.Persuasion)),
+            Ppb.Law => Loc.T("= {0}", Avg3Formula(Skills.Investigation, Skills.Observation, Skills.Tracking)),
+            Ppb.Corruption => Loc.T("= −({0}) / 9", Avg3Formula(Skills.Vigilance, Skills.Gambling, Skills.Acting)),
+            Ppb.Science => Loc.T("= {0} + {1} mod", Loc.T(Skills.Knowledge), Loc.T(Attrs.Intelligence)),
+            Ppb.Magic => Loc.T("= {0} + {1} mod", Loc.T(Skills.Magic), Loc.T(Attrs.Willpower)),
+            Ppb.Culture => Loc.T("= {0}", Avg3Formula(Skills.FineArts, Skills.Linguistics, Skills.Diplomacy)),
             Ppb.Intelligence =>
-                $"= {Skills.Perception} / 2 + {Skills.Survival} / 2 + {Skills.Deceit}",
-            Ppb.Defense => $"= {Avg3Formula(Skills.StrategyAndTactics, Skills.Inspire, Skills.Geography)}",
+                Loc.T("= {0} / 2 + {1} / 2 + {2}", Loc.T(Skills.Perception), Loc.T(Skills.Survival), Loc.T(Skills.Deceit)),
+            Ppb.Defense => Loc.T("= {0}", Avg3Formula(Skills.StrategyAndTactics, Skills.Inspire, Skills.Geography)),
             _ => null,
         };
 
@@ -226,7 +226,7 @@ namespace DA_Common.Barony
             if (!HasAdvisorAdditive(key))
                 return null;
 
-            return $"= {FromSkillsSkillLabel(key)}";
+            return Loc.T("= {0}", FromSkillsSkillLabel(key));
         }
 
         /// <summary>
@@ -235,17 +235,17 @@ namespace DA_Common.Barony
         public static string? ExplainAdvisorPercent(Ppb key) => key switch
         {
             Ppb.Treasury => null,
-            Ppb.Corruption => $"= {FromSkillsSkillLabel(Ppb.Corruption)}/100",
+            Ppb.Corruption => Loc.T("= {0}/100", FromSkillsSkillLabel(Ppb.Corruption)),
             Ppb.Food or Ppb.Economy or Ppb.Production or Ppb.Defense
-                => $"= {FromSkillsSkillLabel(key)}/60",
-            _ => $"= {FromSkillsSkillLabel(key)}/100",
+                => Loc.T("= {0}/60", FromSkillsSkillLabel(key)),
+            _ => Loc.T("= {0}/100", FromSkillsSkillLabel(key)),
         };
 
         private static string FromSkillsSkillLabel(Ppb key) =>
-            $"{PpbCatalog.NameEnglish(key).ToLowerInvariant()} skill";
+            Loc.T("{0} skill", PpbCatalog.Name(key));
 
         private static string Avg3Formula(string a, string b, string c) =>
-            $"({a} + {b} + {c}) / 3";
+            $"({Loc.T(a)} + {Loc.T(b)} + {Loc.T(c)}) / 3";
 
         private static decimal Avg3(decimal a, decimal b, decimal c) => (a + b + c) / 3m;
 

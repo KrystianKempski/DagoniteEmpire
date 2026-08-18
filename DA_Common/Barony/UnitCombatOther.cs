@@ -1,3 +1,5 @@
+using DA_Common.Localization;
+
 namespace DA_Common.Barony
 {
     /// <summary>Combat “Other” column keys (Excel Inne).</summary>
@@ -53,11 +55,11 @@ namespace DA_Common.Barony
             var list = entries?.Where(e => !string.IsNullOrWhiteSpace(e.Label) || e.Value != 0).ToList()
                 ?? new List<UnitCombatModifierEntry>();
             if (list.Count == 0)
-                return "No other modifiers.";
+                return Loc.T("No other modifiers.");
 
             return string.Join("\n", list.Select(e =>
             {
-                var name = string.IsNullOrWhiteSpace(e.Label) ? "(unnamed)" : e.Label.Trim();
+                var name = string.IsNullOrWhiteSpace(e.Label) ? Loc.T("(unnamed)") : e.Label.Trim();
                 var sign = e.Value > 0 ? "+" : "";
                 return $"{name}: {sign}{e.Value}";
             }));

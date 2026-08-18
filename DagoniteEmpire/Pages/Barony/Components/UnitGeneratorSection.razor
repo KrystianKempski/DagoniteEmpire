@@ -168,7 +168,7 @@
                                             </th>
                                             <th>
                                                 <BaronyTooltip Title="@(L["Wage"])"
-                                                               Text="Share of the unit’s wage after training. Total wage = recruit + training."
+                                                               Text="@(L["Share of the unit’s wage after training. Total wage = recruit + training."])"
                                                                Placement="Placement.Top">
                                                     <span>@L["Wag"]</span>
                                                 </BaronyTooltip>
@@ -223,7 +223,7 @@
                                             </th>
                                             <th>
                                                 <BaronyTooltip Title="@(L["Gold"])"
-                                                               Text="One-time training fee in gold: Express 10 · Accelerated 20 · Standard 40 · Elite 75."
+                                                               Text="@(L["One-time training fee in gold: Express 10 · Accelerated 20 · Standard 40 · Elite 75."])"
                                                                Placement="Placement.Top">
                                                     <span class="unit-workshop__th-res">
                                                         <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
@@ -253,7 +253,7 @@
                                             </th>
                                             <th>
                                                 <BaronyTooltip Title="@(L["Wage"])"
-                                                               Text="Training share of wage after graduation. Total wage = recruit + training."
+                                                               Text="@(L["Training share of wage after graduation. Total wage = recruit + training."])"
                                                                Placement="Placement.Top">
                                                     <span>@L["Wag"]</span>
                                                 </BaronyTooltip>
@@ -266,8 +266,8 @@
                                             var trainName = t.DisplayName(L);
                                             var trainNotes = t.DisplayNotes(L);
                                             var trainTip = string.IsNullOrWhiteSpace(trainNotes)
-                                                ? $"{trainName}: {t.Pd} XP · {t.GoldCost} Gld · {t.Turns} Trn · Dis {t.StartingDiscipline}"
-                                                : $"{trainName}: {trainNotes}. {t.Pd} XP · {t.GoldCost} Gld · {t.Turns} Trn · Dis {t.StartingDiscipline}";
+                ? L["{0}: {1} XP · {2} Gld · {3} Trn · Dis {4}", trainName, t.Pd, t.GoldCost, t.Turns, t.StartingDiscipline].Value
+                : L["{0}: {1}. {2} XP · {3} Gld · {4} Trn · Dis {5}", trainName, trainNotes, t.Pd, t.GoldCost, t.Turns, t.StartingDiscipline].Value;
                                             <tr class="@(_trainingKey == t.Key ? "unit-workshop__row--active" : null)"
                                                 @onclick="() => SelectTraining(t.Key)">
                                                 <td><MudRadio T="string" Value="@t.Key" Dense="true" /></td>
@@ -514,7 +514,7 @@
     private TradeGoodAvailabilitySnapshot? _availability;
 
     private string WageTurnTip => UnitUpkeepFormulas.Explain(_previewUpkeep)
-        + " Food defaults to 0.5/turn once Active (Domain Panel → Army).";
+        + " " + L["Food defaults to 0.5/turn once Active (Domain Panel → Army)."].Value;
 
     private string _xpRecruitKey = string.Empty;
     private string _xpTrainingKey = string.Empty;
@@ -687,17 +687,18 @@
     {
         var hasItem = !string.IsNullOrWhiteSpace(name);
         var m = UnitEquipmentAcquireMode.Normalize(mode);
-        var tipTitle = $"{slot}: {(hasItem ? name : (required ? "required" : "none"))}";
+        var noneLabel = required ? L["Required"].Value : L["None"].Value;
+        var tipTitle = L["{0}: {1}", slot, hasItem ? name! : noneLabel].Value;
         var tipText = !hasItem
-            ? (required ? "Weapon 1 is required." : "Optional — pick from the catalog below.")
+            ? (required ? L["Weapon 1 is required."].Value : L["Optional — pick from the catalog below."].Value)
             : m switch
             {
                 UnitEquipmentAcquireMode.Buy =>
-                    $"Buy for {market} gold (Mkt). No Production.",
+                    L["Buy for {0} gold (Mkt). No Production.", market].Value,
                 UnitEquipmentAcquireMode.Defense =>
-                    $"Paid as Defense: {market * 2} (2× Mkt {market}). No Production/Gold.",
+                    L["Paid as Defense: {0} (2× Mkt {1}). No Production/Gold.", market * 2, market].Value,
                 _ =>
-                    $"Craft: Production {prod} · Gold {gold}. Or Buy (Mkt {market}) / Defense (2×Mkt).",
+                    L["Craft: Production {0} · Gold {1}. Or Buy (Mkt {2}) / Defense (2×Mkt).", prod, gold, market].Value,
             };
         var rowMod = !hasItem ? null
             : m == UnitEquipmentAcquireMode.Buy ? "unit-gear-pay__row--buy"
@@ -714,17 +715,17 @@
                                    ValueChanged="EventCallback.Factory.Create<string>(this, onChanged)"
                                    Disabled="@(!CanEdit)"
                                    Class="unit-gear-pay__modes">
-                        <BaronyTooltip Title="Craft" Text="@($"Production {prod} + gold {gold}.")">
+                        <BaronyTooltip Title="@(L["Craft"])" Text="@(L["Production {0} + gold {1}.", prod, gold])">
                             <MudRadio T="string" Value="@UnitEquipmentAcquireMode.Craft" Dense="true" Class="unit-gear-pay__mode">
                                 <BaronyResourceIcon Resource="Ppb.Production" Size="xs" />
                             </MudRadio>
                         </BaronyTooltip>
-                        <BaronyTooltip Title="Buy" Text="@($"Market gold {market} (Mkt). No Production.")">
+                        <BaronyTooltip Title="@(L["Buy"])" Text="@(L["Market gold {0} (Mkt). No Production.", market])">
                             <MudRadio T="string" Value="@UnitEquipmentAcquireMode.Buy" Dense="true" Class="unit-gear-pay__mode">
                                 <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
                             </MudRadio>
                         </BaronyTooltip>
-                        <BaronyTooltip Title="Defense" Text="@($"2× market = {(market ?? 0) * 2} Defense.")">
+                        <BaronyTooltip Title="@(L["Defense"])" Text="@(L["2× market = {0} Defense.", (market ?? 0) * 2])">
                             <MudRadio T="string" Value="@UnitEquipmentAcquireMode.Defense" Dense="true" Class="unit-gear-pay__mode">
                                 <BaronyResourceIcon Resource="Ppb.Defense" Size="xs" />
                             </MudRadio>

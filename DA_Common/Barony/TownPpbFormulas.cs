@@ -1,3 +1,5 @@
+using DA_Common.Localization;
+
 namespace DA_Common.Barony
 {
     public static class TownPpbFormulas
@@ -31,18 +33,18 @@ namespace DA_Common.Barony
 
         public static string? ExplainAdditive(Ppb key) => key switch
         {
-            Ppb.Food => "= −Population",
-            Ppb.Economy => "= Population",
-            Ppb.Production => "= 2 × Population",
-            Ppb.Loyalty => "= −2 × Population",
-            Ppb.Stability => "= −3 × Population",
-            Ppb.Law => "= −Population",
-            Ppb.Corruption => "= Population",
-            Ppb.Science => "= Population / 2",
-            Ppb.Magic => "= Population / 4",
-            Ppb.Culture => "= Population / 2",
-            Ppb.Defense => "= 2 × Population",
-            Ppb.Treasury => "= taxes% × Population × (20/25/10)",
+            Ppb.Food => Loc.T("= −Population"),
+            Ppb.Economy => Loc.T("= Population"),
+            Ppb.Production => Loc.T("= 2 × Population"),
+            Ppb.Loyalty => Loc.T("= −2 × Population"),
+            Ppb.Stability => Loc.T("= −3 × Population"),
+            Ppb.Law => Loc.T("= −Population"),
+            Ppb.Corruption => Loc.T("= Population"),
+            Ppb.Science => Loc.T("= Population / 2"),
+            Ppb.Magic => Loc.T("= Population / 4"),
+            Ppb.Culture => Loc.T("= Population / 2"),
+            Ppb.Defense => Loc.T("= 2 × Population"),
+            Ppb.Treasury => Loc.T("= taxes% × Population × (20/25/10)"),
             _ => null,
         };
 
@@ -56,7 +58,7 @@ namespace DA_Common.Barony
         public static string PopulationRowLabel(string cityName)
         {
             var name = string.IsNullOrWhiteSpace(cityName) ? "Town" : cityName.Trim();
-            return $"Population of {name}";
+            return Loc.T("Population of {0}", name);
         }
     }
 }
