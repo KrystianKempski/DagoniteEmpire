@@ -32,18 +32,33 @@
 .audience-hall__audience-ring {
     position: relative;
     display: flex;
-    align-items: center;
     justify-content: center;
     width: 100%;
-    gap: .5rem;
+    min-height: var(--throne);
+    align-items: center;
+}
+
+.audience-hall__audience-ring {
+    --throne: min(16rem, 44vw);
 }
 
 .audience-hall__petitioners {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: .75rem;
-    flex-shrink: 0;
+}
+
+.audience-hall__petitioners--left {
+    right: calc(50% + (var(--throne) / 2) + .5rem);
+}
+
+.audience-hall__petitioners--right {
+    left: calc(50% + (var(--throne) / 2) + .5rem);
 }
 
 .audience-hall__petitioner {
@@ -78,7 +93,7 @@
 }
 
 .audience-hall__petitioner.is-on img {
-    filter: drop-shadow(0 2px 8px rgba(var(--barony-accent-rgb, 120, 60, 0), .45));
+    filter: drop-shadow(0 2px 8px rgba(120, 60, 0, .45));
 }
 
 .audience-hall__ring-core {
