@@ -70,5 +70,13 @@ public static class DarkholdOpeningCouncilTopics
                 "Milordzie. Ostatniej wiosny na klifach na wschód od Darkhold rozbił się drakkar piratów z Erude. Rozbitkowie sprawiali nam później trochę kłopotów, lecz baron Ekhard uporał się z nimi. Nie zdążył jednak rozwiązać problemu samego wraku. Ten — wbrew wszelkim przewidywaniom — nie rozleciał się i wciąż trzyma się na skałach. W jego wnętrzu zalęgły się jakieś utopce, zwabione zapewne zwłokami rozbitków. Rybacy, którzy tamtędy przepływają, narzekają, że utopce na nich czyhają; kilku nawet nie wróciło do domostw. Może trzeba by coś zrobić z tym wrakiem."),
     };
 
-    public static string FormatExchangeBody(Topic topic) => topic.BodyEn;
+    public static string FormatExchangeBody(Topic topic) => IsPolish ? topic.BodyPl : topic.BodyEn;
+
+    public static string FormatTitle(Topic topic) => IsPolish ? topic.TitlePl : topic.TitleEn;
+
+    /// <summary>True when the current request's UI culture is Polish — drives which
+    /// language the seeder writes for both council topics and opening audiences.</summary>
+    internal static bool IsPolish =>
+        System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName
+            .Equals("pl", StringComparison.OrdinalIgnoreCase);
 }

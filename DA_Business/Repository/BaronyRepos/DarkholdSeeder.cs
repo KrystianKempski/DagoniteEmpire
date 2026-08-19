@@ -380,7 +380,7 @@ namespace DA_Business.Repository.BaronyRepos
                 ctx.BaronAudiences.Add(new BaronAudience
                 {
                     BaronyId = barony.Id,
-                    Title = topic.TitleEn,
+                    Title = DarkholdOpeningCouncilTopics.FormatTitle(topic),
                     PetitionerName = topic.SpeakerName,
                     Kind = BaronAudienceKind.Council,
                     Status = BaronAudienceStatus.Scheduled,
@@ -406,49 +406,71 @@ namespace DA_Business.Repository.BaronyRepos
         private static void SeedOpeningAudiences(ApplicationDbContext ctx, int baronyId, int turnNumber)
         {
             var now = DateTime.UtcNow;
-            (string Title, string Petitioner, string PetitionerIcon, string Body)[] petitions =
+            var isPolish = DarkholdOpeningCouncilTopics.IsPolish;
+            (string TitleEn, string TitlePl, string PetitionerEn, string PetitionerPl, string PetitionerIcon, string BodyEn, string BodyPl)[] petitions =
             {
                 (
                     "The neighbour's cow on my field",
+                    "Krowa sąsiada na mojej łące",
                     "Tuiw Dun, peasant",
+                    "Tuiw Dun, chłop",
                     "farmer",
-                    "My lord! My neighbour's cow grazes on my field. When I tried to milk her in return, he set upon me and bruised my arms with a rope. Many times I have asked him to keep his cow off my meadow, but he does not watch her at all and lets her wander wherever she pleases. I beg for justice — for me and against my neighbour. He is called Mieon."
+                    "My lord! My neighbour's cow grazes on my field. When I tried to milk her in return, he set upon me and bruised my arms with a rope. Many times I have asked him to keep his cow off my meadow, but he does not watch her at all and lets her wander wherever she pleases. I beg for justice — for me and against my neighbour. He is called Mieon.",
+                    "Milordzie! Krowa sąsiada pasie się na moim polu. Kiedy chciałem ją w zamian wydoić, napadł na mnie i obił mi ramiona powrozem. Wiele razy prosiłem go, by jego krowa nie wypasała się na mojej łące, lecz on w ogóle jej nie pilnuje i pozwala jej łazić, gdzie chce. Proszę o sprawiedliwość — dla mnie i przeciw sąsiadowi. Zwie się Mieon."
                 ),
                 (
                     "A witch at the forest's edge",
+                    "Wiedźma na skraju lasu",
                     "Bostri Trueore, peasant",
+                    "Bostri Trueore, chłop",
                     "farmer",
-                    "My lord, I do not know whether you are aware, but a witch dwells at the edge of the forest. People tolerate her, for she is a skilled herbalist and helps with their troubles — sometimes she delivers a difficult birth, or saves a cow from death. But she is a witch! If you fear Thyrus and the Inquisition, you ought to drive her out. She casts spells and curses. If someone looks at her the wrong way, or refuses her what she asks, she may lay a dreadful curse upon them!"
+                    "My lord, I do not know whether you are aware, but a witch dwells at the edge of the forest. People tolerate her, for she is a skilled herbalist and helps with their troubles — sometimes she delivers a difficult birth, or saves a cow from death. But she is a witch! If you fear Thyrus and the Inquisition, you ought to drive her out. She casts spells and curses. If someone looks at her the wrong way, or refuses her what she asks, she may lay a dreadful curse upon them!",
+                    "Panie, nie wiem, czy Wam wiadomo, ale na skraju lasu mieszka wiedźma. Ludzie ją tolerują, bo jest dobrą zielarką i pomaga w kłopotach — czasem odbierze trudny poród albo uratuje krowę od śmierci. Ale to wiedźma! Jeśli boicie się Thyrusa i inkwizycji, powinniście ją przegnać. Rzuca czary i klątwy. Jeśli ktoś spojrzy na nią krzywo albo nie da jej tego, czego zażąda, może rzucić na niego straszliwe przekleństwo!"
                 ),
                 (
                     "The innkeeper waters down his ale",
+                    "Karczmarz rozwadnia piwo",
                     "Horos Phassar, local craftsman",
+                    "Horos Phassar, miejscowy rzemieślnik",
                     "hammer",
-                    "My lord. Congratulations on your appointment. I wish to offer my respects and my pledge of loyalty. There is also a rather serious matter. Such things are punished harshly in more civilised places. You see, the local innkeeper waters down his beer. You may say that everyone waters it a little and that this is the norm — but my lord, he goes far beyond all measure! This cannot be allowed. I pray you, reprimand him and put an end to this thievery. I assure you that all of Darkhold will be grateful to you for evermore."
+                    "My lord. Congratulations on your appointment. I wish to offer my respects and my pledge of loyalty. There is also a rather serious matter. Such things are punished harshly in more civilised places. You see, the local innkeeper waters down his beer. You may say that everyone waters it a little and that this is the norm — but my lord, he goes far beyond all measure! This cannot be allowed. I pray you, reprimand him and put an end to this thievery. I assure you that all of Darkhold will be grateful to you for evermore.",
+                    "Milordzie. Gratuluję nominacji. Pragnę złożyć wyrazy szacunku i zapewnić o mojej lojalności. Jest też pewna dość poważna sprawa. W bardziej cywilizowanych miejscach takie rzeczy są surowo karane. Otóż miejscowy karczmarz rozwadnia piwo. Powiecie, że każdy trochę rozwadnia i to norma, ale panie, on przekracza wszelkie granice! Tak być nie może. Proszę, upomnijcie go i ukróćcie ten złodziejski proceder. Zapewniam, że całe Darkhold będzie wam wdzięczne po wsze czasy."
                 ),
                 (
                     "My child has gone missing",
+                    "Moje dziecko zaginęło",
                     "Annyte Trapp, the forester's wife",
+                    "Annyte Trapp, żona leśnika",
                     "horn",
-                    "Baron! My child has gone missing. Please! Help me! My little Riff. He was playing by the house; I took my eyes off him for but a moment, and he vanished — gone! Perhaps someone has taken him! I beg you, order everyone questioned and send guards to search! Perhaps he is lost in the forest and cannot find his way home!"
+                    "Baron! My child has gone missing. Please! Help me! My little Riff. He was playing by the house; I took my eyes off him for but a moment, and he vanished — gone! Perhaps someone has taken him! I beg you, order everyone questioned and send guards to search! Perhaps he is lost in the forest and cannot find his way home!",
+                    "Baronie! Moje dziecko zaginęło. Proszę, pomóżcie mi! Mój mały Riff. Bawił się przy domostwie, na chwilę spuściłam go z oczu i zniknął — przepadł! Może ktoś go porwał! Błagam, każcie wszystkich przepytać i wyślijcie strażników na poszukiwania! Może zabłądził w lesie i nie potrafi znaleźć drogi do domu!"
                 ),
                 (
                     "Patronage for the shrine of Orados",
+                    "Patronat nad kapliczką Oradosa",
                     "Brother Squall",
+                    "Brat Szkwał",
                     "sun-priest",
-                    "My lord, I am a humble servant of Orados, God of Tides, of storms, waves and shores. The previous baron permitted me to found a shrine here in Darkhold. I believe Orados holds this land especially dear, as one may see in the strength and wildness of the weather here. Yet the local folk are not kindly disposed toward my god, for the storm they so dread is his blessing. I ask that you take my shrine under your patronage and attend me at mass. The Allfather will surely look upon you more favourably — and who knows, perhaps he will even temper his wrath and let the ships be spared the storms that so often visit the coast of Darkhold."
+                    "My lord, I am a humble servant of Orados, God of Tides, of storms, waves and shores. The previous baron permitted me to found a shrine here in Darkhold. I believe Orados holds this land especially dear, as one may see in the strength and wildness of the weather here. Yet the local folk are not kindly disposed toward my god, for the storm they so dread is his blessing. I ask that you take my shrine under your patronage and attend me at mass. The Allfather will surely look upon you more favourably — and who knows, perhaps he will even temper his wrath and let the ships be spared the storms that so often visit the coast of Darkhold.",
+                    "Panie, jestem skromnym sługą Oradosa, Boga Pływów, sztormów, fal i wybrzeży. Poprzedni baron zezwolił mi założyć w Darkhold kapliczkę. Wierzę, że Orados szczególnie umiłował tę krainę, co widać po sile i nieokiełznaniu tutejszej pogody. Jednak okoliczna ludność nie jest przychylna mojemu bogu, skoro sztorm, którego tak się boi, jest jego łaską. Proszę, obejmijcie patronatem moją kaplicę i odwiedźcie mnie podczas mszy. Wszechojciec z pewnością spojrzy na was przychylniej — a kto wie, może nawet utemperuje swój gniew i pozwoli statkom uchować się przed sztormami, które tak często nawiedzają wybrzeże Darkhold."
                 ),
                 (
                     "A gift of wine and a marriage proposal",
+                    "Beczka wina i propozycja małżeństwa",
                     "Baronet Jochim Bullewyn",
+                    "Baronet Jochim, głowa rodu Bullewynów, szlachcic z Darkhold",
                     "banner",
-                    "Noble liege! Congratulations on your appointment! I am certain you will manage splendidly in your new office. Please accept, toward our future cooperation, this cask of my very finest wine! May its exquisite taste caress your palate and gladden your stomach and your head. Allow me to present my most beloved daughter! She is very pretty, obedient and clever — and her dowry is most handsome! She would make an excellent wife, but I keep my little flower only for the worthiest of husbands. — the noble winked knowingly — Perhaps you might call on us one of these days? My wife makes a superb turkey. (The daughter looked her stated age. She was not unpleasant to behold — pretty, even — though hardly a great beauty. She seemed amiable and had a lovely smile.)"
+                    "Noble liege! Congratulations on your appointment! I am certain you will manage splendidly in your new office. Please accept, toward our future cooperation, this cask of my very finest wine! May its exquisite taste caress your palate and gladden your stomach and your head. Allow me to present my most beloved daughter! She is very pretty, obedient and clever — and her dowry is most handsome! She would make an excellent wife, but I keep my little flower only for the worthiest of husbands. — the noble winked knowingly — Perhaps you might call on us one of these days? My wife makes a superb turkey. (The daughter looked her stated age. She was not unpleasant to behold — pretty, even — though hardly a great beauty. She seemed amiable and had a lovely smile.)",
+                    "Szlachetny seniorze! Gratuluję nominacji! Jestem pewien, że doskonale poradzicie sobie na nowym stanowisku. Przyjmijcie, na poczet naszej przyszłej współpracy, tę oto beczkę mojego najprzedniejszego wina! Niechaj jego wytworny smak pieści wasze podniebienie i raduje żołądek oraz głowę. Pozwólcie, że przedstawię wam moją najukochańszą córkę! Jest bardzo ładna, posłuszna i mądra, a i posag ma znamienity! Świetnie nadawałaby się na żonę, lecz chowam mój kwiatuszek tylko dla najgodniejszych mężów. — szlachcic mrugnął porozumiewawczo — Może zajdziecie do nas w odwiedziny któregoś dnia? Moja żona robi wyborną potrawkę z indyka. (Córka wyglądała na podany wiek — nie była brzydka, nawet ładna, choć pięknością raczej nie była. Sprawiała sympatyczne wrażenie i miała ładny uśmiech.)"
                 ),
                 (
                     "A vassal's homage",
+                    "Hołd lenny",
                     "Baronetess Millena Canterill",
+                    "Baroneta Millena Canterill, głowa rodu Canterillów Brązowych",
                     "banner",
-                    "Greetings, baron. I am Millena Canterill, your vassal. Congratulations on your ennoblement. I pay you homage and assure you of my obedience. — she gave a perfunctory bow — I hope you contrive to rule longer than the previous baron did."
+                    "Greetings, baron. I am Millena Canterill, your vassal. Congratulations on your ennoblement. I pay you homage and assure you of my obedience. — she gave a perfunctory bow — I hope you contrive to rule longer than the previous baron did.",
+                    "Witajcie, baronie. Jestem Millena Canterill, wasza wasalka. Gratuluję nobilitacji. Składam hołd i zapewniam o moim posłuszeństwie. — skłoniła się zdawkowo — Mam nadzieję, że uda się wam rządzić dłużej niż poprzedniemu baronowi."
                 ),
             };
 
@@ -457,8 +479,8 @@ namespace DA_Business.Repository.BaronyRepos
                 ctx.BaronAudiences.Add(new BaronAudience
                 {
                     BaronyId = baronyId,
-                    Title = p.Title,
-                    PetitionerName = p.Petitioner,
+                    Title = isPolish ? p.TitlePl : p.TitleEn,
+                    PetitionerName = isPolish ? p.PetitionerPl : p.PetitionerEn,
                     PetitionerIcon = p.PetitionerIcon,
                     Kind = DA_Common.Barony.BaronAudienceKind.Audience,
                     Status = DA_Common.Barony.BaronAudienceStatus.Scheduled,
@@ -469,7 +491,7 @@ namespace DA_Business.Repository.BaronyRepos
                     {
                         new BaronAudienceExchange
                         {
-                            Body = p.Body,
+                            Body = isPolish ? p.BodyPl : p.BodyEn,
                             IsFromPetitioner = true,
                             TurnNumber = turnNumber,
                             SortOrder = 0,

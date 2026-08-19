@@ -4,6 +4,7 @@
 @inject NavigationManager _navigationManager;
 @inject IPostRepository _postRepository
 @inject IUserService _userService
+@inject IBrowserViewportService _viewportService
 
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_HeroPlayer + "," + SD.Role_DukePlayer + "," + SD.Role_GameMaster)]
 <MudStack Wrap="Wrap.NoWrap" Spacing="@Spaceing" Row="@IsRow" AlignItems="AlignItems.Start">
@@ -83,7 +84,10 @@
         try
         {
             await OnDrawerChanged.InvokeAsync();
-            _navigationManager.NavigateTo("/barony");
+            // Mobile/tablet: every other Barony page is blocked, so go straight to the one that works.
+            var bp = await _viewportService.GetCurrentBreakpointAsync();
+            var target = bp <= Breakpoint.Md ? "/barony/audience-hall" : "/barony";
+            _navigationManager.NavigateTo(target);
         }
         catch (Exception e)
         {

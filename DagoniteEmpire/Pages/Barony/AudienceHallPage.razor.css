@@ -1,8 +1,8 @@
 .audience-hall {
-    --throne: clamp(9rem, 42vh, 25rem);
+    --throne: clamp(8rem, 30dvh, 20rem);
     max-width: 46rem;
     margin: 0 auto;
-    height: calc(100dvh - 64px - 72px);
+    height: calc(100dvh - 64px);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -20,14 +20,17 @@
     overflow: hidden;
 }
 
-/* Stage: throne/ring + mode tiles. Fixed size — never grows with petition content. */
+/* Stage: throne/ring + mode tiles. Fixed 40% of the screen height regardless of mode, so
+   Audiences/Council/Adventures all share the exact same "big icon" area size. Ring/tiles
+   split 70/30 of that (see their own rules) so each zone centers its own content. */
 .audience-hall__stage {
-    flex: 0 0 auto;
+    flex: 0 0 40dvh;
+    height: 40dvh;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1rem;
     width: 100%;
+    overflow: hidden;
 }
 
 .audience-hall__throne {
@@ -46,8 +49,13 @@
 }
 
 /* Row layout: left satellites — center icon — right satellites. Puts petitioner/advisor
-   icons "around" the throne without needing absolute-position trigonometry. */
+   icons "around" the throne without needing absolute-position trigonometry. 70% of the
+   stage's fixed height — always wraps the center icon (even the bare Idle throne) so its
+   own vertical centering is consistent across every mode. */
 .audience-hall__ring {
+    flex: 0 0 70%;
+    height: 70%;
+    min-height: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -74,6 +82,15 @@
 
 .audience-hall__ring-core:active {
     transform: scale(.96);
+}
+
+.audience-hall__ring-core--static {
+    cursor: default;
+}
+
+.audience-hall__ring-core--static:hover,
+.audience-hall__ring-core--static:active {
+    transform: none;
 }
 
 .audience-hall__ring-core .audience-hall__badge {
@@ -143,9 +160,13 @@
     color: var(--barony-accent);
 }
 
+/* Remaining 30% of the fixed-height stage — its own band, so the tiles center inside it
+   instead of relying on the ring's leftover space. */
 .audience-hall__tiles {
+    flex: 0 0 30%;
+    height: 30%;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
     gap: 1.4rem;
     width: 100%;
@@ -193,7 +214,8 @@
 
 /* Petition/parchment: fills the remaining fixed height. AudiencePanel (.audience-scroll)
    owns its own internal scroll region, so this wrapper must not scroll too. Relative so the
-   pager can dock to its top-right corner, over the audience text area. */
+   pager can dock to its top-right corner, over the audience text area. No bottom padding —
+   the reply composer (.audience-scroll__dock) should sit flush against the screen's bottom. */
 .audience-hall__petition {
     position: relative;
     width: 100%;
@@ -203,7 +225,7 @@
     flex-direction: column;
     align-items: center;
     overflow: hidden;
-    padding: 0 0 .75rem;
+    padding: 0;
 }
 
 /* Prev/next audience picker — pinned to the top-right corner of the parchment. */
@@ -295,7 +317,7 @@
 
 @media (max-width: 640px) {
     .audience-hall {
-        --throne: clamp(7rem, 34vh, 14rem);
+        --throne: clamp(6rem, 24dvh, 11rem);
         max-width: none;
     }
 

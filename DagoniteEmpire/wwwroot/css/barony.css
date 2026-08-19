@@ -46,6 +46,12 @@
         display: block !important;
     }
 
+    /* No other Barony page can be reached on mobile anyway — hide the tab bar entirely
+       so there is nothing to tap into a blocked page with. */
+    .barony-scope--audience-hall .barony-tabbar {
+        display: none !important;
+    }
+
     .barony-mobile-block {
         display: flex;
         align-items: center;
@@ -2046,6 +2052,16 @@ button.barony-meta-bar__stat--clickable:focus-visible {
         inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
+/* display:contents on desktop = a transparent pass-through, items lay out directly in the
+   flex row above exactly as before; mobile turns this into a real collapsible dropdown. */
+.barony-resource-hud__list {
+    display: contents;
+}
+
+.barony-resource-hud__toggle {
+    display: none;
+}
+
 .barony-page-header__sections-switch {
     flex: 0 1 auto;
     max-width: min(16rem, 100%);
@@ -2119,27 +2135,79 @@ button.barony-meta-bar__stat--clickable:focus-visible {
 .barony-resource-hud__item--defense { --res-accent: var(--res-defense); }
 .barony-resource-hud__item--gold { --res-accent: var(--res-gold); }
 
-@media (max-width: 720px) {
+@media (max-width: 1279.98px) {
+    /* Collapsed to a small round toggle; tapping it drops down a vertical resource list
+       instead of the desktop's always-visible horizontal row. */
     .barony-resource-hud {
         top: auto;
         bottom: 72px;
         right: 8px;
-        left: 8px;
+        left: auto;
         width: auto;
         max-width: calc(100vw - 16px);
-        justify-content: space-between;
-        overflow-x: auto;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0;
+        padding: 0;
+        background: none;
+        border: none;
+        box-shadow: none;
+        overflow: visible;
+    }
+
+    .barony-resource-hud__toggle {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.6rem;
+        height: 2.6rem;
+        padding: 0;
+        border-radius: 999px;
+        background: linear-gradient(180deg, rgba(36, 30, 24, 0.94), rgba(22, 18, 14, 0.96));
+        border: 1px solid rgba(212, 180, 100, 0.28);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+        cursor: pointer;
+    }
+
+    .barony-resource-hud__toggle img {
+        width: 1.4rem;
+        height: 1.4rem;
+        object-fit: contain;
+    }
+
+    .barony-resource-hud__list {
+        display: none;
+        flex-direction: column;
+        gap: 2px;
+        margin-top: 6px;
+        padding: 6px;
+        border-radius: 10px;
+        max-height: 55vh;
+        overflow-y: auto;
+        background: linear-gradient(180deg, rgba(36, 30, 24, 0.94), rgba(22, 18, 14, 0.96));
+        border: 1px solid rgba(212, 180, 100, 0.28);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+    }
+
+    .barony-resource-hud--open .barony-resource-hud__list {
+        display: flex;
     }
 
     .barony-resource-hud__item {
-        min-width: 2.5rem;
-        flex: 1 1 auto;
-        width: auto;
-        padding: 0.15rem 0.15rem 0.2rem;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.6rem;
+        width: 100%;
+        min-width: 0;
+        border-bottom: none;
+        border-left: 3px solid var(--res-accent, rgba(212, 180, 100, 0.45));
+        padding: 0.3rem 0.5rem;
     }
 
-    .barony-resource-hud__stock {
-        font-size: 0.82rem;
+    .barony-resource-hud__delta {
+        width: auto;
+        min-height: 0;
     }
 }
 

@@ -45,16 +45,14 @@
                                 </button>
                             }
                         </div>
-                        <button type="button"
-                                class="audience-hall__ring-core @(_selectedSeatKey == GeneralSeatKey ? "is-on" : "")"
-                                title="@L["General Council"]"
-                                @onclick="SelectGeneralCouncil">
+                        <div class="audience-hall__ring-core audience-hall__ring-core--static"
+                             title="@L["General Council"]">
                             <img src="@("/" + MyIcon.CouncilTable)" class="audience-hall__throne" alt="" />
                             @if (UnassignedCouncilTopics.Count > 0)
                             {
                                 <span class="audience-hall__badge">@UnassignedCouncilTopics.Count</span>
                             }
-                        </button>
+                        </div>
                         <div class="audience-hall__satellites audience-hall__satellites--right">
                             @foreach (var seat in RightCouncilSeats)
                             {
@@ -178,7 +176,9 @@
                 }
                 else
                 {
-                    <img src="@("/" + MyIcon.Throne)" class="audience-hall__throne" alt="" />
+                    <div class="audience-hall__ring">
+                        <img src="@("/" + MyIcon.Throne)" class="audience-hall__throne" alt="" />
+                    </div>
                 }
 
 
@@ -267,7 +267,7 @@
                             <AudiencePanel @key="CurrentCouncilTopic.Id"
                                            Audience="CurrentCouncilTopic"
                                            HallLayout="true"
-                                           AdvisorIcon="CurrentCouncilAdvisorIcon"
+                                           AdvisorIcon="@CurrentCouncilAdvisorIcon"
                                            CanWriteAsBaron="true"
                                            BaronCharacterName="BaronCharacterName"
                                            Busy="_busy"
@@ -375,18 +375,25 @@
                 a.LastExchange is null || a.LastExchange.IsFromPetitioner))
             .ToList();
 
-    /// <summary>Only this many icons fit comfortably around the throne — the rest hide behind "More".</summary>
+    /// <summary>Only this many icons fit comfortably around the throne. The "More" tile itself
+    /// counts as one of them, so when there's overflow only 5 petitioners show alongside it.</summary>
     private const int MaxVisiblePetitioners = 6;
 
+    private bool HasPetitionerOverflow => PetitionerSatellites.Count > MaxVisiblePetitioners;
+
     private List<PetitionerSatellite> VisiblePetitionerSatellites =>
-        PetitionerSatellites.Take(MaxVisiblePetitioners).ToList();
+        PetitionerSatellites.Take(HasPetitionerOverflow ? MaxVisiblePetitioners - 1 : MaxVisiblePetitioners).ToList();
 
     private List<PetitionerSatellite> OverflowPetitionerSatellites =>
-        PetitionerSatellites.Skip(MaxVisiblePetitioners).ToList();
+        PetitionerSatellites.Skip(HasPetitionerOverflow ? MaxVisiblePetitioners - 1 : MaxVisiblePetitioners).ToList();
 
-    private List<PetitionerSatellite> LeftPetitionerSatellites => SplitSides(VisiblePetitionerSatellites).Left;
+    /// <summary>"More" always renders on the right, so when it's present the right side gets one
+    /// fewer petitioner icon to keep both flanks at 3 total (petitioners + "More").</summary>
+    private List<PetitionerSatellite> LeftPetitionerSatellites =>
+        HasPetitionerOverflow ? SplitSides(VisiblePetitionerSatellites).Right : SplitSides(VisiblePetitionerSatellites).Left;
 
-    private List<PetitionerSatellite> RightPetitionerSatellites => SplitSides(VisiblePetitionerSatellites).Right;
+    private List<PetitionerSatellite> RightPetitionerSatellites =>
+        HasPetitionerOverflow ? SplitSides(VisiblePetitionerSatellites).Left : SplitSides(VisiblePetitionerSatellites).Right;
 
     private List<ChapterSatellite> ChapterSatellites =>
         CampaignChapters
@@ -547,12 +554,6 @@
     private void SelectChapter(int chapterId)
     {
         _navigationManager.NavigateTo($"/chapter/{chapterId}");
-    }
-
-    private void SelectGeneralCouncil()
-    {
-        _selectedSeatKey = GeneralSeatKey;
-        _councilIndex = 0;
     }
 
     private void StepTopic(int delta)
