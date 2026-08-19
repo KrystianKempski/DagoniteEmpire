@@ -63,6 +63,7 @@ namespace DA_Common.Barony
             new("justice", "Law", "icons/justice.svg"),
 
             // Faith, arts, learning
+            new("sun-priest", "Priest", "icons/sun-priest.svg"),
             new("chalice", "Courtier", "icons/jeweled-chalice.svg"),
             new("quill-ink", "Scribe", "icons/quill-ink.svg"),
             new("quill", "Clerk", "icons/quill.svg"),

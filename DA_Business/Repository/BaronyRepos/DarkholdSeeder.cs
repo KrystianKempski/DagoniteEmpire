@@ -435,7 +435,7 @@ namespace DA_Business.Repository.BaronyRepos
                 (
                     "Patronage for the shrine of Orados",
                     "Brother Squall",
-                    "chalice",
+                    "sun-priest",
                     "My lord, I am a humble servant of Orados, God of Tides, of storms, waves and shores. The previous baron permitted me to found a shrine here in Darkhold. I believe Orados holds this land especially dear, as one may see in the strength and wildness of the weather here. Yet the local folk are not kindly disposed toward my god, for the storm they so dread is his blessing. I ask that you take my shrine under your patronage and attend me at mass. The Allfather will surely look upon you more favourably — and who knows, perhaps he will even temper his wrath and let the ships be spared the storms that so often visit the coast of Darkhold."
                 ),
                 (
