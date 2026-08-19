@@ -25,198 +25,262 @@
     else if (Barony is not null)
     {
         <div class="audience-hall__hub">
-            @if (_mode == HallMode.Council)
-            {
-                <div class="audience-hall__council">
-                    <button type="button"
-                            class="audience-hall__ring-core @(_selectedSeatKey == GeneralSeatKey ? "is-on" : "")"
-                            title="@L["General Council"]"
-                            @onclick="SelectGeneralCouncil">
-                        <img src="@("/" + MyIcon.CouncilTable)" class="audience-hall__throne audience-hall__throne--wide" alt="" />
-                        @if (UnassignedCouncilTopics.Count > 0)
-                        {
-                            <span class="audience-hall__badge">@UnassignedCouncilTopics.Count</span>
-                        }
-                    </button>
-                    <div class="audience-hall__advisors">
-                        @foreach (var seat in CouncilSeats)
-                        {
-                            <button type="button"
-                                    class="audience-hall__advisor @(_selectedSeatKey == seat.Key ? "is-on" : "")"
-                                    title="@seat.Label"
-                                    @onclick="() => SelectSeat(seat)">
-                                @if (seat.Topics.Count > 0)
-                                {
-                                    <span class="audience-hall__badge">@seat.Topics.Count</span>
-                                }
-                                <img src="@("/" + seat.Icon)" alt="" />
-                                <span>@seat.ShortLabel</span>
-                            </button>
-                        }
-                    </div>
-                </div>
-            }
-            else if (_mode == HallMode.Audiences && PendingAudiences.Count > 0)
-            {
-                @* max 3 per side visible; overflow goes to dropdown *@
-                var indexedAudiences = PendingAudiences.Select((a, i) => (a, i)).ToList();
-                var visibleLeft  = indexedAudiences.Where(t => t.i % 2 == 0).Take(3).ToList();
-                var visibleRight = indexedAudiences.Where(t => t.i % 2 == 1).Take(3).ToList();
-                var hiddenCount  = Math.Max(0, PendingAudiences.Count - 6);
-                <div class="audience-hall__audience-ring">
-                    <div class="audience-hall__petitioners audience-hall__petitioners--left">
-                        @foreach (var (a, idx) in visibleLeft)
-                        {
-                            var iconSrc = "/" + PetitionerIconCatalog.PathFor(a.PetitionerIcon);
-                            <button type="button"
-                                    class="audience-hall__petitioner @(_audienceIndex == idx ? "is-on" : "")"
-                                    title="@a.PetitionerName"
-                                    @onclick="() => SelectAudience(idx)">
-                                <img src="@iconSrc" alt="" />
-                                <span>@ShortName(a.PetitionerName)</span>
-                            </button>
-                        }
-                    </div>
-                    <img src="@("/" + MyIcon.MedievalThrone)" class="audience-hall__throne" alt="" />
-                    <div class="audience-hall__petitioners audience-hall__petitioners--right">
-                        @foreach (var (a, idx) in visibleRight)
-                        {
-                            var iconSrc = "/" + PetitionerIconCatalog.PathFor(a.PetitionerIcon);
-                            <button type="button"
-                                    class="audience-hall__petitioner @(_audienceIndex == idx ? "is-on" : "")"
-                                    title="@a.PetitionerName"
-                                    @onclick="() => SelectAudience(idx)">
-                                <img src="@iconSrc" alt="" />
-                                <span>@ShortName(a.PetitionerName)</span>
-                            </button>
-                        }
-                        @if (hiddenCount > 0)
-                        {
-                            <div class="audience-hall__petitioner-more">
+            <div class="audience-hall__stage">
+                @if (_mode == HallMode.Council)
+                {
+                    <div class="audience-hall__ring">
+                        <div class="audience-hall__satellites audience-hall__satellites--left">
+                            @foreach (var seat in LeftCouncilSeats)
+                            {
                                 <button type="button"
-                                        class="audience-hall__more-btn @(_showMorePetitioners ? "is-on" : "")"
-                                        title="@L["More petitioners"]"
-                                        @onclick="() => _showMorePetitioners = !_showMorePetitioners">
-                                    +@hiddenCount
+                                        class="audience-hall__advisor @(_selectedSeatKey == seat.Key ? "is-on" : "")"
+                                        title="@seat.Label"
+                                        @onclick="() => SelectSeat(seat)">
+                                    @if (seat.Topics.Count > 0)
+                                    {
+                                        <span class="audience-hall__badge">@seat.Topics.Count</span>
+                                    }
+                                    <img src="@("/" + seat.Icon)" alt="" />
+                                    <span>@seat.ShortLabel</span>
                                 </button>
-                                @if (_showMorePetitioners)
-                                {
-                                    <div class="audience-hall__more-dropdown">
-                                        @for (int i = 6; i < PendingAudiences.Count; i++)
-                                        {
-                                            var idx = i;
-                                            var a2 = PendingAudiences[idx];
-                                            var iconSrc2 = "/" + PetitionerIconCatalog.PathFor(a2.PetitionerIcon);
-                                            <button type="button"
-                                                    class="audience-hall__more-item @(_audienceIndex == idx ? "is-on" : "")"
-                                                    title="@a2.PetitionerName"
-                                                    @onclick="() => { SelectAudience(idx); _showMorePetitioners = false; }">
-                                                <img src="@iconSrc2" alt="" />
-                                                <span>@ShortName(a2.PetitionerName)</span>
-                                            </button>
-                                        }
-                                    </div>
-                                }
-                            </div>
-                        }
+                            }
+                        </div>
+                        <button type="button"
+                                class="audience-hall__ring-core @(_selectedSeatKey == GeneralSeatKey ? "is-on" : "")"
+                                title="@L["General Council"]"
+                                @onclick="SelectGeneralCouncil">
+                            <img src="@("/" + MyIcon.CouncilTable)" class="audience-hall__throne" alt="" />
+                            @if (UnassignedCouncilTopics.Count > 0)
+                            {
+                                <span class="audience-hall__badge">@UnassignedCouncilTopics.Count</span>
+                            }
+                        </button>
+                        <div class="audience-hall__satellites audience-hall__satellites--right">
+                            @foreach (var seat in RightCouncilSeats)
+                            {
+                                <button type="button"
+                                        class="audience-hall__advisor @(_selectedSeatKey == seat.Key ? "is-on" : "")"
+                                        title="@seat.Label"
+                                        @onclick="() => SelectSeat(seat)">
+                                    @if (seat.Topics.Count > 0)
+                                    {
+                                        <span class="audience-hall__badge">@seat.Topics.Count</span>
+                                    }
+                                    <img src="@("/" + seat.Icon)" alt="" />
+                                    <span>@seat.ShortLabel</span>
+                                </button>
+                            }
+                        </div>
                     </div>
-                </div>
-            }
-            else
-            {
-                <img src="@("/" + MyIcon.MedievalThrone)" class="audience-hall__throne" alt="" />
-            }
+                }
+                else if (_mode == HallMode.Audiences)
+                {
+                    <div class="audience-hall__ring">
+                        <div class="audience-hall__satellites audience-hall__satellites--left">
+                            @foreach (var p in LeftPetitionerSatellites)
+                            {
+                                <button type="button"
+                                        class="audience-hall__advisor @(CurrentAudience?.Id == p.Id ? "is-on" : "")"
+                                        title="@p.Label"
+                                        @onclick="() => SelectAudience(p.Id)">
+                                    @if (p.NeedsAttention)
+                                    {
+                                        <span class="audience-hall__badge audience-hall__badge--flag">!</span>
+                                    }
+                                    <img src="@("/" + p.Icon)" alt="" />
+                                    <span>@p.Label</span>
+                                </button>
+                            }
+                        </div>
+                        <img src="@("/" + MyIcon.Throne)" class="audience-hall__throne" alt="" />
+                        <div class="audience-hall__satellites audience-hall__satellites--right">
+                            @foreach (var p in RightPetitionerSatellites)
+                            {
+                                <button type="button"
+                                        class="audience-hall__advisor @(CurrentAudience?.Id == p.Id ? "is-on" : "")"
+                                        title="@p.Label"
+                                        @onclick="() => SelectAudience(p.Id)">
+                                    @if (p.NeedsAttention)
+                                    {
+                                        <span class="audience-hall__badge audience-hall__badge--flag">!</span>
+                                    }
+                                    <img src="@("/" + p.Icon)" alt="" />
+                                    <span>@p.Label</span>
+                                </button>
+                            }
+                            @if (OverflowPetitionerSatellites.Count > 0)
+                            {
+                                <MudMenu @bind-Open="_showMorePetitioners"
+                                         CloseOnClick="false"
+                                         Dense="true"
+                                         AnchorOrigin="Origin.BottomCenter"
+                                         TransformOrigin="Origin.TopCenter"
+                                         Class="audience-hall__more-menu">
+                                    <ActivatorContent>
+                                        <button type="button"
+                                                class="audience-hall__advisor"
+                                                title="@L["More petitioners"]"
+                                                @onclick="() => _showMorePetitioners = true">
+                                            <span class="audience-hall__badge">@OverflowPetitionerSatellites.Count</span>
+                                            <MudIcon Icon="@Icons.Material.Filled.MoreHoriz" Style="width:3rem;height:3rem;" />
+                                            <span>@L["More"]</span>
+                                        </button>
+                                    </ActivatorContent>
+                                    <ChildContent>
+                                        @foreach (var p in OverflowPetitionerSatellites)
+                                        {
+                                            <MudMenuItem OnClick="() => SelectAudience(p.Id)">
+                                                <div class="audience-hall__more-item">
+                                                    <img src="@("/" + p.Icon)" alt="" />
+                                                    <span>@p.Label</span>
+                                                    @if (p.NeedsAttention)
+                                                    {
+                                                        <span class="audience-hall__badge audience-hall__badge--flag audience-hall__badge--inline">!</span>
+                                                    }
+                                                </div>
+                                            </MudMenuItem>
+                                        }
+                                    </ChildContent>
+                                </MudMenu>
+                            }
+                        </div>
+                    </div>
+                }
+                else if (_mode == HallMode.Adventures)
+                {
+                    <div class="audience-hall__ring">
+                        <div class="audience-hall__satellites audience-hall__satellites--left">
+                            @foreach (var c in LeftChapterSatellites)
+                            {
+                                <button type="button"
+                                        class="audience-hall__advisor"
+                                        title="@c.Label"
+                                        @onclick="() => SelectChapter(c.Id)">
+                                    <img src="@("/" + MyIcon.Bookmark)" alt="" />
+                                    <span>@c.Label</span>
+                                </button>
+                            }
+                        </div>
+                        <img src="@("/" + MyIcon.AdventureCamp)" class="audience-hall__throne audience-hall__throne--zoom" alt="" />
+                        <div class="audience-hall__satellites audience-hall__satellites--right">
+                            @foreach (var c in RightChapterSatellites)
+                            {
+                                <button type="button"
+                                        class="audience-hall__advisor"
+                                        title="@c.Label"
+                                        @onclick="() => SelectChapter(c.Id)">
+                                    <img src="@("/" + MyIcon.Bookmark)" alt="" />
+                                    <span>@c.Label</span>
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <img src="@("/" + MyIcon.Throne)" class="audience-hall__throne" alt="" />
+                }
 
-            <div class="audience-hall__tiles">
-                <button type="button"
-                        class="audience-hall__tile @(_mode == HallMode.Audiences ? "is-on" : "")"
-                        @onclick="ToggleAudiences">
-                    @if (PendingAudiences.Count > 0)
-                    {
-                        <span class="audience-hall__badge">@PendingAudiences.Count</span>
-                    }
-                    <img src="@("/" + MyIcon.TiedScroll)" alt="" />
-                    <span>@L["Audiences"]</span>
-                </button>
-                <button type="button"
-                        class="audience-hall__tile @(_mode == HallMode.Council ? "is-on" : "")"
-                        @onclick="ToggleCouncil">
-                    @if (OpenCouncilTopics.Count > 0)
-                    {
-                        <span class="audience-hall__badge">@OpenCouncilTopics.Count</span>
-                    }
-                    <img src="@("/" + MyIcon.People)" alt="" />
-                    <span>@L["Council"]</span>
-                </button>
-                <button type="button"
-                        class="audience-hall__tile"
-                        @onclick="GoToAdventuresAsync"
-                        disabled="@_busy">
-                    <img src="@("/" + MyIcon.Bookmark)" alt="" />
-                    <span>@L["Adventures"]</span>
-                </button>
+
+                <div class="audience-hall__tiles">
+                    <button type="button"
+                            class="audience-hall__tile @(_mode == HallMode.Audiences ? "is-on" : "")"
+                            disabled="@(_mode == HallMode.Audiences)"
+                            @onclick="ToggleAudiences">
+                        @if (PendingAudiences.Count > 0)
+                        {
+                            <span class="audience-hall__badge">@PendingAudiences.Count</span>
+                        }
+                        <img src="@("/" + MyIcon.TiedScroll)" alt="" />
+                        <span>@L["Audiences"]</span>
+                    </button>
+                    <button type="button"
+                            class="audience-hall__tile @(_mode == HallMode.Council ? "is-on" : "")"
+                            disabled="@(_mode == HallMode.Council)"
+                            @onclick="ToggleCouncil">
+                        @if (OpenCouncilTopics.Count > 0)
+                        {
+                            <span class="audience-hall__badge">@OpenCouncilTopics.Count</span>
+                        }
+                        <img src="@("/" + MyIcon.People)" alt="" />
+                        <span>@L["Council"]</span>
+                    </button>
+                    <button type="button"
+                            class="audience-hall__tile @(_mode == HallMode.Adventures ? "is-on" : "")"
+                            disabled="@(_mode == HallMode.Adventures)"
+                            @onclick="ToggleAdventures">
+                        @if (CampaignChapters.Count > 0)
+                        {
+                            <span class="audience-hall__badge">@CampaignChapters.Count</span>
+                        }
+                        <img src="@("/" + MyIcon.Bookmark)" alt="" />
+                        <span>@L["Adventures"]</span>
+                    </button>
+                </div>
             </div>
 
-            @if (_mode == HallMode.Audiences)
+            @if (_mode != HallMode.Adventures)
             {
                 <div class="audience-hall__petition">
-                    @if (CurrentAudience is null)
+                    @if (_mode == HallMode.Audiences)
                     {
-                        <div class="audience-scroll">
-                            <div class="audience-scroll__sheet audience-scroll__sheet--empty">
-                                <p>@L["No pending audiences right now. Well governed!"]</p>
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        <AudiencePanel @key="CurrentAudience.Id"
-                                       Audience="CurrentAudience"
-                                       HallLayout="true"
-                                       CanWriteAsBaron="true"
-                                       BaronCharacterName="BaronCharacterName"
-                                       Busy="_busy"
-                                       OnSpeak="req => SpeakAsync(CurrentAudience, req)"
-                                       OnDismiss="() => DismissAsync(CurrentAudience)" />
-                        @if (PendingAudiences.Count > 1)
+                        @if (ActiveAudiences.Count == 0)
                         {
-                            <div class="audience-hall__pager">
-                                <button type="button" class="audience-hall__ink-btn" disabled="@(_audienceIndex <= 0)" @onclick="() => StepTopic(-1)">‹</button>
-                                <span>@(_audienceIndex + 1) / @PendingAudiences.Count</span>
-                                <button type="button" class="audience-hall__ink-btn" disabled="@(_audienceIndex >= PendingAudiences.Count - 1)" @onclick="() => StepTopic(1)">›</button>
+                            <div class="audience-scroll">
+                                <div class="audience-scroll__sheet audience-scroll__sheet--empty">
+                                    <p>@L["No audiences right now. Well governed!"]</p>
+                                </div>
                             </div>
                         }
-                    }
-                </div>
-            }
-            else if (_mode == HallMode.Council && _selectedSeatKey is not null)
-            {
-                <div class="audience-hall__petition">
-                    @if (CurrentCouncilTopic is null)
-                    {
-                        <div class="audience-scroll">
-                            <div class="audience-scroll__sheet audience-scroll__sheet--empty">
-                                <p>@L["No council topics right now."]</p>
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        <AudiencePanel @key="CurrentCouncilTopic.Id"
-                                       Audience="CurrentCouncilTopic"
-                                       HallLayout="true"
-                                       CanWriteAsBaron="true"
-                                       BaronCharacterName="BaronCharacterName"
-                                       Busy="_busy"
-                                       OnSpeak="req => SpeakAsync(CurrentCouncilTopic, req)"
-                                       OnDismiss="() => DismissAsync(CurrentCouncilTopic)" />
-                        @if (SelectedCouncilTopics.Count > 1)
+                        else if (CurrentAudience is not null)
                         {
-                            <div class="audience-hall__pager">
-                                <button type="button" class="audience-hall__ink-btn" disabled="@(_councilIndex <= 0)" @onclick="() => StepTopic(-1)">‹</button>
-                                <span>@(_councilIndex + 1) / @SelectedCouncilTopics.Count</span>
-                                <button type="button" class="audience-hall__ink-btn" disabled="@(_councilIndex >= SelectedCouncilTopics.Count - 1)" @onclick="() => StepTopic(1)">›</button>
+                            <AudiencePanel @key="CurrentAudience.Id"
+                                           Audience="CurrentAudience"
+                                           HallLayout="true"
+                                           CanWriteAsBaron="true"
+                                           BaronCharacterName="BaronCharacterName"
+                                           Busy="_busy"
+                                           OnSpeak="req => SpeakAsync(CurrentAudience, req)"
+                                           OnDismiss="() => DismissAsync(CurrentAudience)" />
+                            @if (ActiveAudiences.Count > 1)
+                            {
+                                <div class="audience-hall__pager">
+                                    <button type="button" class="audience-hall__ink-btn" disabled="@(_audienceIndex <= 0)" @onclick="() => StepTopic(-1)">‹</button>
+                                    <span>@(_audienceIndex + 1) / @ActiveAudiences.Count</span>
+                                    <button type="button" class="audience-hall__ink-btn" disabled="@(_audienceIndex >= ActiveAudiences.Count - 1)" @onclick="() => StepTopic(1)">›</button>
+                                </div>
+                            }
+                        }
+                    }
+                    else if (_mode == HallMode.Council && _selectedSeatKey is not null)
+                    {
+                        @if (CurrentCouncilTopic is null)
+                        {
+                            <div class="audience-scroll">
+                                <div class="audience-scroll__sheet audience-scroll__sheet--empty">
+                                    <p>@L["No council topics right now."]</p>
+                                </div>
                             </div>
+                        }
+                        else
+                        {
+                            <AudiencePanel @key="CurrentCouncilTopic.Id"
+                                           Audience="CurrentCouncilTopic"
+                                           HallLayout="true"
+                                           AdvisorIcon="CurrentCouncilAdvisorIcon"
+                                           CanWriteAsBaron="true"
+                                           BaronCharacterName="BaronCharacterName"
+                                           Busy="_busy"
+                                           OnSpeak="req => SpeakAsync(CurrentCouncilTopic, req)"
+                                           OnDismiss="() => DismissAsync(CurrentCouncilTopic)" />
+                            @if (SelectedCouncilTopics.Count > 1)
+                            {
+                                <div class="audience-hall__pager">
+                                    <button type="button" class="audience-hall__ink-btn" disabled="@(_councilIndex <= 0)" @onclick="() => StepTopic(-1)">‹</button>
+                                    <span>@(_councilIndex + 1) / @SelectedCouncilTopics.Count</span>
+                                    <button type="button" class="audience-hall__ink-btn" disabled="@(_councilIndex >= SelectedCouncilTopics.Count - 1)" @onclick="() => StepTopic(1)">›</button>
+                                </div>
+                            }
                         }
                     }
                 </div>
@@ -226,16 +290,22 @@
 </div>
 
 @code {
-    private enum HallMode { Idle, Audiences, Council }
+    private enum HallMode { Idle, Audiences, Council, Adventures }
 
     private const string GeneralSeatKey = "";
 
     private sealed record CouncilSeat(string Key, string Label, string ShortLabel, string Icon, List<BaronAudienceDTO> Topics);
 
-    private HallMode _mode = HallMode.Idle;
+    private sealed record PetitionerSatellite(int Id, string Icon, string Label, bool NeedsAttention);
+    private sealed record ChapterSatellite(int Id, string Label);
+
+    private HallMode _mode = HallMode.Audiences;
     private List<BaronAudienceDTO> _audiences = new();
     private List<AdvisorDTO> _advisors = new();
-    private int _audienceIndex;
+    private CampaignDTO? _campaign;
+    // -1 = no audience picked yet (petitioner ring shows on load, but the parchment stays empty
+    // until an icon is clicked); ClampIndexes/StepTopic already treat this as "unselected".
+    private int _audienceIndex = -1;
     private int _councilIndex;
     private string? _selectedSeatKey;
     private bool _busy;
@@ -243,13 +313,18 @@
 
     private string? BaronCharacterName => UserInfo?.SelectedCharacter?.NPCName;
 
-    private IReadOnlyList<BaronAudienceDTO> PendingAudiences =>
+    // All open audiences (baron may have already replied) — shown as icons around the throne.
+    private IReadOnlyList<BaronAudienceDTO> ActiveAudiences =>
         _audiences
-            .Where(a => BaronAudienceKind.IsAudience(a.Kind)
-                        && a.IsActive
-                        && (a.LastExchange is null || a.LastExchange.IsFromPetitioner))
+            .Where(a => BaronAudienceKind.IsAudience(a.Kind) && a.IsActive)
             .OrderBy(a => a.TurnNumber)
             .ThenBy(a => a.Id)
+            .ToList();
+
+    // Subset of ActiveAudiences still waiting on the baron's reply — drives the "needs attention" badges.
+    private IReadOnlyList<BaronAudienceDTO> PendingAudiences =>
+        ActiveAudiences
+            .Where(a => a.LastExchange is null || a.LastExchange.IsFromPetitioner)
             .ToList();
 
     private IReadOnlyList<BaronAudienceDTO> OpenCouncilTopics =>
@@ -257,6 +332,12 @@
             .Where(a => BaronAudienceKind.IsCouncil(a.Kind) && a.IsActive)
             .OrderBy(a => a.TurnNumber)
             .ThenBy(a => a.Id)
+            .ToList();
+
+    private IReadOnlyList<ChapterDTO> CampaignChapters =>
+        (_campaign?.Chapters ?? Array.Empty<ChapterDTO>())
+            .OrderBy(c => c.DateNumber)
+            .ThenBy(c => c.Id)
             .ToList();
 
     private IReadOnlyList<BaronAudienceDTO> UnassignedCouncilTopics =>
@@ -279,6 +360,56 @@
 
             return seats;
         }
+    }
+
+    private List<CouncilSeat> LeftCouncilSeats => SplitSides(CouncilSeats).Left;
+
+    private List<CouncilSeat> RightCouncilSeats => SplitSides(CouncilSeats).Right;
+
+    private List<PetitionerSatellite> PetitionerSatellites =>
+        ActiveAudiences
+            .Select(a => new PetitionerSatellite(
+                a.Id,
+                PetitionerIconCatalog.PathFor(a.PetitionerIcon),
+                a.PetitionerName,
+                a.LastExchange is null || a.LastExchange.IsFromPetitioner))
+            .ToList();
+
+    /// <summary>Only this many icons fit comfortably around the throne — the rest hide behind "More".</summary>
+    private const int MaxVisiblePetitioners = 6;
+
+    private List<PetitionerSatellite> VisiblePetitionerSatellites =>
+        PetitionerSatellites.Take(MaxVisiblePetitioners).ToList();
+
+    private List<PetitionerSatellite> OverflowPetitionerSatellites =>
+        PetitionerSatellites.Skip(MaxVisiblePetitioners).ToList();
+
+    private List<PetitionerSatellite> LeftPetitionerSatellites => SplitSides(VisiblePetitionerSatellites).Left;
+
+    private List<PetitionerSatellite> RightPetitionerSatellites => SplitSides(VisiblePetitionerSatellites).Right;
+
+    private List<ChapterSatellite> ChapterSatellites =>
+        CampaignChapters
+            .Select(c => new ChapterSatellite(c.Id, c.Name))
+            .ToList();
+
+    private List<ChapterSatellite> LeftChapterSatellites => SplitSides(ChapterSatellites).Left;
+
+    private List<ChapterSatellite> RightChapterSatellites => SplitSides(ChapterSatellites).Right;
+
+    /// <summary>Alternates items left/right so both flanks of the throne stay balanced as the list grows.</summary>
+    private static (List<T> Left, List<T> Right) SplitSides<T>(IReadOnlyList<T> items)
+    {
+        var left = new List<T>();
+        var right = new List<T>();
+        for (var i = 0; i < items.Count; i++)
+        {
+            if (i % 2 == 0)
+                right.Add(items[i]);
+            else
+                left.Add(items[i]);
+        }
+        return (left, right);
     }
 
     private static bool TopicBelongsTo(BaronAudienceDTO topic, string label, string personName)
@@ -322,10 +453,16 @@
     }
 
     private BaronAudienceDTO? CurrentAudience =>
-        _audienceIndex >= 0 && _audienceIndex < PendingAudiences.Count ? PendingAudiences[_audienceIndex] : null;
+        _audienceIndex >= 0 && _audienceIndex < ActiveAudiences.Count ? ActiveAudiences[_audienceIndex] : null;
 
     private BaronAudienceDTO? CurrentCouncilTopic =>
         _councilIndex >= 0 && _councilIndex < SelectedCouncilTopics.Count ? SelectedCouncilTopics[_councilIndex] : null;
+
+    // Icon of the advisor whose seat is selected — null for the General Council bucket.
+    private string? CurrentCouncilAdvisorIcon =>
+        _selectedSeatKey is not null && _selectedSeatKey != GeneralSeatKey
+            ? CouncilSeats.FirstOrDefault(s => s.Key == _selectedSeatKey)?.Icon
+            : null;
 
     protected override async Task OnInitializedAsync()
     {
@@ -341,13 +478,17 @@
         await _baronyRepo.EnsureCouncilSession(Barony.Id, Barony.TurnNumber, Barony.Year, Barony.Season);
         _audiences = await _baronyRepo.GetAudiences(BaronyId);
         _advisors = await _baronyRepo.GetAdvisors(Barony.Id);
+        var campaigns = (await _campaignRepository.GetAll(Barony.CharacterId)).ToList();
+        _campaign = campaigns.FirstOrDefault(c =>
+                        string.Equals(c.Name, Barony.Name, StringComparison.OrdinalIgnoreCase))
+                    ?? campaigns.OrderByDescending(c => c.CreatedDate).FirstOrDefault();
         ClampIndexes();
     }
 
     private void ClampIndexes()
     {
-        if (_audienceIndex >= PendingAudiences.Count)
-            _audienceIndex = Math.Max(0, PendingAudiences.Count - 1);
+        if (_audienceIndex >= ActiveAudiences.Count)
+            _audienceIndex = Math.Max(0, ActiveAudiences.Count - 1);
         if (_councilIndex >= SelectedCouncilTopics.Count)
             _councilIndex = Math.Max(0, SelectedCouncilTopics.Count - 1);
         if (_selectedSeatKey is not null
@@ -356,31 +497,56 @@
             _selectedSeatKey = null;
     }
 
+    // These only ENTER their mode now (buttons are disabled while already active, see markup)
+    // so a stray double-click can never fall back to Idle/throne mid-animation.
     private void ToggleAudiences()
     {
+        if (_mode == HallMode.Audiences)
+            return;
         _selectedSeatKey = null;
-        _mode = _mode == HallMode.Audiences ? HallMode.Idle : HallMode.Audiences;
+        _mode = HallMode.Audiences;
     }
 
     private void ToggleCouncil()
     {
         if (_mode == HallMode.Council)
-        {
-            _mode = HallMode.Idle;
-            _selectedSeatKey = null;
-        }
-        else
-        {
-            _mode = HallMode.Council;
-            _selectedSeatKey = null;
-            _councilIndex = 0;
-        }
+            return;
+        _mode = HallMode.Council;
+        _selectedSeatKey = null;
+        _councilIndex = 0;
+    }
+
+    private void ToggleAdventures()
+    {
+        if (_mode == HallMode.Adventures)
+            return;
+        _selectedSeatKey = null;
+        _mode = HallMode.Adventures;
     }
 
     private void SelectSeat(CouncilSeat seat)
     {
         _selectedSeatKey = seat.Key;
         _councilIndex = 0;
+    }
+
+    private void SelectAudience(int audienceId)
+    {
+        _showMorePetitioners = false;
+        var list = ActiveAudiences;
+        for (var i = 0; i < list.Count; i++)
+        {
+            if (list[i].Id == audienceId)
+            {
+                _audienceIndex = i;
+                return;
+            }
+        }
+    }
+
+    private void SelectChapter(int chapterId)
+    {
+        _navigationManager.NavigateTo($"/chapter/{chapterId}");
     }
 
     private void SelectGeneralCouncil()
@@ -392,7 +558,7 @@
     private void StepTopic(int delta)
     {
         if (_mode == HallMode.Audiences)
-            _audienceIndex = Math.Clamp(_audienceIndex + delta, 0, Math.Max(0, PendingAudiences.Count - 1));
+            _audienceIndex = Math.Clamp(_audienceIndex + delta, 0, Math.Max(0, ActiveAudiences.Count - 1));
         else if (_mode == HallMode.Council)
             _councilIndex = Math.Clamp(_councilIndex + delta, 0, Math.Max(0, SelectedCouncilTopics.Count - 1));
     }
@@ -452,20 +618,6 @@
         {
             _busy = false;
         }
-    }
-
-    private void SelectAudience(int idx)
-    {
-        _audienceIndex = idx;
-        _showMorePetitioners = false;
-    }
-
-    private static string ShortName(string? name)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            return "?";
-        var comma = name.IndexOf(',');
-        return comma > 0 ? name[..comma].Trim() : name.Trim();
     }
 
     private async Task GoToAdventuresAsync()

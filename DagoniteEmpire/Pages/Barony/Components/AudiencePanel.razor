@@ -1,118 +1,137 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
+@implements IAsyncDisposable
+@inject IJSRuntime JS
 
 @if (HallLayout)
 {
     <div class="audience-scroll">
         <div class="audience-scroll__sheet">
-            <p class="audience-scroll__meta">
-                @if (IsCouncil)
+            <div class="audience-scroll__header">
+                @if (!IsCouncil && !string.IsNullOrWhiteSpace(Audience.PetitionerIcon))
                 {
-                    <span>@L["Council"]</span>
+                    <img src="@("/" + PetitionerIconSrc)" class="audience-scroll__petitioner-icon" alt="" />
                 }
-                else
+                @if (IsCouncil && !string.IsNullOrWhiteSpace(AdvisorIcon))
                 {
-                    @if (!string.IsNullOrWhiteSpace(Audience.PetitionerIcon))
-                    {
-                        <img src="@("/" + PetitionerIconSrc)" class="audience-scroll__petitioner-icon" alt="" />
-                    }
-                    <span>@Audience.PetitionerName</span>
+                    <img src="@("/" + AdvisorIcon)" class="audience-scroll__petitioner-icon" alt="" />
                 }
-                <span>· T@(Audience.TurnNumber)</span>
-            </p>
-            <h2 class="audience-scroll__title">@Audience.Title</h2>
-            @foreach (var x in Audience.Exchanges.OrderBy(e => e.SortOrder).ThenBy(e => e.Id))
-            {
-                <div class="audience-scroll__passage @ExchangeThemeClass(x)">
-                    <span class="audience-scroll__speaker">@L[SpeakerLabel(x)]</span>
-                    <div class="audience-scroll__body">
-                        @if (TryGetChapterLink(x, out var chapterId, out var chapterLabel))
+                <div class="audience-scroll__header-text">
+                    <p class="audience-scroll__meta">
+                        @if (IsCouncil)
                         {
-                            <span>@chapterLabel </span>
-                            <a href="/chapter/@chapterId">@L["Open chapter"]</a>
+                            <span>@L["Council"]</span>
                         }
                         else
                         {
-                            @x.Body
+                            <span>@Audience.PetitionerName</span>
                         }
-                    </div>
-                    @if (x.IsResourceChange
-                        && ((x.Additive is not null && !x.Additive.IsEmpty) || x.HasPhp))
-                    {
-                        <div class="audience-scroll__delta">
-                            @if (x.Additive is not null && !x.Additive.IsEmpty)
+                        <span>· T@(Audience.TurnNumber)</span>
+                    </p>
+                    <h2 class="audience-scroll__title">@Audience.Title</h2>
+                </div>
+            </div>
+            <div class="audience-scroll__scroll" id="@ScrollContainerId">
+                @foreach (var x in Audience.Exchanges.OrderBy(e => e.SortOrder).ThenBy(e => e.Id))
+                {
+                    <div class="audience-scroll__passage @ExchangeThemeClass(x)">
+                        <span class="audience-scroll__speaker">@L[SpeakerLabel(x)]</span>
+                        <div class="audience-scroll__body">
+                            @if (TryGetChapterLink(x, out var chapterId, out var chapterLabel))
                             {
-                                @foreach (var info in PpbCatalog.All)
-                                {
-                                    var v = x.Additive[info.Key];
-                                    if (v == 0m)
-                                        continue;
-                                    <span>@PpbFormat.Additive(v) @info.Short</span>
-                                }
+                                <span>@chapterLabel </span>
+                                <a href="/chapter/@chapterId">@L["Open chapter"]</a>
                             }
-                            @if (x.Prestige != 0)
+                            else
                             {
-                                <span>@FmtPhp(x.Prestige) @L["Prestige"]</span>
-                            }
-                            @if (x.Honor != 0)
-                            {
-                                <span>@FmtPhp(x.Honor) @L["Honor"]</span>
-                            }
-                            @if (x.Fear != 0)
-                            {
-                                <span>@FmtPhp(x.Fear) @L["Fear"]</span>
+                                @x.Body
                             }
                         </div>
-                    }
-                </div>
-            }
+                        @if (x.IsResourceChange
+                            && ((x.Additive is not null && !x.Additive.IsEmpty) || x.HasPhp))
+                        {
+                            <div class="audience-scroll__delta">
+                                @if (x.Additive is not null && !x.Additive.IsEmpty)
+                                {
+                                    @foreach (var info in PpbCatalog.All)
+                                    {
+                                        var v = x.Additive[info.Key];
+                                        if (v == 0m)
+                                            continue;
+                                        <span>@PpbFormat.Additive(v) @info.Short</span>
+                                    }
+                                }
+                                @if (x.Prestige != 0)
+                                {
+                                    <span>@FmtPhp(x.Prestige) @L["Prestige"]</span>
+                                }
+                                @if (x.Honor != 0)
+                                {
+                                    <span>@FmtPhp(x.Honor) @L["Honor"]</span>
+                                }
+                                @if (x.Fear != 0)
+                                {
+                                    <span>@FmtPhp(x.Fear) @L["Fear"]</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
         </div>
 
         @if (CanReply)
         {
-            <div class="audience-scroll__reply">
-                @if (CanWriteAsBaron)
-                {
-                    <div class="audience-scroll__modes">
-                        <button type="button"
-                                class="audience-hall__ink-btn @(_baronSpeakerMode == SpeakerModeBaron ? "is-on" : "")"
-                                disabled="@Busy"
-                                @onclick="() => _baronSpeakerMode = SpeakerModeBaron">
-                            @BaronLordSpeaker
-                        </button>
-                        <button type="button"
-                                class="audience-hall__ink-btn @(_baronSpeakerMode == BaronCouncilSession.QuestionToGmSpeaker ? "is-on" : "")"
-                                disabled="@Busy"
-                                @onclick="() => _baronSpeakerMode = BaronCouncilSession.QuestionToGmSpeaker">
-                            @L["Question to GM"]
-                        </button>
-                    </div>
-                }
-                <textarea class="audience-scroll__draft"
-                          rows="3"
-                          disabled="@Busy"
-                          placeholder="@ComposerPlaceholder"
-                          @bind="_draft"
-                          @bind:event="oninput"></textarea>
-                <div class="audience-scroll__actions">
-                    <button type="button"
-                            class="audience-hall__ink-btn audience-hall__ink-btn--strong"
-                            disabled="@(Busy || !CanSpeak)"
-                            @onclick="SpeakAsync">
-                        @L["Speak"]
-                    </button>
+            <div id="@ComposerDockId" class="audience-scroll__dock @(_replyExpanded ? "audience-scroll__dock--expanded" : "audience-scroll__dock--collapsed")">
+                <div class="audience-scroll__dock-collapsed" role="button" tabindex="0" @onclick="ExpandComposerAsync">
+                    <span>@ComposerCollapsedHint</span>
+                </div>
+                <div class="audience-scroll__dock-expanded">
                     @if (CanWriteAsBaron)
                     {
-                        <button type="button"
-                                class="audience-hall__ink-btn"
-                                disabled="@Busy"
-                                @onclick="() => OnDismiss.InvokeAsync()">
-                            @L["Dismiss"]
-                        </button>
+                        <div class="audience-scroll__modes">
+                            <button type="button"
+                                    class="audience-hall__ink-btn @(_baronSpeakerMode == SpeakerModeBaron ? "is-on" : "")"
+                                    disabled="@Busy"
+                                    @onclick="() => _baronSpeakerMode = SpeakerModeBaron">
+                                @BaronLordSpeaker
+                            </button>
+                            <button type="button"
+                                    class="audience-hall__ink-btn @(_baronSpeakerMode == BaronCouncilSession.QuestionToGmSpeaker ? "is-on" : "")"
+                                    disabled="@Busy"
+                                    @onclick="() => _baronSpeakerMode = BaronCouncilSession.QuestionToGmSpeaker">
+                                @L["Question to GM"]
+                            </button>
+                        </div>
                     }
+                    <textarea class="audience-scroll__draft"
+                              @ref="_draftInputRef"
+                              rows="3"
+                              disabled="@Busy"
+                              placeholder="@ComposerPlaceholder"
+                              @bind="_draft"
+                              @bind:event="oninput"></textarea>
+                    <div class="audience-scroll__actions">
+                        <button type="button"
+                                class="audience-hall__ink-btn audience-hall__ink-btn--strong"
+                                disabled="@(Busy || !CanSpeak)"
+                                @onclick="SpeakAsync">
+                            @L["Speak"]
+                        </button>
+                        @if (CanWriteAsBaron)
+                        {
+                            <button type="button"
+                                    class="audience-hall__ink-btn"
+                                    disabled="@Busy"
+                                    @onclick="() => OnDismiss.InvokeAsync()">
+                                @L["Dismiss"]
+                            </button>
+                        }
+                    </div>
                 </div>
             </div>
         }
     </div>
+
 }
 else
 {
@@ -432,6 +451,8 @@ else
     [Parameter] public bool InitiallyOpen { get; set; }
     /// <summary>Parchment presentation used by Audience Hall (no project-card chrome).</summary>
     [Parameter] public bool HallLayout { get; set; }
+    /// <summary>Council topic header icon (Audience Hall) — the assigned advisor's icon, same spot as the petitioner icon.</summary>
+    [Parameter] public string? AdvisorIcon { get; set; }
     [Parameter] public bool CanWriteAsGm { get; set; }
     [Parameter] public bool CanWriteAsBaron { get; set; }
     [Parameter] public bool Busy { get; set; }
@@ -454,6 +475,22 @@ else
     private string _baronSpeakerMode = SpeakerModeBaron;
     private string _otherSpeaker = "";
     private bool _speakersInitialized;
+
+    /// <summary>Docked composer (Audience Hall only) — collapsed by default, expands on click.</summary>
+    private readonly string ComposerDockId = "audience-hall-composer-" + Guid.NewGuid().ToString("N");
+    private bool _replyExpanded;
+    private bool _outsideCollapseRegistered;
+    private ElementReference _draftInputRef;
+    private DotNetObjectReference<AudiencePanel>? _dotNetRef;
+
+    /// <summary>Scrollable passages region (Audience Hall only) — jumps to the last entry on open/reply.</summary>
+    private readonly string ScrollContainerId = "audience-hall-scroll-" + Guid.NewGuid().ToString("N");
+    private int _lastScrolledExchangeCount = -1;
+
+    private string ComposerCollapsedHint =>
+        _baronSpeakerMode == BaronCouncilSession.QuestionToGmSpeaker
+            ? L["Click to ask the GM…"].Value
+            : L["Click to write your reply…"].Value;
 
     private bool IsCouncil => BaronAudienceKind.IsCouncil(Audience.Kind);
 
@@ -550,6 +587,87 @@ else
     }
 
     private void Toggle() => _isOpen = !_isOpen;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!HallLayout)
+            return;
+
+        var exchangeCount = Audience.Exchanges.Count;
+        if (!firstRender && exchangeCount == _lastScrolledExchangeCount)
+            return;
+
+        _lastScrolledExchangeCount = exchangeCount;
+        try
+        {
+            await JS.InvokeVoidAsync("ScrollToLastPassage", ScrollContainerId);
+        }
+        catch
+        {
+            // Container may not be rendered yet — not critical.
+        }
+    }
+
+    private async Task ExpandComposerAsync()
+    {
+        if (_replyExpanded)
+            return;
+
+        _replyExpanded = true;
+        StateHasChanged();
+        await Task.Yield();
+        try
+        {
+            // preventScroll: the textarea is still mid max-height transition here (near-zero
+            // size) — without this the browser scrolls the nearest container into view to
+            // "reveal" the newly-focused element, which reads as a sudden jump.
+            await _draftInputRef.FocusAsync(preventScroll: true);
+        }
+        catch
+        {
+            // Element may not be rendered yet on very first paint — not critical.
+        }
+
+        try
+        {
+            _dotNetRef ??= DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("QuillPostEditor.enableOutsideClickCollapse",
+                ComposerDockId, _dotNetRef, nameof(CollapseComposerFromJs));
+            _outsideCollapseRegistered = true;
+        }
+        catch
+        {
+            // Best-effort — the composer still works without auto-collapse.
+        }
+    }
+
+    [JSInvokable]
+    public async Task CollapseComposerFromJs()
+    {
+        if (!_replyExpanded)
+            return;
+
+        _replyExpanded = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_outsideCollapseRegistered)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("QuillPostEditor.disableOutsideClickCollapse", ComposerDockId);
+            }
+            catch
+            {
+                // Circuit may already be gone on navigation/disconnect.
+            }
+        }
+
+        _dotNetRef?.Dispose();
+    }
+
 
     private string ExchangeThemeClass(BaronAudienceExchangeDTO x) =>
         x.IsResourceChange || IsProjectNote(x) || IsChapterNote(x)

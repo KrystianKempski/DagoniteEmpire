@@ -62,6 +62,15 @@ function ShowDeleteConfirmationModal() {
     $('#deleteConfirmationModal').modal('show');
 }
 
+// Audience Hall: scrolls a passages container so its last child starts at the top of view.
+window.ScrollToLastPassage = (containerId) => {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    const passages = container.querySelectorAll('.audience-scroll__passage');
+    if (passages.length === 0) return;
+    passages[passages.length - 1].scrollIntoView({ block: 'start' });
+};
+
 function HideDeleteConfirmationModal() {
     $('#deleteConfirmationModal').modal('hide');
 }

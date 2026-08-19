@@ -1164,7 +1164,6 @@ namespace DA_Common
         public const string AxeSword = "icons/axe-sword.svg";
         public const string VerticalBanner = "icons/vertical-banner.svg";
         public const string People = "icons/people.svg";
-        public const string CouncilTable = "icons/counciltable.svg";
         public const string ShakingHands = "icons/shaking-hands.svg";
         public const string WoodenCrate = "icons/wooden-crate.svg";
         public const string WoodCabinBlack = "icons/wood-cabin-black.svg";
@@ -1201,7 +1200,9 @@ namespace DA_Common
         public const string Copper = "icons/copper.svg";
         public const string Dice = "icons/dices.svg";
         public const string StoneThrone = "icons/stone-throne.svg";
-        public const string MedievalThrone = "icons/Throne-of-medieval-lord-with-vertical-banners.svg";
+        public const string Throne = "icons/Throne-of-medieval-lord-with-vertical-banners.svg";
+        public const string CouncilTable = "icons/counciltable.svg";
+        public const string AdventureCamp = "icons/adventurecamp.svg";
         public const string Abacus = "icons/abacus.svg";
         public const string ElfHelmet = "icons/elf-helmet.svg";
         public const string JeweledChalice = "icons/jeweled-chalice.svg";

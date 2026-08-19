@@ -7,7 +7,7 @@
 @inherits LayoutComponentBase
 
 <PageTitle>@L["DagoniteEmpire"]</PageTitle>
-<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/svg+xml" href="/icons/Dragon.svg">
 
 <MudThemeProvider/>
 <MudPopoverProvider />
@@ -22,7 +22,10 @@ MaxWidth="MaxWidth.Large" />
         <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
             <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@((e) => DrawerStartToggle())" />
         </MudHidden>
-        <MudButton Class="app-bar-title p-0 m-0" Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Text" DropShadow="true" Color="Color.Primary" Href="#">@L["Dagonite Empire"]</MudButton>
+        <MudButton Class="app-bar-title p-0 m-0" Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Text" DropShadow="true" Color="Color.Primary" Href="#">
+            <img src="/icons/Dragon_white.svg" alt="" class="app-bar-dragon-icon" />
+            @L["Dagonite Empire"]
+        </MudButton>
         @* Horizontal nav only above drawer breakpoint; on mobile/tablet use MudDrawer instead. *@
         <MudHidden Breakpoint="Breakpoint.MdAndDown">
             <div class="app-bar-nav">

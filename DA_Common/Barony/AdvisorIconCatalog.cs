@@ -8,7 +8,7 @@ namespace DA_Common.Barony
     /// </summary>
     public static class AdvisorIconCatalog
     {
-        public const string Baron = "icons/stone-throne.svg";
+        public const string Baron = "icons/Throne-of-medieval-lord-with-vertical-banners.svg";
         public const string Chancellor = "icons/jeweled-chalice.svg";
         public const string GuardCaptain = "icons/elf-helmet.svg";
         public const string Steward = "icons/abacus.svg";

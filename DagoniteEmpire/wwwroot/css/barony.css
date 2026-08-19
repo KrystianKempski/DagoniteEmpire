@@ -41,6 +41,11 @@
         display: none !important;
     }
 
+    /* Audience Hall is the one Barony page allowed on mobile/tablet. */
+    .barony-scope--audience-hall {
+        display: block !important;
+    }
+
     .barony-mobile-block {
         display: flex;
         align-items: center;
@@ -48,6 +53,10 @@
         min-height: calc(100vh - 64px);
         padding: 24px;
         background: #f4efe3;
+    }
+
+    .barony-mobile-block--hidden {
+        display: none;
     }
 
     .barony-mobile-block__card {
@@ -73,6 +82,25 @@
         font-size: .85rem;
         color: #6f6656;
     }
+}
+
+/* Audience Hall: single fixed screen, no whole-page scroll. .barony-scope's own
+   min-height + padding (content-box) are taller than the viewport by design for
+   normal scrolling pages — override both here, same pattern as march-map/battle-map. */
+.mud-main-content:has(.barony-scope--audience-hall) {
+    overflow: hidden;
+    height: 100dvh;
+    max-height: 100dvh;
+    box-sizing: border-box;
+}
+
+.barony-scope--audience-hall {
+    box-sizing: border-box;
+    height: calc(100dvh - 64px);
+    max-height: calc(100dvh - 64px);
+    min-height: 0;
+    overflow: hidden;
+    padding: 0;
 }
 
 .barony-scope h1,
@@ -9723,12 +9751,20 @@ a.city-building-name-text--link:hover {
     font-size: 0.9em;
 }
 
-.baron-audience__petitioner-icon,
-.audience-scroll__petitioner-icon {
+.baron-audience__petitioner-icon {
     width: 1.35rem;
     height: 1.35rem;
     object-fit: contain;
     flex-shrink: 0;
+}
+
+/* Hall header portrait — sized to roughly match the petitioner name + title block. */
+.audience-scroll__petitioner-icon {
+    width: 3.4rem;
+    height: 3.4rem;
+    object-fit: contain;
+    flex-shrink: 0;
+    align-self: center;
 }
 
 .audience-scroll__meta {
@@ -11936,6 +11972,7 @@ a.city-building-name-text--link:hover {
     text-decoration: underline;
     text-underline-offset: .18em;
     text-decoration-color: color-mix(in srgb, var(--barony-accent) 55%, transparent);
+    transition: color .15s ease, opacity .15s ease;
 }
 
 .audience-hall__ink-btn:hover:not(:disabled) {
@@ -11956,13 +11993,33 @@ a.city-building-name-text--link:hover {
 
 .audience-scroll {
     width: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: .7rem;
+    gap: .55rem;
+    animation: audience-scroll-in 1.1s ease-out both;
 }
 
+/* Each newly-opened audience/topic (fresh DOM via @key) fades in from fully invisible —
+   slower and simpler (opacity only) than the other hub entrance animations. */
+@keyframes audience-scroll-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Header (icon + petitioner/council label + title) stays put; only the passages below scroll. */
 .audience-scroll__sheet {
     position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
     padding: 1.35rem 1.4rem 1.5rem;
     color: #3a2c18;
     text-align: left;
@@ -11971,13 +12028,38 @@ a.city-building-name-text--link:hover {
     line-height: 1.55;
     background-color: #ead7ad;
     background-image:
-        radial-gradient(ellipse at 18% 8%, rgba(255, 248, 230, .7), transparent 42%),
-        radial-gradient(ellipse at 88% 92%, rgba(140, 96, 40, .16), transparent 48%),
-        linear-gradient(180deg, #f3e2ba 0%, #e6cc96 48%, #d9b978 100%);
+        radial-gradient(ellipse at 18% 8%, rgba(255, 248, 230, .55), transparent 42%),
+        radial-gradient(ellipse at 88% 92%, rgba(90, 60, 20, .28), transparent 48%),
+        url('/images/parchment.jpg');
+    background-size: auto, auto, cover;
+    background-position: center, center, center;
+    background-repeat: no-repeat, no-repeat, no-repeat;
     border: 1px solid #c4a46a;
     box-shadow:
         0 8px 22px rgba(60, 42, 18, .22),
         inset 0 0 48px rgba(120, 80, 30, .12);
+}
+
+.audience-scroll__header {
+    display: flex;
+    align-items: flex-start;
+    flex-shrink: 0;
+    gap: .75rem;
+    margin-bottom: .7rem;
+}
+
+.audience-scroll__header-text {
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    min-width: 0;
+}
+
+/* Only this region scrolls — the header above keeps a fixed footprint. */
+.audience-scroll__scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
 }
 
 .audience-scroll__sheet::before,
@@ -12013,19 +12095,20 @@ a.city-building-name-text--link:hover {
     align-items: center;
     flex-wrap: wrap;
     gap: .4rem;
-    margin: 0 0 .35rem;
+    margin: 0;
     font-size: .82rem;
     letter-spacing: .08em;
     text-transform: uppercase;
     color: #7a6238;
 }
 
-.audience-scroll__title {
-    margin: 0 0 .9rem;
+/* .barony-scope h2 (Eagle Lake) is more specific than a bare class — qualify with
+   .barony-scope so this wins and the title matches the petitioner name's font. */
+.barony-scope .audience-scroll__title {
+    margin: 0;
     font-family: 'IM Fell English', 'Times New Roman', serif;
     font-weight: 400;
     font-size: 1.28rem;
-    font-style: italic;
     color: #2c2114;
 }
 
@@ -12058,11 +12141,58 @@ a.city-building-name-text--link:hover {
     color: #6b542e;
 }
 
-.audience-scroll__reply {
+/* Docked reply composer — collapsed pill by default, expands on click,
+   collapses again on an outside click (mirrors the chapter thread post-dock). */
+.audience-scroll__dock {
+    flex: 0 0 auto;
+    width: 100%;
+    border: 1px solid #c4a46a;
+    background: color-mix(in srgb, #f7ecd0 92%, white);
+    box-shadow: 0 4px 14px rgba(60, 42, 18, .18);
+}
+
+/* Animated in lock-step with .audience-scroll__dock-expanded below (same durations) so the
+   collapsed pill fades/shrinks out WHILE the expanded panel grows in, instead of vanishing
+   instantly via display:none — that instant snap is what made the whole area "jump". */
+.audience-scroll__dock-collapsed {
+    max-height: 3rem;
+    opacity: 1;
+    overflow: hidden;
+    padding: .6rem .9rem;
+    cursor: text;
+    user-select: none;
+    color: #6b542e;
+    font-family: 'IM Fell English', 'Times New Roman', serif;
+    font-size: .98rem;
+    transition: max-height .25s ease, opacity .2s ease, padding .25s ease;
+}
+
+.audience-scroll__dock--expanded .audience-scroll__dock-collapsed {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    pointer-events: none;
+}
+
+.audience-scroll__dock-expanded {
     display: flex;
     flex-direction: column;
-    gap: .45rem;
-    width: 100%;
+    gap: .5rem;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+    padding: 0 .75rem;
+    transition: max-height .25s ease, opacity .2s ease, padding .25s ease;
+}
+
+.audience-scroll__dock--expanded .audience-scroll__dock-expanded {
+    max-height: 22rem;
+    opacity: 1;
+    overflow: visible;
+    pointer-events: auto;
+    padding: .75rem;
 }
 
 .audience-scroll__modes,
