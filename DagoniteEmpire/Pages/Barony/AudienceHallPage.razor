@@ -58,17 +58,20 @@
             }
             else if (_mode == HallMode.Audiences && PendingAudiences.Count > 0)
             {
+                @* max 3 per side visible; overflow goes to dropdown *@
+                var indexedAudiences = PendingAudiences.Select((a, i) => (a, i)).ToList();
+                var visibleLeft  = indexedAudiences.Where(t => t.i % 2 == 0).Take(3).ToList();
+                var visibleRight = indexedAudiences.Where(t => t.i % 2 == 1).Take(3).ToList();
+                var hiddenCount  = Math.Max(0, PendingAudiences.Count - 6);
                 <div class="audience-hall__audience-ring">
                     <div class="audience-hall__petitioners audience-hall__petitioners--left">
-                        @for (int i = 0; i < PendingAudiences.Count; i += 2)
+                        @foreach (var (a, idx) in visibleLeft)
                         {
-                            var idx = i;
-                            var a = PendingAudiences[idx];
                             var iconSrc = "/" + PetitionerIconCatalog.PathFor(a.PetitionerIcon);
                             <button type="button"
                                     class="audience-hall__petitioner @(_audienceIndex == idx ? "is-on" : "")"
                                     title="@a.PetitionerName"
-                                    @onclick="() => _audienceIndex = idx">
+                                    @onclick="() => SelectAudience(idx)">
                                 <img src="@iconSrc" alt="" />
                                 <span>@ShortName(a.PetitionerName)</span>
                             </button>
@@ -76,18 +79,45 @@
                     </div>
                     <img src="@("/" + MyIcon.MedievalThrone)" class="audience-hall__throne" alt="" />
                     <div class="audience-hall__petitioners audience-hall__petitioners--right">
-                        @for (int i = 1; i < PendingAudiences.Count; i += 2)
+                        @foreach (var (a, idx) in visibleRight)
                         {
-                            var idx = i;
-                            var a = PendingAudiences[idx];
                             var iconSrc = "/" + PetitionerIconCatalog.PathFor(a.PetitionerIcon);
                             <button type="button"
                                     class="audience-hall__petitioner @(_audienceIndex == idx ? "is-on" : "")"
                                     title="@a.PetitionerName"
-                                    @onclick="() => _audienceIndex = idx">
+                                    @onclick="() => SelectAudience(idx)">
                                 <img src="@iconSrc" alt="" />
                                 <span>@ShortName(a.PetitionerName)</span>
                             </button>
+                        }
+                        @if (hiddenCount > 0)
+                        {
+                            <div class="audience-hall__petitioner-more">
+                                <button type="button"
+                                        class="audience-hall__more-btn @(_showMorePetitioners ? "is-on" : "")"
+                                        title="@L["More petitioners"]"
+                                        @onclick="() => _showMorePetitioners = !_showMorePetitioners">
+                                    +@hiddenCount
+                                </button>
+                                @if (_showMorePetitioners)
+                                {
+                                    <div class="audience-hall__more-dropdown">
+                                        @for (int i = 6; i < PendingAudiences.Count; i++)
+                                        {
+                                            var idx = i;
+                                            var a2 = PendingAudiences[idx];
+                                            var iconSrc2 = "/" + PetitionerIconCatalog.PathFor(a2.PetitionerIcon);
+                                            <button type="button"
+                                                    class="audience-hall__more-item @(_audienceIndex == idx ? "is-on" : "")"
+                                                    title="@a2.PetitionerName"
+                                                    @onclick="() => { SelectAudience(idx); _showMorePetitioners = false; }">
+                                                <img src="@iconSrc2" alt="" />
+                                                <span>@ShortName(a2.PetitionerName)</span>
+                                            </button>
+                                        }
+                                    </div>
+                                }
+                            </div>
                         }
                     </div>
                 </div>
@@ -209,6 +239,7 @@
     private int _councilIndex;
     private string? _selectedSeatKey;
     private bool _busy;
+    private bool _showMorePetitioners;
 
     private string? BaronCharacterName => UserInfo?.SelectedCharacter?.NPCName;
 
@@ -421,6 +452,12 @@
         {
             _busy = false;
         }
+    }
+
+    private void SelectAudience(int idx)
+    {
+        _audienceIndex = idx;
+        _showMorePetitioners = false;
     }
 
     private static string ShortName(string? name)

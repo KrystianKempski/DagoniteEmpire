@@ -1,20 +1,23 @@
 .audience-hall {
-    --throne: min(24rem, 72vw);
+    --throne: min(22rem, 68vw);
     max-width: 42rem;
     margin: 0 auto;
-    min-height: calc(100dvh - 64px - 72px);
+    /* fill exactly the viewport minus top/bottom bars; no page-level scroll */
+    height: calc(100dvh - 64px - 72px);
     display: flex;
     flex-direction: column;
-    overflow: visible;
+    overflow: hidden;
 }
 
 .audience-hall__hub {
+    /* fixed upper section — tron + tiles */
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
     text-align: center;
-    padding: .35rem .75rem 1.25rem;
-    gap: 1.35rem;
+    padding: .35rem .75rem .6rem;
+    gap: .9rem;
     overflow: visible;
 }
 
@@ -23,17 +26,17 @@
     flex-shrink: 0;
     width: var(--throne);
     height: var(--throne);
-    max-height: min(24rem, 78vh);
+    max-height: min(22rem, 50vh);
     object-fit: contain;
     filter: brightness(0) drop-shadow(0 6px 14px rgba(47, 42, 36, .34));
 }
 
 .audience-hall__throne--wide {
-    /* counciltable content ratio ≈ 2.5 : 1 — cap height so it doesn't dominate */
     height: auto;
-    max-height: min(12rem, 35vh);
+    max-height: min(12rem, 30vh);
 }
 
+/* ── council & audience-ring ── */
 .audience-hall__council,
 .audience-hall__audience-ring {
     position: relative;
@@ -45,9 +48,11 @@
 }
 
 .audience-hall__audience-ring {
-    --throne: min(16rem, 44vw);
+    /* slightly smaller throne to leave room for petitioner columns */
+    --throne: min(16rem, 42vw);
 }
 
+/* ── petitioner columns (left / right of throne) ── */
 .audience-hall__petitioners {
     position: absolute;
     top: 50%;
@@ -56,15 +61,17 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: .75rem;
+    gap: .45rem;
 }
 
 .audience-hall__petitioners--left {
-    right: calc(50% + (var(--throne) / 2) + .5rem);
+    right: calc(50% + (var(--throne) / 2) + .4rem);
+    align-items: flex-end;
 }
 
 .audience-hall__petitioners--right {
-    left: calc(50% + (var(--throne) / 2) + .5rem);
+    left: calc(50% + (var(--throne) / 2) + .4rem);
+    align-items: flex-start;
 }
 
 .audience-hall__petitioner {
@@ -72,26 +79,25 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: .25rem;
-    min-width: 5rem;
-    max-width: 6rem;
-    padding: .2rem .3rem;
+    gap: .15rem;
+    width: 4.2rem;
+    padding: .15rem .2rem;
     background: transparent;
     border: none;
     cursor: pointer;
     color: var(--barony-ink);
     font-family: 'IM Fell English', 'Times New Roman', serif;
-    font-size: .9rem;
-    line-height: 1.15;
+    font-size: .75rem;
+    line-height: 1.1;
     text-align: center;
     word-break: break-word;
 }
 
 .audience-hall__petitioner img {
-    width: 3.2rem;
-    height: 3.2rem;
+    width: 2.1rem;
+    height: 2.1rem;
     object-fit: contain;
-    filter: brightness(0) drop-shadow(0 2px 5px rgba(47, 42, 36, .22));
+    filter: brightness(0) drop-shadow(0 1px 4px rgba(47, 42, 36, .18));
 }
 
 .audience-hall__petitioner.is-on {
@@ -99,9 +105,85 @@
 }
 
 .audience-hall__petitioner.is-on img {
-    filter: brightness(0) drop-shadow(0 2px 8px rgba(120, 60, 0, .55));
+    filter: brightness(0) drop-shadow(0 2px 7px rgba(120, 60, 0, .55));
 }
 
+/* ── "more petitioners" button + dropdown ── */
+.audience-hall__petitioner-more {
+    position: relative;
+}
+
+.audience-hall__more-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: 999px;
+    border: 1.5px solid var(--barony-muted, #8b7355);
+    background: transparent;
+    cursor: pointer;
+    font-family: 'IM Fell English', 'Times New Roman', serif;
+    font-size: .78rem;
+    color: var(--barony-muted);
+    transition: border-color .15s, color .15s;
+}
+
+.audience-hall__more-btn.is-on,
+.audience-hall__more-btn:hover {
+    border-color: var(--barony-accent);
+    color: var(--barony-accent);
+}
+
+.audience-hall__more-dropdown {
+    position: absolute;
+    top: 2.4rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    background: #f3e2ba;
+    border: 1px solid #c4a46a;
+    border-radius: .4rem;
+    box-shadow: 0 6px 18px rgba(60, 42, 18, .22);
+    padding: .4rem .3rem;
+    display: flex;
+    flex-direction: column;
+    gap: .3rem;
+    min-width: 5.5rem;
+}
+
+.audience-hall__more-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: .45rem;
+    padding: .2rem .4rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-family: 'IM Fell English', 'Times New Roman', serif;
+    font-size: .82rem;
+    color: var(--barony-ink);
+    text-align: left;
+    border-radius: .25rem;
+    white-space: nowrap;
+}
+
+.audience-hall__more-item img {
+    width: 1.5rem;
+    height: 1.5rem;
+    object-fit: contain;
+    filter: brightness(0);
+    flex-shrink: 0;
+}
+
+.audience-hall__more-item.is-on,
+.audience-hall__more-item:hover {
+    background: rgba(120, 60, 0, .08);
+    color: var(--barony-accent);
+}
+
+/* ── council icon ring ── */
 .audience-hall__ring-core {
     position: relative;
     display: grid;
@@ -159,6 +241,7 @@
     color: var(--barony-accent);
 }
 
+/* ── nav tiles ── */
 .audience-hall__tiles {
     display: flex;
     align-items: flex-start;
@@ -198,19 +281,24 @@
     cursor: default;
 }
 
+/* ── petition panel — scrollable, fills remaining height ── */
 .audience-hall__petition {
+    flex: 1;
+    min-height: 0;
     width: 100%;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    overflow-y: auto;
+    padding: 0 .75rem .75rem;
 }
 
 .audience-hall__pager {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: .85rem;
-    margin-top: .55rem;
+    padding: .4rem 0;
     color: var(--barony-muted);
     font-family: 'IM Fell English', 'Times New Roman', serif;
     font-size: .92rem;
@@ -235,7 +323,7 @@
 
 @media (max-width: 640px) {
     .audience-hall {
-        --throne: min(18rem, 52vw);
+        --throne: min(16rem, 48vw);
         max-width: none;
     }
 }
