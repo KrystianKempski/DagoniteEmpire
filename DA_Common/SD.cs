@@ -1164,6 +1164,7 @@ namespace DA_Common
         public const string AxeSword = "icons/axe-sword.svg";
         public const string VerticalBanner = "icons/vertical-banner.svg";
         public const string People = "icons/people.svg";
+        public const string CouncilTable = "icons/counciltable.svg";
         public const string ShakingHands = "icons/shaking-hands.svg";
         public const string WoodenCrate = "icons/wooden-crate.svg";
         public const string WoodCabinBlack = "icons/wood-cabin-black.svg";
