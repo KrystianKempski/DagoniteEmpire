@@ -28,11 +28,57 @@
     filter: drop-shadow(0 6px 14px rgba(47, 42, 36, .34));
 }
 
-.audience-hall__council {
+.audience-hall__council,
+.audience-hall__audience-ring {
     position: relative;
     display: flex;
+    align-items: center;
     justify-content: center;
     width: 100%;
+    gap: .5rem;
+}
+
+.audience-hall__petitioners {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .75rem;
+    flex-shrink: 0;
+}
+
+.audience-hall__petitioner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .25rem;
+    min-width: 5rem;
+    max-width: 6rem;
+    padding: .2rem .3rem;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--barony-ink);
+    font-family: 'IM Fell English', 'Times New Roman', serif;
+    font-size: .9rem;
+    line-height: 1.15;
+    text-align: center;
+    word-break: break-word;
+}
+
+.audience-hall__petitioner img {
+    width: 3.2rem;
+    height: 3.2rem;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 5px rgba(47, 42, 36, .22));
+}
+
+.audience-hall__petitioner.is-on {
+    color: var(--barony-accent);
+}
+
+.audience-hall__petitioner.is-on img {
+    filter: drop-shadow(0 2px 8px rgba(var(--barony-accent-rgb, 120, 60, 0), .45));
 }
 
 .audience-hall__ring-core {

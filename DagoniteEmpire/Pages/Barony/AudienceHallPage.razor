@@ -56,6 +56,42 @@
                     </div>
                 </div>
             }
+            else if (_mode == HallMode.Audiences && PendingAudiences.Count > 0)
+            {
+                <div class="audience-hall__audience-ring">
+                    <div class="audience-hall__petitioners audience-hall__petitioners--left">
+                        @for (int i = 0; i < PendingAudiences.Count; i += 2)
+                        {
+                            var idx = i;
+                            var a = PendingAudiences[idx];
+                            var iconSrc = "/" + PetitionerIconCatalog.PathFor(a.PetitionerIcon);
+                            <button type="button"
+                                    class="audience-hall__petitioner @(_audienceIndex == idx ? "is-on" : "")"
+                                    title="@a.PetitionerName"
+                                    @onclick="() => _audienceIndex = idx">
+                                <img src="@iconSrc" alt="" />
+                                <span>@ShortName(a.PetitionerName)</span>
+                            </button>
+                        }
+                    </div>
+                    <img src="@("/" + MyIcon.StoneThrone)" class="audience-hall__throne" alt="" />
+                    <div class="audience-hall__petitioners audience-hall__petitioners--right">
+                        @for (int i = 1; i < PendingAudiences.Count; i += 2)
+                        {
+                            var idx = i;
+                            var a = PendingAudiences[idx];
+                            var iconSrc = "/" + PetitionerIconCatalog.PathFor(a.PetitionerIcon);
+                            <button type="button"
+                                    class="audience-hall__petitioner @(_audienceIndex == idx ? "is-on" : "")"
+                                    title="@a.PetitionerName"
+                                    @onclick="() => _audienceIndex = idx">
+                                <img src="@iconSrc" alt="" />
+                                <span>@ShortName(a.PetitionerName)</span>
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
             else
             {
                 <img src="@("/" + MyIcon.StoneThrone)" class="audience-hall__throne" alt="" />
@@ -385,6 +421,14 @@
         {
             _busy = false;
         }
+    }
+
+    private static string ShortName(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return "?";
+        var comma = name.IndexOf(',');
+        return comma > 0 ? name[..comma].Trim() : name.Trim();
     }
 
     private async Task GoToAdventuresAsync()
