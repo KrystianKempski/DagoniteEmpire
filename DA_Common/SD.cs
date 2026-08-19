@@ -1201,6 +1201,7 @@ namespace DA_Common
         public const string Copper = "icons/copper.svg";
         public const string Dice = "icons/dices.svg";
         public const string StoneThrone = "icons/stone-throne.svg";
+        public const string MedievalThrone = "icons/Throne-of-medieval-lord-with-vertical-banners.svg";
         public const string Abacus = "icons/abacus.svg";
         public const string ElfHelmet = "icons/elf-helmet.svg";
         public const string JeweledChalice = "icons/jeweled-chalice.svg";
