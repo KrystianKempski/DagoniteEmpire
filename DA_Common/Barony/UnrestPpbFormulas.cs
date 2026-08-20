@@ -7,6 +7,7 @@ namespace DA_Common.Barony
         public const string InputLabel = "Unrest";
         public const int Max = 5;
         public const decimal EconomyProductionPercentPerUnrest = 10m;
+        public const decimal EconomyProductionPercentFloor = CommunityPercentLimits.PerSourcePenaltyFloor;
         public const decimal LoyaltyStabilityLawPerUnrest = 3m;
 
         public static int Clamp(int unrest) => Math.Clamp(unrest, 0, Max);
@@ -29,8 +30,9 @@ namespace DA_Common.Barony
             var v = new PpbVector();
             v.EnsureSize();
             if (u == 0m) return v;
-            v[Ppb.Economy] = -EconomyProductionPercentPerUnrest * u;
-            v[Ppb.Production] = -EconomyProductionPercentPerUnrest * u;
+            var ecoProd = CommunityPercentLimits.ClampSourcePenalty(-EconomyProductionPercentPerUnrest * u);
+            v[Ppb.Economy] = ecoProd;
+            v[Ppb.Production] = ecoProd;
             return v;
         }
 
@@ -47,12 +49,13 @@ namespace DA_Common.Barony
         public static string? ExplainPercent(Ppb key) => key switch
         {
             Ppb.Economy or Ppb.Production
-                => Loc.T("= −{0} × {1}", Loc.T(InputLabel), EconomyProductionPercentPerUnrest.ToString("0")),
+                => Loc.T("= max(−{0} × {1}, {2})", Loc.T(InputLabel), EconomyProductionPercentPerUnrest.ToString("0"), EconomyProductionPercentFloor.ToString("0")),
             _ => null,
         };
 
         public static string CatalogDescription =>
             "Community penalty from barony Unrest (0–5). "
-            + "Also reduces Law, which can raise Crime (= max(0, −Final Law)).";
+            + "Also reduces Law, which can raise Crime (= max(0, −Final Law)). "
+            + $"Percent Economy/Production is capped at {EconomyProductionPercentFloor}% per source.";
     }
 }

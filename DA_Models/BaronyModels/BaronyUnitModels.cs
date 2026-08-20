@@ -26,6 +26,8 @@ namespace DA_Models.BaronyModels
         public string Name { get; set; } = string.Empty;
         public string Status { get; set; } = DA_Common.Barony.UnitStatus.Training;
         public int TroopCount { get; set; } = DA_Common.Barony.UnitRules.DefaultTroopCount;
+        /// <summary>Nominal full strength for this unit (casualty / reinforce / regen ceiling).</summary>
+        public int MaxTroopCount { get; set; } = DA_Common.Barony.UnitRules.DefaultTroopCount;
 
         public string RecruitSelectionKey { get; set; } = string.Empty;
         public string TrainingTypeKey { get; set; } = string.Empty;
@@ -114,6 +116,10 @@ namespace DA_Models.BaronyModels
             string.Equals(Status, DA_Common.Barony.UnitStatus.Training, StringComparison.OrdinalIgnoreCase);
         public bool IsActive =>
             string.Equals(Status, DA_Common.Barony.UnitStatus.Active, StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>Effective full-strength ceiling (falls back to default when unset).</summary>
+        public int FullTroopCount =>
+            MaxTroopCount > 0 ? MaxTroopCount : DA_Common.Barony.UnitRules.DefaultTroopCount;
     }
 
     /// <summary>Payload to create a training unit + Unit Training project.</summary>

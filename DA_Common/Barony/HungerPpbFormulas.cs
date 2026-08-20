@@ -6,7 +6,7 @@ namespace DA_Common.Barony
     {
         public const string InputLabel = "Hunger";
         public const decimal EconomyProductionPercentPerHunger = 5m;
-        public const decimal EconomyProductionPercentFloor = -50m;
+        public const decimal EconomyProductionPercentFloor = CommunityPercentLimits.PerSourcePenaltyFloor;
         public const decimal LoyaltyStabilityPerHunger = 3m;
         public const decimal LawPerHunger = 2m;
         public const decimal CorruptionPerHunger = 1m;
@@ -37,7 +37,7 @@ namespace DA_Common.Barony
             var v = new PpbVector();
             v.EnsureSize();
             if (h == 0m) return v;
-            var ecoProd = Math.Max(-EconomyProductionPercentPerHunger * h, EconomyProductionPercentFloor);
+            var ecoProd = CommunityPercentLimits.ClampSourcePenalty(-EconomyProductionPercentPerHunger * h);
             v[Ppb.Economy] = ecoProd;
             v[Ppb.Production] = ecoProd;
             return v;

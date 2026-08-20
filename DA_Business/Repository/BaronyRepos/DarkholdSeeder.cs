@@ -293,6 +293,7 @@ namespace DA_Business.Repository.BaronyRepos
                         Name = s.Name,
                         Status = s.Status,
                         TroopCount = s.TroopCount,
+                        MaxTroopCount = Math.Max(s.TroopCount, UnitRules.DefaultTroopCount),
                         RecruitSelectionKey = s.RecruitSelectionKey,
                         TrainingTypeKey = s.TrainingTypeKey,
                         RaceKey = s.RaceKey,

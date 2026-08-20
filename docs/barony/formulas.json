@@ -73,7 +73,7 @@
       "title": "Hunger",
       "category": "community-penalty",
       "implementation": "DA_Common/Barony/HungerPpbFormulas.cs",
-      "input": "Hunger = max(0, -(FoodStock + FinalFood before Community)); FoodStock = current Food stock",
+      "input": "Hunger = max(0, -(FoodStock + FinalFood before Community)); FoodStock = current Food stock; per-source % floor -40; community Σ % floor -80",
       "additive": {
         "Loyalty": "-Hunger * 3",
         "Stability": "-Hunger * 3",
@@ -81,8 +81,8 @@
         "Corruption": "Hunger * 1"
       },
       "percent": {
-        "Economy": "max(-Hunger * 5, -50)",
-        "Production": "max(-Hunger * 5, -50)"
+        "Economy": "max(-Hunger * 5, -40)",
+        "Production": "max(-Hunger * 5, -40)"
       }
     },
     {
@@ -97,8 +97,8 @@
         "Corruption": "Crime / 2"
       },
       "percent": {
-        "Economy": "max(-Crime * 3, -50)",
-        "Production": "max(-Crime * 3, -50)"
+        "Economy": "max(-Crime * 3, -40)",
+        "Production": "max(-Crime * 3, -40)"
       }
     },
     {
@@ -112,8 +112,8 @@
         "Stability": "-Corruption * 1"
       },
       "percent": {
-        "Economy": "max(-Corruption * 3, -50)",
-        "Production": "max(-Corruption * 3, -50)"
+        "Economy": "max(-Corruption * 3, -40)",
+        "Production": "max(-Corruption * 3, -40)"
       }
     },
     {
@@ -128,8 +128,8 @@
         "Law": "-Unrest * 3"
       },
       "percent": {
-        "Economy": "-Unrest * 10",
-        "Production": "-Unrest * 10"
+        "Economy": "max(-Unrest * 10, -40)",
+        "Production": "max(-Unrest * 10, -40)"
       }
     },
     {

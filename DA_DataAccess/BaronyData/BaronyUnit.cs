@@ -12,6 +12,8 @@ namespace DA_DataAccess.BaronyData
         public string Name { get; set; } = string.Empty;
         public string Status { get; set; } = DA_Common.Barony.UnitStatus.Training;
         public int TroopCount { get; set; } = DA_Common.Barony.UnitRules.DefaultTroopCount;
+        /// <summary>Nominal full strength (default 50). MG may raise or lower per unit.</summary>
+        public int MaxTroopCount { get; set; } = DA_Common.Barony.UnitRules.DefaultTroopCount;
 
         public string RecruitSelectionKey { get; set; } = string.Empty;
         public string TrainingTypeKey { get; set; } = string.Empty;

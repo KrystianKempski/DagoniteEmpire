@@ -1126,6 +1126,23 @@
     color: var(--barony-ink);
 }
 
+.unit-draft-card__name-btn {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    text-align: left;
+    color: inherit;
+    font: inherit;
+}
+
+.unit-draft-card__name-btn:hover b {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
 .unit-draft-card__captain {
     font-size: 0.88rem;
     font-weight: 600;
@@ -1215,17 +1232,13 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    flex: 1 1 0;
-    min-width: 4.4rem;
+    /* Grow with cell count (set via --combat-cols on each block). */
+    flex: var(--combat-cols, 4) 1 0;
+    min-width: calc(var(--combat-cols, 4) * 1.05rem);
     padding: 4px 4px 5px;
     background: color-mix(in srgb, var(--barony-surface-2) 70%, #d8c9a8);
     border: 1px solid var(--barony-border);
     border-radius: 3px;
-}
-
-.unit-combat-break__block--wide {
-    flex: 1.55 1 0;
-    min-width: 6.75rem;
 }
 
 /* Title sits full-width above the columns (Excel ATAK / OBRONA header). */
@@ -1455,6 +1468,11 @@
 
 .unit-draft-skill-tile__cols--legend span:first-child {
     text-align: left;
+}
+
+.unit-draft-skill-tile__cols > *:not(:first-child) {
+    justify-self: stretch;
+    text-align: right;
 }
 
 .unit-draft-skill-tile__cols--head {

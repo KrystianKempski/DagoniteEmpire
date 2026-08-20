@@ -16,8 +16,18 @@
                 </MudText>
             }
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                @L["Full strength is {0}. Each 10% lost → −1 Attack/Defense, −4 Max HP (floors: Atk/Def ≥ 1, Max HP ≥ 10). Understrength units regenerate +{1} troops per turn.", FullStrength, UnitRules.TroopRegenPerTurn]
+                @L["Full strength is the unit's nominal ceiling. Each 10% lost → −1 Attack/Defense, −4 Max HP (floors: Atk/Def ≥ 1, Max HP ≥ 10). Understrength units regenerate +{0} troops per turn.", UnitRules.TroopRegenPerTurn]
             </MudText>
+            <MudNumericField T="int"
+                             @bind-Value="_max"
+                             Label="@(L["Max troops"])"
+                             HelperText="@($"1–{UnitRules.AbsoluteMaxTroopCount}")"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="1"
+                             Max="@UnitRules.AbsoluteMaxTroopCount"
+                             Immediate="true"
+                             Class="baron-influence-field mb-2" />
             <MudNumericField T="int"
                              @bind-Value="_value"
                              Label="@(L["Troops"])"
@@ -25,7 +35,7 @@
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="0"
-                             Max="@FullStrength"
+                             Max="@_max"
                              Class="baron-influence-field" />
         </div>
     </DialogContent>
@@ -43,23 +53,35 @@
     [Parameter] public int FullStrength { get; set; } = UnitRules.DefaultTroopCount;
 
     private int _value;
+    private int _max;
 
     private string Helper
     {
         get
         {
-            var preview = UnitCasualtyFormulas.Compute(_value, FullStrength);
+            var max = Math.Max(1, _max);
+            var preview = UnitCasualtyFormulas.Compute(_value, max);
             return preview.Steps == 0
-                ? "No casualty penalty at this strength."
-                : $"Preview: {preview.Steps} steps → Atk {preview.Attack}, Def {preview.Defense}, HP {preview.Hp}.";
+                ? L["No casualty penalty at this strength."].Value
+                : L["Preview: {0} steps → Atk {1}, Def {2}, HP {3}.", preview.Steps, preview.Attack, preview.Defense, preview.Hp].Value;
         }
     }
 
     protected override void OnInitialized()
-        => _value = Math.Clamp(Value, 0, Math.Max(1, FullStrength));
+    {
+        _max = Math.Clamp(
+            FullStrength > 0 ? FullStrength : UnitRules.DefaultTroopCount,
+            1,
+            UnitRules.AbsoluteMaxTroopCount);
+        _value = Math.Clamp(Value, 0, _max);
+    }
 
     private void Cancel() => MudDialog.Cancel();
 
     private void Save()
-        => MudDialog.Close(DialogResult.Ok(Math.Clamp(_value, 0, Math.Max(1, FullStrength))));
+    {
+        var max = Math.Clamp(_max, 1, UnitRules.AbsoluteMaxTroopCount);
+        var troops = Math.Clamp(_value, 0, max);
+        MudDialog.Close(DialogResult.Ok(new UnitTroopCountEditResult(troops, max)));
+    }
 }

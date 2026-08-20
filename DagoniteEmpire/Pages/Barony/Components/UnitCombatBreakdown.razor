@@ -94,8 +94,9 @@
         (string Label, string TipTitle, int Value, string ColTip) a,
         int total) => __builder =>
     {
-        <div class="unit-combat-break__block">
-            <BaronyTooltip Title="@title" Text="@tipText" Placement="Placement.Bottom">
+        var cols = 1 + 1 + (lossValue.HasValue ? 1 : 0) + 1; // parts + Oth + Loss? + Tot
+        <div class="unit-combat-break__block" style="@($"--combat-cols:{cols}")">
+            <BaronyTooltip Title="@L[title]" Text="@tipText" Placement="Placement.Bottom">
                 <div class="unit-combat-break__title">@L[title]</div>
             </BaronyTooltip>
             <div class="unit-combat-break__cols">
@@ -119,8 +120,9 @@
         (string Label, string TipTitle, int Value, string ColTip) b,
         int total) => __builder =>
     {
-        <div class="unit-combat-break__block">
-            <BaronyTooltip Title="@title" Text="@tipText" Placement="Placement.Bottom">
+        var cols = 2 + 1 + (lossValue.HasValue ? 1 : 0) + 1;
+        <div class="unit-combat-break__block" style="@($"--combat-cols:{cols}")">
+            <BaronyTooltip Title="@L[title]" Text="@tipText" Placement="Placement.Bottom">
                 <div class="unit-combat-break__title">@L[title]</div>
             </BaronyTooltip>
             <div class="unit-combat-break__cols">
@@ -146,8 +148,9 @@
         (string Label, string TipTitle, int Value, string ColTip) c,
         int total) => __builder =>
     {
-        <div class="unit-combat-break__block unit-combat-break__block--wide">
-            <BaronyTooltip Title="@title" Text="@tipText" Placement="Placement.Bottom">
+        var cols = 3 + 1 + (lossValue.HasValue ? 1 : 0) + 1;
+        <div class="unit-combat-break__block" style="@($"--combat-cols:{cols}")">
+            <BaronyTooltip Title="@L[title]" Text="@tipText" Placement="Placement.Bottom">
                 <div class="unit-combat-break__title">@L[title]</div>
             </BaronyTooltip>
             <div class="unit-combat-break__cols">
@@ -168,11 +171,12 @@
     {
         var baseHp = Combat.MaxHp - Combat.OtherHp - Combat.LossHp;
         var cur = CurrentHp ?? Combat.MaxHp;
-        <div class="unit-combat-break__block">
+        var cols = CurrentHp.HasValue ? 5 : 4;
+        <div class="unit-combat-break__block" style="@($"--combat-cols:{cols}")">
             <BaronyTooltip Title="@(L["Hit points"])"
                            Text="@(L["Maximum = Build×2 + Will×2 + Endurance + Discipline×3 + other + casualty loss. Current tracks wounds in play."])"
                            Placement="Placement.Bottom">
-                <div class="unit-combat-break__title">Hit points</div>
+                <div class="unit-combat-break__title">@L["Hit points"]</div>
             </BaronyTooltip>
             <div class="unit-combat-break__cols">
                 @Col("Max", "Maximum", baseHp, "Formula maximum before other and casualty modifiers")

@@ -28,6 +28,7 @@ namespace DA_Business.Repository.BaronyRepos
                 Name = string.IsNullOrWhiteSpace(name) ? "Forming unit" : name.Trim(),
                 Status = UnitStatus.Training,
                 TroopCount = UnitRules.DefaultTroopCount,
+                MaxTroopCount = UnitRules.DefaultTroopCount,
                 RecruitSelectionKey = recruit.Key,
                 TrainingTypeKey = trainingKey,
                 RaceKey = UnitRaceKey.Human,

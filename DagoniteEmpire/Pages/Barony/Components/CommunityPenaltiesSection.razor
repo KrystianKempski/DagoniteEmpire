@@ -105,7 +105,7 @@
 
     private List<PpbModifierRow> RowList => Rows?.ToList() ?? new();
     private PpbVector AdditiveSum => BaronyCalc.SumAdditive(RowList);
-    private PpbVector PercentSum => BaronyCalc.SumPercent(RowList);
+    private PpbVector PercentSum => BaronyCalc.SumCommunityPercent(RowList);
     private PpbVector Glance => BaronyCalc.SectionGlance(RowList);
 
     private static Func<Ppb, string?>? AdditiveExplain(string sourceKey) => sourceKey switch

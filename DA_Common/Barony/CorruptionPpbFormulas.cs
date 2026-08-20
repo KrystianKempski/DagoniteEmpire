@@ -6,7 +6,7 @@ namespace DA_Common.Barony
     {
         public const string InputLabel = "Corruption";
         public const decimal EconomyProductionPercentPerCorruption = 3m;
-        public const decimal EconomyProductionPercentFloor = -50m;
+        public const decimal EconomyProductionPercentFloor = CommunityPercentLimits.PerSourcePenaltyFloor;
         public const decimal LoyaltyPerCorruption = 2m;
         public const decimal StabilityPerCorruption = 1m;
 
@@ -29,7 +29,7 @@ namespace DA_Common.Barony
             var v = new PpbVector();
             v.EnsureSize();
             if (c == 0m) return v;
-            var ecoProd = Math.Max(-EconomyProductionPercentPerCorruption * c, EconomyProductionPercentFloor);
+            var ecoProd = CommunityPercentLimits.ClampSourcePenalty(-EconomyProductionPercentPerCorruption * c);
             v[Ppb.Economy] = ecoProd;
             v[Ppb.Production] = ecoProd;
             return v;

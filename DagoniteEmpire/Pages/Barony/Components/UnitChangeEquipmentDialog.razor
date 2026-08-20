@@ -13,7 +13,7 @@
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
                 @L["Pick a new loadout and how to pay for each piece (Craft / Buy / Defense), same as the unit generator."]
                 @((MarkupString)L["Creates a <b>{0}</b> project in Resource allocation — fund it on Projects.", L["Unit Change Equipment"]].Value)
-                @L["Cost is scaled by current troops ({0}/{1}).", Unit.TroopCount, UnitRules.DefaultTroopCount]
+                @L["Cost is scaled by current troops ({0}/{1}).", Unit.TroopCount, Unit.FullTroopCount]
                 @L["Gear quality stays as set by the GM ({0}).", CurrentQuality]
             </MudText>
 
@@ -172,7 +172,8 @@
         _costs = UnitChangeEquipmentCostFormulas.Compute(
             _w1, _w2, _armorDef, _shieldDef, _mountDef,
             new UnitEquipmentPayModes(_payW1, _payW2, _payArmor, _payShield, _payMount),
-            Unit.TroopCount);
+            Unit.TroopCount,
+            Unit.FullTroopCount);
     }
 
     private RenderFragment PayRow(

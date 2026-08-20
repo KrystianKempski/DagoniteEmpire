@@ -918,6 +918,13 @@ namespace DagoniteEmpire.Pages.Barony
             => PpbVector.Sum(rows.Select(r => r.Percent));
 
         /// <summary>
+        /// Community section percent Σ with section penalty floor (−80%).
+        /// Individual row values stay uncapped beyond the per-source −40% floor.
+        /// </summary>
+        public static PpbVector SumCommunityPercent(IEnumerable<PpbModifierRow> rows)
+            => CommunityPercentLimits.CapSectionPenaltySum(SumPercent(rows));
+
+        /// <summary>
         /// Additive values that percent modifiers scale: positive per row only.
         /// </summary>
         public static PpbVector SumScalableAdditive(IEnumerable<PpbModifierRow> rows)
@@ -948,13 +955,39 @@ namespace DagoniteEmpire.Pages.Barony
         }
 
         /// <summary>
+        /// Domain Panel total: community percent contribution is capped at −80% per PPB key.
+        /// </summary>
+        public static PpbVector SummarizeDomainPanel(
+            IEnumerable<PpbModifierRow> nonCommunityRows,
+            IEnumerable<PpbModifierRow> communityRows)
+        {
+            var other = nonCommunityRows.ToList();
+            var community = communityRows.ToList();
+            var all = other.Concat(community);
+            return PpbMath.Summarize(
+                SumAdditive(all),
+                SumScalableAdditive(all),
+                SumPercent(other) + SumCommunityPercent(community));
+        }
+
+        /// <summary>
+        /// Domain Panel percent Σ across all sections (community portion capped at −80%).
+        /// </summary>
+        public static PpbVector SumDomainPanelPercent(
+            IEnumerable<PpbModifierRow> nonCommunityRows,
+            IEnumerable<PpbModifierRow> communityRows)
+            => SumPercent(nonCommunityRows) + SumCommunityPercent(communityRows);
+
+        /// <summary>
         /// Barony Summary table rows: global Σ additive / Σ percent, scalable, percent effect, Final.
         /// </summary>
         public static List<PpbModifierRow> BuildBaronySummaryRows(DomainPanelRowSet panel)
         {
             var all = panel.AllRows;
             var additive = SumAdditive(all);
-            var percent = SumPercent(all);
+            var percent = SumDomainPanelPercent(
+                all.Where(r => !IsCommunityRow(r)),
+                panel.CommunityRows);
             var scalable = SumScalableAdditive(all);
             var percentEffect = new PpbVector();
             scalable.EnsureSize();
@@ -971,6 +1004,17 @@ namespace DagoniteEmpire.Pages.Barony
                 new() { Label = "Percent effect", Additive = percentEffect },
                 new() { Label = "Final Value", Additive = panel.GrandTotal },
             };
+        }
+
+        private static bool IsCommunityRow(PpbModifierRow row)
+        {
+            var key = CommunitySource.NormalizeKey(row.Label);
+            return key is CommunitySource.Hunger
+                or CommunitySource.Crime
+                or CommunitySource.Corruption
+                or CommunitySource.Unrest
+                or CommunitySource.Economy
+                or CommunitySource.Society;
         }
 
         /// <summary>
@@ -1033,6 +1077,7 @@ namespace DagoniteEmpire.Pages.Barony
             allRows.AddRange(decreeRows);
             allRows.AddRange(eventRows);
             allRows.AddRange(armyRows);
+            var nonCommunityRows = allRows.ToList();
             allRows.AddRange(communityRows);
 
             return new DomainPanelRowSet
@@ -1048,7 +1093,7 @@ namespace DagoniteEmpire.Pages.Barony
                 ArmyRows = armyRows,
                 CommunityRows = communityRows,
                 AllRows = allRows,
-                GrandTotal = SummarizeSections(allRows),
+                GrandTotal = SummarizeDomainPanel(nonCommunityRows, communityRows),
             };
         }
 

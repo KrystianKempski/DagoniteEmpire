@@ -12,7 +12,19 @@
          aria-expanded="@(Collapsible ? _isOpen : null)">
         <div class="unit-draft-card__title-main">
             <span>@ResolvedTitleEyebrow</span>
-            <b>@(string.IsNullOrWhiteSpace(Unit.Name) || Unit.Name == "Forming unit" ? "(name)" : Unit.Name)</b>
+            @if (CanManageAsMg)
+            {
+                <button type="button"
+                        class="unit-draft-card__name-btn"
+                        @onclick:stopPropagation="true"
+                        @onclick="EditNameAsync">
+                    <b>@(string.IsNullOrWhiteSpace(Unit.Name) || Unit.Name == "Forming unit" ? "(name)" : Unit.Name)</b>
+                </button>
+            }
+            else
+            {
+                <b>@(string.IsNullOrWhiteSpace(Unit.Name) || Unit.Name == "Forming unit" ? "(name)" : Unit.Name)</b>
+            }
             @if (!string.IsNullOrWhiteSpace(Unit.CaptainName))
             {
                 <BaronyTooltip Title="@(L["Captain"])"
@@ -64,9 +76,23 @@
             </span>
         </BaronyTooltip>
         <BaronyTooltip Title="@(L["Experience points"])"
-                       Text="@(L["Experience points (XP) left to spend after training. Attribute = target × 10; base skill = level × 3; specialization = level × 1 (≤ parent); discipline = current level."])"
+                       Text="@XpTip"
                        Placement="Placement.Bottom">
-            <span class="unit-draft-card__meta-item"><em>XP</em> <b>@Unit.RemainingPd</b></span>
+            <span class="unit-draft-card__meta-item">
+                <em>XP</em>
+                @if (CanManageAsMg)
+                {
+                    <button type="button"
+                            class="unit-draft-card__meta-btn"
+                            @onclick="EditXpAsync">
+                        @Unit.RemainingPd
+                    </button>
+                }
+                else
+                {
+                    <b>@Unit.RemainingPd</b>
+                }
+            </span>
         </BaronyTooltip>
         <BaronyTooltip Title="@(L["Troops"])" Text="@TroopTip" Placement="Placement.Bottom">
             <span class="unit-draft-card__meta-item">
@@ -74,15 +100,15 @@
                 @if (CanManageAsMg)
                 {
                     <button type="button"
-                            class="unit-draft-card__meta-btn @(Unit.TroopCount < UnitRules.DefaultTroopCount ? "unit-draft-card__meta-btn--loss" : null)"
+                            class="unit-draft-card__meta-btn @(Unit.TroopCount < Unit.FullTroopCount ? "unit-draft-card__meta-btn--loss" : null)"
                             @onclick="EditTroopCountAsync">
-                        @Unit.TroopCount/@UnitRules.DefaultTroopCount
+                        @Unit.TroopCount/@Unit.FullTroopCount
                     </button>
                 }
                 else
                 {
-                    <b class="@(Unit.TroopCount < UnitRules.DefaultTroopCount ? "unit-draft-card__meta-val--loss" : null)">
-                        @Unit.TroopCount/@UnitRules.DefaultTroopCount
+                    <b class="@(Unit.TroopCount < Unit.FullTroopCount ? "unit-draft-card__meta-val--loss" : null)">
+                        @Unit.TroopCount/@Unit.FullTroopCount
                     </b>
                 }
             </span>
@@ -163,9 +189,15 @@
                 <span>@L["Skills"]</span>
             </BaronyTooltip>
             <span class="unit-draft-card__section-hint">
-                base Total = Base+Other · special Total = parent+From+Base+Other
-                @(CanManageAsMg ? " · click Base / Other (MG)" : "")
-                @(CanSpendPd ? " · + spends XP" : "")
+                @L["Total = base skill + attribute + specialization"]
+                @if (CanManageAsMg)
+                {
+                    <text> · @L["Click Base or Other to edit (MG)."]</text>
+                }
+                @if (CanSpendPd)
+                {
+                    <text> · @L["+ spends XP"]</text>
+                }
             </span>
         </div>
         <UnitSkillTiles Unit="@Unit"
@@ -269,17 +301,19 @@
                        Text="@(L["Uses the highest eligible skill: Dodges always; Shields only with a shield equipped; Armor only with armor equipped."])"
                        Placement="Placement.Top">
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                Def skill <b>@(UnitSkillTree.Find(_combat.DefenseSkillKeyUsed)?.Name ?? _combat.DefenseSkillKeyUsed ?? "—")</b>
+                @{
+                    var defSkill = UnitSkillTree.Find(_combat.DefenseSkillKeyUsed);
+                    var defSkillName = defSkill is not null
+                        ? defSkill.DisplayName(L)
+                        : (_combat.DefenseSkillKeyUsed ?? "—");
+                }
+                @L["Defense skill"] <b>@defSkillName</b>
             </MudText>
         </BaronyTooltip>
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
             @if (Unit.IsTraining && Unit.MaxBaseSkillAtGraduation > 0)
             {
                 <text>@L["Max skill"] <b>@Unit.MaxBaseSkillAtGraduation</b> @L["(until graduation)"]</text>
-            }
-            else if (Unit.IsActive)
-            {
-                <text>@L["Base skill cap lifted"]</text>
             }
             @if (Unit.FreeAttributePoints > 0)
             {
@@ -603,9 +637,9 @@
     {
         get
         {
-            var explain = UnitCasualtyFormulas.Explain(Unit.TroopCount);
+            var explain = UnitCasualtyFormulas.Explain(Unit.TroopCount, Unit.FullTroopCount);
             return CanManageAsMg
-                ? $"{explain}\n\n{L["Click to set troop count (MG)."]}"
+                ? $"{explain}\n\n{L["Click to set troop count and max strength (MG)."]}"
                 : explain;
         }
     }
@@ -614,11 +648,59 @@
         ? L["Current / maximum hit points."].Value + "\n\n" + L["Click to set current HP (MG)."].Value
         : L["Current / maximum hit points."].Value;
 
+    private string XpTip
+    {
+        get
+        {
+            var baseTip = L["Experience points (XP) left to spend after training. Attribute = target × 10; base skill = level × 3; specialization = level × 1 (≤ parent); discipline = current level."].Value;
+            return CanManageAsMg
+                ? $"{baseTip}\n\n{L["Click to set remaining XP (MG)."]}"
+                : baseTip;
+        }
+    }
+
     private void RefreshCombat()
     {
         _combat = UnitStatHelper.Compute(Unit);
         _upkeep = UnitStatHelper.ComputeUpkeep(Unit);
         _upkeepExplain = UnitUpkeepFormulas.Explain(_upkeep);
+    }
+
+    private async Task EditNameAsync()
+    {
+        if (!CanManageAsMg) return;
+
+        var parameters = new DialogParameters
+        {
+            [nameof(UnitNameEditDialog.Value)] = Unit.Name,
+        };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
+        var dialog = await _dialogService.ShowAsync<UnitNameEditDialog>(L["Unit name"], parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not string name)
+            return;
+
+        Unit.Name = name.Trim();
+        await SkillsChanged.InvokeAsync();
+    }
+
+    private async Task EditXpAsync()
+    {
+        if (!CanManageAsMg) return;
+
+        var parameters = new DialogParameters
+        {
+            [nameof(UnitXpEditDialog.UnitName)] = Unit.Name,
+            [nameof(UnitXpEditDialog.Value)] = Unit.RemainingPd,
+        };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
+        var dialog = await _dialogService.ShowAsync<UnitXpEditDialog>(L["Experience points"], parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not int xp)
+            return;
+
+        Unit.RemainingPd = Math.Max(0, xp);
+        await OnXpDraftChanged.InvokeAsync();
     }
 
     private async Task EditTroopCountAsync()
@@ -629,15 +711,16 @@
         {
             [nameof(UnitTroopCountEditDialog.UnitName)] = Unit.Name,
             [nameof(UnitTroopCountEditDialog.Value)] = Unit.TroopCount,
-            [nameof(UnitTroopCountEditDialog.FullStrength)] = UnitRules.DefaultTroopCount,
+            [nameof(UnitTroopCountEditDialog.FullStrength)] = Unit.FullTroopCount,
         };
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
-        var dialog = await _dialogService.ShowAsync<UnitTroopCountEditDialog>("Troop count", parameters, options);
+        var dialog = await _dialogService.ShowAsync<UnitTroopCountEditDialog>(L["Troop count"], parameters, options);
         var result = await dialog.Result;
-        if (result is null || result.Canceled || result.Data is not int troops)
+        if (result is null || result.Canceled || result.Data is not UnitTroopCountEditResult saved)
             return;
 
-        Unit.TroopCount = troops;
+        Unit.MaxTroopCount = saved.MaxTroopCount;
+        Unit.TroopCount = Math.Clamp(saved.TroopCount, 0, Unit.FullTroopCount);
         RefreshCombat();
         if (Unit.CurrentHp > _combat.MaxHp)
             Unit.CurrentHp = _combat.MaxHp;
@@ -656,7 +739,7 @@
             [nameof(UnitHpEditDialog.MaxHp)] = _combat.MaxHp,
         };
         var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
-        var dialog = await _dialogService.ShowAsync<UnitHpEditDialog>("Hit points", parameters, options);
+        var dialog = await _dialogService.ShowAsync<UnitHpEditDialog>(L["Hit points"], parameters, options);
         var result = await dialog.Result;
         if (result is null || result.Canceled || result.Data is not int hp)
             return;

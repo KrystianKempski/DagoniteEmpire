@@ -1276,6 +1276,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("MaxBaseSkillAtGraduation")
                         .HasColumnType("integer");
 
+                    b.Property<int>("MaxTroopCount")
+                        .HasColumnType("integer");
+
                     b.Property<string>("MountKey")
                         .HasColumnType("text");
 

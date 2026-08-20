@@ -175,9 +175,10 @@ namespace DA_Common.Barony
             UnitArmorDef? shield,
             UnitMountDef? mount,
             UnitEquipmentPayModes payModes,
-            int? reinforceTroops = null)
+            int? reinforceTroops = null,
+            int fullTroopCount = UnitRules.DefaultTroopCount)
         {
-            var full = UnitRules.DefaultTroopCount;
+            var full = Math.Max(1, fullTroopCount);
             var current = Math.Clamp(currentTroops, 0, full);
             var missing = full - current;
             var n = reinforceTroops is int asked
@@ -239,9 +240,10 @@ namespace DA_Common.Barony
             UnitArmorDef? shield,
             UnitMountDef? mount,
             UnitEquipmentPayModes payModes,
-            int troopCount)
+            int troopCount,
+            int fullTroopCount = UnitRules.DefaultTroopCount)
         {
-            var full = UnitRules.DefaultTroopCount;
+            var full = Math.Max(1, fullTroopCount);
             var n = Math.Clamp(troopCount, 1, full);
             var (fullProd, fullGold, fullDef) = UnitTrainingCostFormulas.SumGear(
                 weapon1, weapon2, armor, shield, mount, payModes);

@@ -11,7 +11,7 @@
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                @L["People cost = Selected volunteers + Standard training, scaled by troops / {0} (floor).", UnitRules.DefaultTroopCount]
+                @L["People cost = Selected volunteers + Standard training, scaled by troops / {0} (floor).", Unit.FullTroopCount]
                 @L["Gear = current loadout at {0}% salvage, then the same scale.", UnitRules.ReinforceGearSalvagePercent]
             </MudText>
 
@@ -19,7 +19,7 @@
                              @bind-Value="_troopCount"
                              @bind-Value:after="Recalc"
                              Label="@(L["Troops to add"])"
-                             HelperText="@(L["Missing {0}. Current {1}/{2}.", _missing, Unit.TroopCount, UnitRules.DefaultTroopCount])"
+                             HelperText="@(L["Missing {0}. Current {1}/{2}.", _missing, Unit.TroopCount, Unit.FullTroopCount])"
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Min="1"
@@ -92,14 +92,14 @@
         _armor = UnitArmorCatalog.Find(Unit.ArmorKey);
         _shield = UnitArmorCatalog.Find(Unit.ShieldKey);
         _mount = UnitMountCatalog.Find(Unit.MountKey);
-        _missing = Math.Max(0, UnitRules.DefaultTroopCount - Unit.TroopCount);
+        _missing = Math.Max(0, Unit.FullTroopCount - Unit.TroopCount);
         _troopCount = Math.Max(1, _missing);
         Recalc();
     }
 
     private void Recalc()
     {
-        _missing = Math.Max(0, UnitRules.DefaultTroopCount - Unit.TroopCount);
+        _missing = Math.Max(0, Unit.FullTroopCount - Unit.TroopCount);
         if (_troopCount < 1) _troopCount = 1;
         if (_troopCount > _missing && _missing > 0) _troopCount = _missing;
 
@@ -107,7 +107,8 @@
             Unit.TroopCount,
             _w1, _w2, _armor, _shield, _mount,
             new UnitEquipmentPayModes(_payW1, _payW2, _payArmor, _payShield, _payMount),
-            _troopCount);
+            _troopCount,
+            Unit.FullTroopCount);
     }
 
     private RenderFragment PayRow(

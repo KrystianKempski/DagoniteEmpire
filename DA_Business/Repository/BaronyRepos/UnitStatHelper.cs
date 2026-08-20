@@ -71,7 +71,7 @@ namespace DA_Business.Repository.BaronyRepos
                 dto.OtherAttack, dto.OtherDefense, dto.OtherDamage, dto.OtherMove, dto.OtherArmor, dto.OtherHp,
                 UnitRaceCatalog.Find(dto.RaceKey).MoveBonus,
                 dto.TroopCount,
-                UnitRules.DefaultTroopCount,
+                dto.FullTroopCount,
                 UnitMountCatalog.Find(dto.MountKey));
             if (!string.IsNullOrWhiteSpace(combat.DefenseSkillKeyUsed))
                 dto.DefenseSkillKey = combat.DefenseSkillKeyUsed;

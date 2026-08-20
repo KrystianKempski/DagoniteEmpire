@@ -242,7 +242,7 @@
     private bool CanReinforce =>
         CanEdit
         && Unit.IsActive
-        && Unit.TroopCount < UnitRules.DefaultTroopCount
+        && Unit.TroopCount < Unit.FullTroopCount
         && Unit.TrainingProjectId is null;
     private bool CanChangeEquipment =>
         CanEdit

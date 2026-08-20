@@ -1097,14 +1097,17 @@ namespace DA_Business.Repository.BaronyRepos
             var notes = new List<string>();
             var units = await ctx.BaronyUnits
                 .Where(u => u.BaronyId == baronyId
-                    && u.TroopCount < UnitRules.DefaultTroopCount
                     && u.Status != UnitStatus.Disbanded)
                 .ToListAsync();
 
             foreach (var unit in units)
             {
+                var full = unit.MaxTroopCount > 0 ? unit.MaxTroopCount : UnitRules.DefaultTroopCount;
+                if (unit.TroopCount >= full)
+                    continue;
+
                 var before = unit.TroopCount;
-                var after = UnitCasualtyFormulas.Regenerate(before);
+                var after = UnitCasualtyFormulas.Regenerate(before, full);
                 if (after <= before)
                     continue;
 
@@ -1119,7 +1122,7 @@ namespace DA_Business.Repository.BaronyRepos
                 unit.CurrentHp = wasAtMax ? newMax : Math.Min(unit.CurrentHp, newMax);
                 unit.DefenseSkillKey = dto.DefenseSkillKey;
 
-                notes.Add($"{unit.Name}: {before} → {after}/{UnitRules.DefaultTroopCount}");
+                notes.Add($"{unit.Name}: {before} → {after}/{full}");
             }
 
             return notes;
@@ -1190,10 +1193,11 @@ namespace DA_Business.Repository.BaronyRepos
                             var dto = ToUnitDTO(unit);
                             var oldMax = UnitStatHelper.Compute(dto).MaxHp;
                             var wasAtMax = unit.CurrentHp >= oldMax;
+                            var full = unit.MaxTroopCount > 0 ? unit.MaxTroopCount : UnitRules.DefaultTroopCount;
                             unit.TroopCount = Math.Clamp(
                                 unit.TroopCount + add,
                                 0,
-                                UnitRules.DefaultTroopCount);
+                                full);
                             unit.UpdatedAtUtc = DateTime.UtcNow;
                             dto.TroopCount = unit.TroopCount;
                             var newMax = UnitStatHelper.Compute(dto).MaxHp;
@@ -1204,8 +1208,9 @@ namespace DA_Business.Repository.BaronyRepos
                         if (project.UnitId is null or <= 0)
                             project.UnitId = unit.Id;
 
+                        var fullLabel = unit.MaxTroopCount > 0 ? unit.MaxTroopCount : UnitRules.DefaultTroopCount;
                         notes.Add(
-                            $"Reinforce complete: {unit.Name} troops {before} → {unit.TroopCount}/{UnitRules.DefaultTroopCount}"
+                            $"Reinforce complete: {unit.Name} troops {before} → {unit.TroopCount}/{fullLabel}"
                             + (add > 0 ? $" (+{add})." : " (no troops added — check project notes)."));
                         return new ProjectApplyResult(notes, Applied: add > 0);
                     }
@@ -3744,6 +3749,7 @@ namespace DA_Business.Repository.BaronyRepos
                     Name = request.Name.Trim(),
                     Status = UnitStatus.Training,
                     TroopCount = UnitRules.DefaultTroopCount,
+                    MaxTroopCount = UnitRules.DefaultTroopCount,
                     RecruitSelectionKey = recruit.Key,
                     TrainingTypeKey = training.Key,
                     RaceKey = string.IsNullOrWhiteSpace(request.RaceKey)
@@ -3912,7 +3918,8 @@ namespace DA_Business.Repository.BaronyRepos
                 if (!string.Equals(unit.Status, UnitStatus.Active, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException("Only Active units can be reinforced.");
 
-                var missing = UnitRules.DefaultTroopCount - unit.TroopCount;
+                var full = unit.MaxTroopCount > 0 ? unit.MaxTroopCount : UnitRules.DefaultTroopCount;
+                var missing = full - unit.TroopCount;
                 if (missing <= 0)
                     throw new InvalidOperationException("Unit is already at full strength.");
 
@@ -3943,7 +3950,8 @@ namespace DA_Business.Repository.BaronyRepos
                     UnitArmorCatalog.Find(unit.ShieldKey),
                     UnitMountCatalog.Find(unit.MountKey),
                     payModes,
-                    n);
+                    n,
+                    full);
 
                 if (costs.TroopCount <= 0)
                     throw new InvalidOperationException("Nothing to reinforce.");
@@ -4074,8 +4082,9 @@ namespace DA_Business.Repository.BaronyRepos
                         ? UnitEquipmentAcquireMode.Craft
                         : UnitEquipmentAcquireMode.Normalize(request.MountAcquireMode));
 
+                var full = unit.MaxTroopCount > 0 ? unit.MaxTroopCount : UnitRules.DefaultTroopCount;
                 var costs = UnitChangeEquipmentCostFormulas.Compute(
-                    weapon1, weapon2, armor, shield, mount, payModes, unit.TroopCount);
+                    weapon1, weapon2, armor, shield, mount, payModes, unit.TroopCount, full);
 
                 var goldCost = new PpbVector();
                 goldCost[Ppb.Treasury] = costs.Gold;
@@ -4115,7 +4124,7 @@ namespace DA_Business.Repository.BaronyRepos
                     BaronyId = request.BaronyId,
                     Name = $"Change equipment: {unit.Name}",
                     Description =
-                        $"Re-equip {unit.Name} ({unit.TroopCount}/{UnitRules.DefaultTroopCount} troops): {gearSummary}. "
+                        $"Re-equip {unit.Name} ({unit.TroopCount}/{full} troops): {gearSummary}. "
                         + "Gear paid Craft / Buy / Defense like the unit generator; cost scaled by troop count.",
                     // Same funding flow as Unit Reinforce (Resource allocation + Combined tracks).
                     OutputKind = ProjectOutputKind.UnitChangeEquipment,
@@ -5466,6 +5475,7 @@ namespace DA_Business.Repository.BaronyRepos
             Name = e.Name,
             Status = e.Status,
             TroopCount = e.TroopCount,
+            MaxTroopCount = e.MaxTroopCount > 0 ? e.MaxTroopCount : UnitRules.DefaultTroopCount,
             RecruitSelectionKey = e.RecruitSelectionKey,
             TrainingTypeKey = e.TrainingTypeKey,
             RaceKey = string.IsNullOrWhiteSpace(e.RaceKey) ? UnitRaceKey.Human : e.RaceKey,
@@ -5530,7 +5540,11 @@ namespace DA_Business.Repository.BaronyRepos
             e.BaronyId = d.BaronyId;
             e.Name = d.Name?.Trim() ?? string.Empty;
             e.Status = string.IsNullOrWhiteSpace(d.Status) ? UnitStatus.Training : d.Status.Trim();
-            e.TroopCount = Math.Clamp(d.TroopCount, 0, UnitRules.DefaultTroopCount);
+            e.MaxTroopCount = Math.Clamp(
+                d.MaxTroopCount > 0 ? d.MaxTroopCount : UnitRules.DefaultTroopCount,
+                1,
+                UnitRules.AbsoluteMaxTroopCount);
+            e.TroopCount = Math.Clamp(d.TroopCount, 0, e.MaxTroopCount);
             e.RecruitSelectionKey = d.RecruitSelectionKey ?? string.Empty;
             e.TrainingTypeKey = d.TrainingTypeKey ?? string.Empty;
             e.RaceKey = string.IsNullOrWhiteSpace(d.RaceKey) ? UnitRaceKey.Human : d.RaceKey.Trim();
@@ -5863,22 +5877,26 @@ namespace DA_Business.Repository.BaronyRepos
         {
             var fromNotes = ReadReinforceTroops(project.Notes);
             if (fromNotes > 0)
-                return ClampReinforceAdd(fromNotes, unit.TroopCount);
+                return ClampReinforceAdd(fromNotes, unit.TroopCount, unit.MaxTroopCount);
 
             var fromResult = ReadLeadingIntAfter(project.ResultDescription, "Adds ");
             if (fromResult > 0)
-                return ClampReinforceAdd(fromResult, unit.TroopCount);
+                return ClampReinforceAdd(fromResult, unit.TroopCount, unit.MaxTroopCount);
 
             var fromDesc = ReadLeadingIntAfter(project.Description, "Replenish ");
             if (fromDesc > 0)
-                return ClampReinforceAdd(fromDesc, unit.TroopCount);
+                return ClampReinforceAdd(fromDesc, unit.TroopCount, unit.MaxTroopCount);
 
-            var missing = UnitRules.DefaultTroopCount - unit.TroopCount;
+            var full = unit.MaxTroopCount > 0 ? unit.MaxTroopCount : UnitRules.DefaultTroopCount;
+            var missing = full - unit.TroopCount;
             return Math.Max(0, missing);
         }
 
-        private static int ClampReinforceAdd(int add, int currentTroops) =>
-            Math.Clamp(add, 0, Math.Max(0, UnitRules.DefaultTroopCount - currentTroops));
+        private static int ClampReinforceAdd(int add, int currentTroops, int maxTroopCount)
+        {
+            var full = maxTroopCount > 0 ? maxTroopCount : UnitRules.DefaultTroopCount;
+            return Math.Clamp(add, 0, Math.Max(0, full - currentTroops));
+        }
 
         private static int ReadReinforceTroops(string? notes)
         {

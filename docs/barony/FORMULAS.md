@@ -118,26 +118,30 @@ Class: `TownPpbFormulas`. Row “Population of \<city\>” under City and Buildi
 
 PPB balances **before** Community rows use Domain **Final** Food / Law / Corruption from sections above Community (Hunger / Crime / Corruption inputs). Economy conjuncture uses Final Economy after Hunger/Crime/Corruption/Unrest.
 
+**Percent caps**
+- Per source (Hunger / Crime / Corruption / Unrest / Economy): percent penalty floor **−40%** (Economy already soft-capped ±40)
+- Community section Σ percent: floor **−80%** per PPB key (applied to Domain Panel Final; individual rows still show uncapped-beyond-per-source values)
+
 ### Hunger — `HungerPpbFormulas`
 - `Hunger = max(0, −(FoodStock + FoodIncome))` — only when granary stock cannot cover this turn’s Food income
 - `FoodStock` = current Food resource stock; `FoodIncome` = Final Food before Community
-- `% Economy/Production = max(−Hunger×5, −50)`
+- `% Economy/Production = max(−Hunger×5, −40)`
 - `+ Loyalty/Stability = −Hunger×3`, `Law = −Hunger×2`, `Corruption = Hunger`
 
 ### Crime — `CrimePpbFormulas`
 - `Crime = max(0, −Final Law)` — only when Law is negative; then Crime = |Law|
 - Final Law includes Hunger and Unrest Law penalties (Crime itself does not change Law)
-- `% Economy/Production = max(−Crime×3, −50)`
+- `% Economy/Production = max(−Crime×3, −40)`
 - `+ Loyalty = −Crime`, `Stability = −Crime×2`, `Corruption = Crime/2`
 
 ### Corruption — `CorruptionPpbFormulas`
 - `Corruption = max(0, CorruptionBalance)` — `CorruptionBalance` = Final Corruption before Community
-- `% Economy/Production = max(−Corruption×3, −50)`
+- `% Economy/Production = max(−Corruption×3, −40)`
 - `+ Loyalty = −Corruption×2`, `Stability = −Corruption`
 
 ### Unrest — `UnrestPpbFormulas`
 - `Unrest = Barony.Unrest`
-- `% Economy/Production = −Unrest×10`
+- `% Economy/Production = max(−Unrest×10, −40)`
 - `+ Loyalty/Stability/Law = −Unrest×3`
 
 ### Economy (conjuncture) — `EconomyConjunctureFormulas`

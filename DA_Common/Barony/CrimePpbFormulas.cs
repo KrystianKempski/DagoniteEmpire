@@ -6,7 +6,7 @@ namespace DA_Common.Barony
     {
         public const string InputLabel = "Crime";
         public const decimal EconomyProductionPercentPerCrime = 3m;
-        public const decimal EconomyProductionPercentFloor = -50m;
+        public const decimal EconomyProductionPercentFloor = CommunityPercentLimits.PerSourcePenaltyFloor;
         public const decimal LoyaltyPerCrime = 1m;
         public const decimal StabilityPerCrime = 2m;
         public const decimal CorruptionPerCrime = 0.5m;
@@ -32,7 +32,7 @@ namespace DA_Common.Barony
             var v = new PpbVector();
             v.EnsureSize();
             if (c == 0m) return v;
-            var ecoProd = Math.Max(-EconomyProductionPercentPerCrime * c, EconomyProductionPercentFloor);
+            var ecoProd = CommunityPercentLimits.ClampSourcePenalty(-EconomyProductionPercentPerCrime * c);
             v[Ppb.Economy] = ecoProd;
             v[Ppb.Production] = ecoProd;
             return v;
