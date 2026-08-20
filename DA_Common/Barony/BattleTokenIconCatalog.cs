@@ -38,8 +38,8 @@ namespace DA_Common.Barony
         private static readonly IReadOnlyDictionary<string, string> LegacyPaths =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                ["axe"] = "icons/axe-in-stump.svg",
-                ["tower"] = "icons/stone-tower.svg",
+                ["axe"] = "icons/axe-in-stump-black.svg",
+                ["tower"] = "icons/stone-tower-black.svg",
                 ["banner"] = "icons/imperial.svg",
             };
 

@@ -373,6 +373,9 @@
                 PetitionerIconCatalog.PathFor(a.PetitionerIcon),
                 a.PetitionerName,
                 a.LastExchange is null || a.LastExchange.IsFromPetitioner))
+            // Needs-attention (yellow badge) topics stay visible; already-answered ones sink
+            // toward the "More" overflow first when there isn't room for every icon.
+            .OrderByDescending(p => p.NeedsAttention)
             .ToList();
 
     /// <summary>Only this many icons fit comfortably around the throne. The "More" tile itself
@@ -482,7 +485,6 @@
     {
         if (Barony is null)
             return;
-        await _baronyRepo.EnsureCouncilSession(Barony.Id, Barony.TurnNumber, Barony.Year, Barony.Season);
         _audiences = await _baronyRepo.GetAudiences(BaronyId);
         _advisors = await _baronyRepo.GetAdvisors(Barony.Id);
         var campaigns = (await _campaignRepository.GetAll(Barony.CharacterId)).ToList();

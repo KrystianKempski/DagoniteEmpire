@@ -17,7 +17,7 @@ namespace DA_Common.Barony
         {
             "icons/quill-ink.svg",
             "icons/people.svg",
-            "icons/hunting-horn.svg",
+            "icons/hunting-horn-black.svg",
             "icons/lyre.svg",
             "icons/herbs-bundle.svg",
             "icons/compass.svg",
