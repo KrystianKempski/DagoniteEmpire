@@ -45,7 +45,8 @@ namespace DA_Business.Repository.BaronyRepos
 
         /// <summary>
         /// Adds any missing permanent decrees. Syncs PPB + description for existing ones
-        /// (keeps each barony’s IsActive choice).
+        /// (keeps each barony’s IsActive choice). Removes accidental duplicates
+        /// (e.g. from concurrent GetOverview backfills).
         /// </summary>
         public static void EnsureForBarony(ApplicationDbContext ctx, int baronyId)
         {
@@ -55,12 +56,15 @@ namespace DA_Business.Repository.BaronyRepos
 
             foreach (var entry in Defaults)
             {
-                var match = existing.FirstOrDefault(d =>
-                    string.Equals(d.Name, entry.Name, StringComparison.OrdinalIgnoreCase));
+                var matches = existing
+                    .Where(d => string.Equals(d.Name, entry.Name, StringComparison.OrdinalIgnoreCase))
+                    .OrderByDescending(d => d.IsActive)
+                    .ThenBy(d => d.Id)
+                    .ToList();
 
-                if (match is null)
+                if (matches.Count == 0)
                 {
-                    ctx.Decrees.Add(new Decree
+                    var added = new Decree
                     {
                         BaronyId = baronyId,
                         Name = entry.Name,
@@ -68,14 +72,26 @@ namespace DA_Business.Repository.BaronyRepos
                         AdditiveJson = Ser(entry.Additive),
                         PercentJson = Ser(entry.Percent),
                         IsActive = entry.DefaultActive,
-                    });
+                    };
+                    ctx.Decrees.Add(added);
+                    existing.Add(added);
                     continue;
                 }
 
-                match.Name = entry.Name;
-                match.Description = entry.Description;
-                match.AdditiveJson = Ser(entry.Additive);
-                match.PercentJson = Ser(entry.Percent);
+                var keep = matches[0];
+                keep.Name = entry.Name;
+                keep.Description = entry.Description;
+                keep.AdditiveJson = Ser(entry.Additive);
+                keep.PercentJson = Ser(entry.Percent);
+
+                foreach (var dup in matches.Skip(1))
+                {
+                    // Prefer keeping an active copy; fold active flag onto survivor.
+                    if (dup.IsActive)
+                        keep.IsActive = true;
+                    ctx.Decrees.Remove(dup);
+                    existing.Remove(dup);
+                }
             }
         }
 

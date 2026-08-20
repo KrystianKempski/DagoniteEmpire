@@ -42,5 +42,9 @@ namespace DA_Common.Barony
 
             return (nextYear, nextMonth, turnNumber + 1, nextSeason);
         }
+
+        /// <summary>True when leaving Winter for Spring — calendar year increments.</summary>
+        public static bool IsNewYearTransition(string? seasonBeforeAdvance) =>
+            string.Equals(NormalizeSeason(seasonBeforeAdvance), "Winter", StringComparison.OrdinalIgnoreCase);
     }
 }

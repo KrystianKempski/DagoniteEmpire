@@ -643,6 +643,10 @@ namespace DA_Models.BaronyModels
         public string NewSeason { get; set; } = string.Empty;
         public int NewYear { get; set; }
         public int NewMonth { get; set; }
+        /// <summary>Winter → Spring: calendar year incremented and ages bumped.</summary>
+        public bool YearAdvanced { get; set; }
+        public bool BaronAgeIncremented { get; set; }
+        public int RelationsAged { get; set; }
         public PpbVector AppliedIncome { get; set; } = new();
         public List<string> CompletedProjects { get; set; } = new();
         /// <summary>Detailed outcomes applied when projects finished this resolve (training, reinforce, events, etc.).</summary>

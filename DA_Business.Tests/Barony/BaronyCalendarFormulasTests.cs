@@ -34,6 +34,16 @@ public class BaronyCalendarFormulasTests
     [InlineData("Winter", false)]
     public void FarmsProduceFood_FalseOnlyInWinter(string? season, bool expected) =>
         Assert.Equal(expected, BaronyCalendarFormulas.FarmsProduceFood(season));
+
+    [Theory]
+    [InlineData("Winter", true)]
+    [InlineData("winter", true)]
+    [InlineData("Spring", false)]
+    [InlineData("Fall", false)]
+    [InlineData("Autumn", false)]
+    [InlineData(null, false)]
+    public void IsNewYearTransition_OnlyFromWinter(string? season, bool expected) =>
+        Assert.Equal(expected, BaronyCalendarFormulas.IsNewYearTransition(season));
 }
 
 public class VillagePpbFormulasSeasonTests

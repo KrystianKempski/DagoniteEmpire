@@ -22,7 +22,7 @@ namespace DA_Common.Barony
             v[Ppb.Loyalty] = -2m * pop;
             v[Ppb.Stability] = -3m * pop;
             v[Ppb.Law] = -pop;
-            v[Ppb.Corruption] = pop;
+            v[Ppb.Corruption] = pop / 2m;
             v[Ppb.Science] = pop / 2m;
             v[Ppb.Magic] = pop / 4m;
             v[Ppb.Culture] = pop / 2m;
@@ -39,7 +39,7 @@ namespace DA_Common.Barony
             Ppb.Loyalty => Loc.T("= −2 × Population"),
             Ppb.Stability => Loc.T("= −3 × Population"),
             Ppb.Law => Loc.T("= −Population"),
-            Ppb.Corruption => Loc.T("= Population"),
+            Ppb.Corruption => Loc.T("= Population / 2"),
             Ppb.Science => Loc.T("= Population / 2"),
             Ppb.Magic => Loc.T("= Population / 4"),
             Ppb.Culture => Loc.T("= Population / 2"),
@@ -50,7 +50,7 @@ namespace DA_Common.Barony
 
         public static string CatalogDescription =>
             "The barony’s main town. PPB comes from Population — hover each PPB value for its formula. "
-            + "Unlike a village: Food = −Population (no farm yield); Economy / Law / Corruption at full Population "
+            + "Unlike a village: Food = −Population (no farm yield); Economy / Law at full Population, Corruption = Population/2 "
             + "(village uses Population/2, −Population/2, Population/4); twice Defense, Science, Culture, and Magic; "
             + "Loyalty −2×Population; Stability −3×Population. "
             + "Walls are a separate building (not included here).";

@@ -106,7 +106,7 @@ Class: `TownPpbFormulas`. Row “Population of \<city\>” under City and Buildi
 | Loyalty | `−2 × Population` |
 | Stability | `−3 × Population` |
 | Law | `−Population` |
-| Corruption | `Population` |
+| Corruption | `Population / 2` |
 | Science / Culture | `Population / 2` |
 | Magic | `Population / 4` |
 | Defense | `2 × Population` |
@@ -173,7 +173,7 @@ Pipeline (player End Turn flag → MG Resolve Turn):
    - Auto-generated unit/map projects start as **Resource allocation** (turns do not tick until fully funded); then → **In progress**
 3. Sync `Size` = primary-domain tile count
 4. If Final Stability ≤ 0 → loyalty test (below)
-5. Advance calendar one season (`BaronyCalendarFormulas`: Spring → Summer → Fall → Winter; year++ on Spring); re-roll Conjuncture 2d6
+5. Advance calendar one season (`BaronyCalendarFormulas`: Spring → Summer → Fall → Winter; year++ on Winter→Spring). On new year: baron `Character.Age` +1 and each `BaronyRelation` with a set Age +1; re-roll Conjuncture 2d6
 6. Reset Baron's Time: remove non-system actions; restore management to `RequiredManagementJc` (100 BT). Percent time modifiers are kept.
 7. Letter communication quotas refresh with the new turn number (inbound caps per correspondent/region; awaiting-reply lock is only for the current turn).
 8. Depleted units regenerate troops (`UnitRules.TroopRegenPerTurn`)

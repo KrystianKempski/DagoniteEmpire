@@ -1502,6 +1502,11 @@ namespace DA_DataAccess.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BaronyId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Decrees_BaronyId_PermanentName")
+                        .HasFilter("\"Name\" IN ('Few free days', 'Many free days')");
+
                     b.ToTable("Decrees");
                 });
 

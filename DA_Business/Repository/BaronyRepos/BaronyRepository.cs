@@ -1005,6 +1005,7 @@ namespace DA_Business.Repository.BaronyRepos
                 report.UnrestAfter = barony.Unrest;
 
                 // 5) Advance calendar (same step precomputed for project event dating)
+                var yearAdvanced = BaronyCalendarFormulas.IsNewYearTransition(barony.Season);
                 barony.Year = nextCal.Year;
                 barony.Month = nextCal.Month;
                 barony.TurnNumber = nextCal.TurnNumber;
@@ -1013,6 +1014,15 @@ namespace DA_Business.Repository.BaronyRepos
                 report.NewSeason = nextCal.Season;
                 report.NewYear = nextCal.Year;
                 report.NewMonth = nextCal.Month;
+                report.YearAdvanced = yearAdvanced;
+
+                // 5b) New year (Winter → Spring): baron + relation characters age +1
+                if (yearAdvanced)
+                {
+                    var aging = await AgeCharactersForNewYearAsync(ctx, barony);
+                    report.BaronAgeIncremented = aging.BaronAged;
+                    report.RelationsAged = aging.RelationsAged;
+                }
 
                 // 6) New conjuncture
                 var conj = RollService.Roll2d6();
@@ -1546,6 +1556,32 @@ namespace DA_Business.Repository.BaronyRepos
                 : notes.TrimEnd() + "; " + ProjectResultsAppliedMarker;
         }
 
+        /// <summary>
+        /// On Winter → Spring, increment the baron's Character.Age and every relation with a set Age.
+        /// </summary>
+        private static async Task<(bool BaronAged, int RelationsAged)> AgeCharactersForNewYearAsync(
+            ApplicationDbContext ctx, Barony barony)
+        {
+            var baronAged = false;
+            if (barony.CharacterId > 0)
+            {
+                var character = await ctx.Characters.FirstOrDefaultAsync(c => c.Id == barony.CharacterId);
+                if (character is not null)
+                {
+                    character.Age += 1;
+                    baronAged = true;
+                }
+            }
+
+            var relations = await ctx.BaronyRelations
+                .Where(r => r.BaronyId == barony.Id && r.Age != null)
+                .ToListAsync();
+            foreach (var relation in relations)
+                relation.Age = relation.Age!.Value + 1;
+
+            return (baronAged, relations.Count);
+        }
+
         private static string BuildTurnSummary(TurnResolveReportDTO r)
         {
             var lines = new List<string>
@@ -1553,6 +1589,17 @@ namespace DA_Business.Repository.BaronyRepos
                 $"Turn {r.PreviousTurnNumber} resolved → Turn {r.NewTurnNumber} ({r.NewSeason} {r.NewYear}).",
                 $"Resource income applied. Size {r.Size}. Control DC {r.ControlDc} (population {r.SettlementPopulation}).",
             };
+            if (r.YearAdvanced)
+            {
+                var ageBits = new List<string>();
+                if (r.BaronAgeIncremented)
+                    ageBits.Add("baron +1");
+                if (r.RelationsAged > 0)
+                    ageBits.Add($"{r.RelationsAged} relation(s) +1");
+                lines.Add(ageBits.Count > 0
+                    ? $"New year: ages increased ({string.Join(", ", ageBits)})."
+                    : "New year: calendar advanced (no ages to update).");
+            }
             if (r.CompletedProjects.Count > 0)
             {
                 lines.Add("Completed projects: " + string.Join(", ", r.CompletedProjects) + ".");

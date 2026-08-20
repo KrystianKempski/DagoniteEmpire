@@ -128,6 +128,16 @@ namespace DA_DataAccess.Data
                 entity.HasIndex(e => new { e.BaronyId, e.OwnerScope, e.NoteType });
             });
 
+            modelBuilder.Entity<Decree>(entity =>
+            {
+                // Permanent work-calendar decrees must exist at most once per barony
+                // (guards concurrent EnsureForBarony backfills from Domain Panel + HUD).
+                entity.HasIndex(e => new { e.BaronyId, e.Name })
+                    .IsUnique()
+                    .HasDatabaseName("IX_Decrees_BaronyId_PermanentName")
+                    .HasFilter("\"Name\" IN ('Few free days', 'Many free days')");
+            });
+
             modelBuilder.Entity<BaronPhpSource>(entity =>
             {
                 entity.HasIndex(e => e.BaronyId);
