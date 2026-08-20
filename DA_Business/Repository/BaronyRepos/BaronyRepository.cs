@@ -165,6 +165,9 @@ namespace DA_Business.Repository.BaronyRepos
                     throw new RepositoryErrorException(Loc.T("Unsupported barony seed profile: {0}", seedProfile ?? string.Empty));
                 }
 
+                // Permanent work-calendar decrees exist for every barony (Darkhold + custom).
+                PermanentDecreesSeeder.EnsureForBarony(ctx, added.Entity.Id);
+
                 ApplyStarterResourceStocks(added.Entity);
                 SeedBaronCampaign(ctx, character, added.Entity);
                 await ctx.SaveChangesAsync();
@@ -1620,6 +1623,9 @@ namespace DA_Business.Repository.BaronyRepos
                     .ToList();
 
                 SeniorHousesSeeder.EnsureForBarony(ctx, baronyId);
+                OrganizationsSeeder.EnsureForBarony(ctx, baronyId);
+                PermanentDecreesSeeder.EnsureForBarony(ctx, baronyId);
+                DarkholdRelationLocalization.EnsurePolishForBarony(ctx, baronyId, barony.Name);
                 await EnsureCoreOfficeDescriptionsAsync(ctx, baronyId);
                 await EnsureStarterCityBuildingsAsync(ctx, baronyId);
                 await ctx.SaveChangesAsync();
@@ -1924,14 +1930,44 @@ namespace DA_Business.Repository.BaronyRepos
                 using var ctx = await _db.CreateDbContextAsync();
                 var e = dto.Id > 0 ? await ctx.Decrees.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
                 if (e is null) { e = ToEntity(dto); ctx.Decrees.Add(e); }
-                else { ApplyDecree(e, dto); }
+                else
+                {
+                    // Permanent decrees keep catalog name/PPB; only IsActive (and free-text description) may change.
+                    if (PermanentDecreesSeeder.IsPermanent(e.Name))
+                    {
+                        e.IsActive = dto.IsActive;
+                        if (!string.IsNullOrWhiteSpace(dto.Description))
+                            e.Description = dto.Description.Trim();
+                    }
+                    else
+                    {
+                        ApplyDecree(e, dto);
+                    }
+                }
+                PermanentDecreesSeeder.ApplyMutualExclusivity(ctx, e);
                 await ctx.SaveChangesAsync();
                 return ToDTO(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SaveDecree)); }
         }
 
-        public Task<int> DeleteDecree(int id) => Delete(ctx => ctx.Decrees, id, nameof(DeleteDecree));
+        public async Task<int> DeleteDecree(int id)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.Decrees.FirstOrDefaultAsync(x => x.Id == id);
+                if (e is null)
+                    return 0;
+                if (PermanentDecreesSeeder.IsPermanent(e.Name))
+                    throw new RepositoryErrorException(Loc.T("This decree is permanent and cannot be removed."));
+                ctx.Decrees.Remove(e);
+                await ctx.SaveChangesAsync();
+                return 1;
+            }
+            catch (RepositoryErrorException) { throw; }
+            catch (System.Exception ex) { throw Err(ex, nameof(DeleteDecree)); }
+        }
 
         // ---------------- Events ----------------
         public async Task<List<BaronyEventDTO>> GetEvents(int baronyId) =>
@@ -1959,8 +1995,10 @@ namespace DA_Business.Repository.BaronyRepos
             try
             {
                 using var ctx = await _db.CreateDbContextAsync();
+                var barony = await ctx.Baronies.AsNoTracking().FirstOrDefaultAsync(b => b.Id == baronyId);
                 SeniorHousesSeeder.EnsureForBarony(ctx, baronyId);
                 OrganizationsSeeder.EnsureForBarony(ctx, baronyId);
+                DarkholdRelationLocalization.EnsurePolishForBarony(ctx, baronyId, barony?.Name);
                 await ctx.SaveChangesAsync();
 
                 var list = await ctx.BaronyRelations.AsNoTracking()

@@ -11,7 +11,12 @@ namespace DA_Common.Barony
         public const decimal LawPerHunger = 2m;
         public const decimal CorruptionPerHunger = 1m;
 
-        public static decimal FromFoodBalance(decimal foodBalance) => Math.Max(0m, -foodBalance);
+        /// <summary>
+        /// Hunger only when granary stock cannot cover this turn's Food income.
+        /// <c>Hunger = max(0, −(foodStock + foodIncome))</c>.
+        /// </summary>
+        public static decimal FromFoodStockAndIncome(decimal foodStock, decimal foodIncome) =>
+            Math.Max(0m, -(foodStock + foodIncome));
 
         public static PpbVector ComputeAdditive(decimal hunger)
         {
@@ -38,9 +43,16 @@ namespace DA_Common.Barony
             return v;
         }
 
-        public static string FormulaSummary(decimal foodFinal, decimal hunger) =>
-            Loc.T("This turn: Final Food {0}, Hunger {1} (= max(0, −Food)).",
-                PpbFormat.Number(foodFinal), PpbFormat.Number(hunger));
+        public static string FormulaSummary(decimal foodStock, decimal foodIncome, decimal hunger)
+        {
+            var projected = foodStock + foodIncome;
+            return Loc.T(
+                "This turn: Food stock {0} + income {1} = {2}; Hunger {3} (= max(0, −(stock+income))).",
+                PpbFormat.Number(foodStock),
+                PpbFormat.Number(foodIncome),
+                PpbFormat.Number(projected),
+                PpbFormat.Number(hunger));
+        }
 
         public static string? ExplainAdditive(Ppb key) => key switch
         {
@@ -59,7 +71,7 @@ namespace DA_Common.Barony
         };
 
         public static string CatalogDescription =>
-            "Community penalty when Food balance is below zero. "
-            + $"{InputLabel} = max(0, −Final Food before Community).";
+            "Community penalty only when Food stock + turn Food income would go below zero. "
+            + $"{InputLabel} = max(0, −(Food stock + Final Food before Community)).";
     }
 }

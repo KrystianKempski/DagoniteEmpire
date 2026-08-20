@@ -119,7 +119,8 @@ Class: `TownPpbFormulas`. Row “Population of \<city\>” under City and Buildi
 PPB balances **before** Community rows use Domain **Final** Food / Law / Corruption from sections above Community (Hunger / Crime / Corruption inputs). Economy conjuncture uses Final Economy after Hunger/Crime/Corruption/Unrest.
 
 ### Hunger — `HungerPpbFormulas`
-- `Hunger = max(0, −FoodBalance)` — `FoodBalance` = Final Food before Community
+- `Hunger = max(0, −(FoodStock + FoodIncome))` — only when granary stock cannot cover this turn’s Food income
+- `FoodStock` = current Food resource stock; `FoodIncome` = Final Food before Community
 - `% Economy/Production = max(−Hunger×5, −50)`
 - `+ Loyalty/Stability = −Hunger×3`, `Law = −Hunger×2`, `Corruption = Hunger`
 

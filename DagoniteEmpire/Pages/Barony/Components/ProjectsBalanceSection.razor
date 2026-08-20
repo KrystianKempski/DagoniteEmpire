@@ -144,8 +144,8 @@
     [Parameter] public int CurrentTurn { get; set; } = 1;
     [Parameter] public bool CanManage { get; set; }
 
-    /// <summary>Food … Defense (7 cumulative resources, required cost).</summary>
-    private static readonly IReadOnlyList<PpbInfo> _costColumns = ResourceCatalog.All.Take(7).ToList();
+    /// <summary>Food … Defense + Gold (all cumulative resources used as project cost).</summary>
+    private static readonly IReadOnlyList<PpbInfo> _costColumns = ResourceCatalog.All;
 
     private List<BalanceRow> _rows = new();
     private PpbVector _audienceAdd = new();

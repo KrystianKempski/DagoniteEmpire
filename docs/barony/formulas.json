@@ -73,7 +73,7 @@
       "title": "Hunger",
       "category": "community-penalty",
       "implementation": "DA_Common/Barony/HungerPpbFormulas.cs",
-      "input": "Hunger = max(0, -FinalFood before Community)",
+      "input": "Hunger = max(0, -(FoodStock + FinalFood before Community)); FoodStock = current Food stock",
       "additive": {
         "Loyalty": "-Hunger * 3",
         "Stability": "-Hunger * 3",

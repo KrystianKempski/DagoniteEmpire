@@ -58,9 +58,9 @@
                                 <td class="city-building-col-name">
                                     <div class="city-building-name-cell">
                                         <BaronyTooltip Title="@(L["Description"])" Text="@NameTooltip(item)">
-                                            <span class="city-building-name-text">@item.Name</span>
+                                            <span class="city-building-name-text">@L[item.Name]</span>
                                         </BaronyTooltip>
-                                        @if (CanManage)
+                                        @if (CanManage && !IsPermanent(item))
                                         {
                                             <span class="city-building-name-actions">
                                                 <BaronyTooltip Text="@(L["Edit decree"])">
@@ -180,8 +180,18 @@
         BaronyCalc.SectionGlance(
             BaronyCalc.DecreeRows(Decrees).Concat(TradeGoodRows));
 
-    private static string? NameTooltip(DecreeDTO item) =>
-        string.IsNullOrWhiteSpace(item.Description) ? null : item.Description.Trim();
+    private string? NameTooltip(DecreeDTO item)
+    {
+        if (IsPermanent(item))
+        {
+            var desc = string.IsNullOrWhiteSpace(item.Description) ? item.Name : item.Description.Trim();
+            return L[desc] + "\n" + L["Permanent decree — cannot be removed."];
+        }
+        return string.IsNullOrWhiteSpace(item.Description) ? null : item.Description.Trim();
+    }
+
+    private static bool IsPermanent(DecreeDTO item) =>
+        PermanentDecreesSeeder.IsPermanent(item.Name);
 
     private async Task AddAsync()
     {

@@ -830,7 +830,8 @@ namespace DagoniteEmpire.Pages.Barony
             int unrest,
             int settlementPopulation,
             int conjunctureDice,
-            int conjunctureModifier)
+            int conjunctureModifier,
+            decimal foodStock)
         {
             var preCommunity = new List<PpbModifierRow>();
             preCommunity.AddRange(advisorRows);
@@ -842,8 +843,8 @@ namespace DagoniteEmpire.Pages.Barony
             preCommunity.AddRange(armyRows);
 
             var preFinal = SummarizeSections(preCommunity);
-            var foodFinal = preFinal[Ppb.Food];
-            var hunger = HungerPpbFormulas.FromFoodBalance(foodFinal);
+            var foodIncome = preFinal[Ppb.Food];
+            var hunger = HungerPpbFormulas.FromFoodStockAndIncome(foodStock, foodIncome);
             var corruptionFinal = preFinal[Ppb.Corruption];
             var corruption = CorruptionPpbFormulas.FromCorruptionBalance(corruptionFinal);
             var unrestValue = Math.Max(0m, unrest);
@@ -852,7 +853,7 @@ namespace DagoniteEmpire.Pages.Barony
                 CommunitySource.Hunger,
                 HungerPpbFormulas.ComputeAdditive(hunger),
                 HungerPpbFormulas.ComputePercent(hunger),
-                HungerPpbFormulas.FormulaSummary(foodFinal, hunger),
+                HungerPpbFormulas.FormulaSummary(foodStock, foodIncome, hunger),
                 HungerPpbFormulas.CatalogDescription);
             var unrestRow = Row(
                 CommunitySource.Unrest,
@@ -1015,12 +1016,14 @@ namespace DagoniteEmpire.Pages.Barony
             eventRows.AddRange(AdventureEventRows(ov.Events, ov.Barony.TurnNumber));
             var armyRows = ArmyRows(ov.Units);
             var settlementPop = SumSettlementPopulation(ov.Barony.Id, ov.Buildings, ov.Improvements);
+            var foodStock = ov.Barony.FoodInGranaries;
             var communityRows = CommunityRows(
                 advisorRows, buildingRows, socialRows, improvementRows, decreeRows, eventRows, armyRows,
                 ov.Barony.Unrest,
                 settlementPop,
                 ov.Barony.ConjunctureDice,
-                ov.Barony.ConjunctureModifier);
+                ov.Barony.ConjunctureModifier,
+                foodStock);
 
             var allRows = new List<PpbModifierRow>();
             allRows.AddRange(advisorRows);

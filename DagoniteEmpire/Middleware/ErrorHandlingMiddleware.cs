@@ -1,16 +1,6 @@
 ﻿using DagoniteEmpire.Exceptions;
 using DagoniteEmpire.Helper;
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.Diagnostics;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace DagoniteEmpire.Middleware
@@ -26,28 +16,66 @@ namespace DagoniteEmpire.Middleware
             _jsRuntime = jsRuntime;
         }
 
-
         public async Task InvokeAsync(HttpContext context, RequestDelegate next)
         {
             try
             {
                 await next.Invoke(context);
             }
-            catch(RepositoryErrorException ex)
+            catch (RepositoryErrorException ex)
             {
-                await _jsRuntime.ToastrError(ex.Message);
+                _logger.LogError(ex, ex.Message);
+                await TryNotifyAsync(() => _jsRuntime.ToastrError(ex.Message));
+                if (!context.Response.HasStarted)
+                {
+                    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                    context.Response.ContentType = Text.Plain;
+                    await context.Response.WriteAsync(ex.Message);
+                }
             }
-            catch(WarningException ex) 
+            catch (WarningException ex)
             {
-                await _jsRuntime.ToastrWarning(ex.Message);
+                _logger.LogWarning(ex, ex.Message);
+                await TryNotifyAsync(() => _jsRuntime.ToastrWarning(ex.Message));
+                if (!context.Response.HasStarted)
+                {
+                    context.Response.StatusCode = StatusCodes.Status400BadRequest;
+                    context.Response.ContentType = Text.Plain;
+                    await context.Response.WriteAsync(ex.Message);
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, ex.Message);
-                context.Response.StatusCode = 500;
-                context.Response.ContentType = Text.Plain;
-                await context.Response.WriteAsync("Error:" + ex.Message);
-                await _jsRuntime.ToastrError("Error" + ex.Message);
+                if (!context.Response.HasStarted)
+                {
+                    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                    context.Response.ContentType = Text.Plain;
+                    await context.Response.WriteAsync("Error:" + ex.Message);
+                }
+                await TryNotifyAsync(() => _jsRuntime.ToastrError("Error" + ex.Message));
+            }
+        }
+
+        /// <summary>
+        /// Toastr needs an active Blazor circuit. Skip JS during static HTTP endpoints
+        /// (e.g. /Account/DemoBaron) so the real exception is not replaced by a JS-interop failure.
+        /// </summary>
+        private async Task TryNotifyAsync(Func<ValueTask> notify)
+        {
+            try
+            {
+                await notify();
+            }
+            catch (InvalidOperationException ex) when (
+                ex.Message.Contains("JavaScript interop", StringComparison.OrdinalIgnoreCase)
+                || ex.Message.Contains("statically rendered", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogDebug(ex, "Skipped toastr notification outside an interactive Blazor circuit.");
+            }
+            catch (JSException ex)
+            {
+                _logger.LogDebug(ex, "Skipped toastr notification; JS runtime unavailable.");
             }
         }
     }

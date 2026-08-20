@@ -241,6 +241,7 @@ namespace DA_Business.Repository.BaronyRepos
 
             // --- Relations (Vassals + Neighbors only; FiefId -> fief) ---
             var relMap = new Dictionary<int, int>();
+            var isPolish = DarkholdOpeningCouncilTopics.IsPolish;
             var relRows = seed.BaronyRelations
                 .Select(s => (s.Id, Entity: new BaronyRelation
                 {
@@ -248,9 +249,13 @@ namespace DA_Business.Repository.BaronyRepos
                     Category = s.Category,
                     GroupName = s.GroupName,
                     Name = s.Name,
-                    Title = s.Title,
+                    Title = isPolish
+                        ? DarkholdRelationLocalization.LocalizeTitle(s.Name, s.Title)
+                        : s.Title,
                     Age = s.Age,
-                    Description = s.Description,
+                    Description = isPolish
+                        ? DarkholdRelationLocalization.LocalizeDescription(s.Name, s.Description)
+                        : s.Description,
                     TroopCount = s.TroopCount,
                     RelationDescription = s.RelationDescription,
                     Notes = s.Notes,
@@ -270,7 +275,7 @@ namespace DA_Business.Repository.BaronyRepos
                     .Select(s => new BaronyRelationModifier
                     {
                         RelationId = relMap[s.RelationId],
-                        Description = s.Description,
+                        Description = DarkholdRelationLocalization.LocalizeModifierDescription(s.Description),
                         Value = s.Value,
                         SortOrder = s.SortOrder,
                     }));
