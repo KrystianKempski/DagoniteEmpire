@@ -204,6 +204,7 @@
     [Parameter] public List<TerrainImprovementDTO> Improvements { get; set; } = new();
     [Parameter] public BaronySeatDTO? Seat { get; set; }
     [Parameter] public List<SeatPurposeTemplateDTO> PurposeTemplates { get; set; } = new();
+    [Parameter] public List<BaronArtifactDTO> Artifacts { get; set; } = new();
     [Parameter] public List<BuildingTemplateDTO> Catalog { get; set; } = new();
     [Parameter] public bool CanManage { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
@@ -217,16 +218,16 @@
     private PpbModifierRow? LordsSeatRow =>
         Seat is null
             ? null
-            : BaronyCalc.LordsSeatSummaryRow(Seat.Rooms, BaronyCalc.PurposeLookup(PurposeTemplates));
+            : BaronyCalc.LordsSeatSummaryRow(Seat.Rooms, BaronyCalc.PurposeLookup(PurposeTemplates), Artifacts);
 
     private List<TerrainImprovementDTO> Towns =>
         Improvements.Where(BaronyCalc.IsTown)
             .OrderBy(BaronyCalc.TownPopulationLabel, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-    private PpbVector AdditiveSum => BaronyCalc.SumCityBuildings(BaronyId, SavedBuildings, Improvements, Seat, PurposeTemplates);
-    private PpbVector PercentSum => BaronyCalc.SumCityBuildingsPercent(BaronyId, SavedBuildings, Improvements, Seat, PurposeTemplates);
-    private PpbVector Glance => BaronyCalc.SectionGlance(BaronyCalc.CityBuildingSectionRows(BaronyId, SavedBuildings, Improvements, Seat, PurposeTemplates));
+    private PpbVector AdditiveSum => BaronyCalc.SumCityBuildings(BaronyId, SavedBuildings, Improvements, Seat, PurposeTemplates, Artifacts);
+    private PpbVector PercentSum => BaronyCalc.SumCityBuildingsPercent(BaronyId, SavedBuildings, Improvements, Seat, PurposeTemplates, Artifacts);
+    private PpbVector Glance => BaronyCalc.SectionGlance(BaronyCalc.CityBuildingSectionRows(BaronyId, SavedBuildings, Improvements, Seat, PurposeTemplates, Artifacts));
     private int PopulationSum => BaronyCalc.SumCityPopulation(BaronyId, SavedBuildings, Improvements);
 
     private static string? TownNameTooltip(TerrainImprovementDTO town)

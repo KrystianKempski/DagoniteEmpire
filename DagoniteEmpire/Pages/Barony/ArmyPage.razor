@@ -111,6 +111,7 @@ else if (Barony is not null)
                                          CanManageAsMg="@RosterCanManage"
                                          AvailableCaptains="@_courtiers"
                                          OccupiedCaptainIds="@_occupiedCaptainIds"
+                                         BattleInProgress="@_battleInProgress"
                                          OnChanged="ReloadAsync" />
                     }
                 </div>
@@ -135,9 +136,9 @@ else if (Barony is not null)
 
     private int _rosterUnits => _units.Count;
     private int _rosterTroops => _units.Sum(u => u.TroopCount);
-    private int _rosterWage => _units.Where(u => u.IsActive).Sum(u => UnitStatHelper.ComputeUpkeep(u).Gold);
-    private decimal _rosterFood => _units.Where(u => u.IsActive).Sum(u => UnitStatHelper.ComputeUpkeep(u).Food);
-    private int _rosterDefense => _units.Where(u => u.IsActive).Sum(u => UnitStatHelper.ComputeUpkeep(u).Defense);
+    private int _rosterWage => _units.Where(u => u.IsActive).Sum(u => UnitStatHelper.ComputeUpkeep(u, _battleInProgress).Gold);
+    private decimal _rosterFood => _units.Where(u => u.IsActive).Sum(u => UnitStatHelper.ComputeUpkeep(u, _battleInProgress).Food);
+    private int _rosterDefense => _units.Where(u => u.IsActive).Sum(u => UnitStatHelper.ComputeUpkeep(u, _battleInProgress).Defense);
 
     protected override async Task OnInitializedAsync()
     {

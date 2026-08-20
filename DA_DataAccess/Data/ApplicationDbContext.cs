@@ -138,6 +138,17 @@ namespace DA_DataAccess.Data
                     .HasFilter("\"Name\" IN ('Few free days', 'Many free days')");
             });
 
+            modelBuilder.Entity<AvailableAdvisor>(entity =>
+            {
+                entity.HasIndex(e => e.CharacterId)
+                    .IsUnique()
+                    .HasFilter("\"CharacterId\" IS NOT NULL");
+                entity.HasIndex(e => new { e.BaronyId, e.CharacterId })
+                    .IsUnique()
+                    .HasDatabaseName("IX_AvailableAdvisors_BaronyId_CharacterId")
+                    .HasFilter("\"CharacterId\" IS NOT NULL");
+            });
+
             modelBuilder.Entity<BaronPhpSource>(entity =>
             {
                 entity.HasIndex(e => e.BaronyId);

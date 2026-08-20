@@ -21,6 +21,7 @@ namespace DA_Models.BaronyModels
         public List<BaronyRelationDTO> Relations { get; set; } = new();
         public BaronySeatDTO? Seat { get; set; }
         public List<SeatPurposeTemplateDTO> SeatPurposeTemplates { get; set; } = new();
+        public List<BaronArtifactDTO> Artifacts { get; set; } = new();
         public List<BaronyResourceSourceDTO> ResourceSources { get; set; } = new();
         public List<BaronPurseSourceDTO> PurseSources { get; set; } = new();
         public List<BaronyUnitDTO> Units { get; set; } = new();

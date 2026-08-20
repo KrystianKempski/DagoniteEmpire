@@ -8,6 +8,7 @@ using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Chat;
 using DA_DataAccess.Data;
 using DA_Models.BaronyModels;
+using DA_Models.CharacterModels;
 using DagoniteEmpire.Exceptions;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,11 +21,13 @@ namespace DA_Business.Repository.BaronyRepos
     public class BaronyRepository : IBaronyRepository
     {
         private readonly IDbContextFactory<ApplicationDbContext> _db;
+        private readonly ICharacterRepository _characters;
         private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-        public BaronyRepository(IDbContextFactory<ApplicationDbContext> db)
+        public BaronyRepository(IDbContextFactory<ApplicationDbContext> db, ICharacterRepository characters)
         {
             _db = db;
+            _characters = characters;
         }
 
         // ---------------- JSON helpers ----------------
@@ -1045,6 +1048,10 @@ namespace DA_Business.Repository.BaronyRepos
                 // 9) Depleted units regenerate troops toward full strength
                 report.UnitTroopRegenerations = await RegenerateDepletedUnitsAsync(ctx, baronyId);
 
+                // 9b) Unit peacetime actions: Training XP + partial demobilization
+                var battleActive = await IsBaronyBattleInProgressAsync(ctx, baronyId);
+                report.UnitActionResults = await ApplyUnitActionsOnResolveAsync(ctx, baronyId, battleActive);
+
                 // 10) Clear ready flag
                 barony.PlayerTurnReady = false;
 
@@ -1136,6 +1143,141 @@ namespace DA_Business.Repository.BaronyRepos
             }
 
             return notes;
+        }
+
+        private static async Task<bool> IsBaronyBattleInProgressAsync(ApplicationDbContext ctx, int baronyId)
+        {
+            var phase = await ctx.BaronyBattleMaps.AsNoTracking()
+                .Where(m => m.BaronyId == baronyId)
+                .Select(m => m.Phase)
+                .FirstOrDefaultAsync();
+            return string.Equals(phase, BaronyBattlePhases.Battle, StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Apply Training XP and Partial demobilization for units with peacetime actions.
+        /// Domain bonuses are live in Domain Panel (not applied here). Battle suppresses XP.
+        /// </summary>
+        private async Task<List<string>> ApplyUnitActionsOnResolveAsync(
+            ApplicationDbContext ctx, int baronyId, bool battleSuppresses)
+        {
+            var notes = new List<string>();
+            var units = await ctx.BaronyUnits
+                .Where(u => u.BaronyId == baronyId
+                    && u.Status == UnitStatus.Active
+                    && u.CurrentAction != null
+                    && u.CurrentAction != "")
+                .ToListAsync();
+            if (units.Count == 0)
+                return notes;
+
+            var barony = await ctx.Baronies.AsNoTracking().FirstOrDefaultAsync(b => b.Id == baronyId);
+            CharacterDTO? baronCharacter = null;
+            if (barony is { CharacterId: > 0 })
+                baronCharacter = await _characters.GetById(barony.CharacterId, fullIncludes: true);
+
+            foreach (var unit in units)
+            {
+                var action = UnitActionKind.Normalize(unit.CurrentAction);
+                if (action == UnitActionKind.None)
+                    continue;
+
+                if (UnitActionKind.GrantsTrainingXp(action))
+                {
+                    if (battleSuppresses)
+                    {
+                        notes.Add($"{unit.Name}: {Loc.T("Training XP skipped (battle in progress).")}");
+                    }
+                    else
+                    {
+                        var (kind, command, strategy) = await ResolveCaptainTrainingSkillsAsync(
+                            ctx, unit, baronCharacter);
+                        var xp = UnitActionFormulas.TrainingXp(
+                            kind, command, strategy, unit.ActionTrainingJc, battleSuppresses: false);
+                        if (xp > 0)
+                        {
+                            unit.RemainingPd += xp;
+                            unit.UpdatedAtUtc = DateTime.UtcNow;
+                            notes.Add($"{unit.Name}: +{xp} XP ({UnitActionKind.DisplayName(action)})");
+                            AppendUnitLog(unit, "action", Loc.T("Training: +{0} XP", xp), xp);
+                        }
+                        else
+                        {
+                            notes.Add($"{unit.Name}: {Loc.T("Training yielded 0 XP (no captain or skills).")}");
+                        }
+                    }
+                }
+                // Partial demobilization is a live Domain Panel upkeep modifier (×½), not a resolve effect.
+            }
+
+            return notes;
+        }
+
+        private async Task<(UnitCaptainKind Kind, int Command, int Strategy)> ResolveCaptainTrainingSkillsAsync(
+            ApplicationDbContext ctx, BaronyUnit unit, CharacterDTO? baronCharacter)
+        {
+            if (unit.CaptainIsBaron)
+            {
+                var (cmd, strat) = CharacterCommandStrategy(baronCharacter);
+                return (UnitCaptainKind.Baron, cmd, strat);
+            }
+
+            if (unit.CaptainAvailableAdvisorId is not int captainId || captainId <= 0)
+                return (UnitCaptainKind.None, 0, 0);
+
+            var person = await ctx.AvailableAdvisors.AsNoTracking()
+                .FirstOrDefaultAsync(a => a.Id == captainId && a.BaronyId == unit.BaronyId);
+            if (person is null)
+                return (UnitCaptainKind.None, 0, 0);
+
+            if (person.CharacterId is int linkedId && linkedId > 0)
+            {
+                var character = await _characters.GetById(linkedId, fullIncludes: true);
+                var (cmd, strat) = CharacterCommandStrategy(character);
+                return (UnitCaptainKind.LinkedCharacter, cmd, strat);
+            }
+
+            var sheet = DeserializeCourtSheet(person.SheetJson);
+            var command = sheet.GetMain(CourtMainSkill.Command) + sheet.GetMainOtherSum(CourtMainSkill.Command);
+            var strategy = sheet.GetSecondary(CourtSecondarySkill.StrategyTactics);
+            return (UnitCaptainKind.CourtSheet, command, strategy);
+        }
+
+        private static (int Command, int Strategy) CharacterCommandStrategy(CharacterDTO? character)
+        {
+            if (character is null)
+                return (0, 0);
+            CharacterSkillRelations.Wire(character);
+            return (SpecialSkill(character, UnitActionFormulas.CharacterCommandSkill),
+                SpecialSkill(character, UnitActionFormulas.CharacterStrategySkill));
+        }
+
+        private static int SpecialSkill(CharacterDTO character, string name)
+        {
+            if (character.SpecialSkills is null)
+                return 0;
+            foreach (var s in character.SpecialSkills)
+            {
+                if (string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase))
+                    return (int)Math.Floor((decimal)s.SumBonus);
+            }
+            return 0;
+        }
+
+        private static void AppendUnitLog(BaronyUnit unit, string kind, string text, int? xpDelta = null)
+        {
+            var log = DeUnitLog(unit.LogJson);
+            log.Insert(0, new BaronyUnitLogEntryDTO
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                UtcAt = DateTime.UtcNow,
+                Kind = kind,
+                Text = text,
+                XpDelta = xpDelta,
+            });
+            if (log.Count > 80)
+                log = log.Take(80).ToList();
+            unit.LogJson = SerUnitLog(log);
         }
 
         private sealed record ProjectApplyResult(List<string> Notes, bool Applied);
@@ -1615,6 +1757,9 @@ namespace DA_Business.Repository.BaronyRepos
                 lines.Add("Troop recovery (+" + UnitRules.TroopRegenPerTurn + "/turn): "
                     + string.Join("; ", r.UnitTroopRegenerations) + ".");
 
+            if (r.UnitActionResults.Count > 0)
+                lines.Add("Unit actions: " + string.Join("; ", r.UnitActionResults) + ".");
+
             if (r.LoyaltyTestRan)
             {
                 lines.Add(
@@ -1680,6 +1825,7 @@ namespace DA_Business.Repository.BaronyRepos
                 DarkholdRelationLocalization.EnsurePolishForBarony(ctx, baronyId, barony.Name);
                 await EnsureCoreOfficeDescriptionsAsync(ctx, baronyId);
                 await EnsureStarterCityBuildingsAsync(ctx, baronyId);
+                await RefreshLinkedCourtiersAsync(ctx, baronyId);
                 await ctx.SaveChangesAsync();
 
                 var availableAdvisors = (await ctx.AvailableAdvisors.AsNoTracking()
@@ -1709,6 +1855,13 @@ namespace DA_Business.Repository.BaronyRepos
                     Relations = (await ctx.BaronyRelations.AsNoTracking().Include(x => x.Modifiers).Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Seat = await EnsureSeatDtoAsync(ctx, baronyId),
                     SeatPurposeTemplates = await LoadPurposeTemplatesAsync(ctx, baronyId),
+                    Artifacts = (await ctx.BaronArtifacts.AsNoTracking()
+                            .Where(x => x.BaronyId == baronyId)
+                            .OrderBy(x => x.SortOrder)
+                            .ThenBy(x => x.Id)
+                            .ToListAsync())
+                        .Select(ToDTO)
+                        .ToList(),
                     CommunityModifiers = (await ctx.CommunityModifiers.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Fiefs = (await ctx.Fiefs.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Tiles = tiles.Select(ToDTO).ToList(),
@@ -1734,6 +1887,7 @@ namespace DA_Business.Repository.BaronyRepos
             {
                 using var ctx = await _db.CreateDbContextAsync();
                 await EnsureCoreOfficeDescriptionsAsync(ctx, baronyId);
+                await RefreshLinkedCourtiersAsync(ctx, baronyId);
                 await ctx.SaveChangesAsync();
 
                 var personById = (await ctx.AvailableAdvisors.AsNoTracking()
@@ -1750,8 +1904,94 @@ namespace DA_Business.Repository.BaronyRepos
             catch (System.Exception ex) { throw Err(ex, nameof(GetAdvisors)); }
         }
 
-        public async Task<List<AvailableAdvisorDTO>> GetAvailableAdvisors(int baronyId) =>
-            await GetList(ctx => ctx.AvailableAdvisors, baronyId, ToDTO, nameof(GetAvailableAdvisors));
+        public async Task<List<AvailableAdvisorDTO>> GetAvailableAdvisors(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                await RefreshLinkedCourtiersAsync(ctx, baronyId);
+                await EnsureCourtSheetCommanderCxAsync(ctx, baronyId);
+                await ctx.SaveChangesAsync();
+                return (await ctx.AvailableAdvisors.AsNoTracking()
+                        .Where(x => x.BaronyId == baronyId)
+                        .OrderBy(x => x.Name)
+                        .ThenBy(x => x.Id)
+                        .ToListAsync())
+                    .Select(ToDTO)
+                    .ToList();
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetAvailableAdvisors)); }
+        }
+
+        public async Task<AvailableAdvisorDTO> AttachCharacterAsCourtier(int baronyId, int characterId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var barony = await ctx.Baronies.AsNoTracking().FirstOrDefaultAsync(b => b.Id == baronyId)
+                    ?? throw new InvalidOperationException(Loc.T("Barony not found."));
+                if (barony.CharacterId == characterId)
+                    throw new InvalidOperationException(Loc.T("The baron character is already tied to this barony."));
+
+                var already = await ctx.AvailableAdvisors.AsNoTracking()
+                    .AnyAsync(a => a.CharacterId == characterId);
+                if (already)
+                    throw new InvalidOperationException(Loc.T("This character is already attached as a courtier somewhere."));
+
+                var character = await _characters.GetById(characterId, fullIncludes: true);
+                if (character is null || character.Id <= 0)
+                    throw new InvalidOperationException(Loc.T("Character not found."));
+
+                var skills = CharacterBaronySkillPpb.FromCharacter(character);
+                var sheet = CommanderCxFormulas.BuildCharacterCommanderSheet(null, character);
+                var e = new AvailableAdvisor
+                {
+                    BaronyId = baronyId,
+                    CharacterId = characterId,
+                    Name = CharacterDisplayName(character),
+                    Description = null,
+                    SheetJson = JsonSerializer.Serialize(sheet, JsonOptions),
+                    SkillsJson = Ser(skills),
+                };
+                ctx.AvailableAdvisors.Add(e);
+                await ctx.SaveChangesAsync();
+                return ToDTO(e);
+            }
+            catch (InvalidOperationException) { throw; }
+            catch (System.Exception ex) { throw Err(ex, nameof(AttachCharacterAsCourtier)); }
+        }
+
+        public async Task<HashSet<int>> GetAttachedCourtierCharacterIds()
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var ids = await ctx.AvailableAdvisors.AsNoTracking()
+                    .Where(a => a.CharacterId != null)
+                    .Select(a => a.CharacterId!.Value)
+                    .ToListAsync();
+                return ids.ToHashSet();
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetAttachedCourtierCharacterIds)); }
+        }
+
+        public async Task<CourtCharacterSheet> SaveBaronCommanderSheet(int baronyId, CourtCharacterSheet sheet)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var barony = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == baronyId)
+                    ?? throw new InvalidOperationException(Loc.T("Barony not found."));
+
+                var character = await _characters.GetById(barony.CharacterId, fullIncludes: true);
+                var saved = CommanderCxFormulas.BuildCharacterCommanderSheet(sheet, character);
+                barony.CommanderSheetJson = JsonSerializer.Serialize(saved, JsonOptions);
+                await ctx.SaveChangesAsync();
+                return saved;
+            }
+            catch (InvalidOperationException) { throw; }
+            catch (System.Exception ex) { throw Err(ex, nameof(SaveBaronCommanderSheet)); }
+        }
 
         /// <summary>Restore catalog office flavor text when assignment overwrote Description with a person bio.</summary>
         private static async Task EnsureCoreOfficeDescriptionsAsync(ApplicationDbContext ctx, int baronyId)
@@ -1860,12 +2100,42 @@ namespace DA_Business.Repository.BaronyRepos
                 var e = dto.Id > 0 ? await ctx.AvailableAdvisors.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
                 if (e is null)
                 {
+                    // Character links go through AttachCharacterAsCourtier only.
+                    dto.CharacterId = null;
                     e = ToEntity(dto);
                     ctx.AvailableAdvisors.Add(e);
                     await ctx.SaveChangesAsync();
                 }
+                else if (e.CharacterId is > 0)
+                {
+                    e.Description = dto.Description;
+                    var character = await _characters.GetById(e.CharacterId.Value, fullIncludes: true);
+                    if (character is not null && character.Id > 0)
+                    {
+                        e.Name = CharacterDisplayName(character);
+                        e.SkillsJson = Ser(CharacterBaronySkillPpb.FromCharacter(character));
+                    }
+
+                    var sheet = CommanderCxFormulas.BuildCharacterCommanderSheet(
+                        dto.Sheet ?? DeserializeCourtSheet(e.SheetJson),
+                        character);
+                    e.SheetJson = JsonSerializer.Serialize(sheet, JsonOptions);
+
+                    var skillsJson = e.SkillsJson;
+                    var offices = await ctx.Advisors
+                        .Where(a => a.AvailableAdvisorId == e.Id)
+                        .ToListAsync();
+                    foreach (var advisor in offices)
+                    {
+                        advisor.SkillsJson = skillsJson;
+                        advisor.PersonName = e.Name;
+                    }
+                    await ResyncUnitsForCaptainAsync(ctx, e.Id, e.BaronyId);
+                    await ctx.SaveChangesAsync();
+                }
                 else
                 {
+                    dto.CharacterId = null;
                     ApplyAvailableAdvisor(e, dto);
                     var skillsJson = e.SkillsJson;
                     var linked = await ctx.Advisors
@@ -3649,7 +3919,9 @@ namespace DA_Business.Repository.BaronyRepos
                         dto.OpenProjectOutputKind = proj.OutputKind;
                         dto.OpenProjectStatus = proj.Status;
                     }
-                    if (u.CaptainAvailableAdvisorId is int cid
+                    if (u.CaptainIsBaron)
+                        dto.CaptainName = Loc.T("Baron");
+                    else if (u.CaptainAvailableAdvisorId is int cid
                         && captainNames.TryGetValue(cid, out var cname))
                         dto.CaptainName = cname;
                     return dto;
@@ -4633,6 +4905,7 @@ namespace DA_Business.Repository.BaronyRepos
                 LuxuryGoodsAccessKey = LuxuryGoodsAccessCatalog.Find(e.LuxuryGoodsAccessKey).Key,
                 TradeTreaties = ParseTradeTreaties(e.TradeTreatiesJson),
                 PlayerTurnReady = e.PlayerTurnReady,
+                CommanderSheet = DeserializeCourtSheet(e.CommanderSheetJson),
             };
         }
 
@@ -4722,15 +4995,32 @@ namespace DA_Business.Repository.BaronyRepos
 
         private static AvailableAdvisorDTO ToDTO(AvailableAdvisor e)
         {
-            var sheet = DeserializeCourtSheet(e.SheetJson);
+            if (e.CharacterId is > 0)
+            {
+                // Commander progress lives in SheetJson; Domain Skills come from SkillsJson.
+                var sheet = DeserializeCourtSheet(e.SheetJson);
+                return new AvailableAdvisorDTO
+                {
+                    Id = e.Id,
+                    BaronyId = e.BaronyId,
+                    Name = e.Name,
+                    Description = e.Description,
+                    CharacterId = e.CharacterId,
+                    Sheet = sheet,
+                    Skills = De(e.SkillsJson),
+                };
+            }
+
+            var courtSheet = CommanderCxFormulas.EnsureCourtSheetCx(DeserializeCourtSheet(e.SheetJson));
             return new AvailableAdvisorDTO
             {
                 Id = e.Id,
                 BaronyId = e.BaronyId,
                 Name = e.Name,
                 Description = e.Description,
-                Sheet = sheet,
-                Skills = CourtPpbFormulas.ComputeTotal(sheet),
+                CharacterId = e.CharacterId,
+                Sheet = courtSheet,
+                Skills = CourtPpbFormulas.ComputeTotal(courtSheet),
             };
         }
 
@@ -4744,13 +5034,88 @@ namespace DA_Business.Repository.BaronyRepos
 
         private static void ApplyAvailableAdvisor(AvailableAdvisor e, AvailableAdvisorDTO d)
         {
-            var sheet = d.Sheet ?? CourtCharacterSheet.CreateDefault();
-            sheet.Normalize();
             e.BaronyId = d.BaronyId;
+            e.CharacterId = d.CharacterId is > 0 ? d.CharacterId : null;
             e.Name = d.Name;
             e.Description = d.Description;
+
+            if (e.CharacterId is > 0)
+            {
+                // Preserve commander tree in SheetJson; Domain Skills stay on SkillsJson.
+                var existingSheet = DeserializeCourtSheet(e.SheetJson);
+                if (d.Sheet is not null)
+                {
+                    existingSheet.CommanderXp = d.Sheet.CommanderXp;
+                    existingSheet.UnlockedCommanderAbilities =
+                        d.Sheet.UnlockedCommanderAbilities?.ToList() ?? new List<string>();
+                }
+                existingSheet.Normalize();
+                e.SheetJson = JsonSerializer.Serialize(existingSheet, JsonOptions);
+                if (d.Skills is not null && !d.Skills.IsEmpty)
+                    e.SkillsJson = Ser(d.Skills);
+                return;
+            }
+
+            var sheet = CommanderCxFormulas.EnsureCourtSheetCx(d.Sheet ?? CourtCharacterSheet.CreateDefault());
+            sheet.Normalize();
             e.SheetJson = JsonSerializer.Serialize(sheet, JsonOptions);
             e.SkillsJson = Ser(CourtPpbFormulas.ComputeTotal(sheet));
+        }
+
+        private static string CharacterDisplayName(CharacterDTO character)
+        {
+            if (!string.IsNullOrWhiteSpace(character.NPCName))
+                return character.NPCName.Trim();
+            if (!string.IsNullOrWhiteSpace(character.UserName))
+                return character.UserName.Trim();
+            return $"Character #{character.Id}";
+        }
+
+        private async Task RefreshLinkedCourtiersAsync(ApplicationDbContext ctx, int baronyId)
+        {
+            var linked = await ctx.AvailableAdvisors
+                .Where(a => a.BaronyId == baronyId && a.CharacterId != null)
+                .ToListAsync();
+            if (linked.Count == 0)
+                return;
+
+            foreach (var e in linked)
+            {
+                var character = await _characters.GetById(e.CharacterId!.Value, fullIncludes: true);
+                if (character is null || character.Id <= 0)
+                    continue;
+
+                e.Name = CharacterDisplayName(character);
+                var skills = CharacterBaronySkillPpb.FromCharacter(character);
+                e.SkillsJson = Ser(skills);
+
+                var sheet = CommanderCxFormulas.BuildCharacterCommanderSheet(
+                    DeserializeCourtSheet(e.SheetJson), character);
+                e.SheetJson = JsonSerializer.Serialize(sheet, JsonOptions);
+
+                var offices = await ctx.Advisors
+                    .Where(a => a.AvailableAdvisorId == e.Id)
+                    .ToListAsync();
+                foreach (var office in offices)
+                {
+                    office.SkillsJson = e.SkillsJson;
+                    office.PersonName = e.Name;
+                }
+            }
+        }
+
+        private static async Task EnsureCourtSheetCommanderCxAsync(ApplicationDbContext ctx, int baronyId)
+        {
+            var courtOnly = await ctx.AvailableAdvisors
+                .Where(a => a.BaronyId == baronyId && a.CharacterId == null)
+                .ToListAsync();
+            foreach (var e in courtOnly)
+            {
+                var sheet = DeserializeCourtSheet(e.SheetJson);
+                if (!CommanderCxFormulas.EnsureMinimumPool(sheet, CommanderCxFormulas.BaseCxFromCourtSheet(sheet)))
+                    continue;
+                e.SheetJson = JsonSerializer.Serialize(sheet, JsonOptions);
+            }
         }
 
         private static CourtCharacterSheet DeserializeCourtSheet(string? json)
@@ -4975,6 +5340,8 @@ namespace DA_Business.Repository.BaronyRepos
             Prestige = e.Prestige,
             Honor = e.Honor,
             Fear = e.Fear,
+            Additive = De(e.AdditiveJson),
+            Percent = De(e.PercentJson),
             SeatRoomId = e.SeatRoomId,
             Description = e.Description,
             SortOrder = e.SortOrder,
@@ -4997,6 +5364,8 @@ namespace DA_Business.Repository.BaronyRepos
             e.Prestige = d.Prestige;
             e.Honor = d.Honor;
             e.Fear = d.Fear;
+            e.AdditiveJson = Ser(d.Additive);
+            e.PercentJson = Ser(d.Percent);
             e.SeatRoomId = d.SeatRoomId;
             e.Description = d.Description;
             e.SortOrder = d.SortOrder;
@@ -5555,6 +5924,10 @@ namespace DA_Business.Repository.BaronyRepos
             CommanderAttack = e.CommanderAttack,
             CommanderDefense = e.CommanderDefense,
             CaptainAvailableAdvisorId = e.CaptainAvailableAdvisorId,
+            CaptainIsBaron = e.CaptainIsBaron,
+            CurrentAction = e.CurrentAction ?? string.Empty,
+            ActionTrainingJc = e.ActionTrainingJc,
+            ActionDemobilizeTroops = e.ActionDemobilizeTroops,
             OtherAttack = e.OtherAttack,
             OtherDefense = e.OtherDefense,
             OtherDamage = e.OtherDamage,
@@ -5632,7 +6005,17 @@ namespace DA_Business.Repository.BaronyRepos
                 : d.DefenseSkillKey.Trim();
             e.CommanderAttack = d.CommanderAttack;
             e.CommanderDefense = d.CommanderDefense;
-            e.CaptainAvailableAdvisorId = d.CaptainAvailableAdvisorId is int cap && cap > 0 ? cap : null;
+            e.CaptainAvailableAdvisorId = d.CaptainIsBaron
+                ? null
+                : (d.CaptainAvailableAdvisorId is int cap && cap > 0 ? cap : null);
+            e.CaptainIsBaron = d.CaptainIsBaron;
+            e.CurrentAction = UnitActionKind.Normalize(d.CurrentAction);
+            e.ActionTrainingJc = UnitActionFormulas.ClampJc(d.ActionTrainingJc);
+            e.ActionDemobilizeTroops = Math.Max(0, d.ActionDemobilizeTroops);
+            if (!UnitActionKind.IsPartialDemobilization(e.CurrentAction))
+                e.ActionDemobilizeTroops = 0;
+            if (!UnitActionKind.GrantsTrainingXp(e.CurrentAction) || !e.CaptainIsBaron)
+                e.ActionTrainingJc = 0;
             e.OtherAttack = d.OtherAttack;
             e.OtherDefense = d.OtherDefense;
             e.OtherDamage = d.OtherDamage;
@@ -5651,6 +6034,22 @@ namespace DA_Business.Repository.BaronyRepos
 
         private static async Task EnforceCaptainAssignmentAsync(ApplicationDbContext ctx, BaronyUnitDTO dto)
         {
+            if (dto.CaptainIsBaron)
+            {
+                dto.CaptainAvailableAdvisorId = null;
+                dto.CaptainName = Loc.T("Baron");
+
+                var otherBaronLed = await ctx.BaronyUnits
+                    .Where(u => u.BaronyId == dto.BaronyId && u.CaptainIsBaron && u.Id != dto.Id)
+                    .ToListAsync();
+                foreach (var other in otherBaronLed)
+                {
+                    other.CaptainIsBaron = false;
+                    other.UpdatedAtUtc = DateTime.UtcNow;
+                }
+                return;
+            }
+
             if (dto.CaptainAvailableAdvisorId is not int captainId || captainId <= 0)
             {
                 dto.CaptainAvailableAdvisorId = null;
@@ -5673,6 +6072,7 @@ namespace DA_Business.Repository.BaronyRepos
             foreach (var other in others)
             {
                 other.CaptainAvailableAdvisorId = null;
+                other.CaptainIsBaron = false;
                 other.CommanderAttack = 0;
                 other.CommanderDefense = 0;
                 // Strip Commander combat-other entries and resum.

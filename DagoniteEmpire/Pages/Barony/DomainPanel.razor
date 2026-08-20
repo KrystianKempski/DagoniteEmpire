@@ -4,6 +4,7 @@
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 @inject ICharacterRepository _characterRepo
 @inject IDialogService _dialogService
+@inject IBaronyBattleMapRepository _battleMapRepo
 
 <PageTitle>Dagonite Empire | @L["Domain Panel"]</PageTitle>
 
@@ -179,6 +180,7 @@ else if (_overview is not null)
                           Improvements="@_overview.Improvements"
                           Seat="@_overview.Seat"
                           PurposeTemplates="@_overview.SeatPurposeTemplates"
+                          Artifacts="@_overview.Artifacts"
                           Catalog="@_buildingCatalog"
                           CanManage="@CanManageAsMg"
                           OnChanged="ReloadOverviewAsync" />
@@ -302,8 +304,9 @@ else if (_overview is not null)
         var advisorModifiers = await _baronyRepo.GetAdvisorInfluenceModifiers(Barony.Id);
         await _baronyRepo.EnsureBaronTimeDefaults(Barony.Id);
         var managementJc = BaronyCalc.ManagementJcSpent(await _baronyRepo.GetBaronTimeActions(Barony.Id));
+        var battleSuppresses = await IsBattleSuppressingActionsAsync(Barony.Id);
         var panel = BaronyCalc.BuildDomainPanelRows(
-            _overview, character, baronModifiers, advisorModifiers, managementJc);
+            _overview, character, baronModifiers, advisorModifiers, managementJc, battleSuppresses);
 
         _advisorsForSection = panel.Advisors;
         _advisorRows = panel.AdvisorRows;
@@ -338,8 +341,9 @@ else if (_overview is not null)
         var advisorModifiers = await _baronyRepo.GetAdvisorInfluenceModifiers(Barony.Id);
         await _baronyRepo.EnsureBaronTimeDefaults(Barony.Id);
         var managementJc = BaronyCalc.ManagementJcSpent(await _baronyRepo.GetBaronTimeActions(Barony.Id));
+        var battleSuppresses = await IsBattleSuppressingActionsAsync(Barony.Id);
         var panel = BaronyCalc.BuildDomainPanelRows(
-            _overview, character, baronModifiers, advisorModifiers, managementJc);
+            _overview, character, baronModifiers, advisorModifiers, managementJc, battleSuppresses);
 
         _advisorsForSection = panel.Advisors;
         _advisorRows = panel.AdvisorRows;
@@ -355,6 +359,19 @@ else if (_overview is not null)
         ApplyPanelTotals(panel);
         NotifyResourceHud();
         StateHasChanged();
+    }
+
+    private async Task<bool> IsBattleSuppressingActionsAsync(int baronyId)
+    {
+        try
+        {
+            var map = await _battleMapRepo.GetOrCreate(baronyId);
+            return string.Equals(map.Phase, BaronyBattlePhases.Battle, StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private void ApplyPanelTotals(BaronyCalc.DomainPanelRowSet panel)
@@ -531,8 +548,9 @@ else if (_overview is not null)
             var advisorModifiers = await _baronyRepo.GetAdvisorInfluenceModifiers(Barony.Id);
             await _baronyRepo.EnsureBaronTimeDefaults(Barony.Id);
             var managementJc = BaronyCalc.ManagementJcSpent(await _baronyRepo.GetBaronTimeActions(Barony.Id));
+            var battleSuppresses = await IsBattleSuppressingActionsAsync(Barony.Id);
             var panel = BaronyCalc.BuildDomainPanelRows(
-                _overview, character, baronModifiers, advisorModifiers, managementJc);
+                _overview, character, baronModifiers, advisorModifiers, managementJc, battleSuppresses);
             var income = BaronyCalc.ExpectedResourceIncome(
                 _overview, character, baronModifiers, advisorModifiers, managementJc);
             var population = BaronyCalc.SumSettlementPopulation(

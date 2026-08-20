@@ -25,6 +25,12 @@ else if (Barony is not null)
                            CanEdit="@CanManageAsMg"
                            OnChanged="ReloadAsync" />
 
+    <BaronCommanderSection Barony="@Barony"
+                           Character="@_character"
+                           CanManage="@CanManageAsMg"
+                           CanEdit="@CanEdit"
+                           OnChanged="ReloadAsync" />
+
     <BaronPhpSection Barony="@Barony"
                      Seat="@_seat"
                      PurposeTemplates="@_purposeTemplates"
@@ -44,7 +50,8 @@ else if (Barony is not null)
     <BaronArtifactsSection Barony="@Barony"
                            Seat="@_seat"
                            Artifacts="@_artifacts"
-                           CanEdit="@CanManageAsMg"
+                           CanManage="@CanManageAsMg"
+                           CanAssignLocation="@CanEdit"
                            OnChanged="ReloadAsync" />
 
     <BaronReputationEffectsSection PrestigeScore="@Barony.Prestige"

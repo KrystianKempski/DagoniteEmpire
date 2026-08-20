@@ -78,9 +78,12 @@ namespace DA_Business.Repository.BaronyRepos
             return combat;
         }
 
-        public static UnitUpkeepTotals ComputeUpkeep(BaronyUnitDTO dto) =>
-            UnitUpkeepFormulas.Compute(
-                dto.Wage, dto.UpkeepFood, dto.UpkeepDefense,
-                dto.Weapon1Key, dto.Weapon2Key, dto.ArmorKey, dto.ShieldKey, dto.MountKey);
+        public static UnitUpkeepTotals ComputeUpkeep(BaronyUnitDTO dto, bool battleSuppressesUnitActions = false) =>
+            UnitActionFormulas.ApplyUpkeepModifier(
+                UnitUpkeepFormulas.Compute(
+                    dto.Wage, dto.UpkeepFood, dto.UpkeepDefense,
+                    dto.Weapon1Key, dto.Weapon2Key, dto.ArmorKey, dto.ShieldKey, dto.MountKey),
+                dto.CurrentAction,
+                battleSuppressesUnitActions);
     }
 }

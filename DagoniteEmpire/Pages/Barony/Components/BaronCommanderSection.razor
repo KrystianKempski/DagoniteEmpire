@@ -1,0 +1,165 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Business.Repository.BaronyRepos
+@inject IBaronyRepository _baronyRepo
+@inject IDialogService _dialogService
+@inject ISnackbar _snackBar
+
+<BaronySection Title="@(L["Commander"])">
+    <Summary>
+        <span class="projects-summary">
+            <span class="projects-summary__item">CX @_sheet.CommanderXp</span>
+            <span class="projects-summary__item">@L["avail."] @CourtCommanderFormulas.AvailableCx(_sheet)</span>
+            <span class="projects-summary__item">@L["spent"] @CourtCommanderFormulas.SpentCx(_sheet)</span>
+        </span>
+    </Summary>
+    <ChildContent>
+        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
+            @L["Commander XP pool = (permanent Inspire + Strategy and tactics) × 2. Unlock abilities on the skill tree; battle awards can raise the pool further."]
+        </MudText>
+
+        <div class="court-commander-panel__cx mb-3">
+            <span class="court-commander-panel__cx-label">@L["CX pool"]</span>
+            @if (CanManage)
+            {
+                <BaronyTooltip Text="@(L["Click to edit CX pool"])">
+                    <button type="button"
+                            class="court-commander-panel__cx-value court-commander-panel__cx-value--editable"
+                            @onclick="OpenCxEditAsync">
+                        @_sheet.CommanderXp
+                    </button>
+                </BaronyTooltip>
+            }
+            else
+            {
+                <span class="court-commander-panel__cx-value">@_sheet.CommanderXp</span>
+            }
+            <span class="court-commander-panel__cx-meta">
+                @L["base {0} · avail. {1} · spent {2}", _baseCx, CourtCommanderFormulas.AvailableCx(_sheet), CourtCommanderFormulas.SpentCx(_sheet)]
+            </span>
+        </div>
+
+        <div class="court-commander-panel__abilities">
+            <MudButton Variant="Variant.Outlined"
+                       Size="Size.Small"
+                       StartIcon="@Icons.Material.Filled.AccountTree"
+                       OnClick="OpenTreeAsync">
+                @L["Skill tree"]
+            </MudButton>
+            @if (_sheet.UnlockedCommanderAbilities.Count == 0)
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-2">@L["No abilities unlocked."]</MudText>
+            }
+            else
+            {
+                <div class="ppb-chips court-commander-chips mt-2">
+                    @foreach (var key in _sheet.UnlockedCommanderAbilities)
+                    {
+                        var ability = CourtCommanderCatalog.Find(key);
+                        <BaronyTooltip Text="@(ability is null ? null : L[ability.DescriptionEn].Value)">
+                            <span class="ppb-chip">
+                                <span class="ppb-chip__label">@(L[ability?.NameEn ?? key])</span>
+                                <span class="ppb-chip__value">T@(ability?.Tier ?? 0)</span>
+                            </span>
+                        </BaronyTooltip>
+                    }
+                </div>
+            }
+        </div>
+    </ChildContent>
+</BaronySection>
+
+@code {
+    [Parameter] public BaronyDTO Barony { get; set; } = new();
+    [Parameter] public CharacterDTO? Character { get; set; }
+    [Parameter] public bool CanManage { get; set; }
+    [Parameter] public bool CanEdit { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private CourtCharacterSheet _sheet = CourtCharacterSheet.CreateDefault();
+    private int _baseCx;
+    private int _ensuredForBaronyId = int.MinValue;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _sheet = CommanderCxFormulas.BuildCharacterCommanderSheet(Barony.CommanderSheet, Character);
+        _baseCx = CommanderCxFormulas.BaseCxFromCharacter(Character);
+        Barony.CommanderSheet = _sheet;
+
+        if (Barony.Id <= 0 || _ensuredForBaronyId == Barony.Id)
+            return;
+
+        try
+        {
+            _sheet = await _baronyRepo.SaveBaronCommanderSheet(Barony.Id, _sheet);
+            Barony.CommanderSheet = _sheet;
+            _ensuredForBaronyId = Barony.Id;
+        }
+        catch
+        {
+            // Non-fatal: UI still shows the projected sheet.
+        }
+    }
+
+    private async Task OpenTreeAsync()
+    {
+        var dialog = await _dialogService.ShowAsync<CourtCommanderTreeDialog>(
+            L["Baron — commander tree"],
+            new DialogParameters<CourtCommanderTreeDialog>
+            {
+                { x => x.Sheet, CloneSheet(_sheet) },
+                { x => x.CanManage, CanManage },
+                { x => x.CanEdit, CanEdit },
+            },
+            new DialogOptions { MaxWidth = MaxWidth.False, FullWidth = false, CloseOnEscapeKey = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not CourtCharacterSheet saved)
+            return;
+
+        await PersistAsync(saved);
+    }
+
+    private async Task OpenCxEditAsync()
+    {
+        if (!CanManage)
+            return;
+        var spent = CourtCommanderFormulas.SpentCx(_sheet);
+        var dialog = await _dialogService.ShowAsync<CourtCommanderXpEditDialog>(
+            L["Commander XP pool"],
+            new DialogParameters<CourtCommanderXpEditDialog>
+            {
+                { x => x.AdvisorName, L["Baron"].Value },
+                { x => x.Value, _sheet.CommanderXp },
+                { x => x.Spent, spent },
+            },
+            new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true, CloseOnEscapeKey = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not int newCx)
+            return;
+
+        _sheet.CommanderXp = Math.Max(Math.Max(spent, _baseCx), newCx);
+        await PersistAsync(_sheet);
+    }
+
+    private async Task PersistAsync(CourtCharacterSheet sheet)
+    {
+        try
+        {
+            _sheet = await _baronyRepo.SaveBaronCommanderSheet(Barony.Id, sheet);
+            Barony.CommanderSheet = _sheet;
+            _baseCx = CommanderCxFormulas.BaseCxFromCharacter(Character);
+            _snackBar.Add(L["Commander progress saved."], Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private static CourtCharacterSheet CloneSheet(CourtCharacterSheet source)
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(source);
+        return System.Text.Json.JsonSerializer.Deserialize<CourtCharacterSheet>(json)
+               ?? CourtCharacterSheet.CreateDefault();
+    }
+}

@@ -119,11 +119,12 @@ namespace DagoniteEmpire.Pages.Barony.Components
                         {
                             "Draft new units with the generator and choose their equipment and skills.",
                             "Reinforce, re-equip, rename and inspect the log of each unit.",
+                            "Assign a peacetime action (patrol, reconnaissance, training, labour, partial demobilization). Patrol / scout / labour add Domain Skills; partial demobilization halves upkeep; Training XP applies on Resolve Turn.",
                             "Plan upkeep: only active units cost wages, food and defence each turn — training units are free until they graduate.",
                         }),
                         new BaronyHelpSection("Working with the Game Master", new[]
                         {
-                            "During a battle, unit cards are locked; HP and roster changes apply when the Game Master ends the battle.",
+                            "During a battle, unit cards are locked and action bonuses / Training XP are suppressed until the Game Master ends the battle.",
                             "The Game Master resolves battles and confirms rewards; coordinate recruitment and deployment with them.",
                         }),
                     },
@@ -132,6 +133,7 @@ namespace DagoniteEmpire.Pages.Barony.Components
                         new BaronyHelpSection("Game Master controls", new[]
                         {
                             "Run and end battles on the Battle Map; roster and HP updates apply on End battle.",
+                            "Resolve Turn applies Training XP from unit Training actions.",
                         }),
                     }),
 
@@ -288,6 +290,7 @@ namespace DagoniteEmpire.Pages.Barony.Components
                         {
                             "Adding or removing offices, managing the pool of available court people, and editing custom skill/influence/upkeep sources are Game Master actions.",
                             "Ask the Game Master to introduce new advisors or adjust an office's bonuses.",
+                            "The Game Master can attach approved NPC/PC characters as courtiers from Panel MG; their Domain Skills follow the character sheet like the baron's.",
                         }),
                     },
                     GmSections: new[]
@@ -295,6 +298,7 @@ namespace DagoniteEmpire.Pages.Barony.Components
                         new BaronyHelpSection("Game Master controls", new[]
                         {
                             "Add/remove offices; add/edit/delete available court people; edit custom skill, influence and upkeep sources per office.",
+                            "From Panel MG → Attach courtier: pick a barony and an approved character. The person appears in Court with Domain Skills from base + special skills. Detach by removing them from Court.",
                         }),
                     }),
 
@@ -302,22 +306,30 @@ namespace DagoniteEmpire.Pages.Barony.Components
                     Key: "character-card",
                     Title: "Baron",
                     Short: "Your baron's own card: how their character shapes the barony, their Prestige, Honor and Fear, their " +
-                           "time budget for the turn, and the artifacts and reputation tiers they command.",
+                           "time budget, artifacts, reputation tiers, and commander skill tree.",
                     PlayerSections: new[]
                     {
                         new BaronyHelpSection("What you'll find here", new[]
                         {
                             "Baron's Influence on the Barony — modifiers coming from the baron's attributes and traits.",
+                            "Commander — CX pool and skill tree (same tree as court captains).",
                             "Prestige, Honor & Fear — every source and the totals.",
                             "Baron's Time — the time pool (from Endurance and Willpower) and how it is spent.",
                             "Trophies, Treasures & Artifacts, and Reputation Effects — tiers and the bonuses they grant.",
                         }),
                         new BaronyHelpSection("What you can do", new[]
                         {
-                            "Add, edit or delete custom time actions — expeditions, adventures and other pursuits that cost Baron Time.",
+                                                        "Open the commander skill tree and unlock abilities when you have CX.",
+"Add, edit or delete custom time actions — expeditions, adventures and other pursuits that cost Baron Time.",
                             "Add, edit or delete time pool modifiers (percent effects from illness, blessings or events).",
                             "Track time spent versus remaining, with warnings when management is under-covered or you overspend.",
+                            "Assign trophies, treasures and artifacts to Lord's Seat chambers (adding new items is done by the Game Master).",
                             "Review your Prestige/Honor/Fear sources, artifact placements and reputation tiers with their barony and character bonuses.",
+                        }),
+                        new BaronyHelpSection("Commander CX", new[]
+                        {
+                            "Baron and linked character courtiers: CX floor = (permanent Inspire + Strategy and tactics) × 2.",
+                            "Simplified court sheets: CX floor = (Command + Strategy/tactics) × 4.",
                         }),
                         new BaronyHelpSection("Working with the Game Master", new[]
                         {
@@ -329,7 +341,8 @@ namespace DagoniteEmpire.Pages.Barony.Components
                     {
                         new BaronyHelpSection("Game Master controls", new[]
                         {
-                            "Add/edit/delete baron influence sources, Prestige/Honor/Fear sources, and artifacts (and assign them to seat chambers).",
+                            "Add/edit/delete baron influence sources, Prestige/Honor/Fear sources, and artifacts (with optional domain PPB).",
+                            "The baron can assign artifact locations to seat chambers; domain PPB applies only while an item is placed.",
                         }),
                     }),
 
@@ -349,7 +362,8 @@ namespace DagoniteEmpire.Pages.Barony.Components
                         {
                             "Assign or change a chamber's purpose (guest hall, treasury, shrine, and so on) from the available templates.",
                             "Switch between floors and inspect each chamber via tooltip — size, occupant, purpose and prestige multiplier.",
-                            "See each chamber's additive and percent modifiers and how they add to the seat's PPB.",
+                            "See each chamber's additive and percent modifiers and how they add to the seat's PPB (including items displayed there).",
+                            "Assign existing trophies, treasures and artifacts to chambers — their domain PPB applies only while displayed.",
                         }),
                         new BaronyHelpSection("Working with the Game Master", new[]
                         {

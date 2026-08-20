@@ -17,6 +17,13 @@
                    OnClick="LoadAsync">
             @L["Refresh"]
         </MudButton>
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
+                   Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.PersonAdd"
+                   OnClick="OpenAttachCourtierDialogAsync">
+            @L["Attach courtier"]
+        </MudButton>
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    Size="Size.Small"
@@ -26,7 +33,7 @@
         </MudButton>
     </MudStack>
     <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pb-3">
-        @L["Create baronies for Duke characters and open them in the barony layer. Each barony is tied to one baron character (1:1)."]
+        @L["Create baronies for Duke characters and open them in the barony layer. Each barony is tied to one baron character (1:1). Attach approved characters as courtiers via Attach courtier — they appear on the Court tab with Domain Skills from their character sheet."]
     </MudText>
 
     @if (IsLoading)
@@ -95,7 +102,20 @@
     private async Task OpenCreateDialogAsync()
     {
         var dialog = await _dialogService.ShowAsync<CreateBaronyDialog>(
-            "Create barony",
+            L["Create barony"],
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled)
+            return;
+
+        await LoadAsync();
+    }
+
+    private async Task OpenAttachCourtierDialogAsync()
+    {
+        var dialog = await _dialogService.ShowAsync<AttachCourtierDialog>(
+            L["Attach courtier"],
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
 
         var result = await dialog.Result;

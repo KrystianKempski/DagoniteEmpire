@@ -34,6 +34,12 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<List<AvailableAdvisorDTO>> GetAvailableAdvisors(int baronyId);
         Task<AvailableAdvisorDTO> SaveAvailableAdvisor(AvailableAdvisorDTO dto);
         Task<int> DeleteAvailableAdvisor(int id);
+        /// <summary>GM: attach an approved Character sheet as a courtier of this barony.</summary>
+        Task<AvailableAdvisorDTO> AttachCharacterAsCourtier(int baronyId, int characterId);
+        /// <summary>Character IDs already linked as courtiers in any barony.</summary>
+        Task<HashSet<int>> GetAttachedCourtierCharacterIds();
+        /// <summary>Save baron commander tree (CX + unlocked abilities).</summary>
+        Task<CourtCharacterSheet> SaveBaronCommanderSheet(int baronyId, CourtCharacterSheet sheet);
 
         // --- Budynki miasta ---
         Task<List<BaronyBuildingDTO>> GetBuildings(int baronyId);

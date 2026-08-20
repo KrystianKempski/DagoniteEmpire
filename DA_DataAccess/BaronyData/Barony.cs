@@ -112,5 +112,11 @@ namespace DA_DataAccess.BaronyData
 
         /// <summary>Player marked the current turn as finished; MG may resolve.</summary>
         public bool PlayerTurnReady { get; set; }
+
+        /// <summary>
+        /// Baron commander skill-tree progress (<see cref="DA_Common.Barony.CourtCharacterSheet"/> JSON:
+        /// CommanderXp + UnlockedCommanderAbilities; skill values projected from the character).
+        /// </summary>
+        public string CommanderSheetJson { get; set; } = "{}";
     }
 }

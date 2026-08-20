@@ -50,10 +50,13 @@ namespace DA_DataAccess.BaronyData
         public int BaronyId { get; set; }
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
-        /// <summary>Computed administrative PPB vector (from <see cref="SheetJson"/>).</summary>
+        /// <summary>Computed administrative PPB vector (from <see cref="SheetJson"/> or linked Character).</summary>
         public string SkillsJson { get; set; } = "{}";
-        /// <summary>Court character sheet JSON (<c>CourtCharacterSheet</c>).</summary>
+        /// <summary>Court character sheet JSON (<c>CourtCharacterSheet</c>). Unused when <see cref="CharacterId"/> is set.</summary>
         public string SheetJson { get; set; } = "{}";
+
+        /// <summary>When set, this courtier is a linked NPC/PC sheet; skills come from that character.</summary>
+        public int? CharacterId { get; set; }
     }
 
     /// <summary>Budynek/ulepszenie działające w mieście głównym (sekcja "Miasto i budynki").</summary>
@@ -263,6 +266,10 @@ namespace DA_DataAccess.BaronyData
         public int Prestige { get; set; }
         public int Honor { get; set; }
         public int Fear { get; set; }
+
+        /// <summary>Domain PPB when the item is displayed in a Lord's Seat chamber.</summary>
+        public string AdditiveJson { get; set; } = "{}";
+        public string PercentJson { get; set; } = "{}";
 
         /// <summary>Lord's Seat chamber where the item is displayed (optional).</summary>
         public int? SeatRoomId { get; set; }

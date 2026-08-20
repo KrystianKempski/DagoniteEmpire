@@ -3636,13 +3636,35 @@ else
         foreach (var entry in summary.Entries)
         {
             var unit = units.FirstOrDefault(u => u.Id == entry.UnitId);
-            if (unit?.CaptainAvailableAdvisorId is not int captainId)
-                continue;
-            var captain = courtiers.FirstOrDefault(c => c.Id == captainId);
-            if (captain is null)
+            if (unit is null)
                 continue;
 
-            var sheet = captain.Sheet ?? CourtCharacterSheet.CreateDefault();
+            CourtCharacterSheet? sheet = null;
+            string captainName = "";
+            AvailableAdvisorDTO? captain = null;
+            var isBaronCaptain = false;
+
+            if (unit.CaptainIsBaron)
+            {
+                if (Barony is null)
+                    continue;
+                sheet = Barony.CommanderSheet ?? CourtCharacterSheet.CreateDefault();
+                captainName = L["Baron"].Value;
+                isBaronCaptain = true;
+            }
+            else if (unit.CaptainAvailableAdvisorId is int captainId)
+            {
+                captain = courtiers.FirstOrDefault(c => c.Id == captainId);
+                if (captain is null)
+                    continue;
+                sheet = captain.Sheet ?? CourtCharacterSheet.CreateDefault();
+                captainName = captain.Name;
+            }
+            else
+            {
+                continue;
+            }
+
             var gained = CourtCommanderFormulas.ComputeBattleCx(
                 sheet,
                 entry.DamageDealt,
@@ -3655,13 +3677,23 @@ else
 
             sheet.CommanderXp += gained;
             sheet.Normalize();
-            captain.Sheet = sheet;
-            captain.Skills = CourtPpbFormulas.ComputeTotal(sheet);
-            await _baronyRepo.SaveAvailableAdvisor(captain);
+
+            if (isBaronCaptain)
+            {
+                Barony!.CommanderSheet = await _baronyRepo.SaveBaronCommanderSheet(BaronyId, sheet);
+            }
+            else if (captain is not null)
+            {
+                captain.Sheet = sheet;
+                if (!captain.IsLinkedCharacter)
+                    captain.Skills = CourtPpbFormulas.ComputeTotal(sheet);
+                await _baronyRepo.SaveAvailableAdvisor(captain);
+            }
+
             AddUnitLogEntry(
                 unit,
                 "xp",
-                $"Captain {captain.Name} gained {gained} CX (pool {sheet.CommanderXp}).",
+                $"Captain {captainName} gained {gained} CX (pool {sheet.CommanderXp}).",
                 xpDelta: null);
             await _baronyRepo.SaveUnit(unit);
         }
@@ -3672,16 +3704,20 @@ else
         ResetCommanderFlags(token);
         token.Discipline = Math.Max(0, unit.Discipline);
         token.Mounted = !string.IsNullOrWhiteSpace(unit.MountKey);
-        token.HasCaptain = unit.CaptainAvailableAdvisorId is not null;
+        token.HasCaptain = unit.CaptainIsBaron || unit.CaptainAvailableAdvisorId is not null;
         var baseRange = Math.Max(0, UnitWeaponCatalog.Find(unit.Weapon1Key)?.Range ?? 0);
         token.Range = baseRange;
-        if (unit.CaptainAvailableAdvisorId is not int captainId)
+
+        CourtCharacterSheet? commanderSheet = null;
+        if (unit.CaptainIsBaron)
+            commanderSheet = Barony?.CommanderSheet;
+        else if (unit.CaptainAvailableAdvisorId is int captainId)
+            commanderSheet = _courtiers.FirstOrDefault(c => c.Id == captainId)?.Sheet;
+        if (commanderSheet is null)
             return;
-        var captain = _courtiers.FirstOrDefault(c => c.Id == captainId);
-        if (captain is null)
-            return;
+
         var bonuses = CourtCommanderFormulas.ComputeBonuses(
-            captain.Sheet,
+            commanderSheet,
             unitHasMount: !string.IsNullOrWhiteSpace(unit.MountKey),
             unitHasShield: !string.IsNullOrWhiteSpace(unit.ShieldKey));
         token.ThunderCharge = bonuses.ThunderCharge;
@@ -3717,7 +3753,7 @@ else
         // Passive abilities have no per-token flag (they bake into stats), so capture the
         // active ones here for badge display. Shield Wall Basics only applies with a shield.
         var hasShield = !string.IsNullOrWhiteSpace(unit.ShieldKey);
-        var unlocked = captain.Sheet?.UnlockedCommanderAbilities ?? new List<string>();
+        var unlocked = commanderSheet.UnlockedCommanderAbilities ?? new List<string>();
         token.AllyCommanderAbilities = unlocked
             .Where(k => AllyPassiveBadgeKeys.Contains(k)
                 && (!string.Equals(k, "shield-wall-basics", StringComparison.OrdinalIgnoreCase) || hasShield))

@@ -1,0 +1,142 @@
+@inject ICharacterRepository _characterRepository
+@inject IBaronyRepository _baronyRepo
+@inject ISnackbar _snackBar
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Color="Color.Secondary" Class="mb-3">
+            @L["Attach an approved character as a courtier of a barony. Domain skills are calculated from their base and special skills like the baron's."]
+        </MudText>
+
+        <MudSelect T="BaronyListItemDTO?"
+                   Label="@(L["Barony"])"
+                   @bind-Value="_selectedBarony"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Dense="true"
+                   Required="true"
+                   Class="mb-3"
+                   Placeholder="@(L["Select a barony"])">
+            @foreach (var barony in _baronies)
+            {
+                <MudSelectItem Value="@barony">@($"{barony.Name} ({barony.BaronName})")</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudSelect T="CharacterDTO?"
+                   Label="@(L["Character"])"
+                   @bind-Value="_selectedCharacter"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Dense="true"
+                   Required="true"
+                   Disabled="@(_selectedBarony is null)"
+                   Placeholder="@(L["Select a character"])">
+            @foreach (var character in EligibleCharacters)
+            {
+                <MudSelectItem Value="@character">@CharacterLabel(character)</MudSelectItem>
+            }
+        </MudSelect>
+
+        @if (_selectedBarony is not null && EligibleCharacters.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Class="mt-3" Dense="true">
+                @L["No eligible characters. Approve a character that is not already a baron or courtier."]
+            </MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="@(_selectedBarony is null || _selectedCharacter is null || _saving)"
+                   OnClick="SaveAsync">
+            @L["Attach as courtier"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private List<BaronyListItemDTO> _baronies = new();
+    private List<CharacterDTO> _characters = new();
+    private HashSet<int> _linkedCharacterIds = new();
+    private HashSet<int> _baronCharacterIds = new();
+    private BaronyListItemDTO? _selectedBarony;
+    private CharacterDTO? _selectedCharacter;
+    private bool _saving;
+
+    private List<CharacterDTO> EligibleCharacters
+    {
+        get
+        {
+            if (_selectedBarony is null)
+                return new();
+
+            return _characters
+                .Where(c => !_linkedCharacterIds.Contains(c.Id)
+                            && !_baronCharacterIds.Contains(c.Id)
+                            && c.Id != _selectedBarony.CharacterId)
+                .OrderBy(c => c.NPCName, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _baronies = (await _baronyRepo.GetAllSummaries())
+            .OrderBy(b => b.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+        _baronCharacterIds = _baronies.Select(b => b.CharacterId).ToHashSet();
+
+        _characters = (await _characterRepository.GetAllApproved(fullIncludes: false))
+            .Where(c => c.IsApproved)
+            .ToList();
+
+        _linkedCharacterIds = await _baronyRepo.GetAttachedCourtierCharacterIds();
+    }
+
+    private static string CharacterLabel(CharacterDTO character)
+    {
+        var name = string.IsNullOrWhiteSpace(character.NPCName) ? $"#{character.Id}" : character.NPCName;
+        var owner = string.IsNullOrWhiteSpace(character.UserName) ? "—" : character.UserName;
+        var type = string.IsNullOrWhiteSpace(character.NPCType) ? "" : $" · {character.NPCType}";
+        return $"{name} ({owner}{type})";
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task SaveAsync()
+    {
+        if (_selectedBarony is null || _selectedCharacter is null)
+        {
+            _snackBar.Add(L["Select a barony and a character."], Severity.Warning);
+            return;
+        }
+
+        _saving = true;
+        try
+        {
+            var saved = await _baronyRepo.AttachCharacterAsCourtier(_selectedBarony.Id, _selectedCharacter.Id);
+            _snackBar.Add(L["Courtier “{0}” attached to {1}.", saved.Name, _selectedBarony.Name], Severity.Success);
+            MudDialog.Close(DialogResult.Ok(saved));
+        }
+        catch (InvalidOperationException ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Warning);
+        }
+        catch (RepositoryErrorException ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(L["Failed to attach courtier: "] + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

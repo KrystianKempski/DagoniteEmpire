@@ -30,9 +30,20 @@ else if (_seat is not null)
     <LordsSeatSection Seat="@_seat"
                       PurposeTemplates="@_purposeTemplates"
                       Advisors="@_advisors"
+                      Artifacts="@_artifacts"
                       CanEdit="@CanEdit"
                       CanManage="@CanManageAsMg"
                       OnChanged="ReloadAsync" />
+
+    @if (Barony is not null)
+    {
+        <BaronArtifactsSection Barony="@Barony"
+                               Seat="@_seat"
+                               Artifacts="@_artifacts"
+                               CanManage="@CanManageAsMg"
+                               CanAssignLocation="@CanEdit"
+                               OnChanged="ReloadAsync" />
+    }
 
     @if (CanManageAsMg)
     {
@@ -46,6 +57,7 @@ else if (_seat is not null)
     private BaronySeatDTO? _seat;
     private List<SeatPurposeTemplateDTO> _purposeTemplates = new();
     private List<AdvisorDTO> _advisors = new();
+    private List<BaronArtifactDTO> _artifacts = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -64,6 +76,7 @@ else if (_seat is not null)
         _seat = await _baronyRepo.EnsureSeat(Barony.Id);
         _purposeTemplates = await _baronyRepo.GetSeatPurposeTemplates(Barony.Id);
         _advisors = await _baronyRepo.GetAdvisors(Barony.Id);
+        _artifacts = await _baronyRepo.GetBaronArtifacts(Barony.Id);
         NotifyResourceHud();
         await InvokeAsync(StateHasChanged);
     }

@@ -81,8 +81,20 @@ namespace DA_Models.BaronyModels
         /// <summary>Assigned court person acting as unit captain (1:1).</summary>
         public int? CaptainAvailableAdvisorId { get; set; }
 
+        /// <summary>Baron leads this unit (exclusive with <see cref="CaptainAvailableAdvisorId"/>).</summary>
+        public bool CaptainIsBaron { get; set; }
+
         /// <summary>Display name of assigned captain (filled when loading roster).</summary>
         public string? CaptainName { get; set; }
+
+        /// <summary>Peacetime order (<see cref="DA_Common.Barony.UnitActionKind"/>).</summary>
+        public string CurrentAction { get; set; } = string.Empty;
+
+        /// <summary>BT spent on Training when the baron is captain (0–100).</summary>
+        public int ActionTrainingJc { get; set; }
+
+        /// <summary>Pending troop reduction for Partial demobilization (applied on Resolve Turn).</summary>
+        public int ActionDemobilizeTroops { get; set; }
 
         public int OtherAttack { get; set; }
         public int OtherDefense { get; set; }

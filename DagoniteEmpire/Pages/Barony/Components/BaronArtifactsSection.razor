@@ -59,11 +59,21 @@
                                 <td class="ppb-row-label artifact-col-name">
                                     <div class="source-cell">
                                         <span class="source-cell__name">@item.Name</span>
-                                        @if (CanEdit)
+                                        @if (CanManage)
                                         {
                                             <span class="source-cell__actions">
                                                 <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => EditAsync(item))" />
                                                 <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteAsync(item))" />
+                                            </span>
+                                        }
+                                        else if (CanAssignLocation)
+                                        {
+                                            <span class="source-cell__actions">
+                                                <BaronyTooltip Text="@(L["Assign location"])">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Place"
+                                                                   Size="Size.Small"
+                                                                   OnClick="@(() => AssignLocationAsync(item))" />
+                                                </BaronyTooltip>
                                             </span>
                                         }
                                     </div>
@@ -86,9 +96,22 @@
                                     </BaronyTooltip>
                                 </td>
                                 <td class="artifact-col-location">
-                                    <BaronyTooltip Title="@(L["Location"])" Text="@BaronyCalc.ArtifactLocationTooltip(item, Seat)">
-                                        <span>@BaronyCalc.ArtifactLocationLabel(item, Seat)</span>
-                                    </BaronyTooltip>
+                                    @if (CanAssignLocation || CanManage)
+                                    {
+                                        <button type="button"
+                                                class="lords-seat-occupant-item-name artifact-location-btn"
+                                                @onclick="@(() => AssignLocationAsync(item))">
+                                            <BaronyTooltip Title="@(L["Location"])" Text="@BaronyCalc.ArtifactLocationTooltip(item, Seat)">
+                                                <span>@BaronyCalc.ArtifactLocationLabel(item, Seat)</span>
+                                            </BaronyTooltip>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <BaronyTooltip Title="@(L["Location"])" Text="@BaronyCalc.ArtifactLocationTooltip(item, Seat)">
+                                            <span>@BaronyCalc.ArtifactLocationLabel(item, Seat)</span>
+                                        </BaronyTooltip>
+                                    }
                                 </td>
                                 <td class="artifact-col-desc">@(item.Description ?? "")</td>
                             </tr>
@@ -98,7 +121,7 @@
             </div>
         }
 
-        @if (CanEdit)
+        @if (CanManage)
         {
             <MudButton Variant="Variant.Outlined" Class="mt-3" StartIcon="@Icons.Material.Filled.Add" OnClick="AddAsync">
                 @L["Add Item"]
@@ -111,7 +134,10 @@
     [Parameter] public BaronyDTO Barony { get; set; } = new();
     [Parameter] public BaronySeatDTO? Seat { get; set; }
     [Parameter] public List<BaronArtifactDTO> Artifacts { get; set; } = new();
-    [Parameter] public bool CanEdit { get; set; }
+    /// <summary>Game Master: create / edit / delete items.</summary>
+    [Parameter] public bool CanManage { get; set; }
+    /// <summary>Baron (or MG): assign chamber location only.</summary>
+    [Parameter] public bool CanAssignLocation { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
 
     [Inject] private IBaronyRepository _baronyRepo { get; set; } = default!;
@@ -134,40 +160,55 @@
         {
             BaronyId = Barony.Id,
             SortOrder = _artifacts.Count == 0 ? 0 : _artifacts.Max(a => a.SortOrder) + 1,
-        });
+        }, locationOnly: false);
 
     private async Task EditAsync(BaronArtifactDTO item) =>
-        await OpenEditDialog(new BaronArtifactDTO
-        {
-            Id = item.Id,
-            BaronyId = item.BaronyId,
-            Name = item.Name,
-            Kind = item.Kind,
-            Origin = item.Origin,
-            Prestige = item.Prestige,
-            Honor = item.Honor,
-            Fear = item.Fear,
-            SeatRoomId = item.SeatRoomId,
-            Description = item.Description,
-            SortOrder = item.SortOrder,
-        });
+        await OpenEditDialog(Clone(item), locationOnly: false);
 
-    private async Task OpenEditDialog(BaronArtifactDTO draft)
+    private async Task AssignLocationAsync(BaronArtifactDTO item) =>
+        await OpenEditDialog(Clone(item), locationOnly: !CanManage);
+
+    private static BaronArtifactDTO Clone(BaronArtifactDTO item) => new()
+    {
+        Id = item.Id,
+        BaronyId = item.BaronyId,
+        Name = item.Name,
+        Kind = item.Kind,
+        Origin = item.Origin,
+        Prestige = item.Prestige,
+        Honor = item.Honor,
+        Fear = item.Fear,
+        Additive = item.Additive.Clone(),
+        Percent = item.Percent.Clone(),
+        SeatRoomId = item.SeatRoomId,
+        Description = item.Description,
+        SortOrder = item.SortOrder,
+    };
+
+    private async Task OpenEditDialog(BaronArtifactDTO draft, bool locationOnly)
     {
         var isNew = draft.Id <= 0;
+        if (locationOnly && isNew)
+            return;
+
         var parameters = new DialogParameters<BaronArtifactEditDialog>
         {
             { x => x.Artifact, draft },
             { x => x.Seat, Seat },
             { x => x.ExistingArtifacts, Artifacts },
+            { x => x.LocationOnly, locationOnly },
         };
 
+        var title = locationOnly
+            ? L["Assign location"]
+            : (isNew ? L["Add Item"] : L["Edit Item"]);
+
         var dialog = await _dialogService.ShowAsync<BaronArtifactEditDialog>(
-            isNew ? L["Add Item"] : L["Edit Item"],
+            title,
             parameters,
             new DialogOptions
             {
-                MaxWidth = MaxWidth.Medium,
+                MaxWidth = locationOnly ? MaxWidth.Small : MaxWidth.Large,
                 FullWidth = true,
                 CloseOnEscapeKey = true,
             });
@@ -194,13 +235,13 @@
         }
 
         await _baronyRepo.SaveBaronArtifact(saved);
-        _snackBar.Add(L["Item saved."], Severity.Success);
+        _snackBar.Add(locationOnly ? L["Location updated."] : L["Item saved."], Severity.Success);
         await OnChanged.InvokeAsync();
     }
 
     private async Task DeleteAsync(BaronArtifactDTO item)
     {
-        if (item.Id <= 0)
+        if (item.Id <= 0 || !CanManage)
             return;
 
         await _baronyRepo.DeleteBaronArtifact(item.Id);

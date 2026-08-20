@@ -10,6 +10,9 @@ namespace DA_Models.BaronyModels
         public int Prestige { get; set; }
         public int Honor { get; set; }
         public int Fear { get; set; }
+        /// <summary>Domain PPB; active only while placed in a non-ruin chamber.</summary>
+        public DA_Common.Barony.PpbVector Additive { get; set; } = new();
+        public DA_Common.Barony.PpbVector Percent { get; set; } = new();
         public int? SeatRoomId { get; set; }
         public string? Description { get; set; }
         public int SortOrder { get; set; }

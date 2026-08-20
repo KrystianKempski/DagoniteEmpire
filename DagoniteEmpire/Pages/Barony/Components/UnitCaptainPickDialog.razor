@@ -13,21 +13,28 @@
             @if (!string.IsNullOrWhiteSpace(UnitName))
             {
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                    @L["{0} — pick a free courtier (1 courtier ↔ 1 unit).", UnitName]
+                    @L["{0} — pick the baron or a free courtier (1 courtier ↔ 1 unit).", UnitName]
                 </MudText>
             }
             else
             {
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                    @L["Pick a free courtier (1 courtier ↔ 1 unit)."]
+                    @L["Pick the baron or a free courtier (1 courtier ↔ 1 unit)."]
                 </MudText>
             }
 
             <button type="button"
-                    class="unit-captain-pick__option @(_selectedId is null ? "unit-captain-pick__option--picked" : null)"
-                    @onclick="() => _selectedId = null">
+                    class="unit-captain-pick__option @(_mode == PickMode.None ? "unit-captain-pick__option--picked" : null)"
+                    @onclick="() => _mode = PickMode.None">
                 <span class="unit-captain-pick__name">@L["No captain"]</span>
                 <span class="unit-captain-pick__hint">@L["Clear assignment"]</span>
+            </button>
+
+            <button type="button"
+                    class="unit-captain-pick__option @(_mode == PickMode.Baron ? "unit-captain-pick__option--picked" : null)"
+                    @onclick="() => _mode = PickMode.Baron">
+                <span class="unit-captain-pick__name">@L["Baron"]</span>
+                <span class="unit-captain-pick__hint">@L["The baron leads this unit (Training uses character skills × BT)."]</span>
             </button>
 
             @if (!Selectable.Any())
@@ -42,12 +49,16 @@
                     @foreach (var person in Selectable)
                     {
                         var unlocked = person.Sheet?.UnlockedCommanderAbilities.Count ?? 0;
-                        var picked = _selectedId == person.Id;
+                        var picked = _mode == PickMode.Courtier && _selectedId == person.Id;
                         <button type="button"
                                 class="unit-captain-pick__option @(picked ? "unit-captain-pick__option--picked" : null)"
-                                @onclick="() => _selectedId = person.Id">
+                                @onclick="() => PickCourtier(person.Id)">
                             <span class="unit-captain-pick__name">@person.Name</span>
                             <span class="unit-captain-pick__meta">
+                                @if (person.IsLinkedCharacter)
+                                {
+                                    <span class="unit-captain-option__badge">@L["Character"]</span>
+                                }
                                 @if (unlocked > 0)
                                 {
                                     <BaronyTooltip Text="@(L["Unlocked commander abilities"])">
@@ -71,7 +82,7 @@
     <DialogActions>
         <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
         <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">
-            @(_selectedId is null ? "Clear" : "Assign")
+            @(_mode == PickMode.None ? L["Clear"] : L["Assign"])
         </MudButton>
     </DialogActions>
 </MudDialog>
@@ -81,9 +92,13 @@
 
     [Parameter] public string? UnitName { get; set; }
     [Parameter] public int? CurrentCaptainId { get; set; }
+    [Parameter] public bool CurrentCaptainIsBaron { get; set; }
     [Parameter] public List<AvailableAdvisorDTO> AvailableCaptains { get; set; } = new();
     [Parameter] public HashSet<int> OccupiedCaptainIds { get; set; } = new();
 
+    private enum PickMode { None, Baron, Courtier }
+
+    private PickMode _mode = PickMode.None;
     private int? _selectedId;
 
     private IEnumerable<AvailableAdvisorDTO> Selectable =>
@@ -92,7 +107,21 @@
             .OrderBy(a => a.Name, StringComparer.OrdinalIgnoreCase);
 
     protected override void OnInitialized()
-        => _selectedId = CurrentCaptainId is > 0 ? CurrentCaptainId : null;
+    {
+        if (CurrentCaptainIsBaron)
+            _mode = PickMode.Baron;
+        else if (CurrentCaptainId is > 0)
+        {
+            _mode = PickMode.Courtier;
+            _selectedId = CurrentCaptainId;
+        }
+    }
+
+    private void PickCourtier(int id)
+    {
+        _mode = PickMode.Courtier;
+        _selectedId = id;
+    }
 
     private static string Truncate(string text, int max)
     {
@@ -103,5 +132,19 @@
     private void Cancel() => MudDialog.Cancel();
 
     private void Save()
-        => MudDialog.Close(DialogResult.Ok(_selectedId));
+    {
+        MudDialog.Close(DialogResult.Ok(new UnitCaptainPickResult
+        {
+            IsBaron = _mode == PickMode.Baron,
+            AvailableAdvisorId = _mode == PickMode.Courtier && _selectedId is > 0
+                ? _selectedId
+                : null,
+        }));
+    }
+
+    public sealed class UnitCaptainPickResult
+    {
+        public bool IsBaron { get; set; }
+        public int? AvailableAdvisorId { get; set; }
+    }
 }

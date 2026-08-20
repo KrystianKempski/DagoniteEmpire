@@ -116,12 +116,29 @@
                     </BaronyTooltip>
                 }
             }
+            @if (CanEdit && Unit.IsActive)
+            {
+                <BaronyTooltip Title="@(ActionButtonTitle)"
+                               Text="@(L["Choose a peacetime order: patrol, reconnaissance, training, labour, or partial demobilization."])">
+                    <button type="button"
+                            class="unit-draft-card__icon-btn @(HasActiveAction ? "unit-draft-card__icon-btn--captain" : null)"
+                            disabled="@_busy"
+                            aria-label="@(L["Unit action"])"
+                            @onclick="OpenActionPickerAsync">
+                        <img src="/icons/sprint.svg"
+                             alt=""
+                             width="20"
+                             height="20"
+                             class="unit-draft-card__icon-btn-img" />
+                    </button>
+                </BaronyTooltip>
+            }
             @if (CanEdit)
             {
                 <BaronyTooltip Title="@(string.IsNullOrWhiteSpace(Unit.CaptainName) ? L["Assign captain"].Value : L["Captain: {0}", Unit.CaptainName].Value)"
-                               Text="@(L["Choose a free courtier as this unit’s captain (1 courtier ↔ 1 unit)."])">
+                               Text="@(L["Choose the baron or a free courtier as this unit’s captain (1 courtier ↔ 1 unit)."])">
                     <button type="button"
-                            class="unit-draft-card__icon-btn @(Unit.CaptainAvailableAdvisorId is > 0 ? "unit-draft-card__icon-btn--captain" : null)"
+                            class="unit-draft-card__icon-btn @(Unit.CaptainAvailableAdvisorId is > 0 || Unit.CaptainIsBaron ? "unit-draft-card__icon-btn--captain" : null)"
                             disabled="@_busy"
                             aria-label="@(L["Assign captain"])"
                             @onclick="OpenCaptainPickerAsync">
@@ -159,6 +176,7 @@
     [Parameter] public bool CanManageAsMg { get; set; }
     [Parameter] public List<AvailableAdvisorDTO> AvailableCaptains { get; set; } = new();
     [Parameter] public HashSet<int> OccupiedCaptainIds { get; set; } = new();
+    [Parameter] public bool BattleInProgress { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
 
     private AvailableAdvisorDTO? CurrentCaptain =>
@@ -166,10 +184,27 @@
             ? AvailableCaptains.FirstOrDefault(a => a.Id == id)
             : null;
 
+    private bool HasActiveAction =>
+        UnitActionKind.Normalize(Unit.CurrentAction) != UnitActionKind.None;
+
+    private string ActionButtonTitle
+    {
+        get
+        {
+            var action = UnitActionKind.Normalize(Unit.CurrentAction);
+            return action == UnitActionKind.None
+                ? L["Unit action"].Value
+                : L["Action: {0}", UnitActionKind.DisplayName(action)].Value;
+        }
+    }
+
     private string CaptainTooltipText
     {
         get
         {
+            if (Unit.CaptainIsBaron)
+                return string.Join("\n", new[] { L["Baron"].Value, L["The baron leads this unit."].Value });
+
             var name = Unit.CaptainName ?? CurrentCaptain?.Name;
             if (string.IsNullOrWhiteSpace(name))
                 return string.Empty;
@@ -203,6 +238,7 @@
         {
             [nameof(UnitCaptainPickDialog.UnitName)] = Unit.Name,
             [nameof(UnitCaptainPickDialog.CurrentCaptainId)] = Unit.CaptainAvailableAdvisorId,
+            [nameof(UnitCaptainPickDialog.CurrentCaptainIsBaron)] = Unit.CaptainIsBaron,
             [nameof(UnitCaptainPickDialog.AvailableCaptains)] = AvailableCaptains,
             [nameof(UnitCaptainPickDialog.OccupiedCaptainIds)] = OccupiedCaptainIds,
         };
@@ -212,18 +248,41 @@
             MaxWidth = MaxWidth.Small,
             FullWidth = true,
         };
-        var dialog = await _dialogService.ShowAsync<UnitCaptainPickDialog>("Assign captain", parameters, options);
+        var dialog = await _dialogService.ShowAsync<UnitCaptainPickDialog>(L["Assign captain"], parameters, options);
         var result = await dialog.Result;
-        if (result is null || result.Canceled)
+        if (result is null || result.Canceled || result.Data is not UnitCaptainPickDialog.UnitCaptainPickResult pick)
             return;
 
-        // Ok(null) means clear; Ok(int) means assign.
-        int? captainId = result.Data switch
+        await OnCaptainChangedAsync(pick.IsBaron, pick.AvailableAdvisorId);
+    }
+
+    private async Task OpenActionPickerAsync()
+    {
+        if (!CanEdit || _busy)
+            return;
+
+        var skills = UnitStatHelper.BuildSkillTotals(Unit);
+        var parameters = new DialogParameters
         {
-            int id => id,
-            _ => null,
+            [nameof(UnitActionPickDialog.UnitName)] = Unit.Name,
+            [nameof(UnitActionPickDialog.CurrentAction)] = Unit.CurrentAction,
+            [nameof(UnitActionPickDialog.ActionTrainingJc)] = Unit.ActionTrainingJc,
+            [nameof(UnitActionPickDialog.CaptainIsBaron)] = Unit.CaptainIsBaron,
+            [nameof(UnitActionPickDialog.BattleInProgress)] = BattleInProgress,
+            [nameof(UnitActionPickDialog.SkillTotals)] = skills,
         };
-        await OnCaptainChangedAsync(captainId);
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+        };
+        var dialog = await _dialogService.ShowAsync<UnitActionPickDialog>(L["Unit action"], parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not UnitActionPickDialog.UnitActionPickResult pick)
+            return;
+
+        await OnActionChangedAsync(pick);
     }
 
     private bool CanSpendPd => CanEdit && Unit.IsActive;
@@ -269,17 +328,24 @@
     private bool _busy;
     private int _baselineUnitId = int.MinValue;
 
-    private async Task OnCaptainChangedAsync(int? captainId)
+    private async Task OnCaptainChangedAsync(bool isBaron, int? captainId)
     {
         if (_busy)
             return;
         _busy = true;
         try
         {
-            Unit.CaptainAvailableAdvisorId = captainId is > 0 ? captainId : null;
+            Unit.CaptainIsBaron = isBaron;
+            Unit.CaptainAvailableAdvisorId = isBaron ? null : (captainId is > 0 ? captainId : null);
+            if (!isBaron)
+                Unit.ActionTrainingJc = 0;
             await _baronyRepo.SaveUnit(Unit);
             _snackBar.Add(
-                Unit.CaptainAvailableAdvisorId is null ? "Captain cleared." : "Captain assigned.",
+                Unit.CaptainIsBaron
+                    ? L["Baron assigned as captain."]
+                    : Unit.CaptainAvailableAdvisorId is null
+                        ? L["Captain cleared."]
+                        : L["Captain assigned."],
                 Severity.Success);
             await OnChanged.InvokeAsync();
         }
@@ -292,6 +358,34 @@
             _busy = false;
         }
     }
+
+    private async Task OnActionChangedAsync(UnitActionPickDialog.UnitActionPickResult pick)
+    {
+        if (_busy)
+            return;
+        _busy = true;
+        try
+        {
+            Unit.CurrentAction = pick.Action;
+            Unit.ActionTrainingJc = pick.TrainingJc;
+            Unit.ActionDemobilizeTroops = 0;
+            await _baronyRepo.SaveUnit(Unit);
+            var label = UnitActionKind.Normalize(pick.Action) == UnitActionKind.None
+                ? L["Unit action cleared."]
+                : L["Unit action set: {0}.", UnitActionKind.DisplayName(pick.Action)];
+            _snackBar.Add(label, Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
     private XpBaseline? _baseline;
 
     private int XpSpentPending =>

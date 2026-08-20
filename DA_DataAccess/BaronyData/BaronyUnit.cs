@@ -67,6 +67,18 @@ namespace DA_DataAccess.BaronyData
         /// <summary>Optional court person assigned as this unit's captain (1:1 per barony).</summary>
         public int? CaptainAvailableAdvisorId { get; set; }
 
+        /// <summary>When true, the baron leads this unit (mutually exclusive with <see cref="CaptainAvailableAdvisorId"/>).</summary>
+        public bool CaptainIsBaron { get; set; }
+
+        /// <summary>Peacetime order (<see cref="DA_Common.Barony.UnitActionKind"/>).</summary>
+        public string CurrentAction { get; set; } = string.Empty;
+
+        /// <summary>BT (JC) spent when baron captains Training (0–100). Scales Training XP.</summary>
+        public int ActionTrainingJc { get; set; }
+
+        /// <summary>Troops to remove at Resolve Turn when action is Partial demobilization.</summary>
+        public int ActionDemobilizeTroops { get; set; }
+
         public int OtherAttack { get; set; }
         public int OtherDefense { get; set; }
         public int OtherDamage { get; set; }

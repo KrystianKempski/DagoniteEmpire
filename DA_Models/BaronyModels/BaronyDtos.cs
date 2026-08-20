@@ -77,6 +77,12 @@ namespace DA_Models.BaronyModels
 
         /// <summary>Player marked the current turn as finished; MG may resolve.</summary>
         public bool PlayerTurnReady { get; set; }
+
+        /// <summary>
+        /// Baron commander skill tree (CX pool + unlocked abilities). Skill values for gates
+        /// are projected from the baron's character (Inspire / Strategy and tactics).
+        /// </summary>
+        public CourtCharacterSheet CommanderSheet { get; set; } = CourtCharacterSheet.CreateDefault();
     }
 
     /// <summary>Lightweight barony row for MG list / selector.</summary>
@@ -117,9 +123,12 @@ namespace DA_Models.BaronyModels
         public int BaronyId { get; set; }
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }
-        /// <summary>Total Domain Skills: from-skill PPB + Domain Other (<see cref="DA_Common.Barony.CourtPpbFormulas.ComputeTotal"/>).</summary>
+        /// <summary>Total Domain Skills: from-skill PPB + Domain Other (<see cref="DA_Common.Barony.CourtPpbFormulas.ComputeTotal"/>), or from linked Character.</summary>
         public PpbVector Skills { get; set; } = new();
         public CourtCharacterSheet Sheet { get; set; } = CourtCharacterSheet.CreateDefault();
+        /// <summary>Linked full character sheet (NPC/PC). When set, skills come from that character.</summary>
+        public int? CharacterId { get; set; }
+        public bool IsLinkedCharacter => CharacterId is > 0;
     }
 
     public class BaronyBuildingDTO
@@ -665,6 +674,8 @@ namespace DA_Models.BaronyModels
         public int NewConjunctureDice { get; set; }
         public int ConjunctureModifier { get; set; }
         public List<string> UnitTroopRegenerations { get; set; } = new();
+        /// <summary>Training XP and demobilization lines applied during Resolve Turn.</summary>
+        public List<string> UnitActionResults { get; set; } = new();
         public string SummaryText { get; set; } = string.Empty;
     }
 }

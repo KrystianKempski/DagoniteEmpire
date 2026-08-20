@@ -1,0 +1,149 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Common.Barony
+@using DA_Models.BaronyModels
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@L["Unit action"]</MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog unit-action-pick">
+            @if (!string.IsNullOrWhiteSpace(UnitName))
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                    @L["{0} — choose a peacetime order for this turn.", UnitName]
+                </MudText>
+            }
+
+            @if (BattleInProgress)
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-3">
+                    @L["A battle is in progress — Domain Skill bonuses, upkeep discounts, and Training XP from actions are suppressed until the battle ends."]
+                </MudAlert>
+            }
+
+            <button type="button"
+                    class="unit-captain-pick__option @(_selected == UnitActionKind.None ? "unit-captain-pick__option--picked" : null)"
+                    @onclick="() => Select(UnitActionKind.None)">
+                <span class="unit-captain-pick__name">@L["No action"]</span>
+                <span class="unit-captain-pick__hint">@UnitActionKind.Description(UnitActionKind.None)</span>
+            </button>
+
+            <div class="unit-captain-pick__list">
+                @foreach (var key in UnitActionKind.All)
+                {
+                    var picked = _selected == key;
+                    <button type="button"
+                            class="unit-captain-pick__option @(picked ? "unit-captain-pick__option--picked" : null)"
+                            @onclick="() => Select(key)">
+                        <span class="unit-captain-pick__name">@UnitActionKind.DisplayName(key)</span>
+                        <span class="unit-captain-pick__hint">@UnitActionKind.Description(key)</span>
+                    </button>
+                }
+            </div>
+
+            @if (_selected == UnitActionKind.Training && CaptainIsBaron)
+            {
+                <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">@L["Baron Time (BT) for training"]</MudText>
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                    @L["XP = ⌊(Command + Strategy) / 2⌋ × BT/100. Expected XP: {0}.", PreviewTrainingXp]
+                </MudText>
+                <MudSlider T="int"
+                           Value="_trainingJc"
+                           ValueChanged="OnTrainingJcChanged"
+                           Min="0"
+                           Max="100"
+                           Step="5"
+                           ValueLabel="true"
+                           Class="mb-1" />
+                <MudText Typo="Typo.caption">@_trainingJc BT</MudText>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(_previewBonus))
+            {
+                <MudAlert Severity="Severity.Info" Dense="true" Class="mt-3">@_previewBonus</MudAlert>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">
+            @L["Save"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public string? UnitName { get; set; }
+    [Parameter] public string CurrentAction { get; set; } = string.Empty;
+    [Parameter] public int ActionTrainingJc { get; set; }
+    [Parameter] public bool CaptainIsBaron { get; set; }
+    [Parameter] public bool BattleInProgress { get; set; }
+    [Parameter] public int PreviewCommand { get; set; }
+    [Parameter] public int PreviewStrategy { get; set; }
+    [Parameter] public Dictionary<string, int> SkillTotals { get; set; } = new(StringComparer.OrdinalIgnoreCase);
+
+    private string _selected = UnitActionKind.None;
+    private int _trainingJc;
+
+    private int PreviewTrainingXp =>
+        UnitActionFormulas.TrainingXp(
+            UnitCaptainKind.Baron, PreviewCommand, PreviewStrategy, _trainingJc, BattleInProgress);
+
+    private string? _previewBonus;
+
+    protected override void OnInitialized()
+    {
+        _selected = UnitActionKind.Normalize(CurrentAction);
+        _trainingJc = UnitActionFormulas.ClampJc(ActionTrainingJc > 0 ? ActionTrainingJc : 100);
+        RefreshPreview();
+    }
+
+    private void Select(string key)
+    {
+        _selected = UnitActionKind.Normalize(key);
+        RefreshPreview();
+    }
+
+    private void OnTrainingJcChanged(int value)
+    {
+        _trainingJc = UnitActionFormulas.ClampJc(value);
+        RefreshPreview();
+    }
+
+    private void RefreshPreview()
+    {
+        if (BattleInProgress
+            && (UnitActionKind.GrantsDomainBonus(_selected) || UnitActionKind.HalvesUpkeep(_selected)))
+        {
+            _previewBonus = L["Action bonuses suppressed (battle in progress)."];
+            return;
+        }
+
+        _previewBonus = UnitActionFormulas.DomainBonusFormula(_selected, SkillTotals)
+            ?? UnitActionFormulas.UpkeepModifierFormula(_selected, battleSuppresses: false);
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        MudDialog.Close(DialogResult.Ok(new UnitActionPickResult
+        {
+            Action = _selected,
+            TrainingJc = _selected == UnitActionKind.Training && CaptainIsBaron
+                ? _trainingJc
+                : 0,
+        }));
+    }
+
+    public sealed class UnitActionPickResult
+    {
+        public string Action { get; set; } = string.Empty;
+        public int TrainingJc { get; set; }
+    }
+}

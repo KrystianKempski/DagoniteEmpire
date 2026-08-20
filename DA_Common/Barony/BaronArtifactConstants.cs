@@ -26,11 +26,12 @@ namespace DA_Common.Barony
         public const string Stolen = "Stolen";
         public const string Inherited = "Inherited";
         public const string Won = "Won";
+        public const string Gift = "Gift";
         public const string Other = "Other";
 
         public static readonly string[] All =
         {
-            Bought, Acquired, Stolen, Inherited, Won, Other,
+            Bought, Acquired, Stolen, Inherited, Won, Gift, Other,
         };
     }
 

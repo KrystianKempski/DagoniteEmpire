@@ -6,57 +6,73 @@
            ActionsClass="baron-influence-dialog-actions">
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
-            <MudTextField @bind-Value="_name"
-                          Label="@(L["Name"])"
-                          Variant="Variant.Outlined"
-                          Margin="Margin.Dense"
-                          Class="baron-influence-field"
-                          Required="true" />
+            @if (LocationOnly)
+            {
+                <MudText Typo="Typo.subtitle2" Class="mb-2">@_name</MudText>
+                <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
+                    @L["Choose a Lord's Seat chamber for this item. Domain PPB applies only while it is placed."]
+                </MudText>
+            }
+            else
+            {
+                <MudTextField @bind-Value="_name"
+                              Label="@(L["Name"])"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Class="baron-influence-field"
+                              Required="true" />
 
-            <MudSelect T="string"
-                       @bind-Value="_kind"
-                       Label="@(L["Type"])"
-                       Variant="Variant.Outlined"
-                       Margin="Margin.Dense"
-                       Class="baron-influence-field"
-                       Dense="true">
-                @foreach (var kind in BaronArtifactKind.All)
-                {
-                    <MudSelectItem Value="@kind">@L[kind]</MudSelectItem>
-                }
-            </MudSelect>
+                <MudSelect T="string"
+                           @bind-Value="_kind"
+                           Label="@(L["Type"])"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Class="baron-influence-field"
+                           Dense="true">
+                    @foreach (var kind in BaronArtifactKind.All)
+                    {
+                        <MudSelectItem Value="@kind">@L[kind]</MudSelectItem>
+                    }
+                </MudSelect>
 
-            <MudSelect T="string"
-                       @bind-Value="_origin"
-                       Label="@(L["Source"])"
-                       HelperText="@(L["How the item was obtained"])"
-                       Variant="Variant.Outlined"
-                       Margin="Margin.Dense"
-                       Class="baron-influence-field"
-                       Dense="true">
-                @foreach (var origin in BaronArtifactOrigin.All)
-                {
-                    <MudSelectItem Value="@origin">@L[origin]</MudSelectItem>
-                }
-            </MudSelect>
+                <MudSelect T="string"
+                           @bind-Value="_origin"
+                           Label="@(L["Source"])"
+                           HelperText="@(L["How the item was obtained"])"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Class="baron-influence-field"
+                           Dense="true">
+                    @foreach (var origin in BaronArtifactOrigin.All)
+                    {
+                        <MudSelectItem Value="@origin">@L[origin]</MudSelectItem>
+                    }
+                </MudSelect>
 
-            <div class="baron-php-edit-fields">
-                <MudNumericField @bind-Value="_prestige"
-                                 Label="@(L["Prestige"])"
-                                 Variant="Variant.Outlined"
-                                 Margin="Margin.Dense"
-                                 Class="baron-influence-field php-field php-field--prestige" />
-                <MudNumericField @bind-Value="_honor"
-                                 Label="@(L["Honor"])"
-                                 Variant="Variant.Outlined"
-                                 Margin="Margin.Dense"
-                                 Class="baron-influence-field php-field php-field--honor" />
-                <MudNumericField @bind-Value="_fear"
-                                 Label="@(L["Fear"])"
-                                 Variant="Variant.Outlined"
-                                 Margin="Margin.Dense"
-                                 Class="baron-influence-field php-field php-field--fear" />
-            </div>
+                <div class="baron-php-edit-fields">
+                    <MudNumericField @bind-Value="_prestige"
+                                     Label="@(L["Prestige"])"
+                                     Variant="Variant.Outlined"
+                                     Margin="Margin.Dense"
+                                     Class="baron-influence-field php-field php-field--prestige" />
+                    <MudNumericField @bind-Value="_honor"
+                                     Label="@(L["Honor"])"
+                                     Variant="Variant.Outlined"
+                                     Margin="Margin.Dense"
+                                     Class="baron-influence-field php-field php-field--honor" />
+                    <MudNumericField @bind-Value="_fear"
+                                     Label="@(L["Fear"])"
+                                     Variant="Variant.Outlined"
+                                     Margin="Margin.Dense"
+                                     Class="baron-influence-field php-field php-field--fear" />
+                </div>
+
+                <MudText Typo="Typo.caption" Class="mt-1 mb-1" Style="color:var(--barony-muted);">
+                    @L["Domain PPB applies only while the item is placed in a Lord's Seat chamber."]
+                </MudText>
+                <PpbVectorEditor @bind-Value="_additive" Title="@(L["PPB additive (+)"])" Compact="true" />
+                <PpbVectorEditor @bind-Value="_percent" Title="@(L["PPB percent (%)"])" Compact="true" Percent="true" />
+            }
 
             <MudSelect T="int?"
                        Value="_seatRoomId"
@@ -83,13 +99,16 @@
                 </MudText>
             }
 
-            <MudTextField @bind-Value="_description"
-                          Label="@(L["Description"])"
-                          HelperText="@(L["Optional. Shown on hover over the name in the table."])"
-                          Variant="Variant.Outlined"
-                          Margin="Margin.Dense"
-                          Lines="3"
-                          Class="baron-influence-field" />
+            @if (!LocationOnly)
+            {
+                <MudTextField @bind-Value="_description"
+                              Label="@(L["Description"])"
+                              HelperText="@(L["Optional. Shown on hover over the name in the table."])"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Lines="3"
+                              Class="baron-influence-field" />
+            }
         </div>
     </DialogContent>
     <DialogActions>
@@ -104,6 +123,8 @@
     [Parameter] public BaronArtifactDTO Artifact { get; set; } = new();
     [Parameter] public BaronySeatDTO? Seat { get; set; }
     [Parameter] public List<BaronArtifactDTO> ExistingArtifacts { get; set; } = new();
+    /// <summary>When true, only chamber location can be changed (baron placement).</summary>
+    [Parameter] public bool LocationOnly { get; set; }
 
     private string _name = string.Empty;
     private string _kind = BaronArtifactKind.Other;
@@ -111,11 +132,13 @@
     private int _prestige;
     private int _honor;
     private int _fear;
+    private PpbVector _additive = new();
+    private PpbVector _percent = new();
     private int? _seatRoomId;
     private string? _description;
     private List<SeatRoomDTO> _rooms = new();
     private string _roomHelper =>
-        L["Chamber where the item is displayed (applies prestige multiplier)."].Value;
+        L["Chamber where the item is displayed (applies prestige multiplier and activates domain PPB)."].Value;
 
     private SeatRoomDTO? _selectedRoom =>
         _seatRoomId is int id ? _rooms.FirstOrDefault(r => r.Id == id) : null;
@@ -137,6 +160,8 @@
         _prestige = Artifact.Prestige;
         _honor = Artifact.Honor;
         _fear = Artifact.Fear;
+        _additive = Artifact.Additive?.Clone() ?? new PpbVector();
+        _percent = Artifact.Percent?.Clone() ?? new PpbVector();
         _seatRoomId = Artifact.SeatRoomId;
         _description = Artifact.Description;
         _rooms = (Seat?.Rooms ?? new())
@@ -167,15 +192,36 @@
 
     private void Save()
     {
+        if (LocationOnly)
+        {
+            if (_seatRoomId is int roomId)
+            {
+                var room = _rooms.FirstOrDefault(r => r.Id == roomId);
+                var capacityError = BaronyCalc.ArtifactCapacityError(
+                    room,
+                    ExistingArtifacts,
+                    Artifact.Id > 0 ? Artifact.Id : null);
+                if (capacityError is not null)
+                {
+                    _snackBar.Add(capacityError, Severity.Warning);
+                    return;
+                }
+            }
+
+            Artifact.SeatRoomId = _seatRoomId;
+            MudDialog.Close(DialogResult.Ok(Artifact));
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(_name))
         {
             _snackBar.Add(L["Name is required."], Severity.Warning);
             return;
         }
 
-        if (_seatRoomId is int roomId)
+        if (_seatRoomId is int fullRoomId)
         {
-            var room = _rooms.FirstOrDefault(r => r.Id == roomId);
+            var room = _rooms.FirstOrDefault(r => r.Id == fullRoomId);
             var capacityError = BaronyCalc.ArtifactCapacityError(
                 room,
                 ExistingArtifacts,
@@ -193,6 +239,8 @@
         Artifact.Prestige = _prestige;
         Artifact.Honor = _honor;
         Artifact.Fear = _fear;
+        Artifact.Additive = _additive.Clone();
+        Artifact.Percent = _percent.Clone();
         Artifact.SeatRoomId = _seatRoomId;
         Artifact.Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim();
         MudDialog.Close(DialogResult.Ok(Artifact));

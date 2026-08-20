@@ -1,5 +1,6 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @inject IDialogService _dialogService
+@inject NavigationManager _nav
 
 <BaronySection Title="@(L["Court"])">
     <Summary>
@@ -9,7 +10,7 @@
     </Summary>
     <ChildContent>
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
-            @L["Advisors, servants, and other people of the court. Main skills plus a few secondary skills compute their Domain Skills. Click a person card to expand the sheet."]
+            @L["Advisors, servants, and other people of the court. Main skills plus a few secondary skills compute their Domain Skills. Click a person card to expand the sheet. Characters attached by the Game Master show Domain Skills from their full character sheet."]
         </MudText>
 
         @if (CanManage)
@@ -48,18 +49,37 @@
                              @onkeydown="(e) => OnCardKeyDown(e, person.Id)">
                         <header class="project-card__header">
                             <div class="project-card__title-row">
-                                <h3 class="project-card__title">@person.Name</h3>
+                                <h3 class="project-card__title">
+                                    @person.Name
+                                    @if (person.IsLinkedCharacter)
+                                    {
+                                        <MudChip T="string" Size="Size.Small" Variant="Variant.Outlined" Color="Color.Info" Class="ml-2">
+                                            @L["Character"]
+                                        </MudChip>
+                                    }
+                                </h3>
                                 @if (isOpen)
                                 {
                                     @if (CanManage)
                                     {
                                         <div class="project-card__actions court-person-card__title-actions" @onclick:stopPropagation="true">
-                                            <BaronyTooltip Text="@(L["Edit person"])">
-                                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                                               Size="Size.Small"
-                                                               OnClick="@(() => OnEdit.InvokeAsync(person))" />
-                                            </BaronyTooltip>
-                                            <BaronyTooltip Text="@(L["Remove person"])">
+                                            @if (!person.IsLinkedCharacter)
+                                            {
+                                                <BaronyTooltip Text="@(L["Edit person"])">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                                   Size="Size.Small"
+                                                                   OnClick="@(() => OnEdit.InvokeAsync(person))" />
+                                                </BaronyTooltip>
+                                            }
+                                            else if (person.CharacterId is int linkedId)
+                                            {
+                                                <BaronyTooltip Text="@(L["Open character sheet"])">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.OpenInNew"
+                                                                   Size="Size.Small"
+                                                                   OnClick="@(() => _nav.NavigateTo($"/character/edit/{linkedId}"))" />
+                                                </BaronyTooltip>
+                                            }
+                                            <BaronyTooltip Text="@(person.IsLinkedCharacter ? L["Detach courtier"] : L["Remove person"])">
                                                 <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                                                Size="Size.Small"
                                                                Color="Color.Error"
@@ -82,7 +102,77 @@
                             }
                         </header>
 
-                        @if (isOpen)
+                        @if (isOpen && person.IsLinkedCharacter)
+                        {
+                            <div class="project-card__panels court-person-card__panels" @onclick:stopPropagation="true">
+                                <section class="project-card__panel court-person-card__panel court-person-card__panel--ppb">
+                                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                                        @L["Domain Skills from the linked character sheet (base + special skills), same formulas as the baron."]
+                                    </MudText>
+                                    <h4 class="project-card__panel-title">@L["Domain Skills"]</h4>
+                                    <div class="court-person-card__ppb-table-wrap">
+                                        <OfficeSourcePpbTable Rows="@DomainSkillRows(person)"
+                                                                ShowCost="false"
+                                                                ExtraClass="ppb-table--court-domain"
+                                                                CanEditOther="false"
+                                                                CellTooltip="@((row, key) => DomainCellTooltip(person, row, key))" />
+                                    </div>
+                                </section>
+
+                                <section class="project-card__panel court-person-card__panel court-person-card__panel--commander" @onclick:stopPropagation="true">
+                                    <h4 class="project-card__panel-title">@L["Commander"]</h4>
+                                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                                        @L["CX = (permanent Inspire + Strategy and tactics) × 2."]
+                                    </MudText>
+                                    <div class="court-commander-panel__cx">
+                                        <span class="court-commander-panel__cx-label">@L["CX pool"]</span>
+                                        @if (CanManage)
+                                        {
+                                            <BaronyTooltip Text="@(L["Click to edit CX pool"])">
+                                                <button type="button"
+                                                        class="court-commander-panel__cx-value court-commander-panel__cx-value--editable"
+                                                        @onclick="@(() => OpenCxEditAsync(person))">
+                                                    @sheet.CommanderXp
+                                                </button>
+                                            </BaronyTooltip>
+                                        }
+                                        else
+                                        {
+                                            <span class="court-commander-panel__cx-value">@sheet.CommanderXp</span>
+                                        }
+                                        <span class="court-commander-panel__cx-meta">avail. @CourtCommanderFormulas.AvailableCx(sheet) · spent @CourtCommanderFormulas.SpentCx(sheet)</span>
+                                    </div>
+                                    <div class="court-commander-panel__abilities">
+                                        <MudButton Variant="Variant.Outlined"
+                                                   Size="Size.Small"
+                                                   StartIcon="@Icons.Material.Filled.AccountTree"
+                                                   OnClick="@(() => OpenCommanderTreeAsync(person))">
+                                            @L["Skill tree"]
+                                        </MudButton>
+                                        @if (sheet.UnlockedCommanderAbilities.Count == 0)
+                                        {
+                                            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">@L["No abilities unlocked."]</MudText>
+                                        }
+                                        else
+                                        {
+                                            <div class="ppb-chips court-commander-chips">
+                                                @foreach (var key in sheet.UnlockedCommanderAbilities)
+                                                {
+                                                    var ability = CourtCommanderCatalog.Find(key);
+                                                    <BaronyTooltip Text="@(ability is null ? null : L[ability.DescriptionEn].Value)">
+                                                        <span class="ppb-chip">
+                                                            <span class="ppb-chip__label">@(L[ability?.NameEn ?? key])</span>
+                                                            <span class="ppb-chip__value">T@(ability?.Tier ?? 0)</span>
+                                                        </span>
+                                                    </BaronyTooltip>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                </section>
+                            </div>
+                        }
+                        else if (isOpen)
                         {
                             var combat = CourtCombatFormulas.Compute(sheet);
                             <div class="project-card__panels court-person-card__panels" @onclick:stopPropagation="true">
@@ -348,6 +438,20 @@
 
     private static IReadOnlyList<AdvisorInfluenceRow> DomainSkillRows(AvailableAdvisorDTO person)
     {
+        if (person.IsLinkedCharacter)
+        {
+            return
+            [
+                new AdvisorInfluenceRow
+                {
+                    Source = CourtCharacterSheet.FromSkillLabel,
+                    Values = person.Skills?.Clone() ?? new PpbVector(),
+                    IsSystem = true,
+                    SystemKind = AdvisorInfluenceSystemKind.Skills,
+                },
+            ];
+        }
+
         var sheet = person.Sheet ?? CourtCharacterSheet.CreateDefault();
         sheet.Normalize();
         var fromSkills = CourtPpbFormulas.Compute(sheet);
@@ -374,6 +478,8 @@
 
     private static string? DomainCellTooltip(AvailableAdvisorDTO person, AdvisorInfluenceRow row, Ppb key)
     {
+        if (person.IsLinkedCharacter)
+            return BaronSkillPpbFormulas.ExplainAdditive(key);
         if (row.SystemKind == AdvisorInfluenceSystemKind.Skills)
             return CourtPpbFormulas.FormulaLabel(key);
         if (row.SystemKind != AdvisorInfluenceSystemKind.Other)
@@ -384,7 +490,7 @@
 
     private async Task EditMainOtherAsync(AvailableAdvisorDTO person)
     {
-        if (!CanManage)
+        if (!CanManage || person.IsLinkedCharacter)
             return;
 
         var sheet = person.Sheet ?? CourtCharacterSheet.CreateDefault();
@@ -410,7 +516,7 @@
 
     private async Task EditDomainOtherAsync(AvailableAdvisorDTO person)
     {
-        if (!CanManage)
+        if (!CanManage || person.IsLinkedCharacter)
             return;
 
         var sheet = person.Sheet ?? CourtCharacterSheet.CreateDefault();
@@ -440,7 +546,7 @@
 
     private async Task EditCombatOtherAsync(AvailableAdvisorDTO person)
     {
-        if (!CanManage)
+        if (!CanManage || person.IsLinkedCharacter)
             return;
 
         var sheet = person.Sheet ?? CourtCharacterSheet.CreateDefault();
@@ -481,7 +587,8 @@
             return;
 
         person.Sheet = saved;
-        person.Skills = CourtPpbFormulas.ComputeTotal(saved);
+        if (!person.IsLinkedCharacter)
+            person.Skills = CourtPpbFormulas.ComputeTotal(saved);
         await OnSheetChanged.InvokeAsync(person);
     }
 
@@ -493,7 +600,8 @@
         sheet.CommanderXp = Math.Max(0, sheet.CommanderXp);
         sheet.Normalize();
         person.Sheet = sheet;
-        person.Skills = CourtPpbFormulas.ComputeTotal(sheet);
+        if (!person.IsLinkedCharacter)
+            person.Skills = CourtPpbFormulas.ComputeTotal(sheet);
         await OnSheetChanged.InvokeAsync(person);
     }
 

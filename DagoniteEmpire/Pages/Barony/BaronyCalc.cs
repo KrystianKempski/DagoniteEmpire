@@ -1,3 +1,4 @@
+using DA_Business.Repository.BaronyRepos;
 using DA_Common;
 using DA_Common.Barony;
 using DA_Common.Localization;
@@ -241,7 +242,8 @@ namespace DagoniteEmpire.Pages.Barony
 
         public static (PpbVector Additive, PpbVector Percent) SeatRoomEffectivePpb(
             SeatRoomDTO room,
-            IReadOnlyDictionary<int, SeatPurposeTemplateDTO> purposes)
+            IReadOnlyDictionary<int, SeatPurposeTemplateDTO> purposes,
+            IEnumerable<BaronArtifactDTO>? artifacts = null)
         {
             if (!room.ContributesPpb)
                 return (new PpbVector(), new PpbVector());
@@ -254,12 +256,37 @@ namespace DagoniteEmpire.Pages.Barony
                 pct = PpbVector.Sum(new[] { pct, purpose.Percent });
             }
 
+            var placed = PlacedArtifactsInRoom(artifacts, room.Id);
+            if (placed.Count > 0)
+            {
+                add = PpbVector.Sum(new[] { add }.Concat(placed.Select(a => a.Additive)));
+                pct = PpbVector.Sum(new[] { pct }.Concat(placed.Select(a => a.Percent)));
+            }
+
             return (add, pct);
         }
 
+        /// <summary>True when the item is in a non-ruin chamber (domain PPB is active).</summary>
+        public static bool ArtifactContributesPpb(BaronArtifactDTO item, BaronySeatDTO? seat)
+        {
+            if (item.SeatRoomId is not int roomId || seat?.Rooms is null)
+                return false;
+            return seat.Rooms.Any(r => r.Id == roomId && r.ContributesPpb);
+        }
+
+        public static List<BaronArtifactDTO> PlacedArtifactsInRoom(
+            IEnumerable<BaronArtifactDTO>? artifacts,
+            int roomId) =>
+            (artifacts ?? Enumerable.Empty<BaronArtifactDTO>())
+                .Where(a => a.SeatRoomId == roomId)
+                .OrderBy(a => a.SortOrder)
+                .ThenBy(a => a.Id)
+                .ToList();
+
         public static PpbModifierRow LordsSeatSummaryRow(
             IEnumerable<SeatRoomDTO> rooms,
-            IReadOnlyDictionary<int, SeatPurposeTemplateDTO> purposes)
+            IReadOnlyDictionary<int, SeatPurposeTemplateDTO> purposes,
+            IEnumerable<BaronArtifactDTO>? artifacts = null)
         {
             var active = rooms.Where(r => r.ContributesPpb).ToList();
             if (active.Count == 0)
@@ -268,32 +295,40 @@ namespace DagoniteEmpire.Pages.Barony
                     "No active chambers. Ruins and unassigned rooms contribute nothing until restored.");
             }
 
-            var add = PpbVector.Sum(active.Select(r => SeatRoomEffectivePpb(r, purposes).Additive));
-            var pct = PpbVector.Sum(active.Select(r => SeatRoomEffectivePpb(r, purposes).Percent));
+            var add = PpbVector.Sum(active.Select(r => SeatRoomEffectivePpb(r, purposes, artifacts).Additive));
+            var pct = PpbVector.Sum(active.Select(r => SeatRoomEffectivePpb(r, purposes, artifacts).Percent));
             var lines = active.Select(r =>
             {
                 var purposeName = r.PurposeTemplateId is int pid && purposes.TryGetValue(pid, out var p)
                     ? p.Name
                     : "Unassigned";
-                return $"• {r.Name} — {purposeName} ({r.SizeCategory}, {r.TileCount} tiles)";
+                var items = PlacedArtifactsInRoom(artifacts, r.Id);
+                var itemBit = items.Count == 0
+                    ? ""
+                    : $" · items: {string.Join(", ", items.Select(a => a.Name))}";
+                return $"• {r.Name} — {purposeName} ({r.SizeCategory}, {r.TileCount} tiles){itemBit}";
             });
             return Row("Lord's Seat", add, pct, null, string.Join("\n", lines));
         }
 
         public static List<PpbModifierRow> LordsSeatDetailRows(
             IEnumerable<SeatRoomDTO> rooms,
-            IReadOnlyDictionary<int, SeatPurposeTemplateDTO> purposes) =>
+            IReadOnlyDictionary<int, SeatPurposeTemplateDTO> purposes,
+            IEnumerable<BaronArtifactDTO>? artifacts = null) =>
             rooms
                 .OrderBy(r => r.SortOrder)
                 .ThenBy(r => r.Name, StringComparer.OrdinalIgnoreCase)
                 .Select(r =>
                 {
-                    var (add, pct) = SeatRoomEffectivePpb(r, purposes);
+                    var (add, pct) = SeatRoomEffectivePpb(r, purposes, artifacts);
                     var purposeName = r.PurposeTemplateId is int pid && purposes.TryGetValue(pid, out var p)
                         ? p.Name
                         : "—";
                     var label = r.IsRuin ? $"{r.Name} (ruin)" : r.Name;
+                    var items = PlacedArtifactsInRoom(artifacts, r.Id);
                     var desc = $"{purposeName} · {r.SizeCategory} · {r.Material}";
+                    if (items.Count > 0)
+                        desc += "\nItems: " + string.Join(", ", items.Select(a => a.Name));
                     if (r.IsRuin)
                         desc = "Ruin — excluded from PPB.\n" + desc;
                     return Row(label, add, pct, null, desc);
@@ -306,14 +341,15 @@ namespace DagoniteEmpire.Pages.Barony
             IEnumerable<BaronyBuildingDTO> saved,
             IEnumerable<TerrainImprovementDTO>? improvements = null,
             BaronySeatDTO? seat = null,
-            IEnumerable<SeatPurposeTemplateDTO>? purposeTemplates = null)
+            IEnumerable<SeatPurposeTemplateDTO>? purposeTemplates = null,
+            IEnumerable<BaronArtifactDTO>? artifacts = null)
         {
             var purposes = PurposeLookup(purposeTemplates);
             var rows = EffectiveCoreCityBuildings(baronyId, saved)
                 .Select(b => Row(b.Name, b.Additive, b.Percent, null, b.Description))
                 .ToList();
             if (seat is not null)
-                rows.Add(LordsSeatSummaryRow(seat.Rooms, purposes));
+                rows.Add(LordsSeatSummaryRow(seat.Rooms, purposes, artifacts));
             rows.AddRange(TownPopulationRows(improvements));
             rows.AddRange(BuildingRows(ExtraCityBuildings(saved)));
             return rows;
@@ -346,7 +382,8 @@ namespace DagoniteEmpire.Pages.Barony
             IEnumerable<BaronyBuildingDTO> saved,
             IEnumerable<TerrainImprovementDTO>? improvements = null,
             BaronySeatDTO? seat = null,
-            IEnumerable<SeatPurposeTemplateDTO>? purposeTemplates = null)
+            IEnumerable<SeatPurposeTemplateDTO>? purposeTemplates = null,
+            IEnumerable<BaronArtifactDTO>? artifacts = null)
         {
             var purposes = PurposeLookup(purposeTemplates);
             var vectors = EffectiveCoreCityBuildings(baronyId, saved).Select(b => b.Additive)
@@ -356,7 +393,7 @@ namespace DagoniteEmpire.Pages.Barony
             {
                 vectors = vectors.Concat(
                     seat.Rooms.Where(r => r.ContributesPpb)
-                        .Select(r => SeatRoomEffectivePpb(r, purposes).Additive));
+                        .Select(r => SeatRoomEffectivePpb(r, purposes, artifacts).Additive));
             }
 
             return PpbVector.Sum(vectors);
@@ -367,7 +404,8 @@ namespace DagoniteEmpire.Pages.Barony
             IEnumerable<BaronyBuildingDTO> saved,
             IEnumerable<TerrainImprovementDTO>? improvements = null,
             BaronySeatDTO? seat = null,
-            IEnumerable<SeatPurposeTemplateDTO>? purposeTemplates = null)
+            IEnumerable<SeatPurposeTemplateDTO>? purposeTemplates = null,
+            IEnumerable<BaronArtifactDTO>? artifacts = null)
         {
             var purposes = PurposeLookup(purposeTemplates);
             var vectors = EffectiveCoreCityBuildings(baronyId, saved).Select(b => b.Percent)
@@ -377,7 +415,7 @@ namespace DagoniteEmpire.Pages.Barony
             {
                 vectors = vectors.Concat(
                     seat.Rooms.Where(r => r.ContributesPpb)
-                        .Select(r => SeatRoomEffectivePpb(r, purposes).Percent));
+                        .Select(r => SeatRoomEffectivePpb(r, purposes, artifacts).Percent));
             }
 
             return PpbVector.Sum(vectors);
@@ -790,29 +828,58 @@ namespace DagoniteEmpire.Pages.Barony
         }
 
         /// <summary>
-        /// Active units only: wage (Gold), food upkeep, defense upkeep as negative Additive.
+        /// Active units only: wage (Gold), food upkeep, defense upkeep as negative Additive,
+        /// plus peacetime action Domain bonuses (suppressed while a battle is in progress).
         /// Training units do not count until graduation.
         /// </summary>
-        public static List<PpbModifierRow> ArmyRows(IEnumerable<BaronyUnitDTO>? units)
+        public static List<PpbModifierRow> ArmyRows(
+            IEnumerable<BaronyUnitDTO>? units,
+            bool battleSuppressesUnitActions = false)
             => (units ?? Enumerable.Empty<BaronyUnitDTO>())
                 .Where(u => u.IsActive)
                 .OrderBy(u => u.Name, StringComparer.OrdinalIgnoreCase)
                 .ThenBy(u => u.Id)
                 .Select(u =>
                 {
-                    var upkeep = UnitUpkeepFormulas.Compute(
-                        u.Wage, u.UpkeepFood, u.UpkeepDefense,
-                        u.Weapon1Key, u.Weapon2Key, u.ArmorKey, u.ShieldKey, u.MountKey);
+                    var upkeep = UnitActionFormulas.ApplyUpkeepModifier(
+                        UnitUpkeepFormulas.Compute(
+                            u.Wage, u.UpkeepFood, u.UpkeepDefense,
+                            u.Weapon1Key, u.Weapon2Key, u.ArmorKey, u.ShieldKey, u.MountKey),
+                        u.CurrentAction,
+                        battleSuppressesUnitActions);
                     var additive = new PpbVector();
                     additive[Ppb.Treasury] = -upkeep.Gold;
                     additive[Ppb.Food] = -upkeep.Food;
                     additive[Ppb.Defense] = -upkeep.Defense;
-                    return Row(
-                        u.Name,
-                        additive,
-                        new PpbVector(),
-                        formula: UnitUpkeepFormulas.Explain(upkeep),
-                        note: $"{u.TroopCount} troops");
+
+                    var skills = UnitStatHelper.BuildSkillTotals(u);
+                    var actionBonus = UnitActionFormulas.DomainBonus(
+                        u.CurrentAction, skills, battleSuppressesUnitActions);
+                    additive.AddInPlace(actionBonus);
+
+                    var formula = UnitUpkeepFormulas.Explain(upkeep);
+                    var upkeepActionFormula = UnitActionFormulas.UpkeepModifierFormula(
+                        u.CurrentAction, battleSuppressesUnitActions);
+                    if (!string.IsNullOrWhiteSpace(upkeepActionFormula))
+                        formula = $"{formula}\n{upkeepActionFormula}";
+
+                    var actionFormula = UnitActionFormulas.DomainBonusFormula(u.CurrentAction, skills);
+                    if (battleSuppressesUnitActions
+                        && UnitActionKind.GrantsDomainBonus(u.CurrentAction))
+                    {
+                        actionFormula = Loc.T("Action bonuses suppressed (battle in progress).");
+                    }
+                    if (!string.IsNullOrWhiteSpace(actionFormula))
+                        formula = $"{formula}\n{actionFormula}";
+
+                    var actionLabel = UnitActionKind.Normalize(u.CurrentAction) == UnitActionKind.None
+                        ? null
+                        : UnitActionKind.DisplayName(u.CurrentAction);
+                    var note = actionLabel is null
+                        ? $"{u.TroopCount} troops"
+                        : $"{u.TroopCount} troops · {actionLabel}";
+
+                    return Row(u.Name, additive, new PpbVector(), formula: formula, note: note);
                 })
                 .ToList();
 
@@ -1032,13 +1099,14 @@ namespace DagoniteEmpire.Pages.Barony
             CharacterDTO? character = null,
             IEnumerable<BaronInfluenceModifierDTO>? baronModifiers = null,
             IEnumerable<AdvisorInfluenceModifierDTO>? advisorModifiers = null,
-            int managementJc = BaronTimeRules.RequiredManagementJc)
+            int managementJc = BaronTimeRules.RequiredManagementJc,
+            bool battleSuppressesUnitActions = false)
         {
             var advisors = AdvisorsForDomainPanel(
                 ov.Advisors, ov.Barony, character, baronModifiers, advisorModifiers, managementJc);
             var advisorRows = AdvisorRows(advisors);
             var buildingRows = CityBuildingSectionRows(
-                ov.Barony.Id, ov.Buildings, ov.Improvements, ov.Seat, ov.SeatPurposeTemplates);
+                ov.Barony.Id, ov.Buildings, ov.Improvements, ov.Seat, ov.SeatPurposeTemplates, ov.Artifacts);
             var socialRows = SocialRows(ov.Barony.Id, ov.SocialRelations);
             var improvementRows = ImprovementRows(
                 ov.Improvements, ov.Tiles, ov.Fiefs, ov.Barony.VassalTributePercent, ov.Barony.Season);
@@ -1058,7 +1126,7 @@ namespace DagoniteEmpire.Pages.Barony
             var eventRows = EventRows(ov.Events, ov.Barony.TurnNumber);
             eventRows.AddRange(AudienceEventRows(ov.Audiences, ov.Barony.TurnNumber));
             eventRows.AddRange(AdventureEventRows(ov.Events, ov.Barony.TurnNumber));
-            var armyRows = ArmyRows(ov.Units);
+            var armyRows = ArmyRows(ov.Units, battleSuppressesUnitActions);
             var settlementPop = SumSettlementPopulation(ov.Barony.Id, ov.Buildings, ov.Improvements);
             var foodStock = ov.Barony.FoodInGranaries;
             var communityRows = CommunityRows(
@@ -1289,50 +1357,7 @@ namespace DagoniteEmpire.Pages.Barony
         }
 
         public static PpbVector InfluenceFromSkills(CharacterDTO? character)
-        {
-            if (character is null)
-                return new PpbVector();
-
-            CharacterSkillRelations.Wire(character);
-
-            decimal Special(string name)
-            {
-                if (character.SpecialSkills is null)
-                    return 0m;
-                foreach (var s in character.SpecialSkills)
-                {
-                    if (string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase))
-                        return s.SumBonus;
-                }
-                return 0m;
-            }
-
-            decimal Base(string name)
-            {
-                if (character.BaseSkills is null)
-                    return 0m;
-                foreach (var s in character.BaseSkills)
-                {
-                    if (string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase))
-                        return s.SumBonus;
-                }
-                return 0m;
-            }
-
-            decimal Attr(string name)
-            {
-                if (character.Attributes is null)
-                    return 0m;
-                foreach (var a in character.Attributes)
-                {
-                    if (string.Equals(a.Name, name, StringComparison.OrdinalIgnoreCase))
-                        return a.ModifierAbsolute;
-                }
-                return 0m;
-            }
-
-            return BaronSkillPpbFormulas.Compute(Special, Base, Attr);
-        }
+            => CharacterBaronySkillPpb.FromCharacter(character);
 
         public static PpbVector InfluenceFromPrestigeHonorFear(int prestige, int honor, int fear) =>
             BaronReputationTiers.InfluenceFromScores(prestige, honor, fear);
@@ -1547,13 +1572,13 @@ namespace DagoniteEmpire.Pages.Barony
             if (item.SeatRoomId is not int roomId || seat?.Rooms is null)
             {
                 return "Not placed in a Lord's Seat chamber. Prestige, Honor and Fear use ×1 "
-                    + "(no chamber multiplier).";
+                    + "(no chamber multiplier). Domain PPB from this item is inactive until placed.";
             }
 
             var room = seat.Rooms.FirstOrDefault(r => r.Id == roomId);
             if (room is null)
             {
-                return "Chamber not found. Prestige, Honor and Fear use ×1.";
+                return "Chamber not found. Prestige, Honor and Fear use ×1. Domain PPB is inactive.";
             }
 
             var name = string.IsNullOrWhiteSpace(room.Name) ? $"Room #{room.Id}" : room.Name;
@@ -1570,7 +1595,13 @@ namespace DagoniteEmpire.Pages.Barony
                 "This multiplier is applied to the item's Prestige, Honor and Fear.",
             };
             if (room.IsRuin)
-                lines.Add("This chamber is a ruin — multiplier treated as ×1.");
+            {
+                lines.Add("This chamber is a ruin — multiplier treated as ×1; domain PPB is inactive.");
+            }
+            else
+            {
+                lines.Add("Domain PPB from this item is active while displayed here.");
+            }
             return string.Join("\n", lines);
         }
 

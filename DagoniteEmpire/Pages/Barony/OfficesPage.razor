@@ -127,12 +127,19 @@ else if (Barony is not null)
     private async Task EditAvailableAdvisorAsync(AvailableAdvisorDTO person)
     {
         if (!CanManageAsMg) return;
+        if (person.IsLinkedCharacter)
+        {
+            _snackBar.Add(L["Linked character courtiers are managed from the character sheet. Detach them here, or attach via Panel MG."], Severity.Info);
+            return;
+        }
+
         await OpenAvailableAdvisorDialog(new AvailableAdvisorDTO
         {
             Id = person.Id,
             BaronyId = person.BaronyId,
             Name = person.Name,
             Description = person.Description,
+            CharacterId = person.CharacterId,
             Sheet = person.Sheet ?? CourtCharacterSheet.CreateDefault(),
             Skills = person.Skills.Clone(),
         });
@@ -170,7 +177,9 @@ else if (Barony is not null)
 
         person.BaronyId = Barony!.Id;
         await _baronyRepo.SaveAvailableAdvisor(person);
-        _snackBar.Add(L["Court sources saved."], Severity.Success);
+        _snackBar.Add(
+            person.IsLinkedCharacter ? L["Commander progress saved."] : L["Court sources saved."],
+            Severity.Success);
         await ReloadAsync();
     }
 }

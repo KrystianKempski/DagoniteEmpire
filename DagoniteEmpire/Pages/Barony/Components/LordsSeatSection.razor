@@ -239,7 +239,7 @@
                                     <span>@L["Size"]</span>
                                 </BaronyTooltip>
                             </th>
-                            <th rowspan="2" class="lords-seat-col-occupant">@L["Occupant"]</th>
+                            <th rowspan="2" class="lords-seat-col-occupant">@L["Occupant / Items"]</th>
                             <th rowspan="2" class="lords-seat-col-prestige seat-php-header">
                                 <BaronyTooltip Text="@(L["Prestige / Honor / Fear (per-chamber, × multiplier)"])">
                                     <span>@L["Prestige"]</span>
@@ -265,7 +265,8 @@
                     <tbody>
                         @foreach (var room in OrderedRooms)
                         {
-                            var (additive, percent) = RoomPpbValues(room);
+                            var (additive, percent) = RoomEffectivePpb(room);
+                            var roomItems = BaronyCalc.PlacedArtifactsInRoom(Artifacts, room.Id);
                             <tr class="@RowClass(room)">
                                 <td class="lords-seat-col-name">
                                     <div class="city-building-name-cell">
@@ -321,16 +322,39 @@
                                     @{
                                         var occupantName = OccupantNameOnly(room);
                                         var occupantTip = OccupantSubtitle(room);
+                                        var hasOccupant = !string.IsNullOrWhiteSpace(occupantName);
+                                        var hasItems = roomItems.Count > 0;
                                     }
-                                    @if (string.IsNullOrWhiteSpace(occupantName))
+                                    @if (!hasOccupant && !hasItems)
                                     {
                                         <span class="lords-seat-muted">—</span>
                                     }
                                     else
                                     {
-                                        <BaronyTooltip Title="@(L["Occupant"])" Text="@(occupantTip ?? occupantName)">
-                                            <span class="lords-seat-occupant-name">@occupantName</span>
-                                        </BaronyTooltip>
+                                        <div class="lords-seat-occupant-stack">
+                                            @if (hasOccupant)
+                                            {
+                                                <BaronyTooltip Title="@(L["Occupant"])" Text="@(occupantTip ?? occupantName)">
+                                                    <span class="lords-seat-occupant-name">@occupantName</span>
+                                                </BaronyTooltip>
+                                            }
+                                            @if (hasItems)
+                                            {
+                                                <span class="lords-seat-occupant-items">
+                                                    @for (var i = 0; i < roomItems.Count; i++)
+                                                    {
+                                                        var item = roomItems[i];
+                                                        if (i > 0)
+                                                        {
+                                                            <span class="lords-seat-occupant-items-sep">, </span>
+                                                        }
+                                                        <BaronyTooltip Title="@item.Name" Text="@ItemBonusTooltip(item, room)">
+                                                            <span class="lords-seat-occupant-item-name">@item.Name</span>
+                                                        </BaronyTooltip>
+                                                    }
+                                                </span>
+                                            }
+                                        </div>
                                     }
                                 </td>
                                 <td class="lords-seat-col-prestige seat-php-cell">
@@ -426,6 +450,7 @@
     [Parameter] public BaronySeatDTO Seat { get; set; } = new();
     [Parameter] public List<SeatPurposeTemplateDTO> PurposeTemplates { get; set; } = new();
     [Parameter] public List<AdvisorDTO> Advisors { get; set; } = new();
+    [Parameter] public List<BaronArtifactDTO> Artifacts { get; set; } = new();
     [Parameter] public bool CanEdit { get; set; }
     [Parameter] public bool CanManage { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
@@ -602,7 +627,7 @@
         Seat.Rooms.OrderBy(r => r.Level).ThenBy(r => r.SortOrder).ThenBy(r => r.Name, StringComparer.OrdinalIgnoreCase);
 
     private PpbVector Glance =>
-        BaronyCalc.SectionGlance(BaronyCalc.LordsSeatDetailRows(Seat.Rooms, PurposeLookup));
+        BaronyCalc.SectionGlance(BaronyCalc.LordsSeatDetailRows(Seat.Rooms, PurposeLookup, Artifacts));
 
     private PpbVector AdditiveSum =>
         PpbVector.Sum(Seat.Rooms.Where(r => r.ContributesPpb)
@@ -635,7 +660,7 @@
     }
 
     private (PpbVector Additive, PpbVector Percent) RoomEffectivePpb(SeatRoomDTO room) =>
-        BaronyCalc.SeatRoomEffectivePpb(room, PurposeLookup);
+        BaronyCalc.SeatRoomEffectivePpb(room, PurposeLookup, Artifacts);
 
     private (PpbVector Additive, PpbVector Percent) RoomPpbValues(SeatRoomDTO room)
     {
@@ -702,6 +727,74 @@
         }
 
         return name;
+    }
+
+    private string ItemBonusTooltip(BaronArtifactDTO item, SeatRoomDTO room)
+    {
+        var lines = new List<string>();
+        if (!string.IsNullOrWhiteSpace(item.Kind))
+            lines.Add($"{L["Type"]}: {L[item.Kind]}");
+        if (!string.IsNullOrWhiteSpace(item.Origin))
+            lines.Add($"{L["Source"]}: {L[item.Origin]}");
+        if (!string.IsNullOrWhiteSpace(item.Description))
+            lines.Add(item.Description.Trim());
+
+        var mult = room.IsRuin || room.PrestigeMultiplier <= 0 ? 1m : room.PrestigeMultiplier;
+        var phpLines = new List<string>();
+        if (item.Prestige != 0)
+            phpLines.Add(PhpBonusLine(L["Prestige"], item.Prestige, mult));
+        if (item.Honor != 0)
+            phpLines.Add(PhpBonusLine(L["Honor"], item.Honor, mult));
+        if (item.Fear != 0)
+            phpLines.Add(PhpBonusLine(L["Fear"], item.Fear, mult));
+        if (phpLines.Count > 0)
+        {
+            lines.Add("");
+            lines.Add(L["Prestige / Honor / Fear"] + ":");
+            lines.AddRange(phpLines);
+        }
+
+        var ppbLines = new List<string>();
+        foreach (var info in PpbCatalog.All)
+        {
+            var add = item.Additive[info.Key];
+            var pct = item.Percent[info.Key];
+            if (add == 0m && pct == 0m)
+                continue;
+            var parts = new List<string>();
+            if (add != 0m)
+                parts.Add(FmtAdd(add));
+            if (pct != 0m)
+                parts.Add(FmtPct(pct));
+            ppbLines.Add($"{info.Name}: {string.Join(" · ", parts)}");
+        }
+
+        if (ppbLines.Count > 0)
+        {
+            lines.Add("");
+            if (room.ContributesPpb)
+                lines.Add(L["Domain PPB (active):"]);
+            else
+                lines.Add(L["Domain PPB (inactive — chamber is a ruin):"]);
+            lines.AddRange(ppbLines);
+        }
+        else if (phpLines.Count == 0)
+        {
+            lines.Add("");
+            lines.Add(L["No bonuses."]);
+        }
+
+        return string.Join("\n", lines);
+    }
+
+    private static string PhpBonusLine(string label, int baseValue, decimal multiplier)
+    {
+        var effective = (int)Math.Round(baseValue * multiplier, MidpointRounding.AwayFromZero);
+        var baseText = baseValue > 0 ? $"+{baseValue}" : baseValue.ToString();
+        var effectiveText = effective > 0 ? $"+{effective}" : effective.ToString();
+        if (multiplier == 1m || baseValue == 0)
+            return $"{label}: {effectiveText}";
+        return $"{label}: {baseText} × {multiplier:0.##} = {effectiveText}";
     }
 
     private string PurposeTooltip(SeatRoomDTO room)
@@ -814,6 +907,9 @@
             room.IsRuin ? L["Inactive (ruin) — excluded from totals."] : L["Active"],
             $"{L["Prestige multiplier"]}: ×{room.PrestigeMultiplier:0.##}",
         };
+        var items = BaronyCalc.PlacedArtifactsInRoom(Artifacts, room.Id);
+        if (items.Count > 0)
+            lines.Add(L["Items: {0}", string.Join(", ", items.Select(a => a.Name))]);
         if (room.GridW > 0 && room.GridH > 0)
             lines.Add($"Grid: ({room.GridX},{room.GridY}) {room.GridW}×{room.GridH}");
         if (layoutIssue != SeatRoomLayoutIssue.None)

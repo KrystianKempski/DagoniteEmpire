@@ -172,6 +172,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("BaronyId")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("CharacterId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Description")
                         .HasColumnType("text");
 
@@ -189,6 +192,15 @@ namespace DA_DataAccess.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CharacterId")
+                        .IsUnique()
+                        .HasFilter("\"CharacterId\" IS NOT NULL");
+
+                    b.HasIndex("BaronyId", "CharacterId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_AvailableAdvisors_BaronyId_CharacterId")
+                        .HasFilter("\"CharacterId\" IS NOT NULL");
+
                     b.ToTable("AvailableAdvisors");
                 });
 
@@ -202,6 +214,10 @@ namespace DA_DataAccess.Migrations
 
                     b.Property<int>("BaronyId")
                         .HasColumnType("integer");
+
+                    b.Property<string>("AdditiveJson")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("Description")
                         .HasColumnType("text");
@@ -221,6 +237,10 @@ namespace DA_DataAccess.Migrations
                         .HasColumnType("text");
 
                     b.Property<string>("Origin")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("PercentJson")
                         .IsRequired()
                         .HasColumnType("text");
 
@@ -720,6 +740,10 @@ namespace DA_DataAccess.Migrations
 
                     b.Property<bool>("PlayerTurnReady")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("CommanderSheetJson")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<int>("Prestige")
                         .HasColumnType("integer");
@@ -1243,6 +1267,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<int?>("CaptainAvailableAdvisorId")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("CaptainIsBaron")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("CombatOtherJson")
                         .IsRequired()
                         .HasColumnType("text");
@@ -1257,6 +1284,16 @@ namespace DA_DataAccess.Migrations
                         .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("CurrentHp")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CurrentAction")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("ActionTrainingJc")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("ActionDemobilizeTroops")
                         .HasColumnType("integer");
 
                     b.Property<string>("DefenseSkillKey")
