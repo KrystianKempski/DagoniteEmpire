@@ -71,15 +71,19 @@ Each ability carries a **status**: `in-code` (effect wired in battle),
 Requirements are per **branch + tier**, not per ability — every ability in a
 tier shares the same skill gate (`CourtCommanderCatalog.FindTierRequirement`).
 
+**PC / linked characters** use Absolute skill totals (`SumAbsolute`) from
+`characterRequirements`. Court-only sheets use the mapped `requirements`
+(Armor → Athletics, Perception → Observation; Riding/Athletics capped at secondary max 6).
+
 | Branch | T1 | T2 | T3 |
 |---|---|---|---|
 | Trunk | Command ≥ 4 | Command ≥ 6 | Command ≥ 8 |
-| Shock | Athletics ≥ 2, Riding ≥ 2 | Athletics ≥ 3, Riding ≥ 3 | Athletics ≥ 5, Riding ≥ 5 |
-| Line | Athletics ≥ 2, Melee ≥ 5 | Athletics ≥ 3, Melee ≥ 6 | Athletics ≥ 5, Melee ≥ 8 |
-| Skirmish | Acrobatics ≥ 2, Shooting ≥ 5 | Acrobatics ≥ 3, Shooting ≥ 6 | Acrobatics ≥ 5, Shooting ≥ 8 |
-| Cunning | Deceit ≥ 5, Observation ≥ 2 | Deceit ≥ 6, Observation ≥ 3 | Deceit ≥ 8, Observation ≥ 5 |
+| Shock | Melee ≥ 2, Riding ≥ 5 | Melee ≥ 3, Riding ≥ 8 | Melee ≥ 5, Riding ≥ 12 |
+| Line | Armor ≥ 5, Melee ≥ 2 | Armor ≥ 8, Melee ≥ 3 | Armor ≥ 12, Melee ≥ 5 |
+| Skirmish | Shooting ≥ 2, Acrobatics ≥ 2 | Shooting ≥ 3, Acrobatics ≥ 3 | Shooting ≥ 5, Acrobatics ≥ 5 |
+| Cunning | Deceit ≥ 2, Perception ≥ 2 | Deceit ≥ 3, Perception ≥ 3 | Deceit ≥ 5, Perception ≥ 5 |
 
-(“Riding” maps to the `animal-handling-riding` secondary skill.)
+(“Riding” / “Armor” on a PC are special skills; court sheets map Riding → `animal-handling-riding`, Armor → Athletics.)
 
 ## CX
 

@@ -18,6 +18,8 @@ public sealed class CourtCommanderSkillRequirement
     public string SkillKey { get; init; } = string.Empty;
     public int Min { get; init; }
     public bool IsMain { get; init; }
+    /// <summary>For character gates: <c>base</c> or <c>special</c>. Court sheet uses <see cref="IsMain"/>.</summary>
+    public string Kind { get; init; } = string.Empty;
 }
 
 /// <summary>Skill requirements shared by every ability in a branch+tier (model B, v2).</summary>
@@ -28,6 +30,9 @@ public sealed class CourtCommanderTierRequirement
     public int CxCost { get; init; } = 1;
     public string RequirementsText { get; init; } = string.Empty;
     public IReadOnlyList<CourtCommanderSkillRequirement> Requirements { get; init; } =
+        Array.Empty<CourtCommanderSkillRequirement>();
+    /// <summary>PC / linked character Absolute skill floors (preferred when a character sheet is present).</summary>
+    public IReadOnlyList<CourtCommanderSkillRequirement> CharacterRequirements { get; init; } =
         Array.Empty<CourtCommanderSkillRequirement>();
 }
 
@@ -196,12 +201,10 @@ public static class CourtCommanderCatalog
                 CxCost = t.CxCost > 0 ? t.CxCost : CxCostForTier(t.Tier),
                 RequirementsText = t.RequirementsText ?? string.Empty,
                 Requirements = (t.Requirements ?? new List<RequirementDto>())
-                    .Select(r => new CourtCommanderSkillRequirement
-                    {
-                        SkillKey = ResolveSkillKey(r.Skill ?? string.Empty),
-                        Min = r.Min,
-                        IsMain = string.Equals(r.Kind, "main", StringComparison.OrdinalIgnoreCase),
-                    })
+                    .Select(MapCourtRequirement)
+                    .ToList(),
+                CharacterRequirements = (t.CharacterRequirements ?? new List<RequirementDto>())
+                    .Select(MapCharacterRequirement)
                     .ToList(),
             })
             .ToList();
@@ -225,6 +228,30 @@ public static class CourtCommanderCatalog
         return new TreeData { Abilities = abilities, TierRequirements = tierRequirements };
     }
 
+    private static CourtCommanderSkillRequirement MapCourtRequirement(RequirementDto r)
+    {
+        var kind = (r.Kind ?? string.Empty).Trim().ToLowerInvariant();
+        return new CourtCommanderSkillRequirement
+        {
+            SkillKey = ResolveSkillKey(r.Skill ?? string.Empty),
+            Min = r.Min,
+            IsMain = kind is "main",
+            Kind = kind,
+        };
+    }
+
+    private static CourtCommanderSkillRequirement MapCharacterRequirement(RequirementDto r)
+    {
+        var kind = (r.Kind ?? "base").Trim().ToLowerInvariant();
+        return new CourtCommanderSkillRequirement
+        {
+            SkillKey = (r.Skill ?? string.Empty).Trim(),
+            Min = r.Min,
+            IsMain = false,
+            Kind = kind is "special" ? "special" : "base",
+        };
+    }
+
     // JSON uses display / PascalCase skill names; map them onto our stable skill keys.
     private static string ResolveSkillKey(string skill)
     {
@@ -234,6 +261,10 @@ public static class CourtCommanderCatalog
         if (name.Equals("Riding", StringComparison.OrdinalIgnoreCase)
             || name.Equals("AnimalHandlingRiding", StringComparison.OrdinalIgnoreCase))
             return CourtSecondarySkill.AnimalHandlingRiding;
+        if (name.Equals("Armor", StringComparison.OrdinalIgnoreCase))
+            return CourtSecondarySkill.Athletics;
+        if (name.Equals("Perception", StringComparison.OrdinalIgnoreCase))
+            return CourtSecondarySkill.Observation;
 
         var lower = name.ToLowerInvariant();
         if (CourtSkillCatalog.FindMain(lower) is { } main)
@@ -272,6 +303,7 @@ public static class CourtCommanderCatalog
         public int CxCost { get; set; }
         public string? RequirementsText { get; set; }
         public List<RequirementDto>? Requirements { get; set; }
+        public List<RequirementDto>? CharacterRequirements { get; set; }
     }
 
     private sealed class RequirementDto
@@ -315,6 +347,24 @@ public static class CourtCommanderFormulas
         return true;
     }
 
+    /// <summary>
+    /// When <paramref name="meetsCharacterSkills"/> is provided and returns a non-null result,
+    /// that result is used instead of the court-sheet skill gate (PC / linked characters).
+    /// </summary>
+    public static bool MeetsSkillRequirements(
+        CourtCharacterSheet sheet,
+        CourtCommanderAbility ability,
+        Func<CourtCommanderAbility, bool?>? meetsCharacterSkills)
+    {
+        if (meetsCharacterSkills is not null)
+        {
+            var characterResult = meetsCharacterSkills(ability);
+            if (characterResult is not null)
+                return characterResult.Value;
+        }
+        return MeetsSkillRequirements(sheet, ability);
+    }
+
     public static bool MeetsBranchGates(CourtCharacterSheet sheet, CourtCommanderAbility ability)
     {
         var unlocked = sheet.UnlockedCommanderAbilities
@@ -353,7 +403,14 @@ public static class CourtCommanderFormulas
         return inBranchT2 >= 1 && trunkT2 >= 1;
     }
 
-    public static bool CanUnlock(CourtCharacterSheet sheet, string abilityKey, out string? reason)
+    public static bool CanUnlock(CourtCharacterSheet sheet, string abilityKey, out string? reason) =>
+        CanUnlock(sheet, abilityKey, out reason, meetsCharacterSkills: null);
+
+    public static bool CanUnlock(
+        CourtCharacterSheet sheet,
+        string abilityKey,
+        out string? reason,
+        Func<CourtCommanderAbility, bool?>? meetsCharacterSkills)
     {
         reason = null;
         var ability = CourtCommanderCatalog.Find(abilityKey);
@@ -376,7 +433,7 @@ public static class CourtCommanderFormulas
             return false;
         }
 
-        if (!MeetsSkillRequirements(sheet, ability))
+        if (!MeetsSkillRequirements(sheet, ability, meetsCharacterSkills))
         {
             reason = "Skill requirements not met.";
             return false;
@@ -397,9 +454,16 @@ public static class CourtCommanderFormulas
         return true;
     }
 
-    public static bool TryUnlock(CourtCharacterSheet sheet, string abilityKey, out string? error)
+    public static bool TryUnlock(CourtCharacterSheet sheet, string abilityKey, out string? error) =>
+        TryUnlock(sheet, abilityKey, out error, meetsCharacterSkills: null);
+
+    public static bool TryUnlock(
+        CourtCharacterSheet sheet,
+        string abilityKey,
+        out string? error,
+        Func<CourtCommanderAbility, bool?>? meetsCharacterSkills)
     {
-        if (!CanUnlock(sheet, abilityKey, out error))
+        if (!CanUnlock(sheet, abilityKey, out error, meetsCharacterSkills))
             return false;
         sheet.UnlockedCommanderAbilities.Add(CourtCommanderCatalog.Find(abilityKey)!.Key);
         sheet.Normalize();

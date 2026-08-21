@@ -98,7 +98,7 @@ namespace DA_Common.Barony
             v[Ppb.Corruption] = -Avg3(
                 Spec(Skills.Vigilance),
                 Spec(Skills.Gambling),
-                Spec(Skills.Acting)) / 3m;
+                Spec(Skills.Acting));
 
             v[Ppb.Science] = Base(Skills.Knowledge) + Attr(Attrs.Intelligence);
 
@@ -197,7 +197,7 @@ namespace DA_Common.Barony
             Ppb.Loyalty => Loc.T("= {0}", Avg3Formula(Skills.Bluff, Skills.PublicSpeech, Skills.SenseMotives)),
             Ppb.Stability => Loc.T("= {0}", Avg3Formula(Skills.Intimidate, Skills.HistoryAndReligion, Skills.Persuasion)),
             Ppb.Law => Loc.T("= {0}", Avg3Formula(Skills.Investigation, Skills.Observation, Skills.Tracking)),
-            Ppb.Corruption => Loc.T("= −({0}) / 9", Avg3Formula(Skills.Vigilance, Skills.Gambling, Skills.Acting)),
+            Ppb.Corruption => Loc.T("= −{0}", Avg3Formula(Skills.Vigilance, Skills.Gambling, Skills.Acting)),
             Ppb.Science => Loc.T("= {0} + {1} mod", Loc.T(Skills.Knowledge), Loc.T(Attrs.Intelligence)),
             Ppb.Magic => Loc.T("= {0} + {1} mod", Loc.T(Skills.Magic), Loc.T(Attrs.Willpower)),
             Ppb.Culture => Loc.T("= {0}", Avg3Formula(Skills.FineArts, Skills.Linguistics, Skills.Diplomacy)),

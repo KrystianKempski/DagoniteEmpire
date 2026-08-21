@@ -1,4 +1,7 @@
+using DA_Business.Repository.BaronyRepos;
+using DA_Common;
 using DA_Common.Barony;
+using DA_Models.CharacterModels;
 
 namespace DA_Business.Tests.Barony;
 
@@ -18,7 +21,17 @@ public class CourtCommanderFormulasTests
         var shockT1 = CourtCommanderCatalog.FindTierRequirement(CourtCommanderBranch.Shock, 1);
         Assert.NotNull(shockT1);
         Assert.Contains(shockT1!.Requirements,
-            r => !r.IsMain && r.SkillKey == CourtSecondarySkill.AnimalHandlingRiding && r.Min == 2);
+            r => r.IsMain && r.SkillKey == CourtMainSkill.Melee && r.Min == 2);
+        Assert.Contains(shockT1.Requirements,
+            r => !r.IsMain && r.SkillKey == CourtSecondarySkill.AnimalHandlingRiding && r.Min == 5);
+        Assert.Contains(shockT1.CharacterRequirements,
+            r => r.SkillKey == "Melee" && r.Min == 2 && r.Kind == "base");
+        Assert.Contains(shockT1.CharacterRequirements,
+            r => r.SkillKey == "Riding" && r.Min == 5 && r.Kind == "special");
+
+        var lineT2 = CourtCommanderCatalog.FindTierRequirement(CourtCommanderBranch.Line, 2);
+        Assert.Contains(lineT2!.CharacterRequirements,
+            r => r.SkillKey == "Armor" && r.Min == 8 && r.Kind == "special");
     }
 
     [Fact]
@@ -84,8 +97,8 @@ public class CourtCommanderFormulasTests
         sheet.Secondary =
         [
             new CourtSecondaryEntry { Key = CourtSecondarySkill.Acrobatics, Value = 3 },
-            new CourtSecondaryEntry { Key = CourtSecondarySkill.Athletics, Value = 3 },
-            new CourtSecondaryEntry { Key = CourtSecondarySkill.AnimalHandlingRiding, Value = 3 },
+            new CourtSecondaryEntry { Key = CourtSecondarySkill.Athletics, Value = 5 },
+            new CourtSecondaryEntry { Key = CourtSecondarySkill.AnimalHandlingRiding, Value = 5 },
             new CourtSecondaryEntry { Key = CourtSecondarySkill.Observation, Value = 3 },
         ];
         sheet.Main[CourtMainSkill.Deceit] = 6;
@@ -107,6 +120,7 @@ public class CourtCommanderFormulasTests
     {
         var sheet = CourtCharacterSheet.CreateDefault();
         sheet.Main[CourtMainSkill.Command] = 10;
+        sheet.Main[CourtMainSkill.Melee] = 5;
         sheet.Secondary =
         [
             new CourtSecondaryEntry { Key = CourtSecondarySkill.Athletics, Value = 6 },
@@ -214,7 +228,7 @@ public class CourtCommanderFormulasTests
     {
         var sheet = CourtCharacterSheet.CreateDefault();
         sheet.Main[CourtMainSkill.Melee] = 6;
-        sheet.Secondary = [new CourtSecondaryEntry { Key = CourtSecondarySkill.Athletics, Value = 3 }];
+        sheet.Secondary = [new CourtSecondaryEntry { Key = CourtSecondarySkill.Athletics, Value = 5 }];
         sheet.CommanderXp = 10;
         Assert.True(CourtCommanderFormulas.TryUnlock(sheet, "shield-wall-basics", out var e), e);
 
@@ -269,6 +283,7 @@ public class CourtCommanderFormulasTests
     {
         var sheet = CourtCharacterSheet.CreateDefault();
         sheet.Main[CourtMainSkill.Command] = 10;
+        sheet.Main[CourtMainSkill.Melee] = 5;
         sheet.Secondary =
         [
             new CourtSecondaryEntry { Key = CourtSecondarySkill.Athletics, Value = 6 },
@@ -285,5 +300,29 @@ public class CourtCommanderFormulasTests
 
         // Third Tier-3 is blocked by the max of two per captain.
         Assert.False(CourtCommanderFormulas.CanUnlock(sheet, "overrun", out _));
+    }
+
+    [Fact]
+    public void CharacterAbsoluteSkills_GateShockTier()
+    {
+        var sheet = CourtCharacterSheet.CreateDefault();
+        sheet.CommanderXp = 10;
+        // Court sheet alone is below Riding ≥ 5.
+        Assert.False(CourtCommanderFormulas.CanUnlock(sheet, "shock-lance", out _));
+
+        var riding = new SpecialSkillDTO { Name = SD.SpecialSkills.AnimalHandle.Riding, BaseBonus = 4 };
+        var character = new CharacterDTO
+        {
+            BaseSkills =
+            [
+                new BaseSkillDTO { Name = SD.BaseSkills.Melee, BaseBonus = 2 },
+            ],
+            SpecialSkills = [riding],
+        };
+        var gate = CommanderCxFormulas.CharacterSkillGate(character);
+        Assert.False(CourtCommanderFormulas.CanUnlock(sheet, "shock-lance", out _, gate));
+
+        riding.BaseBonus = 5;
+        Assert.True(CourtCommanderFormulas.CanUnlock(sheet, "shock-lance", out var reason, gate), reason);
     }
 }

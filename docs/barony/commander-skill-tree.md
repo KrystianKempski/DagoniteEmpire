@@ -11,18 +11,18 @@ Status: `in-code` | `proposal` (★) | `draft` (◆ new from tree notes)
 | trunk | 1 | 1 | Command ≥ 4 |
 | trunk | 2 | 2 | Command ≥ 6 |
 | trunk | 3 | 3 | Command ≥ 8 |
-| shock | 1 | 1 | Athletics ≥ 2, Riding ≥ 2 |
-| shock | 2 | 2 | Athletics ≥ 3, Riding ≥ 3 |
-| shock | 3 | 3 | Athletics ≥ 5, Riding ≥ 5 |
-| line | 1 | 1 | Athletics ≥ 2, Melee ≥ 5 |
-| line | 2 | 2 | Athletics ≥ 3, Melee ≥ 6 |
-| line | 3 | 3 | Athletics ≥ 5, Melee ≥ 8 |
-| skirmish | 1 | 1 | Acrobatics ≥ 2, Shooting ≥ 5 |
-| skirmish | 2 | 2 | Acrobatics ≥ 3, Shooting ≥ 6 |
-| skirmish | 3 | 3 | Acrobatics ≥ 5, Shooting ≥ 8 |
-| cunning | 1 | 1 | Deceit ≥ 5, Observation ≥ 2 |
-| cunning | 2 | 2 | Deceit ≥ 6, Observation ≥ 3 |
-| cunning | 3 | 3 | Deceit ≥ 8, Observation ≥ 5 |
+| shock | 1 | 1 | Melee ≥ 2, Riding ≥ 5 |
+| shock | 2 | 2 | Melee ≥ 3, Riding ≥ 8 |
+| shock | 3 | 3 | Melee ≥ 5, Riding ≥ 12 |
+| line | 1 | 1 | Armor ≥ 5, Melee ≥ 2 |
+| line | 2 | 2 | Armor ≥ 8, Melee ≥ 3 |
+| line | 3 | 3 | Armor ≥ 12, Melee ≥ 5 |
+| skirmish | 1 | 1 | Shooting ≥ 2, Acrobatics ≥ 2 |
+| skirmish | 2 | 2 | Shooting ≥ 3, Acrobatics ≥ 3 |
+| skirmish | 3 | 3 | Shooting ≥ 5, Acrobatics ≥ 5 |
+| cunning | 1 | 1 | Deceit ≥ 2, Perception ≥ 2 |
+| cunning | 2 | 2 | Deceit ≥ 3, Perception ≥ 3 |
+| cunning | 3 | 3 | Deceit ≥ 5, Perception ≥ 5 |
 
 ## Progression gates (unchanged)
 

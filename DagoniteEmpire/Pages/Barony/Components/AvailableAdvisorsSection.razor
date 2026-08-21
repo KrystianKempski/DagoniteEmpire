@@ -1,5 +1,8 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Business.Repository.CharacterReps.IRepository
+@using DA_Models.CharacterModels
 @inject IDialogService _dialogService
+@inject ICharacterRepository _characterRepo
 @inject NavigationManager _nav
 
 <BaronySection Title="@(L["Court"])">
@@ -573,6 +576,19 @@
     private async Task OpenCommanderTreeAsync(AvailableAdvisorDTO person)
     {
         var sheet = person.Sheet ?? CourtCharacterSheet.CreateDefault();
+        CharacterDTO? character = null;
+        if (person.CharacterId is > 0)
+        {
+            try
+            {
+                character = await _characterRepo.GetById(person.CharacterId.Value, fullIncludes: true);
+            }
+            catch
+            {
+                character = null;
+            }
+        }
+
         var dialog = await _dialogService.ShowAsync<CourtCommanderTreeDialog>(
             $"{person.Name} — commander tree",
             new DialogParameters<CourtCommanderTreeDialog>
@@ -580,6 +596,7 @@
                 { x => x.Sheet, sheet },
                 { x => x.CanManage, CanManage },
                 { x => x.CanEdit, CanEdit },
+                { x => x.Character, character },
             },
             new DialogOptions { MaxWidth = MaxWidth.False, FullWidth = false, CloseOnEscapeKey = true });
         var result = await dialog.Result;

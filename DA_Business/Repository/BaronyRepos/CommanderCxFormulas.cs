@@ -1,3 +1,4 @@
+using DA_Common;
 using DA_Common.Barony;
 using DA_Models.CharacterModels;
 
@@ -14,7 +15,27 @@ namespace DA_Business.Repository.BaronyRepos
         public const int CourtSheetMultiplier = 4;
 
         /// <summary>Permanent special-skill total (excludes wounds and temporary bonuses on the skill).</summary>
-        public static int PermanentSpecialSkill(CharacterDTO? character, string skillName)
+        public static int PermanentSpecialSkill(CharacterDTO? character, string skillName) =>
+            AbsoluteSpecialSkill(character, skillName);
+
+        /// <summary>Base skill Absolute total (no temp / wounds).</summary>
+        public static int AbsoluteBaseSkill(CharacterDTO? character, string skillName)
+        {
+            if (character?.BaseSkills is null || string.IsNullOrWhiteSpace(skillName))
+                return 0;
+
+            CharacterSkillRelations.Wire(character);
+            foreach (var s in character.BaseSkills)
+            {
+                if (!string.Equals(s.Name, skillName, StringComparison.OrdinalIgnoreCase))
+                    continue;
+                return Math.Max(0, s.SumAbsolute);
+            }
+            return 0;
+        }
+
+        /// <summary>Special skill Absolute total (no temp / wounds).</summary>
+        public static int AbsoluteSpecialSkill(CharacterDTO? character, string skillName)
         {
             if (character?.SpecialSkills is null || string.IsNullOrWhiteSpace(skillName))
                 return 0;
@@ -24,9 +45,60 @@ namespace DA_Business.Repository.BaronyRepos
             {
                 if (!string.Equals(s.Name, skillName, StringComparison.OrdinalIgnoreCase))
                     continue;
-                return Math.Max(0, s.SumBonus - s.TempBonuses - s.HealthBonus);
+                return Math.Max(0, s.SumAbsolute);
             }
             return 0;
+        }
+
+        /// <summary>
+        /// When the tier lists characterRequirements, evaluate them with Absolute skill totals.
+        /// Returns null when the court-sheet gate should be used instead.
+        /// </summary>
+        public static bool? MeetsCharacterCommanderRequirements(
+            CharacterDTO? character,
+            CourtCommanderAbility ability)
+        {
+            if (character is null)
+                return null;
+
+            var tier = CourtCommanderCatalog.FindTierRequirement(ability.Branch, ability.Tier);
+            if (tier is null || tier.CharacterRequirements.Count == 0)
+                return null;
+
+            CharacterSkillRelations.Wire(character);
+            foreach (var req in tier.CharacterRequirements)
+            {
+                var value = ResolveCharacterRequirementValue(character, req);
+                if (value < req.Min)
+                    return false;
+            }
+            return true;
+        }
+
+        public static Func<CourtCommanderAbility, bool?>? CharacterSkillGate(CharacterDTO? character)
+        {
+            if (character is null)
+                return null;
+            return ability => MeetsCharacterCommanderRequirements(character, ability);
+        }
+
+        private static int ResolveCharacterRequirementValue(
+            CharacterDTO character,
+            CourtCommanderSkillRequirement req)
+        {
+            var key = req.SkillKey.Trim();
+            if (string.Equals(req.Kind, "special", StringComparison.OrdinalIgnoreCase))
+            {
+                // JSON uses short names; map onto SD special-skill names.
+                if (key.Equals("Riding", StringComparison.OrdinalIgnoreCase))
+                    return AbsoluteSpecialSkill(character, SD.SpecialSkills.AnimalHandle.Riding);
+                if (key.Equals("Armor", StringComparison.OrdinalIgnoreCase))
+                    return AbsoluteSpecialSkill(character, SD.SpecialSkills.Athletics.Armor);
+                return AbsoluteSpecialSkill(character, key);
+            }
+
+            // Base skills: Melee, Shooting, Acrobatics, Deceit, Perception, …
+            return AbsoluteBaseSkill(character, key);
         }
 
         public static int BaseCxFromCharacter(CharacterDTO? character)

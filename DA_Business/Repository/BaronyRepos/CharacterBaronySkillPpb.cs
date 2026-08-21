@@ -5,6 +5,7 @@ namespace DA_Business.Repository.BaronyRepos
 {
     /// <summary>
     /// Domain skill units from a full character sheet (same formulas as the baron).
+    /// Uses Absolute skill totals (no temp / wounds).
     /// </summary>
     public static class CharacterBaronySkillPpb
     {
@@ -22,7 +23,7 @@ namespace DA_Business.Repository.BaronyRepos
                 foreach (var s in character.SpecialSkills)
                 {
                     if (string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase))
-                        return s.SumBonus;
+                        return s.SumAbsolute;
                 }
                 return 0m;
             }
@@ -34,7 +35,7 @@ namespace DA_Business.Repository.BaronyRepos
                 foreach (var s in character.BaseSkills)
                 {
                     if (string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase))
-                        return s.SumBonus;
+                        return s.SumAbsolute;
                 }
                 return 0m;
             }
