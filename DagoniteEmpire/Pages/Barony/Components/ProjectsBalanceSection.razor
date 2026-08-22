@@ -22,10 +22,8 @@
                 <table class="ppb-table ppb-table--resources ppb-table--advisors ppb-table--city-buildings ppb-table--decrees ppb-table--project-output ppb-table--projects-balance ppb-table--lined">
                     <colgroup>
                         <col class="projects-balance-col-name" />
-                        @foreach (var _ in _costColumns)
-                        {
-                            <col class="resource-col-ppb" />
-                        }
+                        <col class="projects-balance-col-ready" />
+                        <col class="projects-balance-col-allocated" />
                         @foreach (var _ in PpbCatalog.All)
                         {
                             <col class="ppb-pair-col" />
@@ -34,15 +32,13 @@
                     </colgroup>
                     <thead>
                         <tr>
-                            <th rowspan="3" class="ppb-row-label projects-balance-col-name">@L["Project"]</th>
-                            <th colspan="@_costColumns.Count" class="project-card__panel-title projects-balance-zone-title">@L["Cost"]</th>
+                            <th colspan="3" class="project-card__panel-title projects-balance-zone-title">@L["Cost"]</th>
                             <th colspan="@(PpbCatalog.All.Count * 2)" class="project-card__panel-title projects-balance-zone-title projects-balance-split-start">@L["Expected Output"]</th>
                         </tr>
                         <tr>
-                            @foreach (var info in _costColumns)
-                            {
-                                <th rowspan="2" class="projects-balance-subhead">@info.Short</th>
-                            }
+                            <th rowspan="2" class="ppb-row-label projects-balance-subhead projects-balance-col-name">@L["Project"]</th>
+                            <th rowspan="2" class="projects-balance-subhead projects-balance-col-ready">@L["Start"]</th>
+                            <th rowspan="2" class="projects-balance-subhead projects-balance-col-allocated">@L["Allocated"]</th>
                             @{
                                 var outputIndex = 0;
                             }
@@ -67,7 +63,6 @@
                     <tbody>
                         @foreach (var row in _rows)
                         {
-                            var activeCost = row.Project.GetActiveCost();
                             var outputCellIndex = 0;
                             <tr class="@RowClass(row.Project)">
                                 <td class="ppb-row-label projects-balance-col-name">
@@ -77,16 +72,64 @@
                                         @row.Project.Name
                                     </button>
                                 </td>
-                                @foreach (var info in _costColumns)
-                                {
-                                    <td class="projects-balance-zone--cost @PpbCellClass(info.Key, activeCost[info.Key])">@Fmt(activeCost[info.Key])</td>
-                                }
+                                <td class="projects-balance-zone--cost projects-balance-col-ready">
+                                    <div class="projects-balance-ready-cell">
+                                        <BaronyTooltip Text="@FundedTooltip(row.Project)">
+                                            <MudCheckBox T="bool"
+                                                         Value="@row.Project.IsFullyFundedForStart"
+                                                         Disabled="true"
+                                                         ReadOnly="true"
+                                                         Dense="true"
+                                                         Size="Size.Small"
+                                                         Color="Color.Default"
+                                                         Class="barony-checkbox projects-balance-funded-checkbox" />
+                                        </BaronyTooltip>
+                                    </div>
+                                </td>
+                                <td class="projects-balance-zone--cost projects-balance-col-allocated">
+                                    @if (row.Project.HasAnyAllocation)
+                                    {
+                                        <PpbSummaryChips Vector="@row.Project.Allocated"
+                                                         Columns="@AllocatedChipColumns(row.Project)"
+                                                         HideZero="true" />
+                                    }
+                                    else
+                                    {
+                                        <span class="projects-balance-empty">·</span>
+                                    }
+                                </td>
                                 @foreach (var info in PpbCatalog.All)
                                 {
                                     var hideOutput = row.Project.IsResultHiddenFromViewer(CanManage);
                                     <td class="projects-balance-output-cell @(hideOutput ? null : PpbCellClass(info.Key, row.Project.ResultAdditive[info.Key])) @(outputCellIndex == 0 ? "projects-balance-split-start" : null)">@(hideOutput ? "?" : FmtAdd(row.Project.ResultAdditive[info.Key]))</td>
                                     <td class="projects-balance-output-cell @(hideOutput ? null : PpbCellClass(info.Key, row.Project.ResultPercent[info.Key]))">@(hideOutput ? "?" : FmtPct(row.Project.ResultPercent[info.Key]))</td>
                                     outputCellIndex++;
+                                }
+                            </tr>
+                        }
+
+                        @if (_rows.Count > 0)
+                        {
+                            var totalOutputIndex = 0;
+                            <tr class="ppb-summary-row">
+                                <td class="ppb-row-label projects-balance-col-name">@L["Total"]</td>
+                                <td colspan="2" class="projects-balance-zone--cost projects-balance-col-allocated projects-balance-col-allocated--summary-span">
+                                    @if (!_allocatedTotal.IsEmpty)
+                                    {
+                                        <PpbSummaryChips Vector="@_allocatedTotal"
+                                                         Columns="@AllocatedTotalChipColumns()"
+                                                         HideZero="true" />
+                                    }
+                                    else
+                                    {
+                                        <span class="projects-balance-empty">·</span>
+                                    }
+                                </td>
+                                @foreach (var info in PpbCatalog.All)
+                                {
+                                    <td class="projects-balance-output-cell @PpbCellClass(info.Key, _outputAddTotal[info.Key]) @(totalOutputIndex == 0 ? "projects-balance-split-start" : null)">@FmtAdd(_outputAddTotal[info.Key])</td>
+                                    <td class="projects-balance-output-cell @PpbCellClass(info.Key, _outputPctTotal[info.Key])">@FmtPct(_outputPctTotal[info.Key])</td>
+                                    totalOutputIndex++;
                                 }
                             </tr>
                         }
@@ -98,10 +141,8 @@
                                 <td class="ppb-row-label projects-balance-col-name">
                                     <span>@BaronAudiencePpb.SummaryRowName</span>
                                 </td>
-                                @foreach (var info in _costColumns)
-                                {
-                                    <td class="projects-balance-zone--cost">·</td>
-                                }
+                                <td class="projects-balance-zone--cost projects-balance-col-ready">·</td>
+                                <td class="projects-balance-zone--cost projects-balance-col-allocated">·</td>
                                 @foreach (var info in PpbCatalog.All)
                                 {
                                     <td class="projects-balance-output-cell @PpbCellClass(info.Key, _audienceAdd[info.Key]) @(audienceOutputIndex == 0 ? "projects-balance-split-start" : null)">@FmtAdd(_audienceAdd[info.Key])</td>
@@ -118,10 +159,8 @@
                                 <td class="ppb-row-label projects-balance-col-name">
                                     <span>@BaronAdventurePpb.SummaryRowName</span>
                                 </td>
-                                @foreach (var info in _costColumns)
-                                {
-                                    <td class="projects-balance-zone--cost">·</td>
-                                }
+                                <td class="projects-balance-zone--cost projects-balance-col-ready">·</td>
+                                <td class="projects-balance-zone--cost projects-balance-col-allocated">·</td>
                                 @foreach (var info in PpbCatalog.All)
                                 {
                                     <td class="projects-balance-output-cell @PpbCellClass(info.Key, _adventureAdd[info.Key]) @(adventureOutputIndex == 0 ? "projects-balance-split-start" : null)">@FmtAdd(_adventureAdd[info.Key])</td>
@@ -144,10 +183,10 @@
     [Parameter] public int CurrentTurn { get; set; } = 1;
     [Parameter] public bool CanManage { get; set; }
 
-    /// <summary>Food … Defense + Gold (all cumulative resources used as project cost).</summary>
-    private static readonly IReadOnlyList<PpbInfo> _costColumns = ResourceCatalog.All;
-
     private List<BalanceRow> _rows = new();
+    private PpbVector _allocatedTotal = new();
+    private PpbVector _outputAddTotal = new();
+    private PpbVector _outputPctTotal = new();
     private PpbVector _audienceAdd = new();
     private PpbVector _audiencePct = new();
     private bool HasAudienceRow => !_audienceAdd.IsEmpty || !_audiencePct.IsEmpty;
@@ -168,6 +207,15 @@
             .ThenBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
             .Select(p => new BalanceRow { Project = p })
             .ToList();
+
+        _allocatedTotal = PpbVector.Sum(_rows.Select(r => r.Project.Allocated));
+
+        var fundedProjects = _rows
+            .Select(r => r.Project)
+            .Where(p => p.IsFullyFundedForStart && !p.IsResultHiddenFromViewer(CanManage))
+            .ToList();
+        _outputAddTotal = PpbVector.Sum(fundedProjects.Select(p => p.ResultAdditive));
+        _outputPctTotal = PpbVector.Sum(fundedProjects.Select(p => p.ResultPercent));
 
         BaronyCalc.AudienceCumulativeTotals(Audiences, CurrentTurn, out _audienceAdd, out _audiencePct);
         BaronyCalc.AdventureCumulativeTotals(Events, CurrentTurn, out _adventureAdd, out _adventurePct);
@@ -194,7 +242,21 @@
                 ? "projects-balance-tr--allocating"
                 : string.Empty;
 
-    private static string Fmt(decimal v) => v == 0m ? "·" : PpbFormat.Number(v);
+    private static IReadOnlyList<PpbInfo> AllocatedChipColumns(BaronyProjectDTO project) =>
+        project.ActiveCostColumns
+            .Where(info => project.Allocated[info.Key] > 0m)
+            .ToList();
+
+    private IReadOnlyList<PpbInfo> AllocatedTotalChipColumns() =>
+        ResourceCatalog.All
+            .Where(info => _allocatedTotal[info.Key] > 0m)
+            .ToList();
+
+    private string FundedTooltip(BaronyProjectDTO project) =>
+        project.IsFullyFundedForStart
+            ? L["Fully funded — enough resources allocated to begin the project."]
+            : L["Not fully funded yet."];
+
     private static string FmtAdd(decimal v) => v == 0m ? "·" : PpbFormat.Additive(v);
     private static string FmtPct(decimal v) => v == 0m ? "·" : PpbFormat.Percent(v);
     private static string PpbCellClass(Ppb key, decimal v) => PpbCellStyle.ValueClass(key, v);

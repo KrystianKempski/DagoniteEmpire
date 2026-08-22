@@ -3097,6 +3097,15 @@ button.barony-meta-bar__stat--clickable:focus-visible {
     width: 9rem;
 }
 
+.ppb-table--projects-balance col.projects-balance-col-ready {
+    width: 2.75rem;
+}
+
+.ppb-table--projects-balance col.projects-balance-col-allocated {
+    width: 10rem;
+    min-width: 8rem;
+}
+
 .ppb-table--projects-balance th.projects-balance-col-name,
 .ppb-table--projects-balance td.projects-balance-col-name {
     min-width: 9rem;
@@ -3123,6 +3132,17 @@ button.barony-meta-bar__stat--clickable:focus-visible {
     background: var(--barony-surface);
 }
 
+.ppb-table--projects-balance .ppb-summary-row td.projects-balance-col-allocated,
+.ppb-table--projects-balance .ppb-summary-row td.projects-balance-col-allocated--summary-span {
+    background: var(--barony-surface);
+}
+
+.ppb-table--projects-balance .ppb-summary-row td.projects-balance-col-allocated--summary-span {
+    text-align: left;
+    vertical-align: middle;
+    padding: 0.3rem 0.5rem;
+}
+
 .ppb-table--projects-balance .projects-balance-split-start {
     border-left: 1px solid var(--barony-border-strong);
 }
@@ -3145,6 +3165,27 @@ button.barony-meta-bar__stat--clickable:focus-visible {
 .ppb-table--projects-balance .projects-balance-zone--cost,
 .ppb-table--projects-balance .projects-balance-output-cell {
     text-align: center;
+}
+
+.ppb-table--projects-balance td.projects-balance-col-allocated {
+    text-align: left;
+    vertical-align: middle;
+    padding: 0.3rem 0.5rem;
+}
+
+.ppb-table--projects-balance td.projects-balance-col-ready {
+    vertical-align: middle;
+    padding: 0.2rem 0.35rem;
+}
+
+.projects-balance-ready-cell {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.projects-balance-empty {
+    color: var(--barony-muted);
 }
 
 .ppb-table--projects-balance thead th.projects-balance-output-head.ppb-subcol {
@@ -4984,7 +5025,7 @@ a.city-building-name-text--link:hover {
     font-weight: 600;
 }
 
-/* Barony-themed checkbox: amber/gold instead of MUI blue */
+/* Barony-themed checkbox: amber/gold instead of MudBlazor blue */
 .barony-checkbox .mud-checkbox-icons .mud-icon-root {
     color: rgba(47, 42, 36, 0.35);
 }
@@ -4997,6 +5038,43 @@ a.city-building-name-text--link:hover {
 }
 .barony-checkbox.mud-checkbox-true:hover .mud-checkbox-icons .mud-icon-root {
     color: #7a5e1e;
+}
+.barony-checkbox .mud-primary-text {
+    color: inherit;
+}
+
+/* Barony-themed switch (dialogs / relations / seat templates). */
+.barony-switch.mud-switch .mud-switch-track {
+    background-color: rgba(47, 42, 36, 0.12);
+    border: 1px solid var(--barony-border, #c3b696);
+    opacity: 1;
+}
+.barony-switch.mud-switch.mud-checked .mud-switch-track {
+    background-color: color-mix(in srgb, var(--barony-accent, #9c7a33) 40%, transparent);
+    border-color: var(--barony-accent, #9c7a33);
+}
+.barony-switch.mud-switch .mud-switch-thumb {
+    background-color: var(--barony-surface, #f7f1e4);
+    border: 1px solid var(--barony-border, #c3b696);
+    box-shadow: none;
+}
+.barony-switch.mud-switch.mud-checked .mud-switch-thumb {
+    background-color: var(--barony-accent, #9c7a33);
+    border-color: var(--barony-accent, #9c7a33);
+}
+.barony-switch .mud-primary-text {
+    color: inherit;
+}
+
+/* Barony-themed radio (luxury goods access tiers). */
+.barony-radio .mud-icon-root {
+    color: rgba(47, 42, 36, 0.35);
+}
+.barony-radio.mud-checked .mud-icon-root {
+    color: var(--barony-accent, #9c7a33) !important;
+}
+.barony-radio .mud-primary-text {
+    color: inherit;
 }
 
 .ppb-summary-row td {

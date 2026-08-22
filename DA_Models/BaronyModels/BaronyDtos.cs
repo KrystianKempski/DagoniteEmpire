@@ -444,6 +444,9 @@ namespace DA_Models.BaronyModels
         public bool HasRemainingCost =>
             ActiveCostColumns.Any(info => RemainingCost()[info.Key] > 0m);
 
+        /// <summary>True when the active cost track is fully allocated (ready to start).</summary>
+        public bool IsFullyFundedForStart => !HasRemainingCost;
+
         public bool CanAcceptAllocation =>
             Status is not (ProjectStatus.Completed or ProjectStatus.Cancelled) && HasRemainingCost;
 
