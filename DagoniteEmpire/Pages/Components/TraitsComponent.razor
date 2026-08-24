@@ -42,18 +42,31 @@
                     @if (IsInfoMode == false)
                     {
                     <td>
-                        <div class="row m-0">
+                        <div class="row m-0 action-buttons">
                             @if (obj.TraitApproved || obj.IsRemovable == false)
                             {
-                                <button @onclick="@(()=>EditTrait(obj))" class="col btn-small"><i class="fa-solid fa-info"></i></button>
+                                <MudIconButton Icon="@Icons.Material.Filled.Info"
+                                               Size="Size.Small"
+                                               Class="btn-small-mud"
+                                               OnClick="@(() => EditTrait(obj))"
+                                               aria-label="@(L["Info"])" />
                             }
                             else
                             {
-                                <button @onclick="@(()=>EditTrait(obj))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button>
+                                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                               Size="Size.Small"
+                                               Class="btn-small-mud"
+                                               OnClick="@(() => EditTrait(obj))"
+                                               aria-label="@(L["Edit"])" />
                             }
                             @if(obj.IsRemovable)
                             {
-                                <button @onclick="@(()=>DeleteTrait(obj))" class="col btn-small"><i class="fa-solid fa-trash"></i></button>                                        
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                               Size="Size.Small"
+                                               Color="Color.Error"
+                                               Class="btn-small-mud"
+                                               OnClick="@(() => DeleteTrait(obj))"
+                                               aria-label="@(L["Delete"])" />
                             }
                         </div>
                     </td>

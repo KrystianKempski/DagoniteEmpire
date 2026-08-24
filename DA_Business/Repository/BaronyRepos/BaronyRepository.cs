@@ -4289,6 +4289,7 @@ namespace DA_Business.Repository.BaronyRepos
                 {
                     BaronyId = request.BaronyId,
                     Name = request.Name.Trim(),
+                    IconKey = NormalizeUnitIconKey(request.IconKey),
                     Status = UnitStatus.Training,
                     TroopCount = UnitRules.DefaultTroopCount,
                     MaxTroopCount = UnitRules.DefaultTroopCount,
@@ -6160,6 +6161,7 @@ namespace DA_Business.Repository.BaronyRepos
             Id = e.Id,
             BaronyId = e.BaronyId,
             Name = e.Name,
+            IconKey = NormalizeUnitIconKey(e.IconKey),
             Status = e.Status,
             TroopCount = e.TroopCount,
             MaxTroopCount = e.MaxTroopCount > 0 ? e.MaxTroopCount : UnitRules.DefaultTroopCount,
@@ -6230,6 +6232,7 @@ namespace DA_Business.Repository.BaronyRepos
 
             e.BaronyId = d.BaronyId;
             e.Name = d.Name?.Trim() ?? string.Empty;
+            e.IconKey = NormalizeUnitIconKey(d.IconKey);
             e.Status = string.IsNullOrWhiteSpace(d.Status) ? UnitStatus.Training : d.Status.Trim();
             e.MaxTroopCount = Math.Clamp(
                 d.MaxTroopCount > 0 ? d.MaxTroopCount : UnitRules.DefaultTroopCount,
@@ -6545,6 +6548,16 @@ namespace DA_Business.Repository.BaronyRepos
                 ApplyUnit(unit, dto);
                 unit.UpdatedAtUtc = DateTime.UtcNow;
             }
+        }
+
+        private static string NormalizeUnitIconKey(string? key)
+        {
+            var trimmed = key?.Trim();
+            if (string.IsNullOrEmpty(trimmed))
+                return UnitRules.DefaultIconKey;
+            return BattleTokenIconCatalog.PathFor(trimmed) is not null
+                ? trimmed
+                : UnitRules.DefaultIconKey;
         }
 
         private static string? BuildGearDefenseNote(StartUnitTrainingRequest request)

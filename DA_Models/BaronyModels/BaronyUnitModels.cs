@@ -24,6 +24,8 @@ namespace DA_Models.BaronyModels
         public int Id { get; set; }
         public int BaronyId { get; set; }
         public string Name { get; set; } = string.Empty;
+        /// <summary>Battle-map token icon key (<see cref="DA_Common.Barony.BattleTokenIconCatalog"/>).</summary>
+        public string IconKey { get; set; } = DA_Common.Barony.UnitRules.DefaultIconKey;
         public string Status { get; set; } = DA_Common.Barony.UnitStatus.Training;
         public int TroopCount { get; set; } = DA_Common.Barony.UnitRules.DefaultTroopCount;
         /// <summary>Nominal full strength for this unit (casualty / reinforce / regen ceiling).</summary>
@@ -139,6 +141,7 @@ namespace DA_Models.BaronyModels
     {
         public int BaronyId { get; set; }
         public string Name { get; set; } = string.Empty;
+        public string IconKey { get; set; } = DA_Common.Barony.UnitRules.DefaultIconKey;
         public string RecruitSelectionKey { get; set; } = string.Empty;
         public string TrainingTypeKey { get; set; } = string.Empty;
         public string RaceKey { get; set; } = DA_Common.Barony.UnitRaceKey.Human;
@@ -178,6 +181,12 @@ namespace DA_Models.BaronyModels
     {
         public BaronyUnitDTO Unit { get; set; } = new();
         public BaronyProjectDTO Project { get; set; } = new();
+    }
+
+    public sealed class UnitIdentityEditResult
+    {
+        public string Name { get; init; } = string.Empty;
+        public string IconKey { get; init; } = DA_Common.Barony.UnitRules.DefaultIconKey;
     }
 
     /// <summary>Payload to create a Unit Reinforce project for an understrength Active unit.</summary>

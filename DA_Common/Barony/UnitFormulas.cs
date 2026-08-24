@@ -649,10 +649,10 @@ namespace DA_Common.Barony
             return remainingPd >= cost;
         }
 
-        public static bool CanRaiseSpecialSkill(int current, int parentBase, int remainingPd, out int cost)
+        public static bool CanRaiseSpecialSkill(int current, int parentTotal, int remainingPd, out int cost)
         {
             cost = UnitRules.SpecialSkillRaiseCost(current + 1);
-            if (current + 1 > parentBase)
+            if (current + 1 > parentTotal)
                 return false;
             return remainingPd >= cost;
         }

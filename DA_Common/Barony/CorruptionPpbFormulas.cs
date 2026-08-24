@@ -54,7 +54,6 @@ namespace DA_Common.Barony
         };
 
         public static string CatalogDescription =>
-            "Community penalty from Corruption. "
-            + $"Input = max(0, Final Corruption before Community).";
+            Loc.T("Community penalty from Corruption. Input = max(0, Final Corruption before Community).");
     }
 }

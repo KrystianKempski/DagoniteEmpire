@@ -154,8 +154,16 @@
         </tbody>
     </table>
 
-    <button @onclick="@(()=>AddSpecialSkill(BaseSkill))" class="add-skill"><i class="fa-solid fa-plus"></i></button>
-    <button @onclick="@(()=>RemoveSpecialSkill())" class="add-skill"><i class="fa-solid fa-minus"></i></button>
+    <MudIconButton Icon="@Icons.Material.Filled.Add"
+                   Size="Size.Small"
+                   Class="add-skill-mud"
+                   OnClick="@(() => AddSpecialSkill(BaseSkill))"
+                   aria-label="@(L["Add"])" />
+    <MudIconButton Icon="@Icons.Material.Filled.Remove"
+                   Size="Size.Small"
+                   Class="add-skill-mud"
+                   OnClick="@(() => RemoveSpecialSkill())"
+                   aria-label="@(L["Remove"])" />
     </MudPaper>
 </div>
 

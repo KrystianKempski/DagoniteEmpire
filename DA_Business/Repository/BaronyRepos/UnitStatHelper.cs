@@ -46,6 +46,14 @@ namespace DA_Business.Repository.BaronyRepos
             return totals;
         }
 
+        /// <summary>Base skill total (Base + Other). Caps specialization base rank when spending XP.</summary>
+        public static int BaseSkillTotal(BaronyUnitDTO dto, string baseSkillKey)
+        {
+            dto.SkillBase.TryGetValue(baseSkillKey, out var bas);
+            dto.SkillOther.TryGetValue(baseSkillKey, out var oth);
+            return bas + oth;
+        }
+
         /// <summary>Linked-attribute contribution shown in the Attr column (0 for pure base skills).</summary>
         public static int SkillAttrContribution(BaronyUnitDTO dto, UnitSkillDef def)
         {

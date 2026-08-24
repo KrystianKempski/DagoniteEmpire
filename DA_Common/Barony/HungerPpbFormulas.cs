@@ -71,7 +71,8 @@ namespace DA_Common.Barony
         };
 
         public static string CatalogDescription =>
-            "Community penalty only when Food stock + turn Food income would go below zero. "
-            + $"{InputLabel} = max(0, −(Food stock + Final Food before Community)).";
+            Loc.T(
+                "Community penalty only when Food stock + turn Food income would go below zero. {0} = max(0, −(Food stock + Final Food before Community)).",
+                Loc.T(InputLabel));
     }
 }

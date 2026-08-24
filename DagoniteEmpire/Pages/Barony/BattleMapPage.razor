@@ -874,7 +874,9 @@ else
             foreach (var u in _activeUnits)
             {
                 if (!_allyIconKeys.ContainsKey(u.Id))
-                    _allyIconKeys[u.Id] = "shield";
+                    _allyIconKeys[u.Id] = string.IsNullOrWhiteSpace(u.IconKey)
+                        ? "shield"
+                        : u.IconKey.Trim();
             }
             foreach (var t in Map.Tokens.Where(t => t.UnitId is int))
             {

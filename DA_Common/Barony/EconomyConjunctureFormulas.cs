@@ -96,10 +96,14 @@ namespace DA_Common.Barony
         {
             var conj = EffectiveConjuncture(conjunctureDice, conjunctureModifier);
             var modSign = conjunctureModifier >= 0 ? "+" : "";
-            return
-                $"This turn: Final Economy {PpbFormat.Number(economyAdditive)}, "
-                + $"Population {population}, "
-                + $"Conjuncture {conj} (2d6 {conjunctureDice}{modSign}{conjunctureModifier}).";
+            return Loc.T(
+                "This turn: Final Economy {0}, Population {1}, Conjuncture {2} (2d6 {3}{4}{5}).",
+                PpbFormat.Number(economyAdditive),
+                population,
+                conj,
+                conjunctureDice,
+                modSign,
+                conjunctureModifier);
         }
 
         public static string? ExplainPercent(Ppb key)
@@ -130,9 +134,10 @@ namespace DA_Common.Barony
         }
 
         public static string CatalogDescription =>
-            "Economy is a vital part of the barony. It is produced by the population and shapes many resources. "
-            + "It also depends on outside circumstances and a measure of chance. "
-            + "Depending on its condition, it can strengthen resource output or weaken it. "
-            + "Keeping Economy high is well worth the effort.";
+            Loc.T(
+                "Economy is a vital part of the barony. It is produced by the population and shapes many resources. "
+                + "It also depends on outside circumstances and a measure of chance. "
+                + "Depending on its condition, it can strengthen resource output or weaken it. "
+                + "Keeping Economy high is well worth the effort.");
     }
 }

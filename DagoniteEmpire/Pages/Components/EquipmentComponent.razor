@@ -42,17 +42,29 @@
                             <label class="text-label text-center">@obj.Weight.ToString("F1")</label>
                         </td>
                         <td class="text-center nobottomborder">
-                            <div class="row m-0">
+                            <div class="row m-0 action-buttons">
                                 @if (obj.Equipment.IsApproved == false)
                                 {
-                                    <button @onclick="@(()=>EditEquipment(obj))" class="col btn-small"><i class="fa-solid fa-pencil"></i></button>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                   Size="Size.Small"
+                                                   Class="btn-small-mud"
+                                                   OnClick="@(() => EditEquipment(obj))"
+                                                   aria-label="@(L["Edit"])" />
                                 }
                                 else
                                 {
-                                    <button @onclick="@(()=>EditEquipment(obj))" class="col btn-small"><i class="fa-solid fa-info"></i></button>
+                                    <MudIconButton Icon="@Icons.Material.Filled.Info"
+                                                   Size="Size.Small"
+                                                   Class="btn-small-mud"
+                                                   OnClick="@(() => EditEquipment(obj))"
+                                                   aria-label="@(L["Info"])" />
                                 }
-                                <button @onclick="@(()=>DeleteEquipment(obj))" class="col btn-small"><i class="fa-solid fa-trash"></i></button>
-
+                                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                               Size="Size.Small"
+                                               Color="Color.Error"
+                                               Class="btn-small-mud"
+                                               OnClick="@(() => DeleteEquipment(obj))"
+                                               aria-label="@(L["Delete"])" />
                             </div>
                         </td>
                     </tr>

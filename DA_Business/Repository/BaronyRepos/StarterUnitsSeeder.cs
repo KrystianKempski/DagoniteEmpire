@@ -27,6 +27,7 @@ namespace DA_Business.Repository.BaronyRepos
             {
                 BaronyId = baronyId,
                 Name = CityWatchName,
+                IconKey = "spear",
                 Status = UnitStatus.Active,
                 TroopCount = UnitRules.DefaultTroopCount,
                 MaxTroopCount = UnitRules.DefaultTroopCount,
@@ -74,6 +75,7 @@ namespace DA_Business.Repository.BaronyRepos
             {
                 BaronyId = baronyId,
                 Name = BaronsGuardName,
+                IconKey = "sword",
                 Status = UnitStatus.Active,
                 TroopCount = 10,
                 MaxTroopCount = UnitRules.DefaultTroopCount,

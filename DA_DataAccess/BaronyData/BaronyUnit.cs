@@ -10,6 +10,8 @@ namespace DA_DataAccess.BaronyData
         public int BaronyId { get; set; }
 
         public string Name { get; set; } = string.Empty;
+        /// <summary>Battle-map token icon key (<see cref="BattleTokenIconCatalog"/>).</summary>
+        public string IconKey { get; set; } = DA_Common.Barony.UnitRules.DefaultIconKey;
         public string Status { get; set; } = DA_Common.Barony.UnitStatus.Training;
         public int TroopCount { get; set; } = DA_Common.Barony.UnitRules.DefaultTroopCount;
         /// <summary>Nominal full strength (default 50). MG may raise or lower per unit.</summary>

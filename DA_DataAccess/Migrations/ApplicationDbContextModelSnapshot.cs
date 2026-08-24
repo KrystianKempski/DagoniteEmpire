@@ -1356,6 +1356,10 @@ namespace DA_DataAccess.Migrations
                     b.Property<string>("MountKey")
                         .HasColumnType("text");
 
+                    b.Property<string>("IconKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");

@@ -143,8 +143,16 @@
             @if(IsInfoMode==false)
             {
                 <div class="d-flex">
-                    <button class="add-bonus-button" @onclick="OnAddBonusBtnClick"><i class="fa-solid fa-plus"></i></button>
-                    <button class="add-bonus-button" @onclick="OnDeleteBonusBtnClick"><i class="fa-solid fa-minus"></i></button>
+                    <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                   Size="Size.Small"
+                                   Class="add-bonus-button-mud"
+                                   OnClick="OnAddBonusBtnClick"
+                                   aria-label="@(L["Add"])" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Remove"
+                                   Size="Size.Small"
+                                   Class="add-bonus-button-mud"
+                                   OnClick="OnDeleteBonusBtnClick"
+                                   aria-label="@(L["Remove"])" />
                 </div>
             }
         <label class="warnign-message">@ErrorMessage</label>

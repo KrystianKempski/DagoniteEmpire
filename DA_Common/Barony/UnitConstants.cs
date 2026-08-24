@@ -164,6 +164,8 @@ namespace DA_Common.Barony
     public static class UnitRules
     {
         public const int DefaultTroopCount = 50;
+        /// <summary>Default battle-map / roster icon (<see cref="BattleTokenIconCatalog"/> key).</summary>
+        public const string DefaultIconKey = "shield";
         /// <summary>Hard ceiling when MG edits a unit's max troop count.</summary>
         public const int AbsoluteMaxTroopCount = 500;
         public const decimal DefaultUpkeepFood = 0.5m;

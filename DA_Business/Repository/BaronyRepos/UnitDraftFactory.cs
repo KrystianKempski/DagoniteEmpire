@@ -8,6 +8,7 @@ namespace DA_Business.Repository.BaronyRepos
     {
         public static BaronyUnitDTO FromGenerator(
             string? name,
+            string? iconKey,
             string recruitKey,
             string trainingKey,
             string? weapon1Key,
@@ -26,6 +27,7 @@ namespace DA_Business.Repository.BaronyRepos
             var dto = new BaronyUnitDTO
             {
                 Name = string.IsNullOrWhiteSpace(name) ? "Forming unit" : name.Trim(),
+                IconKey = NormalizeIconKey(iconKey),
                 Status = UnitStatus.Training,
                 TroopCount = UnitRules.DefaultTroopCount,
                 MaxTroopCount = UnitRules.DefaultTroopCount,
@@ -60,6 +62,16 @@ namespace DA_Business.Repository.BaronyRepos
             var combat = UnitStatHelper.Compute(dto);
             dto.CurrentHp = combat.MaxHp;
             return dto;
+        }
+
+        private static string NormalizeIconKey(string? key)
+        {
+            var trimmed = key?.Trim();
+            if (string.IsNullOrEmpty(trimmed))
+                return UnitRules.DefaultIconKey;
+            return BattleTokenIconCatalog.PathFor(trimmed) is not null
+                ? trimmed
+                : UnitRules.DefaultIconKey;
         }
     }
 }

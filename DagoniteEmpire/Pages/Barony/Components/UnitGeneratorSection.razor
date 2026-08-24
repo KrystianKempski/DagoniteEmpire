@@ -1,7 +1,9 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @using DA_Business.Repository.BaronyRepos
+@using DA_Common.Barony
 @inject IBaronyRepository _baronyRepo
 @inject ISnackbar _snackBar
+@inject IDialogService _dialogService
 
 <BaronySection Title="@(L["Unit generator"])">
     <Summary>
@@ -14,14 +16,24 @@
             <div class="unit-workshop__body">
                 @* ---- Left: costs + selectors ---- *@
                 <div class="unit-workshop__left">
-                    <MudTextField @bind-Value="_name"
-                                  @bind-Value:after="Recalc"
-                                  Immediate="true"
-                                  Label="@(L["Unit name"])"
-                                  Variant="Variant.Outlined"
-                                  Margin="Margin.Dense"
-                                  Disabled="@(!CanEdit)"
-                                  Class="baron-influence-field" />
+                    <div class="unit-workshop__identity">
+                        <BaronyTooltip Text="@(L["Choose icon"])">
+                            <button type="button"
+                                    class="unit-workshop__icon-btn"
+                                    disabled="@(!CanEdit)"
+                                    @onclick="PickIconAsync">
+                                <img src="/@GeneratorIconPath" alt="" />
+                            </button>
+                        </BaronyTooltip>
+                        <MudTextField @bind-Value="_name"
+                                      @bind-Value:after="Recalc"
+                                      Immediate="true"
+                                      Label="@(L["Unit name"])"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Disabled="@(!CanEdit)"
+                                      Class="baron-influence-field unit-workshop__name-field" />
+                    </div>
 
                     @* ---- Total cost (Excel “KOSZT CAŁKOWITY”) — above recruit/training ---- *@
                     <div class="unit-workshop__costs">
@@ -454,6 +466,7 @@
                     <UnitDraftCardPreview Unit="@_draft"
                                           TitleEyebrow="Forming unit"
                                           CanManageAsMg="@CanManageAsMg"
+                                          CanEditIdentity="@CanEdit"
                                           CanSpendPd="@CanEdit"
                                           SkillsChanged="OnDraftSkillsChanged"
                                           OnXpDraftChanged="OnDraftXpChanged" />
@@ -484,6 +497,7 @@
     [Parameter] public EventCallback<StartUnitTrainingResult> OnStarted { get; set; }
 
     private string _name = string.Empty;
+    private string _iconKey = UnitRules.DefaultIconKey;
     private string _recruitKey = UnitRecruitSelectionCatalog.BestAvailable.Key;
     private string _trainingKey = UnitTrainingTypeCatalog.Standard.Key;
     private string _weapon1 = "short-spears";
@@ -510,6 +524,11 @@
     private UnitArmorDef? _shieldDef;
     private UnitMountDef? _mountDef;
     private UnitRaceDef _race => UnitRaceCatalog.Find(_draft.RaceKey);
+
+    private string GeneratorIconPath =>
+        BattleTokenIconCatalog.PathFor(_iconKey)
+        ?? BattleTokenIconCatalog.PathFor(UnitRules.DefaultIconKey)
+        ?? "icons/shield.svg";
     private bool _sanitizingGear;
     private TradeGoodAvailabilitySnapshot? _availability;
 
@@ -785,7 +804,7 @@
         }
 
         _draft = UnitDraftFactory.FromGenerator(
-            _name, _recruitKey, _trainingKey,
+            _name, _iconKey, _recruitKey, _trainingKey,
             _weapon1, _weapon2, _armorKey, _shieldKey, _mountKey, _quality,
             _costs);
 
@@ -958,7 +977,32 @@
         return copy;
     }
 
-    private Task OnDraftSkillsChanged() => InvokeAsync(StateHasChanged);
+    private Task OnDraftSkillsChanged()
+    {
+        _iconKey = _draft.IconKey;
+        if (!string.IsNullOrWhiteSpace(_draft.Name) && !string.Equals(_draft.Name, "Forming unit", StringComparison.Ordinal))
+            _name = _draft.Name;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private async Task PickIconAsync()
+    {
+        if (!CanEdit) return;
+
+        var parameters = new DialogParameters
+        {
+            [nameof(BattleTokenIconPickerDialog.SelectedKey)] = _iconKey,
+        };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await _dialogService.ShowAsync<BattleTokenIconPickerDialog>(L["Choose icon"], parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not string key)
+            return;
+
+        _iconKey = key;
+        _draft.IconKey = key;
+        StateHasChanged();
+    }
 
     private Task OnDraftXpChanged()
     {
@@ -1016,6 +1060,7 @@
             {
                 BaronyId = BaronyId,
                 Name = _name.Trim(),
+                IconKey = _iconKey,
                 RecruitSelectionKey = _recruitKey,
                 TrainingTypeKey = _trainingKey,
                 RaceKey = _draft.RaceKey,
@@ -1046,6 +1091,7 @@
                 FreeAttributePoints = _draft.FreeAttributePoints,
             });
             _name = string.Empty;
+            _iconKey = UnitRules.DefaultIconKey;
             _draft.SkillBase.Clear();
             _draft.SkillOther.Clear();
             _draft.SkillOtherSources.Clear();

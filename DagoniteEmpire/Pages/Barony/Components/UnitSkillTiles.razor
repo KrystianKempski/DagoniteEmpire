@@ -240,6 +240,9 @@
         </div>
     };
 
+    private int ParentBaseSkillTotal(string parentKey) =>
+        UnitStatHelper.BaseSkillTotal(Unit, parentKey);
+
     private RenderFragment XpPlusSkill(UnitSkillDef def, int currentBase) => __builder =>
     {
         if (!CanSpendPd) return;
@@ -259,11 +262,11 @@
         else
         {
             var parentKey = def.ParentKey!;
-            Unit.SkillBase.TryGetValue(parentKey, out var parentBase);
+            var parentTotal = ParentBaseSkillTotal(parentKey);
             cost = UnitRules.SpecialSkillRaiseCost(currentBase + 1);
-            canRaise = currentBase + 1 <= parentBase && Unit.RemainingPd >= cost;
-            tip = currentBase + 1 > parentBase
-                ? L["{0} cannot exceed parent base ({1}).", def.DisplayName(L), parentBase].Value
+            canRaise = currentBase + 1 <= parentTotal && Unit.RemainingPd >= cost;
+            tip = currentBase + 1 > parentTotal
+                ? L["{0} cannot exceed parent total ({1}).", def.DisplayName(L), parentTotal].Value
                 : L["Raise {0} base to {1} — costs {2} XP", def.DisplayName(L), currentBase + 1, cost].Value + ".";
         }
 
@@ -468,11 +471,11 @@
         else
         {
             var parentKey = def.ParentKey!;
-            Unit.SkillBase.TryGetValue(parentKey, out var parentBase);
-            if (!UnitPdFormulas.CanRaiseSpecialSkill(current, parentBase, Unit.RemainingPd, out cost))
+            var parentTotal = ParentBaseSkillTotal(parentKey);
+            if (!UnitPdFormulas.CanRaiseSpecialSkill(current, parentTotal, Unit.RemainingPd, out cost))
             {
-                _snackBar.Add(current + 1 > parentBase
-                    ? "Special cannot exceed parent base skill."
+                _snackBar.Add(current + 1 > parentTotal
+                    ? L["Special cannot exceed parent skill total."].Value
                     : $"Need {cost} XP.", Severity.Warning);
                 return;
             }

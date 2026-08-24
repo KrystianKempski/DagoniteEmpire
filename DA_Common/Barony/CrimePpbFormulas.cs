@@ -66,8 +66,8 @@ namespace DA_Common.Barony
         };
 
         public static string CatalogDescription =>
-            "Crime is negative Law. "
-            + $"{InputLabel} = max(0, −Final Law): only when Law is below zero, and then equal to |Law|. "
-            + "Final Law includes Hunger and Unrest Law penalties (Crime itself does not change Law).";
+            Loc.T(
+                "Crime is negative Law. {0} = max(0, −Final Law): only when Law is below zero, and then equal to |Law|. Final Law includes Hunger and Unrest Law penalties (Crime itself does not change Law).",
+                Loc.T(InputLabel));
     }
 }

@@ -1,6 +1,7 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @using DA_Business.Repository.BaronyRepos
 @using DA_Common.Barony
+@using DA_Models.BaronyModels
 @inject ISnackbar _snackBar
 @inject IDialogService _dialogService
 
@@ -12,12 +13,27 @@
          aria-expanded="@(Collapsible ? _isOpen : null)">
         <div class="unit-draft-card__title-main">
             <span>@ResolvedTitleEyebrow</span>
-            @if (CanManageAsMg)
+            @if (CanEditIcon)
+            {
+                <BaronyTooltip Text="@(L["Choose icon"])">
+                    <button type="button"
+                            class="unit-draft-card__icon-btn"
+                            @onclick:stopPropagation="true"
+                            @onclick="PickIconAsync">
+                        <img class="unit-draft-card__icon-btn-img" src="/@UnitIconPath" alt="" />
+                    </button>
+                </BaronyTooltip>
+            }
+            else if (!string.IsNullOrWhiteSpace(Unit.IconKey))
+            {
+                <img class="unit-draft-card__unit-icon" src="/@UnitIconPath" alt="" />
+            }
+            @if (CanEditIcon)
             {
                 <button type="button"
                         class="unit-draft-card__name-btn"
                         @onclick:stopPropagation="true"
-                        @onclick="EditNameAsync">
+                        @onclick="EditIdentityAsync">
                     <b>@(string.IsNullOrWhiteSpace(Unit.Name) || Unit.Name == "Forming unit" ? "(name)" : Unit.Name)</b>
                 </button>
             }
@@ -328,6 +344,8 @@
 @code {
     [Parameter] public BaronyUnitDTO Unit { get; set; } = new();
     [Parameter] public bool CanManageAsMg { get; set; }
+    /// <summary>When true, name and icon can be edited (generator for players; roster for MG).</summary>
+    [Parameter] public bool CanEditIdentity { get; set; }
     [Parameter] public bool CanSpendPd { get; set; }
     [Parameter] public bool ShowCurrentHp { get; set; }
     /// <summary>Baron-style tooltip body for the captain name in parentheses (defaults to the name).</summary>
@@ -354,6 +372,13 @@
     private UnitArmorDef? _shield;
     private UnitMountDef? _mount;
     private UnitRaceDef _race => UnitRaceCatalog.Find(Unit.RaceKey);
+
+    private bool CanEditIcon => CanEditIdentity || CanManageAsMg;
+
+    private string UnitIconPath =>
+        BattleTokenIconCatalog.PathFor(Unit.IconKey)
+        ?? BattleTokenIconCatalog.PathFor(UnitRules.DefaultIconKey)
+        ?? "icons/shield.svg";
 
     private string ResolvedTitleEyebrow =>
         !string.IsNullOrWhiteSpace(TitleEyebrow)
@@ -666,21 +691,41 @@
         _upkeepExplain = UnitUpkeepFormulas.Explain(_upkeep);
     }
 
-    private async Task EditNameAsync()
+    private async Task EditIdentityAsync()
     {
-        if (!CanManageAsMg) return;
+        if (!CanEditIcon) return;
 
         var parameters = new DialogParameters
         {
             [nameof(UnitNameEditDialog.Value)] = Unit.Name,
+            [nameof(UnitNameEditDialog.IconKey)] = Unit.IconKey,
         };
-        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.ExtraSmall, FullWidth = true };
-        var dialog = await _dialogService.ShowAsync<UnitNameEditDialog>(L["Unit name"], parameters, options);
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await _dialogService.ShowAsync<UnitNameEditDialog>(L["Unit name and icon"], parameters, options);
         var result = await dialog.Result;
-        if (result is null || result.Canceled || result.Data is not string name)
+        if (result is null || result.Canceled || result.Data is not UnitIdentityEditResult saved)
             return;
 
-        Unit.Name = name.Trim();
+        Unit.Name = saved.Name.Trim();
+        Unit.IconKey = saved.IconKey;
+        await SkillsChanged.InvokeAsync();
+    }
+
+    private async Task PickIconAsync()
+    {
+        if (!CanEditIcon) return;
+
+        var parameters = new DialogParameters
+        {
+            [nameof(BattleTokenIconPickerDialog.SelectedKey)] = Unit.IconKey,
+        };
+        var options = new DialogOptions { CloseOnEscapeKey = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+        var dialog = await _dialogService.ShowAsync<BattleTokenIconPickerDialog>(L["Choose icon"], parameters, options);
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not string key)
+            return;
+
+        Unit.IconKey = key;
         await SkillsChanged.InvokeAsync();
     }
 

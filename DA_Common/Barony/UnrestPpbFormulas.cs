@@ -54,8 +54,8 @@ namespace DA_Common.Barony
         };
 
         public static string CatalogDescription =>
-            "Community penalty from barony Unrest (0–5). "
-            + "Also reduces Law, which can raise Crime (= max(0, −Final Law)). "
-            + $"Percent Economy/Production is capped at {EconomyProductionPercentFloor}% per source.";
+            Loc.T(
+                "Community penalty from barony Unrest (0–5). Also reduces Law, which can raise Crime (= max(0, −Final Law)). Percent Economy/Production is capped at {0}% per source.",
+                EconomyProductionPercentFloor.ToString("0"));
     }
 }

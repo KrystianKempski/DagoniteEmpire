@@ -1,15 +1,17 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Common.Barony
+@using DA_Models.BaronyModels
 
 <MudDialog Class="baron-influence-dialog"
            ContentClass="baron-influence-dialog-content"
            ActionsClass="baron-influence-dialog-actions">
     <TitleContent>
-        <MudText Typo="Typo.h6">@L["Unit name"]</MudText>
+        <MudText Typo="Typo.h6">@L["Unit name and icon"]</MudText>
     </TitleContent>
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog">
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                @L["Set the display name for this unit."]
+                @L["Set the display name and icon for this unit."]
             </MudText>
             <MudTextField @bind-Value="_value"
                           Label="@(L["Name"])"
@@ -17,6 +19,22 @@
                           Margin="Margin.Dense"
                           Immediate="true"
                           Class="baron-influence-field" />
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-3 mb-2">
+                @L["Unit icon"]
+            </MudText>
+            <div class="bbm-icon-picker">
+                @foreach (var icon in BattleTokenIconCatalog.All)
+                {
+                    <BaronyTooltip Text="@icon.Label">
+                        <button type="button"
+                                class="bbm-icon-picker__item @(string.Equals(icon.Key, _iconKey, StringComparison.OrdinalIgnoreCase) ? "selected" : null)"
+                                @onclick="() => _iconKey = icon.Key">
+                            <img src="/@icon.Path" alt="@icon.Label" />
+                            <span>@icon.Label</span>
+                        </button>
+                    </BaronyTooltip>
+                }
+            </div>
         </div>
     </DialogContent>
     <DialogActions>
@@ -32,11 +50,16 @@
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Parameter] public string? Value { get; set; }
+    [Parameter] public string? IconKey { get; set; }
 
     private string _value = string.Empty;
+    private string _iconKey = UnitRules.DefaultIconKey;
 
     protected override void OnInitialized()
-        => _value = Value?.Trim() ?? string.Empty;
+    {
+        _value = Value?.Trim() ?? string.Empty;
+        _iconKey = NormalizeIconKey(IconKey);
+    }
 
     private void Cancel() => MudDialog.Cancel();
 
@@ -45,6 +68,21 @@
         var name = _value.Trim();
         if (string.IsNullOrWhiteSpace(name))
             return;
-        MudDialog.Close(DialogResult.Ok(name));
+
+        MudDialog.Close(DialogResult.Ok(new UnitIdentityEditResult
+        {
+            Name = name,
+            IconKey = NormalizeIconKey(_iconKey),
+        }));
+    }
+
+    private static string NormalizeIconKey(string? key)
+    {
+        var trimmed = key?.Trim();
+        if (string.IsNullOrEmpty(trimmed))
+            return UnitRules.DefaultIconKey;
+        return BattleTokenIconCatalog.PathFor(trimmed) is not null
+            ? trimmed
+            : UnitRules.DefaultIconKey;
     }
 }
