@@ -1,0 +1,193 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Common.Barony
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog seat-occupant-treasures-dialog">
+            <MudText Typo="Typo.body2" Class="mb-2">
+                @L["Chamber:"] <strong>@Room.Name</strong> — @SeatRoomSizeCategory.DisplayName(Room.SizeCategory, L) @L["({0} tiles)", Room.TileCount]
+            </MudText>
+
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-1">
+                @L["Occupant (optional)"]
+            </MudText>
+            <MudSelect T="int?"
+                       Value="_occupantAdvisorId"
+                       ValueChanged="OnAdvisorChanged"
+                       Label="@(L["From baron / advisors"])"
+                       Clearable="true"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Class="baron-influence-field"
+                       Disabled="@(!AssignableOccupants.Any() || HasCustomOccupant)">
+                <MudSelectItem Value="@((int?)null)">@L["(none)"]</MudSelectItem>
+                @foreach (var advisor in AssignableOccupants)
+                {
+                    <MudSelectItem Value="@((int?)advisor.Id)">@OccupantOptionLabel(advisor)</MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField @bind-Value="OccupantCustom"
+                          Label="@(L["Custom occupant"])"
+                          Placeholder="@(L["e.g. Captain of the Guard"])"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="baron-influence-field mt-2"
+                          Disabled="@HasAdvisorOccupant"
+                          Immediate="true" />
+            @if (!AssignableOccupants.Any())
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-1">
+                    @L["No baron or advisors with assigned names — use custom occupant instead."]
+                </MudText>
+            }
+
+            <div class="seat-occupant-treasures-head">
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">@L["Treasures"]</MudText>
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
+                    @L["Capacity: {0} / {1}", _selectedArtifactIds.Count, CapacityLabel]
+                </MudText>
+            </div>
+            @if (IsAtCapacity)
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-1">
+                    @L["Chamber is full — uncheck an item to add another."]
+                </MudText>
+            }
+
+            @if (OrderedArtifacts.Count == 0)
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
+                    @(Artifacts.Count == 0
+                        ? L["No treasures in the collection yet."]
+                        : L["No unassigned treasures."])
+                </MudText>
+            }
+            else
+            {
+                <div class="seat-occupant-treasures-list">
+                    @foreach (var item in OrderedArtifacts)
+                    {
+                        var selected = _selectedArtifactIds.Contains(item.Id);
+                        var disabled = !selected && IsAtCapacity;
+                        <div class="seat-occupant-treasure-row @(selected ? "seat-occupant-treasure-row--on" : null) @(disabled ? "seat-occupant-treasure-row--disabled" : null)">
+                            <MudCheckBox T="bool"
+                                         Value="@selected"
+                                         ValueChanged="@(v => ToggleArtifact(item.Id, v))"
+                                         Disabled="@disabled"
+                                         Dense="true"
+                                         Size="Size.Small"
+                                         Color="Color.Default"
+                                         Class="barony-checkbox seat-occupant-treasure-check">
+                                <span class="seat-occupant-treasure-copy">
+                                    <span class="seat-occupant-treasure-name">@item.Name</span>
+                                    @if (!string.IsNullOrWhiteSpace(item.Kind))
+                                    {
+                                        <span class="seat-occupant-treasure-meta">@L[item.Kind]</span>
+                                    }
+                                </span>
+                            </MudCheckBox>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary" Variant="Variant.Filled" Class="baron-influence-save-btn" OnClick="Save">@L["Assign"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public SeatRoomDTO Room { get; set; } = new();
+    [Parameter] public List<AdvisorDTO> Advisors { get; set; } = new();
+    [Parameter] public List<BaronArtifactDTO> Artifacts { get; set; } = new();
+
+    private int? _occupantAdvisorId;
+    private string _occupantCustom = string.Empty;
+    private readonly HashSet<int> _selectedArtifactIds = new();
+
+    private IEnumerable<AdvisorDTO> AssignableOccupants =>
+        BaronyCalc.OrderAdvisors(Advisors).Where(a => !string.IsNullOrWhiteSpace(a.PersonName));
+
+    private bool HasCustomOccupant => !string.IsNullOrWhiteSpace(_occupantCustom);
+    private bool HasAdvisorOccupant => _occupantAdvisorId is not null;
+
+    private int? MaxArtifacts => BaronArtifactCapacity.MaxForSize(Room.SizeCategory);
+    private bool IsAtCapacity => MaxArtifacts is int n && _selectedArtifactIds.Count >= n;
+    private string CapacityLabel => MaxArtifacts is int n ? n.ToString() : L["unlimited"].Value;
+
+    private IReadOnlyList<BaronArtifactDTO> OrderedArtifacts =>
+        Artifacts
+            .Where(a => a.SeatRoomId is null || a.SeatRoomId == Room.Id)
+            .OrderBy(a => a.SeatRoomId == Room.Id ? 0 : 1)
+            .ThenBy(a => a.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+    private string OccupantCustom
+    {
+        get => _occupantCustom;
+        set
+        {
+            _occupantCustom = value ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(_occupantCustom))
+                _occupantAdvisorId = null;
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        _occupantAdvisorId = Room.OccupantAdvisorId;
+        _occupantCustom = Room.OccupantCustom ?? string.Empty;
+        foreach (var item in Artifacts.Where(a => a.SeatRoomId == Room.Id))
+            _selectedArtifactIds.Add(item.Id);
+    }
+
+    private void OnAdvisorChanged(int? advisorId)
+    {
+        _occupantAdvisorId = advisorId;
+        if (advisorId is not null)
+            _occupantCustom = string.Empty;
+    }
+
+    private void ToggleArtifact(int id, bool selected)
+    {
+        if (selected)
+        {
+            if (IsAtCapacity && !_selectedArtifactIds.Contains(id))
+                return;
+            _selectedArtifactIds.Add(id);
+        }
+        else
+        {
+            _selectedArtifactIds.Remove(id);
+        }
+        StateHasChanged();
+    }
+
+    private static string OccupantOptionLabel(AdvisorDTO advisor)
+    {
+        var role = BaronyCalc.AdvisorRoleLabel(advisor);
+        var name = advisor.PersonName.Trim();
+        return $"{role}: {name}";
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (MaxArtifacts is int n && _selectedArtifactIds.Count > n)
+            return;
+
+        var custom = string.IsNullOrWhiteSpace(_occupantCustom) ? null : _occupantCustom.Trim();
+        MudDialog.Close(DialogResult.Ok(new SeatRoomOccupantTreasuresAssignmentDTO
+        {
+            OccupantAdvisorId = custom is not null ? null : _occupantAdvisorId,
+            OccupantCustom = custom,
+            ArtifactIds = _selectedArtifactIds.ToList(),
+        }));
+    }
+}

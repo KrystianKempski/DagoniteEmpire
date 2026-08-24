@@ -18,7 +18,7 @@ else if (Barony is not null)
 {
     <BaronyPageHeader Title="@(L["Court"])" HelpKey="offices">
         <Summary>
-            <BaronyTooltip Text="@(L["Combined upkeep of all offices per turn"])">
+            <BaronyTooltip Text="@(L["Combined upkeep of offices and court wages per season"])">
                 <div class="offices-cost-total">
                     <span class="offices-cost-total__label">@L["Σ advisor upkeep"]</span>
                     <span class="offices-cost-total__value">@FmtUpkeep(_totalUpkeep)</span>
@@ -39,6 +39,8 @@ else if (Barony is not null)
     }
 
     <AvailableAdvisorsSection Advisors="@_availableAdvisors"
+                              Offices="@_offices"
+                              Units="@_units"
                               CanManage="@CanManageAsMg"
                               CanEdit="@CanEdit"
                               OnEdit="EditAvailableAdvisorAsync"
@@ -60,6 +62,7 @@ else if (Barony is not null)
 @code {
     private List<AdvisorDTO> _offices = new();
     private List<AvailableAdvisorDTO> _availableAdvisors = new();
+    private List<BaronyUnitDTO> _units = new();
     private List<AdvisorInfluenceModifierDTO> _modifiers = new();
     private decimal _totalUpkeep;
 
@@ -81,8 +84,10 @@ else if (Barony is not null)
 
         var advisors = await _baronyRepo.GetAdvisors(Barony.Id);
         _availableAdvisors = await _baronyRepo.GetAvailableAdvisors(Barony.Id);
+        _units = await _baronyRepo.GetUnits(Barony.Id);
         _offices = BaronyCalc.OrderOffices(advisors);
-        _totalUpkeep = BaronyCalc.SumOfficeUpkeep(advisors, _modifiers);
+        _totalUpkeep = BaronyCalc.SumOfficeUpkeep(advisors, _modifiers)
+            + _availableAdvisors.Sum(p => p.TotalSalaryGold);
         _modifiers = await _baronyRepo.GetAdvisorInfluenceModifiers(Barony.Id);
         StateHasChanged();
     }
@@ -142,6 +147,17 @@ else if (Barony is not null)
             CharacterId = person.CharacterId,
             Sheet = person.Sheet ?? CourtCharacterSheet.CreateDefault(),
             Skills = person.Skills.Clone(),
+            Duties = person.Duties.Select(d => new CourtDutyDTO
+            {
+                Id = d.Id,
+                AvailableAdvisorId = d.AvailableAdvisorId,
+                DutyKind = d.DutyKind,
+                DutyCustomName = d.DutyCustomName,
+                DutyOfficeType = d.DutyOfficeType,
+                DutyUnitId = d.DutyUnitId,
+                SalaryGold = d.SalaryGold,
+                SortOrder = d.SortOrder,
+            }).ToList(),
         });
     }
 

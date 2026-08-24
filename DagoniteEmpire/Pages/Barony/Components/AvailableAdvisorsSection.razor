@@ -3,6 +3,7 @@
 @using DA_Models.CharacterModels
 @inject IDialogService _dialogService
 @inject ICharacterRepository _characterRepo
+@inject IBaronyRepository _baronyRepo
 @inject NavigationManager _nav
 
 <BaronySection Title="@(L["Court"])">
@@ -108,6 +109,9 @@
                         @if (isOpen && person.IsLinkedCharacter)
                         {
                             <div class="project-card__panels court-person-card__panels" @onclick:stopPropagation="true">
+                                <section class="project-card__panel court-person-card__panel court-person-card__panel--skills">
+                                    @CommanderBlock(person, sheet)
+                                </section>
                                 <section class="project-card__panel court-person-card__panel court-person-card__panel--ppb">
                                     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
                                         @L["Domain Skills from the linked character sheet (base + special skills), same formulas as the baron."]
@@ -120,58 +124,7 @@
                                                                 CanEditOther="false"
                                                                 CellTooltip="@((row, key) => DomainCellTooltip(person, row, key))" />
                                     </div>
-                                </section>
-
-                                <section class="project-card__panel court-person-card__panel court-person-card__panel--commander" @onclick:stopPropagation="true">
-                                    <h4 class="project-card__panel-title">@L["Commander"]</h4>
-                                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                                        @L["CX = (permanent Inspire + Strategy and tactics) × 2."]
-                                    </MudText>
-                                    <div class="court-commander-panel__cx">
-                                        <span class="court-commander-panel__cx-label">@L["CX pool"]</span>
-                                        @if (CanManage)
-                                        {
-                                            <BaronyTooltip Text="@(L["Click to edit CX pool"])">
-                                                <button type="button"
-                                                        class="court-commander-panel__cx-value court-commander-panel__cx-value--editable"
-                                                        @onclick="@(() => OpenCxEditAsync(person))">
-                                                    @sheet.CommanderXp
-                                                </button>
-                                            </BaronyTooltip>
-                                        }
-                                        else
-                                        {
-                                            <span class="court-commander-panel__cx-value">@sheet.CommanderXp</span>
-                                        }
-                                        <span class="court-commander-panel__cx-meta">avail. @CourtCommanderFormulas.AvailableCx(sheet) · spent @CourtCommanderFormulas.SpentCx(sheet)</span>
-                                    </div>
-                                    <div class="court-commander-panel__abilities">
-                                        <MudButton Variant="Variant.Outlined"
-                                                   Size="Size.Small"
-                                                   StartIcon="@Icons.Material.Filled.AccountTree"
-                                                   OnClick="@(() => OpenCommanderTreeAsync(person))">
-                                            @L["Skill tree"]
-                                        </MudButton>
-                                        @if (sheet.UnlockedCommanderAbilities.Count == 0)
-                                        {
-                                            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">@L["No abilities unlocked."]</MudText>
-                                        }
-                                        else
-                                        {
-                                            <div class="ppb-chips court-commander-chips">
-                                                @foreach (var key in sheet.UnlockedCommanderAbilities)
-                                                {
-                                                    var ability = CourtCommanderCatalog.Find(key);
-                                                    <BaronyTooltip Text="@(ability is null ? null : L[ability.DescriptionEn].Value)">
-                                                        <span class="ppb-chip">
-                                                            <span class="ppb-chip__label">@(L[ability?.NameEn ?? key])</span>
-                                                            <span class="ppb-chip__value">T@(ability?.Tier ?? 0)</span>
-                                                        </span>
-                                                    </BaronyTooltip>
-                                                }
-                                            </div>
-                                        }
-                                    </div>
+                                    @DutyBlock(person)
                                 </section>
                             </div>
                         }
@@ -258,6 +211,8 @@
                                             }
                                         </div>
                                     }
+
+                                    @CommanderBlock(person, sheet)
                                 </section>
 
                                 <section class="project-card__panel court-person-card__panel court-person-card__panel--ppb">
@@ -352,57 +307,10 @@
                                             </tbody>
                                         </table>
                                     </div>
+
+                                    @DutyBlock(person)
                                 </section>
                             </div>
-
-                            <section class="project-card__panel court-person-card__panel court-person-card__panel--commander" @onclick:stopPropagation="true">
-                                <h4 class="project-card__panel-title">@L["Commander"]</h4>
-                                <div class="court-commander-panel__cx">
-                                    <span class="court-commander-panel__cx-label">@L["CX pool"]</span>
-                                    @if (CanManage)
-                                    {
-                                        <BaronyTooltip Text="@(L["Click to edit CX pool"])">
-                                            <button type="button"
-                                                    class="court-commander-panel__cx-value court-commander-panel__cx-value--editable"
-                                                    @onclick="@(() => OpenCxEditAsync(person))">
-                                                @sheet.CommanderXp
-                                            </button>
-                                        </BaronyTooltip>
-                                    }
-                                    else
-                                    {
-                                        <span class="court-commander-panel__cx-value">@sheet.CommanderXp</span>
-                                    }
-                                    <span class="court-commander-panel__cx-meta">avail. @CourtCommanderFormulas.AvailableCx(sheet) · spent @CourtCommanderFormulas.SpentCx(sheet)</span>
-                                </div>
-                                <div class="court-commander-panel__abilities">
-                                    <MudButton Variant="Variant.Outlined"
-                                               Size="Size.Small"
-                                               StartIcon="@Icons.Material.Filled.AccountTree"
-                                               OnClick="@(() => OpenCommanderTreeAsync(person))">
-                                        @L["Skill tree"]
-                                    </MudButton>
-                                    @if (sheet.UnlockedCommanderAbilities.Count == 0)
-                                    {
-                                        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">@L["No abilities unlocked."]</MudText>
-                                    }
-                                    else
-                                    {
-                                        <div class="ppb-chips court-commander-chips">
-                                            @foreach (var key in sheet.UnlockedCommanderAbilities)
-                                            {
-                                                var ability = CourtCommanderCatalog.Find(key);
-                                                <BaronyTooltip Text="@(ability is null ? null : L[ability.DescriptionEn].Value)">
-                                                    <span class="ppb-chip">
-                                                        <span class="ppb-chip__label">@(L[ability?.NameEn ?? key])</span>
-                                                        <span class="ppb-chip__value">T@(ability?.Tier ?? 0)</span>
-                                                    </span>
-                                                </BaronyTooltip>
-                                            }
-                                        </div>
-                                    }
-                                </div>
-                            </section>
                         }
                     </article>
                 }
@@ -413,6 +321,8 @@
 
 @code {
     [Parameter] public IEnumerable<AvailableAdvisorDTO>? Advisors { get; set; }
+    [Parameter] public IEnumerable<AdvisorDTO>? Offices { get; set; }
+    [Parameter] public List<BaronyUnitDTO> Units { get; set; } = new();
     [Parameter] public bool CanManage { get; set; }
     [Parameter] public bool CanEdit { get; set; }
     [Parameter] public EventCallback<AvailableAdvisorDTO> OnEdit { get; set; }
@@ -437,6 +347,234 @@
     {
         if (e.Key is "Enter" or " ")
             Toggle(id);
+    }
+
+    private RenderFragment CommanderBlock(AvailableAdvisorDTO person, CourtCharacterSheet sheet) => __builder =>
+    {
+        <div class="court-person-card__block">
+            <h4 class="project-card__panel-title @(person.IsLinkedCharacter ? null : "court-person-card__subpanel-title")">@L["Command skill"]</h4>
+            @if (person.IsLinkedCharacter)
+            {
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                    @L["CX = (permanent Inspire + Strategy and tactics) × 2."]
+                </MudText>
+            }
+            <div class="court-commander-panel__cx">
+                <span class="court-commander-panel__cx-label">@L["CX pool"]</span>
+                @if (CanManage)
+                {
+                    <BaronyTooltip Text="@(L["Click to edit CX pool"])">
+                        <button type="button"
+                                class="court-commander-panel__cx-value court-commander-panel__cx-value--editable"
+                                @onclick="@(() => OpenCxEditAsync(person))">
+                            @sheet.CommanderXp
+                        </button>
+                    </BaronyTooltip>
+                }
+                else
+                {
+                    <span class="court-commander-panel__cx-value">@sheet.CommanderXp</span>
+                }
+                <span class="court-commander-panel__cx-meta">avail. @CourtCommanderFormulas.AvailableCx(sheet) · spent @CourtCommanderFormulas.SpentCx(sheet)</span>
+            </div>
+            <div class="court-commander-panel__abilities">
+                <MudButton Variant="Variant.Outlined"
+                           Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.AccountTree"
+                           OnClick="@(() => OpenCommanderTreeAsync(person))">
+                    @L["Skill tree"]
+                </MudButton>
+                @if (sheet.UnlockedCommanderAbilities.Count == 0)
+                {
+                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">@L["No abilities unlocked."]</MudText>
+                }
+                else
+                {
+                    <div class="ppb-chips court-commander-chips">
+                        @foreach (var key in sheet.UnlockedCommanderAbilities)
+                        {
+                            var ability = CourtCommanderCatalog.Find(key);
+                            <BaronyTooltip Text="@(ability is null ? null : L[ability.DescriptionEn].Value)">
+                                <span class="ppb-chip">
+                                    <span class="ppb-chip__label">@(L[ability?.NameEn ?? key])</span>
+                                    <span class="ppb-chip__value">T@(ability?.Tier ?? 0)</span>
+                                </span>
+                            </BaronyTooltip>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    };
+
+    private RenderFragment DutyBlock(AvailableAdvisorDTO person) => __builder =>
+    {
+        var duties = BaronyCalc.OfficeDutiesFor(person, Offices)
+            .Concat(person.Duties.OrderBy(d => d.SortOrder).ThenBy(d => d.Id))
+            .ToList();
+        var total = person.TotalSalaryGold;
+        <div class="court-person-card__block">
+            <h4 class="project-card__panel-title court-person-card__subpanel-title">@L["Duty"]</h4>
+            <div class="court-duty-table-wrap">
+                <table class="ppb-table ppb-table--source ppb-table--lined court-duty-table">
+                    <thead>
+                        <tr>
+                            <th class="ppb-row-label source-col">@L["Duty name"]</th>
+                            <th class="court-duty-table__salary">@L["Salary"]</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (duties.Count == 0)
+                        {
+                            <tr class="source-row--system">
+                                <td class="ppb-row-label source-col" colspan="2">
+                                    <span class="source-cell__name court-duty-name--empty">@L["No duty"]</span>
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var duty in duties)
+                            {
+                                var isOffice = BaronyCalc.IsOfficeDuty(duty);
+                                <tr>
+                                    <td class="ppb-row-label source-col">
+                                        <div class="source-cell">
+                                            @if (CanEdit && !isOffice)
+                                            {
+                                                <button type="button"
+                                                        class="court-duty-name court-duty-name--editable"
+                                                        @onclick="@(() => OpenDutyEditAsync(person, duty))">
+                                                    @BaronyCalc.CourtDutyLabel(duty, Units)
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <span class="court-duty-name">@BaronyCalc.CourtDutyLabel(duty, Units)</span>
+                                            }
+                                            @if (CanEdit && !isOffice)
+                                            {
+                                                <span class="source-cell__actions">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                                   Size="Size.Small"
+                                                                   OnClick="@(() => OpenDutyEditAsync(person, duty))" />
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                                   Size="Size.Small"
+                                                                   Color="Color.Error"
+                                                                   OnClick="@(() => DeleteDutyAsync(person, duty))" />
+                                                </span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td class="court-duty-table__salary">
+                                        @if (isOffice)
+                                        {
+                                            <span class="court-duty-wage__value">·</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="court-duty-wage__value">
+                                                @PpbFormat.Number(duty.SalaryGold)
+                                                <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
+                                            </span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        <tr class="court-duty-table__sum">
+                            <td class="ppb-row-label source-col">@L["Σ salary"]</td>
+                            <td class="court-duty-table__salary">
+                                <span class="court-duty-wage__value">
+                                    @PpbFormat.Number(total)
+                                    <BaronyResourceIcon Resource="Ppb.Treasury" Size="xs" />
+                                </span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            @if (CanEdit)
+            {
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="@(() => OpenDutyEditAsync(person, null))">
+                        @L["Add duty"]
+                    </MudButton>
+                </div>
+            }
+        </div>
+    };
+
+    private async Task OpenDutyEditAsync(AvailableAdvisorDTO person, CourtDutyDTO? existing)
+    {
+        if (!CanEdit)
+            return;
+
+        var draft = existing is null
+            ? new CourtDutyDTO
+            {
+                AvailableAdvisorId = person.Id,
+                DutyKind = CourtDutyKind.Custom,
+                SalaryGold = CourtDutyKind.DefaultSalaryGold,
+            }
+            : new CourtDutyDTO
+            {
+                Id = existing.Id,
+                AvailableAdvisorId = person.Id,
+                DutyKind = existing.DutyKind,
+                DutyCustomName = existing.DutyCustomName,
+                DutyOfficeType = existing.DutyOfficeType,
+                DutyUnitId = existing.DutyUnitId,
+                SalaryGold = existing.SalaryGold,
+                SortOrder = existing.SortOrder,
+            };
+
+        var ownOtherCaptains = person.Duties
+            .Where(d => d.Id != draft.Id
+                && CourtDutyKind.Normalize(d.DutyKind) == CourtDutyKind.Captain
+                && d.DutyUnitId is int uid)
+            .Select(d => d.DutyUnitId!.Value)
+            .ToHashSet();
+        var occupiedAssistantOffices = BaronyCalc.OccupiedAssistantOfficeTypes(AdvisorList, draft.Id > 0 ? draft.Id : null);
+
+        var dialog = await _dialogService.ShowAsync<CourtDutyEditDialog>(
+            existing is null ? L["Add duty"] : L["Duty"],
+            new DialogParameters<CourtDutyEditDialog>
+            {
+                { x => x.Duty, draft },
+                { x => x.PersonName, person.Name },
+                { x => x.Units, Units },
+                { x => x.OwnOtherCaptainUnitIds, ownOtherCaptains },
+                { x => x.OccupiedAssistantOfficeTypes, occupiedAssistantOffices },
+            },
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not CourtDutyDTO saved)
+            return;
+
+        saved.AvailableAdvisorId = person.Id;
+        var persisted = await _baronyRepo.SaveCourtDuty(saved);
+        var list = person.Duties.ToList();
+        var idx = list.FindIndex(d => d.Id == persisted.Id);
+        if (idx >= 0)
+            list[idx] = persisted;
+        else
+            list.Add(persisted);
+        person.Duties = list;
+        await OnSheetChanged.InvokeAsync(person);
+    }
+
+    private async Task DeleteDutyAsync(AvailableAdvisorDTO person, CourtDutyDTO duty)
+    {
+        if (!CanEdit || duty.Id <= 0)
+            return;
+        await _baronyRepo.DeleteCourtDuty(duty.Id);
+        person.Duties = person.Duties.Where(d => d.Id != duty.Id).ToList();
+        await OnSheetChanged.InvokeAsync(person);
     }
 
     private static IReadOnlyList<AdvisorInfluenceRow> DomainSkillRows(AvailableAdvisorDTO person)

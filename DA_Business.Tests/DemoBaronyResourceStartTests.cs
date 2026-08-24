@@ -5,6 +5,7 @@ using DA_Common.Barony;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Data;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace DA_Business.Tests;
 
@@ -117,5 +118,59 @@ public class DemoBaronyResourceStartTests : IClassFixture<DatabaseFixture>
         Assert.Contains(council, a => a.Title == "Lands stolen by Brie — the circle of Haga" && a.PetitionerName == "Merdred Igrus");
         Assert.Contains(council, a => a.Title == "The pirate wreck on the eastern cliffs"
             && a.Exchanges.Any(x => x.Body.Contains("pirate drakkar", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public async Task CreateForCharacter_DarkholdSeedsPolishRoomsAndArtifacts()
+    {
+        var prevUi = CultureInfo.CurrentUICulture;
+        var prevCulture = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentUICulture = new CultureInfo("pl");
+        CultureInfo.CurrentCulture = new CultureInfo("pl");
+        try
+        {
+            await using var ctx = _fixture.CreateContext();
+
+            var profession = new Profession
+            {
+                Name = "Warrior",
+                RelatedAttributeName = "Strength",
+                IsApproved = true,
+            };
+            ctx.Professions.Add(profession);
+            await ctx.SaveChangesAsync();
+
+            var character = new Character
+            {
+                UserName = "demo-baron-seat",
+                NPCName = "Aldric Emberfall",
+                NPCType = SD.NPCType.Duke,
+                IsApproved = true,
+                ProfessionId = profession.Id,
+            };
+            ctx.Characters.Add(character);
+            await ctx.SaveChangesAsync();
+
+            var repo = new BaronyRepository(_fixture.DbContextFactory, characters: null!);
+            var barony = await repo.CreateForCharacter(character.Id, DarkholdSeeder.BaronyName, "Demo barony", "darkhold");
+
+            await using var verify = _fixture.CreateContext();
+            var seat = verify.BaronySeats.Include(s => s.Rooms).Single(s => s.BaronyId == barony.Id);
+            Assert.Equal(DarkholdSeatLocalization.SeatNamePl, seat.Name);
+            Assert.Contains(seat.Rooms, r => r.Name == "Duża komnata przybudówki północnej");
+            Assert.Contains(seat.Rooms, r => r.Name == "Wieża wschodnia — najwyższe piętro, komnata południowa");
+            Assert.DoesNotContain(seat.Rooms, r => r.Name.Contains("lean-to", StringComparison.OrdinalIgnoreCase));
+
+            var artifacts = verify.BaronArtifacts.Where(a => a.BaronyId == barony.Id).ToList();
+            Assert.Equal(DarkholdSeatLocalization.Artifacts.Length, artifacts.Count);
+            Assert.Contains(artifacts, a => a.Name == "Miecz Direboltów" && a.Prestige == 8 && a.SeatRoomId is > 0);
+            Assert.Contains(artifacts, a => a.Name == "Srebrna solniczka" && a.SeatRoomId is null);
+            Assert.Contains(artifacts, a => a.Name == "Trofeum z wraku" && a.Fear == 2 && a.SeatRoomId is null);
+        }
+        finally
+        {
+            CultureInfo.CurrentUICulture = prevUi;
+            CultureInfo.CurrentCulture = prevCulture;
+        }
     }
 }

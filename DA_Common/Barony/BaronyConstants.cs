@@ -16,6 +16,74 @@ namespace DA_Common.Barony
         public static readonly string[] All = { Baron, Chancellor, GuardCaptain, Steward, Custom };
     }
 
+    /// <summary>Court person's assigned function (Dwór — Funkcja).</summary>
+    public readonly struct CourtDutyKind
+    {
+        public const string None = "None";
+        public const string Office = "Office";
+        public const string Assistant = "Assistant";
+        public const string Captain = "Captain";
+        public const string Custom = "Custom";
+
+        public static readonly string[] All = { None, Office, Assistant, Captain, Custom };
+
+        public const decimal DefaultSalaryGold = 3m;
+
+        public static string Normalize(string? kind)
+        {
+            if (string.Equals(kind, Office, StringComparison.OrdinalIgnoreCase))
+                return Office;
+            if (string.Equals(kind, Assistant, StringComparison.OrdinalIgnoreCase))
+                return Assistant;
+            if (string.Equals(kind, Captain, StringComparison.OrdinalIgnoreCase))
+                return Captain;
+            if (string.Equals(kind, Custom, StringComparison.OrdinalIgnoreCase))
+                return Custom;
+            return None;
+        }
+    }
+
+    /// <summary>Named assistant posts for the three core offices.</summary>
+    public readonly struct CourtDutyAssistant
+    {
+        public const string Herald = "Herald";
+        public const string Scribe = "Scribe";
+        public const string Sergeant = "Sergeant";
+
+        public static readonly string[] All = { Herald, Scribe, Sergeant };
+
+        /// <summary>+1 to a significant office skill per this many points of the assistant's matching domain skill.</summary>
+        public const int DomainPointsPerBonus = 5;
+
+        public static string OfficeTypeFor(string? assistant) => assistant switch
+        {
+            Herald => OfficeType.Chancellor,
+            Scribe => OfficeType.Steward,
+            Sergeant => OfficeType.GuardCaptain,
+            _ => OfficeType.Chancellor,
+        };
+
+        public static string? FromOfficeType(string? officeType) => officeType switch
+        {
+            OfficeType.Chancellor => Herald,
+            OfficeType.Steward => Scribe,
+            OfficeType.GuardCaptain => Sergeant,
+            _ => null,
+        };
+
+        public static string Normalize(string? assistant)
+        {
+            if (string.Equals(assistant, Scribe, StringComparison.OrdinalIgnoreCase))
+                return Scribe;
+            if (string.Equals(assistant, Sergeant, StringComparison.OrdinalIgnoreCase))
+                return Sergeant;
+            if (string.Equals(assistant, Herald, StringComparison.OrdinalIgnoreCase))
+                return Herald;
+            var fromOffice = FromOfficeType(officeType: assistant);
+            return fromOffice ?? Herald;
+        }
+    }
+
     /// <summary>Social groups whose relations affect PPB.</summary>
     public readonly struct SocialGroup
     {

@@ -1823,12 +1823,14 @@ namespace DA_Business.Repository.BaronyRepos
                 OrganizationsSeeder.EnsureForBarony(ctx, baronyId);
                 PermanentDecreesSeeder.EnsureForBarony(ctx, baronyId);
                 DarkholdRelationLocalization.EnsurePolishForBarony(ctx, baronyId, barony.Name);
+                DarkholdSeatLocalization.EnsureForBarony(ctx, baronyId, barony.Name);
                 await EnsureCoreOfficeDescriptionsAsync(ctx, baronyId);
                 await EnsureStarterCityBuildingsAsync(ctx, baronyId);
                 await RefreshLinkedCourtiersAsync(ctx, baronyId);
                 await ctx.SaveChangesAsync();
 
                 var availableAdvisors = (await ctx.AvailableAdvisors.AsNoTracking()
+                        .Include(x => x.Duties)
                         .Where(x => x.BaronyId == baronyId)
                         .ToListAsync())
                     .Select(ToDTO)
@@ -1913,6 +1915,7 @@ namespace DA_Business.Repository.BaronyRepos
                 await EnsureCourtSheetCommanderCxAsync(ctx, baronyId);
                 await ctx.SaveChangesAsync();
                 return (await ctx.AvailableAdvisors.AsNoTracking()
+                        .Include(x => x.Duties)
                         .Where(x => x.BaronyId == baronyId)
                         .OrderBy(x => x.Name)
                         .ThenBy(x => x.Id)
@@ -2146,9 +2149,95 @@ namespace DA_Business.Repository.BaronyRepos
                     await ResyncUnitsForCaptainAsync(ctx, e.Id, e.BaronyId);
                     await ctx.SaveChangesAsync();
                 }
-                return ToDTO(e);
+                return ToDTO(await ctx.AvailableAdvisors.AsNoTracking()
+                    .Include(a => a.Duties)
+                    .FirstAsync(a => a.Id == e.Id));
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SaveAvailableAdvisor)); }
+        }
+
+        public async Task<CourtDutyDTO> SaveCourtDuty(CourtDutyDTO dto)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var person = await ctx.AvailableAdvisors
+                    .Include(a => a.Duties)
+                    .FirstOrDefaultAsync(a => a.Id == dto.AvailableAdvisorId)
+                    ?? throw new InvalidOperationException("Court person not found.");
+
+                ApplyCourtierDutyFields(dto);
+                AvailableAdvisorDuty e;
+                if (dto.Id > 0)
+                {
+                    e = person.Duties.FirstOrDefault(d => d.Id == dto.Id)
+                        ?? throw new InvalidOperationException("Duty not found.");
+                    ApplyDutyEntity(e, dto);
+                }
+                else
+                {
+                    e = new AvailableAdvisorDuty { AvailableAdvisorId = person.Id };
+                    ApplyDutyEntity(e, dto);
+                    if (e.SortOrder == 0 && person.Duties.Count > 0)
+                        e.SortOrder = person.Duties.Max(d => d.SortOrder) + 1;
+                    ctx.AvailableAdvisorDuties.Add(e);
+                    person.Duties.Add(e);
+                }
+
+                // One Captain duty per courtier; replace any other Captain rows.
+                if (CourtDutyKind.Normalize(e.DutyKind) == CourtDutyKind.Captain)
+                {
+                    foreach (var other in person.Duties.Where(d => d.Id != e.Id
+                        && CourtDutyKind.Normalize(d.DutyKind) == CourtDutyKind.Captain).ToList())
+                    {
+                        ctx.AvailableAdvisorDuties.Remove(other);
+                    }
+                }
+
+                // One assistant per office.
+                if (CourtDutyKind.Normalize(e.DutyKind) == CourtDutyKind.Assistant
+                    && !string.IsNullOrWhiteSpace(e.DutyOfficeType))
+                {
+                    var officeType = e.DutyOfficeType;
+                    var others = await ctx.AvailableAdvisorDuties
+                        .Where(d => d.Id != e.Id
+                            && d.DutyKind == CourtDutyKind.Assistant
+                            && d.DutyOfficeType == officeType)
+                        .ToListAsync();
+                    ctx.AvailableAdvisorDuties.RemoveRange(others);
+                }
+
+                await ctx.SaveChangesAsync();
+                await SyncDutyCaptainAssignmentAsync(ctx, person);
+                await ctx.SaveChangesAsync();
+                return ToDutyDTO(e);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(SaveCourtDuty)); }
+        }
+
+        public async Task<int> DeleteCourtDuty(int id)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.AvailableAdvisorDuties.FirstOrDefaultAsync(d => d.Id == id);
+                if (e is null)
+                    return 0;
+                var personId = e.AvailableAdvisorId;
+                ctx.AvailableAdvisorDuties.Remove(e);
+                await ctx.SaveChangesAsync();
+
+                var person = await ctx.AvailableAdvisors
+                    .Include(a => a.Duties)
+                    .FirstOrDefaultAsync(a => a.Id == personId);
+                if (person is not null)
+                {
+                    await SyncDutyCaptainAssignmentAsync(ctx, person);
+                    await ctx.SaveChangesAsync();
+                }
+                return 1;
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(DeleteCourtDuty)); }
         }
 
         public async Task<int> DeleteAvailableAdvisor(int id)
@@ -2414,6 +2503,7 @@ namespace DA_Business.Repository.BaronyRepos
             try
             {
                 using var ctx = await _db.CreateDbContextAsync();
+                var barony = await ctx.Baronies.AsNoTracking().FirstOrDefaultAsync(b => b.Id == baronyId);
                 var seat = await ctx.BaronySeats
                     .Include(s => s.Rooms)
                     .ThenInclude(r => r.Traits)
@@ -2426,6 +2516,15 @@ namespace DA_Business.Repository.BaronyRepos
                     ctx.BaronySeats.Add(seat);
                     await ctx.SaveChangesAsync();
                 }
+
+                DarkholdSeatLocalization.EnsureForBarony(ctx, baronyId, barony?.Name);
+                await ctx.SaveChangesAsync();
+
+                seat = await ctx.BaronySeats
+                    .Include(s => s.Rooms)
+                    .ThenInclude(r => r.Traits)
+                    .Include(s => s.Tiles)
+                    .FirstAsync(s => s.Id == seat.Id);
 
                 return ToDTO(seat, baronyId);
             }
@@ -2672,6 +2771,82 @@ namespace DA_Business.Repository.BaronyRepos
             }
         }
 
+        public async Task SetSeatRoomOccupantAndTreasures(
+            int roomId,
+            int? occupantAdvisorId,
+            string? occupantCustom,
+            IReadOnlyList<int> artifactIds)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var room = await ctx.SeatRooms.FirstOrDefaultAsync(x => x.Id == roomId)
+                    ?? throw new InvalidOperationException($"Seat room {roomId} not found.");
+
+                if (string.Equals(room.Status, SeatRoomStatus.Ruin, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidOperationException("Cannot assign occupant or treasures to a ruin.");
+
+                var baronyId = await ctx.BaronySeats.AsNoTracking()
+                    .Where(s => s.Id == room.SeatId)
+                    .Select(s => s.BaronyId)
+                    .FirstAsync();
+
+                var custom = string.IsNullOrWhiteSpace(occupantCustom) ? null : occupantCustom.Trim();
+                if (custom is not null)
+                {
+                    room.OccupantAdvisorId = null;
+                    room.OccupantCustom = custom;
+                }
+                else if (occupantAdvisorId is int aid)
+                {
+                    var advisor = await ctx.Advisors.AsNoTracking()
+                        .FirstOrDefaultAsync(a => a.Id == aid && a.BaronyId == baronyId)
+                        ?? throw new InvalidOperationException("Selected occupant is not available for this barony.");
+                    if (string.IsNullOrWhiteSpace(advisor.PersonName))
+                        throw new InvalidOperationException("Selected occupant has no assigned person.");
+
+                    room.OccupantAdvisorId = aid;
+                    room.OccupantCustom = string.Empty;
+                }
+                else
+                {
+                    room.OccupantAdvisorId = null;
+                    room.OccupantCustom = string.Empty;
+                }
+
+                var selected = (artifactIds ?? Array.Empty<int>())
+                    .Where(id => id > 0)
+                    .Distinct()
+                    .ToList();
+
+                var size = SeatRoomSizeCategory.FromTileCount(Math.Max(0, room.GridW) * Math.Max(0, room.GridH));
+                var max = BaronArtifactCapacity.MaxForSize(size);
+                if (max is int cap && selected.Count > cap)
+                    throw new InvalidOperationException($"Chamber is full ({cap} treasures for this size).");
+
+                var artifacts = await ctx.BaronArtifacts
+                    .Where(a => a.BaronyId == baronyId)
+                    .ToListAsync();
+
+                if (selected.Any(id => artifacts.All(a => a.Id != id)))
+                    throw new InvalidOperationException("One or more treasures are not in this barony's collection.");
+
+                foreach (var item in artifacts)
+                {
+                    if (selected.Contains(item.Id))
+                        item.SeatRoomId = roomId;
+                    else if (item.SeatRoomId == roomId)
+                        item.SeatRoomId = null;
+                }
+
+                await ctx.SaveChangesAsync();
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(SetSeatRoomOccupantAndTreasures));
+            }
+        }
+
         public async Task<List<SeatPurposeTemplateDTO>> GetSeatPurposeTemplates(int baronyId)
         {
             try
@@ -2769,8 +2944,24 @@ namespace DA_Business.Repository.BaronyRepos
             Delete(ctx => ctx.BaronPhpSources, id, nameof(DeleteBaronPhpSource));
 
         // ---------------- Baron artifacts ----------------
-        public async Task<List<BaronArtifactDTO>> GetBaronArtifacts(int baronyId) =>
-            await GetList(ctx => ctx.BaronArtifacts, baronyId, ToDTO, nameof(GetBaronArtifacts));
+        public async Task<List<BaronArtifactDTO>> GetBaronArtifacts(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var barony = await ctx.Baronies.AsNoTracking().FirstOrDefaultAsync(b => b.Id == baronyId);
+                DarkholdSeatLocalization.EnsureForBarony(ctx, baronyId, barony?.Name);
+                await ctx.SaveChangesAsync();
+
+                var list = await ctx.BaronArtifacts.AsNoTracking()
+                    .Where(x => x.BaronyId == baronyId)
+                    .OrderBy(x => x.SortOrder)
+                    .ThenBy(x => x.Id)
+                    .ToListAsync();
+                return list.Select(ToDTO).ToList();
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetBaronArtifacts)); }
+        }
 
         public async Task<BaronArtifactDTO> SaveBaronArtifact(BaronArtifactDTO dto)
         {
@@ -3954,12 +4145,37 @@ namespace DA_Business.Repository.BaronyRepos
                     e.UpdatedAtUtc = DateTime.UtcNow;
                 }
                 await ctx.SaveChangesAsync();
+                dto.Id = e.Id;
+                dto.BaronyId = e.BaronyId;
+                dto.CaptainAvailableAdvisorId = e.CaptainAvailableAdvisorId;
+                dto.CaptainIsBaron = e.CaptainIsBaron;
+                await SyncDutyFromUnitCaptainAsync(ctx, dto);
+                await ctx.SaveChangesAsync();
                 return ToUnitDTO(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SaveUnit)); }
         }
 
-        public Task<int> DeleteUnit(int id) => Delete(ctx => ctx.BaronyUnits, id, nameof(DeleteUnit));
+        public async Task<int> DeleteUnit(int id)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var unit = await ctx.BaronyUnits.FirstOrDefaultAsync(u => u.Id == id);
+                if (unit is null)
+                    return 0;
+
+                var captainDuties = await ctx.AvailableAdvisorDuties
+                    .Where(d => d.DutyKind == CourtDutyKind.Captain && d.DutyUnitId == unit.Id)
+                    .ToListAsync();
+                ctx.AvailableAdvisorDuties.RemoveRange(captainDuties);
+
+                ctx.BaronyUnits.Remove(unit);
+                await ctx.SaveChangesAsync();
+                return 1;
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(DeleteUnit)); }
+        }
 
         public async Task<BaronyUnitDTO> ActivateUnit(int unitId)
         {
@@ -4995,6 +5211,12 @@ namespace DA_Business.Repository.BaronyRepos
 
         private static AvailableAdvisorDTO ToDTO(AvailableAdvisor e)
         {
+            var duties = (e.Duties ?? Enumerable.Empty<AvailableAdvisorDuty>())
+                .OrderBy(d => d.SortOrder)
+                .ThenBy(d => d.Id)
+                .Select(ToDutyDTO)
+                .ToList();
+
             if (e.CharacterId is > 0)
             {
                 // Commander progress lives in SheetJson; Domain Skills come from SkillsJson.
@@ -5008,6 +5230,7 @@ namespace DA_Business.Repository.BaronyRepos
                     CharacterId = e.CharacterId,
                     Sheet = sheet,
                     Skills = De(e.SkillsJson),
+                    Duties = duties,
                 };
             }
 
@@ -5021,8 +5244,21 @@ namespace DA_Business.Repository.BaronyRepos
                 CharacterId = e.CharacterId,
                 Sheet = courtSheet,
                 Skills = CourtPpbFormulas.ComputeTotal(courtSheet),
+                Duties = duties,
             };
         }
+
+        private static CourtDutyDTO ToDutyDTO(AvailableAdvisorDuty e) => new()
+        {
+            Id = e.Id,
+            AvailableAdvisorId = e.AvailableAdvisorId,
+            DutyKind = CourtDutyKind.Normalize(e.DutyKind),
+            DutyCustomName = e.DutyCustomName,
+            DutyOfficeType = e.DutyOfficeType,
+            DutyUnitId = e.DutyUnitId,
+            SalaryGold = e.SalaryGold,
+            SortOrder = e.SortOrder,
+        };
 
         private static AvailableAdvisor ToEntity(AvailableAdvisorDTO d)
         {
@@ -5060,6 +5296,34 @@ namespace DA_Business.Repository.BaronyRepos
             sheet.Normalize();
             e.SheetJson = JsonSerializer.Serialize(sheet, JsonOptions);
             e.SkillsJson = Ser(CourtPpbFormulas.ComputeTotal(sheet));
+        }
+
+        private static void ApplyCourtierDutyFields(CourtDutyDTO d)
+        {
+            var kind = CourtDutyKind.Normalize(d.DutyKind);
+            if (kind == CourtDutyKind.None || kind == CourtDutyKind.Office)
+                kind = CourtDutyKind.Custom;
+            d.DutyKind = kind;
+            d.SalaryGold = Math.Max(0m, d.SalaryGold);
+            d.DutyCustomName = kind == CourtDutyKind.Custom
+                ? (string.IsNullOrWhiteSpace(d.DutyCustomName) ? null : d.DutyCustomName.Trim())
+                : null;
+            d.DutyOfficeType = kind == CourtDutyKind.Assistant
+                ? CourtDutyAssistant.OfficeTypeFor(CourtDutyAssistant.Normalize(
+                    CourtDutyAssistant.FromOfficeType(d.DutyOfficeType) ?? d.DutyOfficeType))
+                : null;
+            d.DutyUnitId = kind == CourtDutyKind.Captain && d.DutyUnitId is > 0 ? d.DutyUnitId : null;
+        }
+
+        private static void ApplyDutyEntity(AvailableAdvisorDuty e, CourtDutyDTO d)
+        {
+            e.AvailableAdvisorId = d.AvailableAdvisorId;
+            e.DutyKind = CourtDutyKind.Normalize(d.DutyKind);
+            e.DutyCustomName = d.DutyCustomName;
+            e.DutyOfficeType = d.DutyOfficeType;
+            e.DutyUnitId = d.DutyUnitId;
+            e.SalaryGold = Math.Max(0m, d.SalaryGold);
+            e.SortOrder = d.SortOrder;
         }
 
         private static string CharacterDisplayName(CharacterDTO character)
@@ -6133,6 +6397,108 @@ namespace DA_Business.Repository.BaronyRepos
             dto.OtherMove = om;
             dto.OtherArmor = oar;
             dto.OtherHp = oh;
+        }
+
+        private static async Task SyncDutyCaptainAssignmentAsync(ApplicationDbContext ctx, AvailableAdvisor person)
+        {
+            var captainDuty = (person.Duties ?? Enumerable.Empty<AvailableAdvisorDuty>())
+                .Where(d => CourtDutyKind.Normalize(d.DutyKind) == CourtDutyKind.Captain
+                    && d.DutyUnitId is > 0)
+                .OrderBy(d => d.SortOrder)
+                .ThenBy(d => d.Id)
+                .FirstOrDefault();
+
+            var captained = await ctx.BaronyUnits
+                .Where(u => u.BaronyId == person.BaronyId && u.CaptainAvailableAdvisorId == person.Id)
+                .ToListAsync();
+
+            if (captainDuty is null)
+            {
+                foreach (var unit in captained)
+                {
+                    unit.CaptainAvailableAdvisorId = null;
+                    unit.UpdatedAtUtc = DateTime.UtcNow;
+                    var dto = ToUnitDTO(unit);
+                    await SyncUnitCommanderBonusesAsync(ctx, dto);
+                    ApplyUnit(unit, dto);
+                }
+                return;
+            }
+
+            var unitId = captainDuty.DutyUnitId!.Value;
+            var target = await ctx.BaronyUnits
+                .FirstOrDefaultAsync(u => u.Id == unitId && u.BaronyId == person.BaronyId)
+                ?? throw new InvalidOperationException("Selected unit is not in this barony.");
+
+            foreach (var unit in captained.Where(u => u.Id != target.Id))
+            {
+                unit.CaptainAvailableAdvisorId = null;
+                unit.UpdatedAtUtc = DateTime.UtcNow;
+                var dto = ToUnitDTO(unit);
+                await SyncUnitCommanderBonusesAsync(ctx, dto);
+                ApplyUnit(unit, dto);
+            }
+
+            var otherCaptainDuties = await ctx.AvailableAdvisorDuties
+                .Where(d => d.AvailableAdvisorId != person.Id
+                    && d.DutyKind == CourtDutyKind.Captain
+                    && d.DutyUnitId == target.Id)
+                .ToListAsync();
+            foreach (var other in otherCaptainDuties)
+                ctx.AvailableAdvisorDuties.Remove(other);
+
+            target.CaptainAvailableAdvisorId = person.Id;
+            target.CaptainIsBaron = false;
+            target.UpdatedAtUtc = DateTime.UtcNow;
+            var targetDto = ToUnitDTO(target);
+            await EnforceCaptainAssignmentAsync(ctx, targetDto);
+            await SyncUnitCommanderBonusesAsync(ctx, targetDto);
+            ApplyUnit(target, targetDto);
+            captainDuty.DutyUnitId = target.Id;
+        }
+
+        private static async Task SyncDutyFromUnitCaptainAsync(ApplicationDbContext ctx, BaronyUnitDTO dto)
+        {
+            var previous = await ctx.AvailableAdvisorDuties
+                .Where(d => d.DutyKind == CourtDutyKind.Captain && d.DutyUnitId == dto.Id)
+                .ToListAsync();
+            foreach (var duty in previous)
+            {
+                if (dto.CaptainAvailableAdvisorId is int cid && cid == duty.AvailableAdvisorId)
+                    continue;
+                ctx.AvailableAdvisorDuties.Remove(duty);
+            }
+
+            if (dto.CaptainAvailableAdvisorId is int captainId && captainId > 0)
+            {
+                var captain = await ctx.AvailableAdvisors
+                    .Include(a => a.Duties)
+                    .FirstOrDefaultAsync(a => a.Id == captainId && a.BaronyId == dto.BaronyId);
+                if (captain is null)
+                    return;
+
+                var existing = captain.Duties
+                    .FirstOrDefault(d => CourtDutyKind.Normalize(d.DutyKind) == CourtDutyKind.Captain);
+                if (existing is null)
+                {
+                    existing = new AvailableAdvisorDuty
+                    {
+                        AvailableAdvisorId = captain.Id,
+                        DutyKind = CourtDutyKind.Captain,
+                        DutyUnitId = dto.Id,
+                        SalaryGold = CourtDutyKind.DefaultSalaryGold,
+                        SortOrder = captain.Duties.Count == 0 ? 0 : captain.Duties.Max(d => d.SortOrder) + 1,
+                    };
+                    ctx.AvailableAdvisorDuties.Add(existing);
+                }
+                else
+                {
+                    existing.DutyKind = CourtDutyKind.Captain;
+                    existing.DutyUnitId = dto.Id;
+                    existing.DutyOfficeType = null;
+                    existing.DutyCustomName = null;
+                }
+            }
         }
 
         private static async Task ResyncUnitsForCaptainAsync(ApplicationDbContext ctx, int captainId, int baronyId)

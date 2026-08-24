@@ -24,6 +24,25 @@ namespace DagoniteEmpire.Pages.Barony
                     a.Additive, a.Percent, a.FormulaText, a.Description))
                 .ToList();
 
+        public static List<PpbModifierRow> CourtWageRows(IEnumerable<AvailableAdvisorDTO>? courtiers)
+        {
+            var rows = new List<PpbModifierRow>();
+            foreach (var person in courtiers ?? Enumerable.Empty<AvailableAdvisorDTO>())
+            {
+                var wage = PpbFormat.Round(Math.Max(0m, person.TotalSalaryGold));
+                if (wage == 0m)
+                    continue;
+                var add = new PpbVector();
+                add[Ppb.Treasury] = -wage;
+                rows.Add(Row(
+                    Loc.T("Court wage — {0}", person.Name),
+                    add,
+                    new PpbVector(),
+                    formula: Loc.T("Seasonal court wage")));
+            }
+            return rows;
+        }
+
         public static List<AdvisorDTO> OrderAdvisors(IEnumerable<AdvisorDTO>? advisors)
         {
             var list = advisors?.ToList() ?? new List<AdvisorDTO>();
@@ -64,7 +83,8 @@ namespace DagoniteEmpire.Pages.Barony
             CharacterDTO? character,
             IEnumerable<BaronInfluenceModifierDTO>? baronModifiers,
             IEnumerable<AdvisorInfluenceModifierDTO>? advisorModifiers = null,
-            int managementJc = BaronTimeRules.RequiredManagementJc)
+            int managementJc = BaronTimeRules.RequiredManagementJc,
+            IEnumerable<AvailableAdvisorDTO>? courtiers = null)
         {
             var modsByAdvisor = (advisorModifiers ?? Enumerable.Empty<AdvisorInfluenceModifierDTO>())
                 .GroupBy(m => m.AdvisorId)
@@ -75,7 +95,7 @@ namespace DagoniteEmpire.Pages.Barony
                 {
                     var row = CloneAdvisorForPanel(a);
                     var mods = modsByAdvisor.GetValueOrDefault(a.Id);
-                    ApplyAdvisorSkillInfluence(row, mods);
+                    ApplyAdvisorSkillInfluence(row, mods, courtiers);
                     ApplyOfficeGoldCostToPanelRow(row, mods);
                     return row;
                 })
@@ -1103,8 +1123,10 @@ namespace DagoniteEmpire.Pages.Barony
             bool battleSuppressesUnitActions = false)
         {
             var advisors = AdvisorsForDomainPanel(
-                ov.Advisors, ov.Barony, character, baronModifiers, advisorModifiers, managementJc);
+                ov.Advisors, ov.Barony, character, baronModifiers, advisorModifiers, managementJc,
+                ov.AvailableAdvisors);
             var advisorRows = AdvisorRows(advisors);
+            advisorRows.AddRange(CourtWageRows(ov.AvailableAdvisors));
             var buildingRows = CityBuildingSectionRows(
                 ov.Barony.Id, ov.Buildings, ov.Improvements, ov.Seat, ov.SeatPurposeTemplates, ov.Artifacts);
             var socialRows = SocialRows(ov.Barony.Id, ov.SocialRelations);
@@ -1728,6 +1750,76 @@ namespace DagoniteEmpire.Pages.Barony
         public static List<AdvisorDTO> OrderOffices(IEnumerable<AdvisorDTO>? advisors)
             => OrderAdvisors(advisors?.Where(a => !a.IsBaron));
 
+        public static string CourtDutyLabel(CourtDutyDTO duty, IEnumerable<BaronyUnitDTO>? units = null)
+        {
+            var kind = CourtDutyKind.Normalize(duty.DutyKind);
+            return kind switch
+            {
+                CourtDutyKind.Office => OfficeDutyLabel(duty),
+                CourtDutyKind.Assistant => Loc.T(CourtDutyAssistant.Normalize(
+                    CourtDutyAssistant.FromOfficeType(duty.DutyOfficeType) ?? duty.DutyOfficeType)),
+                CourtDutyKind.Captain => CaptainDutyLabel(duty.DutyUnitId, units),
+                CourtDutyKind.Custom => string.IsNullOrWhiteSpace(duty.DutyCustomName)
+                    ? Loc.T("Custom duty")
+                    : duty.DutyCustomName.Trim(),
+                _ => Loc.T("No duty"),
+            };
+        }
+
+        public static bool IsOfficeDuty(CourtDutyDTO duty)
+            => CourtDutyKind.Normalize(duty.DutyKind) == CourtDutyKind.Office;
+
+        /// <summary>Virtual duty rows for offices this courtier currently holds (salary is already in office upkeep).</summary>
+        public static IEnumerable<CourtDutyDTO> OfficeDutiesFor(
+            AvailableAdvisorDTO person,
+            IEnumerable<AdvisorDTO>? offices)
+        {
+            return (offices ?? Enumerable.Empty<AdvisorDTO>())
+                .Where(o => !o.IsBaron && o.AvailableAdvisorId == person.Id)
+                .Select(o => new CourtDutyDTO
+                {
+                    Id = 0,
+                    AvailableAdvisorId = person.Id,
+                    DutyKind = CourtDutyKind.Office,
+                    DutyOfficeType = o.OfficeType,
+                    DutyCustomName = string.IsNullOrWhiteSpace(o.Title) ? null : o.Title,
+                    SalaryGold = 0m,
+                    SortOrder = -1,
+                });
+        }
+
+        private static string OfficeDutyLabel(CourtDutyDTO duty)
+        {
+            if (!string.IsNullOrWhiteSpace(duty.DutyCustomName))
+                return LocCatalog.NameOrRaw(duty.DutyCustomName, OfficeType.All);
+
+            return duty.DutyOfficeType switch
+            {
+                OfficeType.Baron => Loc.T("Baron"),
+                OfficeType.Chancellor => Loc.T("Chancellor"),
+                OfficeType.GuardCaptain => Loc.T("Guard Captain"),
+                OfficeType.Steward => Loc.T("Steward"),
+                _ => Loc.T("Advisor"),
+            };
+        }
+
+        public static string CourtDutyLabel(AvailableAdvisorDTO person, IEnumerable<BaronyUnitDTO>? units = null)
+        {
+            if (person.Duties is { Count: > 0 })
+                return string.Join(", ", person.Duties.Select(d => CourtDutyLabel(d, units)));
+            return Loc.T("No duty");
+        }
+
+        private static string CaptainDutyLabel(int? unitId, IEnumerable<BaronyUnitDTO>? units)
+        {
+            var unit = unitId is int id
+                ? units?.FirstOrDefault(u => u.Id == id)
+                : null;
+            if (unit is null || string.IsNullOrWhiteSpace(unit.Name))
+                return Loc.T("Unit captain");
+            return Loc.T("Captain of {0}", unit.Name);
+        }
+
         public static decimal SumOfficeUpkeep(
             IEnumerable<AdvisorDTO>? advisors,
             IEnumerable<AdvisorInfluenceModifierDTO>? modifiers = null)
@@ -1760,7 +1852,8 @@ namespace DagoniteEmpire.Pages.Barony
 
         public static List<AdvisorInfluenceRow> BuildAdvisorInfluenceRows(
             AdvisorDTO advisor,
-            IEnumerable<AdvisorInfluenceModifierDTO>? customModifiers)
+            IEnumerable<AdvisorInfluenceModifierDTO>? customModifiers,
+            IEnumerable<AvailableAdvisorDTO>? courtiers = null)
         {
             var rows = new List<AdvisorInfluenceRow>();
 
@@ -1774,6 +1867,23 @@ namespace DagoniteEmpire.Pages.Barony
                     SystemKind = AdvisorInfluenceSystemKind.Skills,
                     Description = "Administrative skills of the office holder. "
                         + "Only significant (active) skills affect barony PPB in the Domain Panel.",
+                });
+            }
+
+            if (FindOfficeAssistant(advisor, courtiers) is { } assistant)
+            {
+                var significant = EffectiveSignificantSkills(advisor);
+                rows.Add(new AdvisorInfluenceRow
+                {
+                    Source = OfficeAssistantSourceLabel(assistant.Person, assistant.Duty),
+                    Values = AssistantInfluenceFromDomain(assistant.Person.Skills, significant),
+                    IsSystem = true,
+                    SystemKind = AdvisorInfluenceSystemKind.Assistant,
+                    Formula = Loc.T("= floor(domain skill / {0})", CourtDutyAssistant.DomainPointsPerBonus),
+                    Description = Loc.T(
+                        "Advisor's assistant. +1 to each significant office skill per {0} points of the helper's matching domain skill. Salary is paid as a court wage, not office upkeep.",
+                        CourtDutyAssistant.DomainPointsPerBonus),
+                    Cost = Math.Max(0m, assistant.Duty.SalaryGold),
                 });
             }
 
@@ -1797,6 +1907,83 @@ namespace DagoniteEmpire.Pages.Barony
             return rows;
         }
 
+        public const int AssistantDomainPointsPerBonus = CourtDutyAssistant.DomainPointsPerBonus;
+
+        /// <summary>+1 to each significant skill per <see cref="CourtDutyAssistant.DomainPointsPerBonus"/> domain points (floored).</summary>
+        public static PpbVector AssistantInfluenceFromDomain(PpbVector domainSkills, IEnumerable<Ppb> significant)
+        {
+            var values = new PpbVector();
+            var skills = domainSkills ?? new PpbVector();
+            foreach (var key in significant ?? Enumerable.Empty<Ppb>())
+            {
+                if (key == Ppb.Treasury)
+                    continue;
+                values[key] = Math.Floor(skills[key] / CourtDutyAssistant.DomainPointsPerBonus);
+            }
+            return values;
+        }
+
+        public static (AvailableAdvisorDTO Person, CourtDutyDTO Duty)? FindOfficeAssistant(
+            AdvisorDTO office,
+            IEnumerable<AvailableAdvisorDTO>? courtiers)
+        {
+            if (office.IsBaron || string.IsNullOrWhiteSpace(office.OfficeType))
+                return null;
+
+            foreach (var person in courtiers ?? Enumerable.Empty<AvailableAdvisorDTO>())
+            {
+                foreach (var duty in person.Duties)
+                {
+                    if (CourtDutyKind.Normalize(duty.DutyKind) != CourtDutyKind.Assistant)
+                        continue;
+                    if (string.Equals(duty.DutyOfficeType, office.OfficeType, StringComparison.OrdinalIgnoreCase))
+                        return (person, duty);
+                }
+            }
+
+            return null;
+        }
+
+        public static string OfficeAssistantSourceLabel(AvailableAdvisorDTO person, CourtDutyDTO duty)
+        {
+            var post = CourtDutyAssistant.Normalize(
+                CourtDutyAssistant.FromOfficeType(duty.DutyOfficeType) ?? duty.DutyOfficeType);
+            var title = Loc.T(post);
+            var name = string.IsNullOrWhiteSpace(person.Name) ? title : person.Name.Trim();
+            return string.IsNullOrWhiteSpace(person.Name) ? title : $"{title} {name}";
+        }
+
+        public static HashSet<string> OccupiedAssistantOfficeTypes(
+            IEnumerable<AvailableAdvisorDTO>? courtiers,
+            int? exceptDutyId = null)
+        {
+            var taken = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var person in courtiers ?? Enumerable.Empty<AvailableAdvisorDTO>())
+            {
+                foreach (var duty in person.Duties)
+                {
+                    if (exceptDutyId is int id && duty.Id == id)
+                        continue;
+                    if (CourtDutyKind.Normalize(duty.DutyKind) != CourtDutyKind.Assistant)
+                        continue;
+                    if (!string.IsNullOrWhiteSpace(duty.DutyOfficeType))
+                        taken.Add(duty.DutyOfficeType);
+                }
+            }
+            return taken;
+        }
+
+        public static decimal OfficeTableCost(
+            AdvisorDTO advisor,
+            IEnumerable<AdvisorInfluenceModifierDTO>? customModifiers,
+            IEnumerable<AvailableAdvisorDTO>? courtiers = null)
+        {
+            var cost = TotalOfficeCost(advisor, customModifiers);
+            if (FindOfficeAssistant(advisor, courtiers) is { } assistant)
+                cost += Math.Max(0m, assistant.Duty.SalaryGold);
+            return cost;
+        }
+
         public static PpbVector SumAdvisorInfluenceRows(
             IEnumerable<AdvisorInfluenceRow> rows,
             IEnumerable<Ppb>? significantSkills = null)
@@ -1818,14 +2005,15 @@ namespace DagoniteEmpire.Pages.Barony
         /// </summary>
         public static void ApplyAdvisorSkillInfluence(
             AdvisorDTO advisor,
-            IEnumerable<AdvisorInfluenceModifierDTO>? customModifiers)
+            IEnumerable<AdvisorInfluenceModifierDTO>? customModifiers,
+            IEnumerable<AvailableAdvisorDTO>? courtiers = null)
         {
             if (advisor.IsBaron)
                 return;
 
             var active = EffectiveSignificantSkills(advisor);
             var totalSkills = SumAdvisorInfluenceRows(
-                BuildAdvisorInfluenceRows(advisor, customModifiers),
+                BuildAdvisorInfluenceRows(advisor, customModifiers, courtiers),
                 active);
 
             advisor.Additive = BaronSkillPpbFormulas.MapToAdvisorAdditive(totalSkills);
@@ -1834,8 +2022,12 @@ namespace DagoniteEmpire.Pages.Barony
 
         public static void SyncAdvisorAdditive(
             AdvisorDTO advisor,
-            IEnumerable<AdvisorInfluenceModifierDTO>? customModifiers)
-            => ApplyAdvisorSkillInfluence(advisor, customModifiers);
+            IEnumerable<AdvisorInfluenceModifierDTO>? customModifiers,
+            IEnumerable<AvailableAdvisorDTO>? courtiers = null)
+            => ApplyAdvisorSkillInfluence(advisor, customModifiers, courtiers);
+
+        public static string? ExplainAssistantInfluence(Ppb key)
+            => Loc.T("= floor({0} / {1})", PpbCatalog.Name(key), CourtDutyAssistant.DomainPointsPerBonus);
 
         public static string? ExplainOfficeAdvisorAdditive(AdvisorDTO advisor, Ppb key)
         {

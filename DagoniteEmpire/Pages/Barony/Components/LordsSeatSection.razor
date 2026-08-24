@@ -141,23 +141,25 @@
                         {
                             var cellX = x;
                             var cellY = y;
-                            <BaronyTooltip Text="@CellTitle(cellX, cellY)"
-                                           Class="lords-seat-plan__room-tip"
-                                           Style="@($"grid-column:{cellX + 1}; grid-row:{cellY + 1};")">
-                                <div @key="@($"seat-cell-{_currentLevel}-{cellX}-{cellY}")"
-                                     class="lords-seat-plan__cell @CellDropClass(cellX, cellY)"
-                                     @ondragenter="() => OnCellDragEnter(cellX, cellY)"
-                                     @ondragleave="() => OnCellDragLeave(cellX, cellY)"
-                                     @ondragover="e => OnCellDragOver(e, cellX, cellY)"
-                                     @ondragover:preventDefault
-                                     @ondrop="e => OnCellDrop(e, cellX, cellY)"
-                                     @ondrop:preventDefault
-                                     @onmousedown="() => OnCellMouseDown(cellX, cellY)"
-                                     @onmousedown:preventDefault="@IsPainting"
-                                     @onmouseenter="() => OnCellMouseEnter(cellX, cellY)"
-                                     @onclick="() => OnCellClick(cellX, cellY)">
-                                </div>
-                            </BaronyTooltip>
+                            <div @key="@($"seat-cell-slot-{_currentLevel}-{cellX}-{cellY}")"
+                                 class="lords-seat-plan__cell-slot"
+                                 style="grid-column:@(cellX + 1); grid-row:@(cellY + 1);">
+                                <BaronyTooltip Text="@CellTitle(cellX, cellY)"
+                                               Class="lords-seat-plan__room-tip">
+                                    <div class="lords-seat-plan__cell @CellDropClass(cellX, cellY)"
+                                         @ondragenter="() => OnCellDragEnter(cellX, cellY)"
+                                         @ondragleave="() => OnCellDragLeave(cellX, cellY)"
+                                         @ondragover="e => OnCellDragOver(e, cellX, cellY)"
+                                         @ondragover:preventDefault
+                                         @ondrop="e => OnCellDrop(e, cellX, cellY)"
+                                         @ondrop:preventDefault
+                                         @onmousedown="() => OnCellMouseDown(cellX, cellY)"
+                                         @onmousedown:preventDefault="@IsPainting"
+                                         @onmouseenter="() => OnCellMouseEnter(cellX, cellY)"
+                                         @onclick="() => OnCellClick(cellX, cellY)">
+                                    </div>
+                                </BaronyTooltip>
+                            </div>
                         }
                     }
                     @foreach (var room in PlacedRooms)
@@ -267,6 +269,11 @@
                         {
                             var (additive, percent) = RoomEffectivePpb(room);
                             var roomItems = BaronyCalc.PlacedArtifactsInRoom(Artifacts, room.Id);
+                            var occupantName = OccupantNameOnly(room);
+                            var occupantTip = OccupantSubtitle(room);
+                            var hasOccupant = !string.IsNullOrWhiteSpace(occupantName);
+                            var hasItems = roomItems.Count > 0;
+                            var occupantEmpty = !hasOccupant && !hasItems;
                             <tr class="@RowClass(room)">
                                 <td class="lords-seat-col-name">
                                     <div class="city-building-name-cell">
@@ -318,41 +325,51 @@
                                         <span>@(SeatRoomSizeCategory.Letter(room.SizeCategory))(@room.TileCount)</span>
                                     </BaronyTooltip>
                                 </td>
-                                <td class="lords-seat-col-occupant">
-                                    @{
-                                        var occupantName = OccupantNameOnly(room);
-                                        var occupantTip = OccupantSubtitle(room);
-                                        var hasOccupant = !string.IsNullOrWhiteSpace(occupantName);
-                                        var hasItems = roomItems.Count > 0;
-                                    }
-                                    @if (!hasOccupant && !hasItems)
+                                <td class="lords-seat-col-occupant @(occupantEmpty ? "lords-seat-col-occupant--empty" : null) @(CanEdit && !room.IsRuin ? "lords-seat-col-occupant--clickable" : null)"
+                                    @onclick="@(() => AssignOccupantTreasuresAsync(room))"
+                                    @onclick:stopPropagation="true">
+                                    @if (occupantEmpty)
                                     {
-                                        <span class="lords-seat-muted">—</span>
+                                        @if (CanEdit && !room.IsRuin)
+                                        {
+                                            <div class="lords-seat-occupant-assign" @onclick:stopPropagation="true">
+                                                <BaronyTooltip Text="@(L["Assign occupant / items"])">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.SwapHoriz"
+                                                                   Size="Size.Small"
+                                                                   OnClick="@(() => AssignOccupantTreasuresAsync(room))" />
+                                                </BaronyTooltip>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span class="lords-seat-muted">—</span>
+                                        }
                                     }
                                     else
                                     {
                                         <div class="lords-seat-occupant-stack">
                                             @if (hasOccupant)
                                             {
-                                                <BaronyTooltip Title="@(L["Occupant"])" Text="@(occupantTip ?? occupantName)">
+                                                <BaronyTooltip Class="lords-seat-occupant-tip"
+                                                               Title="@(L["Occupant"])"
+                                                               Text="@(occupantTip ?? occupantName)">
                                                     <span class="lords-seat-occupant-name">@occupantName</span>
                                                 </BaronyTooltip>
                                             }
                                             @if (hasItems)
                                             {
-                                                <span class="lords-seat-occupant-items">
-                                                    @for (var i = 0; i < roomItems.Count; i++)
+                                                <div class="lords-seat-occupant-items">
+                                                    @foreach (var item in roomItems)
                                                     {
-                                                        var item = roomItems[i];
-                                                        if (i > 0)
-                                                        {
-                                                            <span class="lords-seat-occupant-items-sep">, </span>
-                                                        }
-                                                        <BaronyTooltip Title="@item.Name" Text="@ItemBonusTooltip(item, room)">
-                                                            <span class="lords-seat-occupant-item-name">@item.Name</span>
-                                                        </BaronyTooltip>
+                                                        <div class="lords-seat-occupant-item">
+                                                            <BaronyTooltip Class="lords-seat-occupant-tip"
+                                                                           Title="@item.Name"
+                                                                           Text="@ItemBonusTooltip(item, room)">
+                                                                <span class="lords-seat-occupant-item-name">@item.Name</span>
+                                                            </BaronyTooltip>
+                                                        </div>
                                                     }
-                                                </span>
+                                                </div>
                                             }
                                         </div>
                                     }
@@ -1388,6 +1405,43 @@
         catch (Exception ex)
         {
             _snackBar.Add(L["Could not assign purpose: "] + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task AssignOccupantTreasuresAsync(SeatRoomDTO room)
+    {
+        if (!CanEdit || room.IsRuin)
+            return;
+
+        var parameters = new DialogParameters<SeatOccupantTreasuresDialog>
+        {
+            { x => x.Room, room },
+            { x => x.Advisors, Advisors },
+            { x => x.Artifacts, Artifacts },
+        };
+
+        var dialog = await _dialogService.ShowAsync<SeatOccupantTreasuresDialog>(
+            L["Occupant / Items"],
+            parameters,
+            DialogOptions());
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not SeatRoomOccupantTreasuresAssignmentDTO assignment)
+            return;
+
+        try
+        {
+            await _baronyRepo.SetSeatRoomOccupantAndTreasures(
+                room.Id,
+                assignment.OccupantAdvisorId,
+                assignment.OccupantCustom,
+                assignment.ArtifactIds);
+            _snackBar.Add(L["Occupant and treasures updated."], Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(L["Could not assign occupant or treasures: "] + ex.Message, Severity.Error);
         }
     }
 

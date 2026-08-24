@@ -45,7 +45,12 @@
                                         CanEdit="@CanManage"
                                         OnEdit="EditRowAsync"
                                         OnDelete="DeleteRowAsync"
-                                        CellTooltip="@((row, key) => row.SystemKind == AdvisorInfluenceSystemKind.Skills ? CourtPpbFormulas.FormulaLabel(key) : null)" />
+                                        CellTooltip="@((row, key) => row.SystemKind switch
+                                        {
+                                            AdvisorInfluenceSystemKind.Skills => CourtPpbFormulas.FormulaLabel(key),
+                                            AdvisorInfluenceSystemKind.Assistant => BaronyCalc.ExplainAssistantInfluence(key),
+                                            _ => null,
+                                        })" />
             }
             else if (!BaronyCalc.IsOfficeAssigned(Advisor))
             {
@@ -105,9 +110,9 @@
     private void RebuildRows()
     {
         _significantSkills = BaronyCalc.EffectiveSignificantSkills(Advisor).ToHashSet();
-        _rows = BaronyCalc.BuildAdvisorInfluenceRows(Advisor, CustomModifiers);
+        _rows = BaronyCalc.BuildAdvisorInfluenceRows(Advisor, CustomModifiers, AvailableAdvisors);
         _total = BaronyCalc.SumAdvisorInfluenceRows(_rows, _significantSkills);
-        _totalCost = BaronyCalc.TotalOfficeCost(Advisor, CustomModifiers);
+        _totalCost = BaronyCalc.OfficeTableCost(Advisor, CustomModifiers, AvailableAdvisors);
     }
 
     private async Task EditProfileAsync()
@@ -204,7 +209,7 @@
                 mods.Add(savedDto);
         }
 
-        BaronyCalc.SyncAdvisorAdditive(Advisor, mods);
+        BaronyCalc.SyncAdvisorAdditive(Advisor, mods, AvailableAdvisors);
         await _baronyRepo.SaveAdvisor(Advisor);
         _snackBar.Add(L["Bonus source saved."], Severity.Success);
         await OnChanged.InvokeAsync();
@@ -217,7 +222,7 @@
 
         await _baronyRepo.DeleteAdvisorInfluenceModifier(row.ModifierId.Value);
         var mods = CustomModifiers.Where(m => m.Id != row.ModifierId).ToList();
-        BaronyCalc.SyncAdvisorAdditive(Advisor, mods);
+        BaronyCalc.SyncAdvisorAdditive(Advisor, mods, AvailableAdvisors);
         await _baronyRepo.SaveAdvisor(Advisor);
         _snackBar.Add(L["Bonus source removed."], Severity.Success);
         await OnChanged.InvokeAsync();
@@ -238,7 +243,7 @@
 
     private async Task PersistAdvisorAsync()
     {
-        BaronyCalc.SyncAdvisorAdditive(Advisor, CustomModifiers);
+        BaronyCalc.SyncAdvisorAdditive(Advisor, CustomModifiers, AvailableAdvisors);
         await _baronyRepo.SaveAdvisor(Advisor);
         _snackBar.Add(L["Office updated."], Severity.Success);
         await OnChanged.InvokeAsync();

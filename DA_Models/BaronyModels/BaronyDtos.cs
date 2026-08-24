@@ -129,6 +129,23 @@ namespace DA_Models.BaronyModels
         /// <summary>Linked full character sheet (NPC/PC). When set, skills come from that character.</summary>
         public int? CharacterId { get; set; }
         public bool IsLinkedCharacter => CharacterId is > 0;
+
+        /// <summary>Assigned court functions (duty + salary). Multiple allowed.</summary>
+        public List<CourtDutyDTO> Duties { get; set; } = new();
+
+        public decimal TotalSalaryGold => Duties.Sum(d => Math.Max(0m, d.SalaryGold));
+    }
+
+    public class CourtDutyDTO
+    {
+        public int Id { get; set; }
+        public int AvailableAdvisorId { get; set; }
+        public string DutyKind { get; set; } = DA_Common.Barony.CourtDutyKind.Custom;
+        public string? DutyCustomName { get; set; }
+        public string? DutyOfficeType { get; set; }
+        public int? DutyUnitId { get; set; }
+        public decimal SalaryGold { get; set; } = DA_Common.Barony.CourtDutyKind.DefaultSalaryGold;
+        public int SortOrder { get; set; }
     }
 
     public class BaronyBuildingDTO
@@ -626,6 +643,13 @@ namespace DA_Models.BaronyModels
         public int? PurposeTemplateId { get; set; }
         public int? OccupantAdvisorId { get; set; }
         public string? OccupantCustom { get; set; }
+    }
+
+    public class SeatRoomOccupantTreasuresAssignmentDTO
+    {
+        public int? OccupantAdvisorId { get; set; }
+        public string? OccupantCustom { get; set; }
+        public List<int> ArtifactIds { get; set; } = new();
     }
 
     public class SeatPurposeTemplateDTO

@@ -123,7 +123,9 @@
         => PpbCatalog.All.Where(p => p.Key != Ppb.Treasury);
 
     private string DisplaySource(AdvisorInfluenceRow row)
-        => row.IsSystem ? L[row.Source].Value : row.Source;
+        => row.SystemKind == AdvisorInfluenceSystemKind.Assistant
+            ? row.Source
+            : row.IsSystem ? L[row.Source].Value : row.Source;
 
     private string RowTitle(AdvisorInfluenceRow row)
     {

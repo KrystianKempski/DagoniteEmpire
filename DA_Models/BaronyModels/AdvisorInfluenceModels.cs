@@ -17,6 +17,7 @@ namespace DA_Models.BaronyModels
     {
         None,
         Skills,
+        Assistant,
         Other,
     }
 

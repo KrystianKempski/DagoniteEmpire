@@ -180,7 +180,7 @@ namespace DA_Business.Repository.BaronyRepos
                 var seat = new BaronySeat
                 {
                     BaronyId = baronyId,
-                    Name = seatSeed.Name,
+                    Name = DarkholdSeatLocalization.LocalizeSeatName(seatSeed.Name),
                     GridWidth = seatSeed.GridWidth,
                     GridHeight = seatSeed.GridHeight,
                     ActiveLevelsJson = seatSeed.ActiveLevelsJson,
@@ -194,7 +194,7 @@ namespace DA_Business.Repository.BaronyRepos
                     .Select(s => (s.Id, Entity: new SeatRoom
                     {
                         SeatId = seat.Id,
-                        Name = s.Name,
+                        Name = DarkholdSeatLocalization.LocalizeRoomName(s.Level, s.GridX, s.GridY, s.Name),
                         Level = s.Level,
                         GridX = s.GridX,
                         GridY = s.GridY,
@@ -214,6 +214,8 @@ namespace DA_Business.Repository.BaronyRepos
                 ctx.SeatRooms.AddRange(roomRows.Select(r => r.Entity));
                 await ctx.SaveChangesAsync();
                 foreach (var r in roomRows) roomMap[r.Id] = r.Entity.Id;
+
+                DarkholdSeatLocalization.SeedArtifacts(ctx, baronyId, roomMap);
 
                 if (seed.SeatRoomTraits.Count > 0)
                 {

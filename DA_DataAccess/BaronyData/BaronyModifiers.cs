@@ -57,6 +57,33 @@ namespace DA_DataAccess.BaronyData
 
         /// <summary>When set, this courtier is a linked NPC/PC sheet; skills come from that character.</summary>
         public int? CharacterId { get; set; }
+
+        public ICollection<AvailableAdvisorDuty> Duties { get; set; } = new List<AvailableAdvisorDuty>();
+    }
+
+    /// <summary>One court function/duty of an <see cref="AvailableAdvisor"/> (Dwór — Funkcja).</summary>
+    public class AvailableAdvisorDuty
+    {
+        [Key]
+        public int Id { get; set; }
+        public int AvailableAdvisorId { get; set; }
+
+        /// <summary><see cref="DA_Common.Barony.CourtDutyKind"/>.</summary>
+        public string DutyKind { get; set; } = DA_Common.Barony.CourtDutyKind.None;
+
+        /// <summary>Custom function name when <see cref="DutyKind"/> is Custom.</summary>
+        public string? DutyCustomName { get; set; }
+
+        /// <summary>Core <see cref="DA_Common.Barony.OfficeType"/> when this person is an assistant.</summary>
+        public string? DutyOfficeType { get; set; }
+
+        /// <summary>Unit captained when <see cref="DutyKind"/> is Captain.</summary>
+        public int? DutyUnitId { get; set; }
+
+        /// <summary>Seasonal wage in gold (imperials). Default 3.</summary>
+        public decimal SalaryGold { get; set; } = DA_Common.Barony.CourtDutyKind.DefaultSalaryGold;
+
+        public int SortOrder { get; set; }
     }
 
     /// <summary>Budynek/ulepszenie działające w mieście głównym (sekcja "Miasto i budynki").</summary>

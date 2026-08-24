@@ -62,6 +62,7 @@ namespace DA_DataAccess.Data
         public DbSet<BaronyPlayerNote> BaronyPlayerNotes { get; set; }
         public DbSet<Advisor> Advisors { get; set; }
         public DbSet<AvailableAdvisor> AvailableAdvisors { get; set; }
+        public DbSet<AvailableAdvisorDuty> AvailableAdvisorDuties { get; set; }
         public DbSet<BaronyBuilding> BaronyBuildings { get; set; }
         public DbSet<SocialGroupRelation> SocialGroupRelations { get; set; }
         public DbSet<Decree> Decrees { get; set; }
@@ -147,6 +148,15 @@ namespace DA_DataAccess.Data
                     .IsUnique()
                     .HasDatabaseName("IX_AvailableAdvisors_BaronyId_CharacterId")
                     .HasFilter("\"CharacterId\" IS NOT NULL");
+                entity.HasMany(e => e.Duties)
+                    .WithOne()
+                    .HasForeignKey(d => d.AvailableAdvisorId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<AvailableAdvisorDuty>(entity =>
+            {
+                entity.HasIndex(e => e.AvailableAdvisorId);
             });
 
             modelBuilder.Entity<BaronPhpSource>(entity =>

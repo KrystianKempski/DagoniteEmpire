@@ -204,6 +204,43 @@ namespace DA_DataAccess.Migrations
                     b.ToTable("AvailableAdvisors");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.BaronyData.AvailableAdvisorDuty", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AvailableAdvisorId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DutyCustomName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("DutyKind")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("DutyOfficeType")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("DutyUnitId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("SalaryGold")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AvailableAdvisorId");
+
+                    b.ToTable("AvailableAdvisorDuties");
+                });
+
             modelBuilder.Entity("DA_DataAccess.BaronyData.BaronArtifact", b =>
                 {
                     b.Property<int>("Id")

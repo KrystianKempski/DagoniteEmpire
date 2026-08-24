@@ -34,6 +34,8 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<List<AvailableAdvisorDTO>> GetAvailableAdvisors(int baronyId);
         Task<AvailableAdvisorDTO> SaveAvailableAdvisor(AvailableAdvisorDTO dto);
         Task<int> DeleteAvailableAdvisor(int id);
+        Task<CourtDutyDTO> SaveCourtDuty(CourtDutyDTO dto);
+        Task<int> DeleteCourtDuty(int id);
         /// <summary>GM: attach an approved Character sheet as a courtier of this barony.</summary>
         Task<AvailableAdvisorDTO> AttachCharacterAsCourtier(int baronyId, int characterId);
         /// <summary>Character IDs already linked as courtiers in any barony.</summary>
@@ -75,6 +77,7 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<SeatRoomDTO> SaveSeatRoom(SeatRoomDTO dto);
         Task<int> DeleteSeatRoom(int id);
         Task SetSeatRoomPurpose(int roomId, int? purposeTemplateId, int? occupantAdvisorId = null, string? occupantCustom = null);
+        Task SetSeatRoomOccupantAndTreasures(int roomId, int? occupantAdvisorId, string? occupantCustom, IReadOnlyList<int> artifactIds);
         Task SetSeatTile(int seatId, int level, int x, int y, string? kind);
         Task SaveSeatActiveLevels(int seatId, IReadOnlyList<int> levels);
         Task<List<SeatPurposeTemplateDTO>> GetSeatPurposeTemplates(int baronyId);

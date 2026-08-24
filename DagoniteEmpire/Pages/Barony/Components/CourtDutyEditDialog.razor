@@ -1,0 +1,204 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Common.Barony
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog court-duty-dialog">
+            @if (!string.IsNullOrWhiteSpace(PersonName))
+            {
+                <MudText Typo="Typo.body2" Class="mb-2">
+                    @PersonName
+                </MudText>
+            }
+
+            <MudSelect T="string"
+                       Value="_kind"
+                       ValueChanged="OnKindChanged"
+                       Label="@(L["Duty"])"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Class="baron-influence-field">
+                <MudSelectItem Value="@CourtDutyKind.Assistant">@L["Advisor's assistant"]</MudSelectItem>
+                <MudSelectItem Value="@CourtDutyKind.Captain">@L["Unit captain"]</MudSelectItem>
+                <MudSelectItem Value="@CourtDutyKind.Custom">@L["Custom duty"]</MudSelectItem>
+            </MudSelect>
+
+            @if (_kind == CourtDutyKind.Assistant)
+            {
+                @if (!AssignableAssistantPosts.Any())
+                {
+                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-2">
+                        @L["No free assistant posts."]
+                    </MudText>
+                }
+                else
+                {
+                    <MudSelect T="string"
+                               @bind-Value="_assistant"
+                               Label="@(L["Assistant post"])"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Class="baron-influence-field mt-2">
+                        @foreach (var post in AssignableAssistantPosts)
+                        {
+                            <MudSelectItem Value="@post">@AssistantOption(post)</MudSelectItem>
+                        }
+                    </MudSelect>
+                }
+            }
+            else if (_kind == CourtDutyKind.Captain)
+            {
+                @if (!AssignableUnits.Any())
+                {
+                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-2">
+                        @L["No free units available."]
+                    </MudText>
+                }
+                else
+                {
+                    <MudSelect T="int?"
+                               @bind-Value="_unitId"
+                               Label="@(L["Unit"])"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Class="baron-influence-field mt-2">
+                        @foreach (var unit in AssignableUnits)
+                        {
+                            <MudSelectItem Value="@((int?)unit.Id)">@unit.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                }
+            }
+            else
+            {
+                <MudTextField @bind-Value="_customName"
+                              Label="@(L["Duty name"])"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Class="baron-influence-field mt-2"
+                              Immediate="true" />
+            }
+
+            <MudNumericField T="decimal"
+                             @bind-Value="_salary"
+                             Label="@(L["Salary (imperials / season)"])"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Class="baron-influence-field mt-2"
+                             Min="0"
+                             Step="1" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   Class="baron-influence-save-btn"
+                   Disabled="@(!CanSave)"
+                   OnClick="Save">@L["Assign"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public CourtDutyDTO Duty { get; set; } = new();
+    [Parameter] public string? PersonName { get; set; }
+    [Parameter] public List<BaronyUnitDTO> Units { get; set; } = new();
+    /// <summary>Unit ids already captained by this person's other duty rows.</summary>
+    [Parameter] public HashSet<int> OwnOtherCaptainUnitIds { get; set; } = new();
+    /// <summary>Office types that already have an assistant (except the duty being edited).</summary>
+    [Parameter] public HashSet<string> OccupiedAssistantOfficeTypes { get; set; } = new();
+
+    private string _kind = CourtDutyKind.Custom;
+    private string _assistant = CourtDutyAssistant.Herald;
+    private string _customName = string.Empty;
+    private int? _unitId;
+    private decimal _salary = CourtDutyKind.DefaultSalaryGold;
+
+    private IEnumerable<string> AssignableAssistantPosts =>
+        CourtDutyAssistant.All.Where(post =>
+        {
+            var office = CourtDutyAssistant.OfficeTypeFor(post);
+            return !OccupiedAssistantOfficeTypes.Contains(office)
+                || string.Equals(office, Duty.DutyOfficeType, StringComparison.OrdinalIgnoreCase);
+        });
+
+    private IEnumerable<BaronyUnitDTO> AssignableUnits =>
+        Units
+            .Where(u => u.CaptainIsBaron == false
+                && (u.CaptainAvailableAdvisorId is null
+                    || u.CaptainAvailableAdvisorId == Duty.AvailableAdvisorId
+                    || u.Id == Duty.DutyUnitId)
+                && (!OwnOtherCaptainUnitIds.Contains(u.Id) || u.Id == Duty.DutyUnitId))
+            .OrderBy(u => u.Name, StringComparer.OrdinalIgnoreCase);
+
+    private bool CanSave => _kind switch
+    {
+        CourtDutyKind.Captain => _unitId is > 0,
+        CourtDutyKind.Custom => !string.IsNullOrWhiteSpace(_customName),
+        CourtDutyKind.Assistant => AssignableAssistantPosts.Any()
+            && AssignableAssistantPosts.Contains(_assistant),
+        _ => false,
+    };
+
+    protected override void OnInitialized()
+    {
+        var kind = CourtDutyKind.Normalize(Duty.DutyKind);
+        _kind = kind is CourtDutyKind.None ? CourtDutyKind.Custom : kind;
+        _assistant = CourtDutyAssistant.Normalize(
+            CourtDutyAssistant.FromOfficeType(Duty.DutyOfficeType) ?? Duty.DutyOfficeType);
+        if (!AssignableAssistantPosts.Contains(_assistant))
+            _assistant = AssignableAssistantPosts.FirstOrDefault() ?? CourtDutyAssistant.Herald;
+        _customName = Duty.DutyCustomName ?? string.Empty;
+        _unitId = Duty.DutyUnitId is > 0 ? Duty.DutyUnitId : AssignableUnits.FirstOrDefault()?.Id;
+        _salary = Duty.SalaryGold >= 0m ? Duty.SalaryGold : CourtDutyKind.DefaultSalaryGold;
+    }
+
+    private void OnKindChanged(string kind)
+    {
+        _kind = CourtDutyKind.Normalize(kind);
+        if (_kind == CourtDutyKind.None)
+            _kind = CourtDutyKind.Custom;
+        if (_kind == CourtDutyKind.Captain && _unitId is null)
+            _unitId = AssignableUnits.FirstOrDefault()?.Id;
+        if (_kind == CourtDutyKind.Assistant && !AssignableAssistantPosts.Contains(_assistant))
+            _assistant = AssignableAssistantPosts.FirstOrDefault() ?? CourtDutyAssistant.Herald;
+    }
+
+    private string AssistantOption(string post)
+    {
+        var office = CourtDutyAssistant.OfficeTypeFor(post) switch
+        {
+            OfficeType.Chancellor => L["Chancellor"].Value,
+            OfficeType.Steward => L["Steward"].Value,
+            OfficeType.GuardCaptain => L["Guard Captain"].Value,
+            _ => post,
+        };
+        return $"{L[post]} — {L["assistant to {0}", office]}";
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (!CanSave)
+            return;
+
+        var kind = CourtDutyKind.Normalize(_kind);
+        MudDialog.Close(DialogResult.Ok(new CourtDutyDTO
+        {
+            Id = Duty.Id,
+            AvailableAdvisorId = Duty.AvailableAdvisorId,
+            DutyKind = kind,
+            DutyCustomName = kind == CourtDutyKind.Custom ? _customName.Trim() : null,
+            DutyOfficeType = kind == CourtDutyKind.Assistant
+                ? CourtDutyAssistant.OfficeTypeFor(_assistant)
+                : null,
+            DutyUnitId = kind == CourtDutyKind.Captain ? _unitId : null,
+            SalaryGold = Math.Max(0m, _salary),
+            SortOrder = Duty.SortOrder,
+        }));
+    }
+}

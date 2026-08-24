@@ -315,8 +315,10 @@ Logic: `BaronyCalc.ApplyAdvisorSkillInfluence`.
 
 **Active skill** = entry in the office `SignificantSkills` (defaults from `AdvisorSignificantSkills.DefaultForOffice`).
 
-**X** = sum of skill-PPB units from Offices: `Advisor.Skills` + custom `AdvisorInfluenceModifierDTO`, then masked to active skills (`SumAdvisorInfluenceRows`).  
+**X** = sum of skill-PPB units from Offices: `Advisor.Skills` + office assistant (`floor(helper domain skill / 5)` on significant skills) + custom `AdvisorInfluenceModifierDTO`, then masked to active skills (`SumAdvisorInfluenceRows`).  
 Then Additive/Percent like the baron from X — customs are **not** injected as raw Additive outside the map.
+
+One assistant per office (Herald / Scribe / Sergeant). Assistant salary shows in the office Cost column but is paid as a court wage (not added again to office upkeep).
 
 | | Baron | Advisor |
 |---|--------------|---------|

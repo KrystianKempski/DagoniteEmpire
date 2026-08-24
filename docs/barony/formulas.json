@@ -331,7 +331,7 @@
       "title": "Baron and Advisors — office holder rows",
       "category": "baron-influence",
       "implementation": "BaronyCalc.ApplyAdvisorSkillInfluence",
-      "notes": "X = SumAdvisorInfluenceRows(BuildAdvisorInfluenceRows): Advisor.Skills + AdvisorInfluenceModifier skill-unit sources, masked to SignificantSkills. Then Additive/Percent = MapToAdvisor*(X) same as baron.advisor-row. Custom sources are never injected as raw Additive after the map.",
+      "notes": "X = SumAdvisorInfluenceRows(BuildAdvisorInfluenceRows): Advisor.Skills + one office assistant (floor(helper domain skill / 5) on SignificantSkills) + AdvisorInfluenceModifier skill-unit sources, masked to SignificantSkills. Then Additive/Percent = MapToAdvisor*(X) same as baron.advisor-row. Custom sources are never injected as raw Additive after the map. Assistant salary is a court wage, not office upkeep.",
       "activeSkills": {
         "Chancellor": ["Loyalty", "Stability", "Culture"],
         "GuardCaptain": ["Law", "Corruption", "Defense"],
