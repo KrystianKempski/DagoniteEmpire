@@ -774,13 +774,18 @@ namespace DA_Common.Barony
         public const string OneTimeResources = "One-time resources";
         public const string Building = "Building";
         public const string Improvement = "Improvement";
+        /// <summary>
+        /// Narrative outcome only (like one-time resources, but no stock grant required).
+        /// Completion records the description / output summary; no PPB, decree, event, or building.
+        /// </summary>
+        public const string Other = "Other";
         public const string UnitTraining = "Unit Training";
         public const string UnitReinforce = "Unit Reinforce";
         public const string UnitChangeEquipment = "Unit Change Equipment";
 
         public static readonly string[] All =
         {
-            DecreeOrTechnology, Event, OneTimeResources, Building, Improvement,
+            DecreeOrTechnology, Event, OneTimeResources, Building, Improvement, Other,
             UnitTraining, UnitReinforce, UnitChangeEquipment,
         };
     }

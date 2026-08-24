@@ -8,7 +8,7 @@ Conventions:
 - `Population` = settlement population (village / town).
 - `Fertility` = `TerrainTile.Fertility` (−1 = unknown, 0–5).
 - `HasPalisade` = optional palisade on villages only.
-- Baron skills = specialization / base `SumBonus`; attribute = `ModifierAbsolute`.
+- Baron skills = specialization / base `SumAbsolute` (no temp / wounds; specialties include related base + attribute Absolute); attribute mods = `ModifierAbsolute`.
 - Baron skill results are floored to integers (`Math.Floor` at the end).
 
 ---

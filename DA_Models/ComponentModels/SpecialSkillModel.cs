@@ -99,7 +99,7 @@ namespace DA_Models.ComponentModels
                     var attr2 = _allParams.Attributes.Get(skill.RelatedAttribute2);
                     if (attr1 != null && attr2 != null)
                     {
-                        if (attr1.SumBonus >= attr2.SumBonus)
+                        if (attr1.SumAbsolute >= attr2.SumAbsolute)
                         {
                             skill.ChosenAttribute = attr1.Name;
                         }

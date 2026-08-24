@@ -902,9 +902,10 @@ namespace DA_Business.Repository.BaronyRepos
                         if (HasProjectResultsApplied(dto.Notes))
                             continue;
 
-                        // One-time: grant only when the project completes (non-terminal path below).
-                        // Never repair-stack stocks on later turns; just stamp the marker if missing.
-                        if (IsOneTimeResourcesKind(dto.OutputKind ?? ""))
+                        // One-time / Other: apply only on the Resolve that completes them.
+                        // Never repair-stack (or re-log) on later turns; just stamp the marker if missing.
+                        if (IsOneTimeResourcesKind(dto.OutputKind ?? "")
+                            || IsOtherKind(dto.OutputKind ?? ""))
                         {
                             dto.Notes = MarkProjectResultsApplied(dto.Notes);
                             ApplyProject(project, dto);
@@ -1247,21 +1248,10 @@ namespace DA_Business.Repository.BaronyRepos
         {
             if (character is null)
                 return (0, 0);
-            CharacterSkillRelations.Wire(character);
-            return (SpecialSkill(character, UnitActionFormulas.CharacterCommandSkill),
-                SpecialSkill(character, UnitActionFormulas.CharacterStrategySkill));
-        }
-
-        private static int SpecialSkill(CharacterDTO character, string name)
-        {
-            if (character.SpecialSkills is null)
-                return 0;
-            foreach (var s in character.SpecialSkills)
-            {
-                if (string.Equals(s.Name, name, StringComparison.OrdinalIgnoreCase))
-                    return (int)Math.Floor((decimal)s.SumBonus);
-            }
-            return 0;
+            // Permanent totals only — wounds / temporary traits are combat & adventure concerns.
+            return (
+                CommanderCxFormulas.AbsoluteSpecialSkill(character, UnitActionFormulas.CharacterCommandSkill),
+                CommanderCxFormulas.AbsoluteSpecialSkill(character, UnitActionFormulas.CharacterStrategySkill));
         }
 
         private static void AppendUnitLog(BaronyUnit unit, string kind, string text, int? xpDelta = null)
@@ -1450,6 +1440,20 @@ namespace DA_Business.Repository.BaronyRepos
                 return new ProjectApplyResult(notes, Applied: true);
             }
 
+            if (IsOtherKind(kind))
+            {
+                var name = string.IsNullOrWhiteSpace(project.Name) ? "Project" : project.Name.Trim();
+                var summary = !string.IsNullOrWhiteSpace(project.ResultDescription)
+                    ? project.ResultDescription.Trim()
+                    : (!string.IsNullOrWhiteSpace(project.Description)
+                        ? project.Description.Trim()
+                        : null);
+                notes.Add(summary is null
+                    ? $"Other project completed: {name} (no mechanical bonuses)."
+                    : $"Other project completed: {name} — {summary}");
+                return new ProjectApplyResult(notes, Applied: true);
+            }
+
             if (string.Equals(kind, ProjectOutputKind.DecreeOrTechnology, StringComparison.OrdinalIgnoreCase)
                 || kind.Contains("Decree", StringComparison.OrdinalIgnoreCase)
                 || kind.Contains("Technology", StringComparison.OrdinalIgnoreCase))
@@ -1632,6 +1636,9 @@ namespace DA_Business.Repository.BaronyRepos
             string.Equals(kind, ProjectOutputKind.OneTimeResources, StringComparison.OrdinalIgnoreCase)
             || kind.Contains("One-time", StringComparison.OrdinalIgnoreCase)
             || kind.Contains("One time", StringComparison.OrdinalIgnoreCase);
+
+        private static bool IsOtherKind(string kind) =>
+            string.Equals(kind, ProjectOutputKind.Other, StringComparison.OrdinalIgnoreCase);
 
         private static bool IsUnitTrainingKind(string kind) =>
             string.Equals(kind, ProjectOutputKind.UnitTraining, StringComparison.OrdinalIgnoreCase)

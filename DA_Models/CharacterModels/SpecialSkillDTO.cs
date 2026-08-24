@@ -45,6 +45,19 @@ namespace DA_Models.CharacterModels
         public int AttributeBonus { get => RelatedAttribute is not null ? RelatedAttribute.Modifier : 0 ; }  
         public int BaseSkillBonus { get => RelatedBaseSkill is not null ? RelatedBaseSkill.SumBonus : 0; }
 
+        /// <summary>
+        /// Permanent specialty total: same stack as <see cref="SumBonus"/>, but without
+        /// TempBonuses / HealthBonus on this skill, the related base skill, or the attribute.
+        /// </summary>
+        public override int SumAbsolute =>
+            base.SumAbsolute + AttributeBonusAbsolute + BaseSkillBonusAbsolute;
+
+        public int AttributeBonusAbsolute =>
+            RelatedAttribute is not null ? RelatedAttribute.ModifierAbsolute : 0;
+
+        public int BaseSkillBonusAbsolute =>
+            RelatedBaseSkill is not null ? RelatedBaseSkill.SumAbsolute : 0;
+
         public bool Editable { get; set; } = false;
 
         public string RelatedAttribute1 { get; set; } = "";

@@ -5,7 +5,8 @@ namespace DA_Business.Repository.BaronyRepos
 {
     /// <summary>
     /// Domain skill units from a full character sheet (same formulas as the baron).
-    /// Uses Absolute skill totals (no temp / wounds).
+    /// Uses Absolute skill totals: permanent stack without TempBonuses / HealthBonus
+    /// (specialties include related base skill Absolute + attribute ModifierAbsolute).
     /// </summary>
     public static class CharacterBaronySkillPpb
     {

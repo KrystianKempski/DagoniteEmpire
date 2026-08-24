@@ -21,7 +21,7 @@
                           Class="baron-influence-field" />
             <MudSelect @bind-Value="_outputKind"
                        Label="@(L["Output type"])"
-                       HelperText="@(L["What this project becomes when completed."])"
+                       HelperText="@OutputKindHelper"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Class="baron-influence-field">
@@ -32,7 +32,7 @@
             </MudSelect>
             <MudTextField @bind-Value="_resultDescription"
                           Label="@(L["Output summary"])"
-                          HelperText="@(L["Short description of the expected result (decree, event, building, etc.)."])"
+                          HelperText="@ResultSummaryHelper"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="2"
@@ -96,7 +96,7 @@
                                      Compact="true"
                                      Columns="@ResourceCatalog.All" />
                 }
-                else
+                else if (!IsOtherKind)
                 {
                     <PpbVectorEditor @bind-Value="_resultAdditive"
                                      Title="@(L["Expected output — additive (+)"])"
@@ -105,6 +105,12 @@
                                      Title="@(L["Expected output — percent (%)"])"
                                      Compact="true"
                                      Percent="true" />
+                }
+                else
+                {
+                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-1">
+                        @L["Other projects grant no automatic resources or PPB — only the description / output summary when completed."]
+                    </MudText>
                 }
             }
             else
@@ -141,6 +147,17 @@
     private PpbVector _costMaterials = new();
     private PpbVector _resultAdditive = new();
     private PpbVector _resultPercent = new();
+
+    private bool IsOtherKind =>
+        string.Equals(_outputKind, ProjectOutputKind.Other, StringComparison.OrdinalIgnoreCase);
+
+    private string OutputKindHelper => IsOtherKind
+        ? L["Like one-time resources, but no stock grant is required — only the description / output summary."]
+        : L["What this project becomes when completed."];
+
+    private string ResultSummaryHelper => IsOtherKind
+        ? L["What the project achieves when completed (narrative only — no automatic bonuses)."]
+        : L["Short description of the expected result (decree, event, building, etc.)."];
 
     protected override void OnInitialized()
     {
@@ -198,6 +215,12 @@
                         Severity.Warning);
                     return;
                 }
+            }
+            else if (IsOtherKind)
+            {
+                // Same funding / turn flow as one-time resources, but no automatic grants.
+                Project.ResultAdditive = new();
+                Project.ResultPercent = new();
             }
             else
             {

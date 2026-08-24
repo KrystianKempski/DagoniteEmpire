@@ -4,8 +4,9 @@ using System.Linq;
 namespace DA_Models.CharacterModels
 {
     /// <summary>
-    /// Wires special-skill listeners so <see cref="SpecialSkillDTO.SumBonus"/> matches the character sheet
-    /// (base skill + chosen attribute modifier).
+    /// Wires special-skill listeners so <see cref="SpecialSkillDTO.SumBonus"/> /
+    /// <see cref="SpecialSkillDTO.SumAbsolute"/> include the related base skill and attribute.
+    /// Auto-picks ChosenAttribute from permanent attribute scores (SumAbsolute).
     /// </summary>
     public static class CharacterSkillRelations
     {
@@ -26,7 +27,7 @@ namespace DA_Models.CharacterModels
                     var a1 = FindAttr(attrs, skill.RelatedAttribute1);
                     var a2 = FindAttr(attrs, skill.RelatedAttribute2);
                     if (a1 is not null && a2 is not null)
-                        skill.ChosenAttribute = a1.SumBonus >= a2.SumBonus ? a1.Name : a2.Name;
+                        skill.ChosenAttribute = a1.SumAbsolute >= a2.SumAbsolute ? a1.Name : a2.Name;
                 }
 
                 if (!string.IsNullOrWhiteSpace(skill.ChosenAttribute))
