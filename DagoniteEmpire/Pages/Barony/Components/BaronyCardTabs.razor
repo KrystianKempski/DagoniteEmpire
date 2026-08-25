@@ -135,8 +135,14 @@
                 // MG gets its own private Notes scope (separate from the baron's).
                 _showBattleMapTab = true;
                 _showNotesTab = true;
-                // Audience Hall is a baron-only visual view for now.
-                _showAudienceHallTab = false;
+                _showAudienceHallTab = true;
+                var mgCharacterId = user?.SelectedCharacter?.Id ?? 0;
+                if (mgCharacterId > 0 && mgCharacterId != -1)
+                {
+                    var mgBarony = await _baronyRepo.GetByCharacterId(mgCharacterId);
+                    if (mgBarony is not null)
+                        _baronyId = mgBarony.Id;
+                }
                 return;
             }
 

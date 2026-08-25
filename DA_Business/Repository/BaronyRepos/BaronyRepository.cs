@@ -905,7 +905,8 @@ namespace DA_Business.Repository.BaronyRepos
                         // One-time / Other: apply only on the Resolve that completes them.
                         // Never repair-stack (or re-log) on later turns; just stamp the marker if missing.
                         if (IsOneTimeResourcesKind(dto.OutputKind ?? "")
-                            || IsOtherKind(dto.OutputKind ?? ""))
+                            || IsOtherKind(dto.OutputKind ?? "")
+                            || ProjectStandardFormulas.IsStandardKind(dto.OutputKind ?? ""))
                         {
                             dto.Notes = MarkProjectResultsApplied(dto.Notes);
                             ApplyProject(project, dto);
@@ -1452,6 +1453,45 @@ namespace DA_Business.Repository.BaronyRepos
                     ? $"Other project completed: {name} (no mechanical bonuses)."
                     : $"Other project completed: {name} — {summary}");
                 return new ProjectApplyResult(notes, Applied: true);
+            }
+
+            if (ProjectStandardFormulas.IsStandardKind(kind))
+            {
+                var subtype = ProjectStandardNotes.GetSubtype(project.Notes);
+                if (string.Equals(subtype, ProjectStandardSubtype.BuyProduction, StringComparison.OrdinalIgnoreCase))
+                {
+                    var grant = ResourceCatalog.Slice(project.ResultAdditive);
+                    var production = grant[Ppb.Production];
+                    if (production <= 0m)
+                    {
+                        notes.Add(
+                            $"{project.Name}: Buy Production finished but Expected output has no Production.");
+                        return new ProjectApplyResult(notes, Applied: false);
+                    }
+
+                    stocks[Ppb.Production] += production;
+
+                    var name = string.IsNullOrWhiteSpace(project.Name) ? "Buy Production" : project.Name.Trim();
+                    ctx.BaronyResourceSources.Add(new BaronyResourceSource
+                    {
+                        BaronyId = barony.Id,
+                        Name = name,
+                        Description = string.IsNullOrWhiteSpace(project.ResultDescription)
+                            ? $"Production purchased via standard project at Resolve Turn {effectStartTurn}."
+                            : project.ResultDescription.Trim(),
+                        AdditiveJson = Ser(grant),
+                        IsTurnEphemeral = false,
+                        VisibleOnTurn = null,
+                    });
+
+                    notes.Add(
+                        $"Buy Production → stocks & Resource Balance “{name}”: "
+                        + $"Prod {PpbFormat.Additive(production)}.");
+                    return new ProjectApplyResult(notes, Applied: true);
+                }
+
+                notes.Add($"{project.Name}: standard project subtype “{subtype ?? "?"}” is not handled.");
+                return new ProjectApplyResult(notes, Applied: false);
             }
 
             if (string.Equals(kind, ProjectOutputKind.DecreeOrTechnology, StringComparison.OrdinalIgnoreCase)

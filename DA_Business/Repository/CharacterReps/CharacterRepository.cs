@@ -572,5 +572,40 @@ namespace DA_Business.Repository.CharacterReps
             return string.Empty;
         }
 
+        public async Task TransferOwnership(int characterId, string newUserName)
+        {
+            if (characterId <= 0)
+                throw new ArgumentException("Character id is required.", nameof(characterId));
+            if (string.IsNullOrWhiteSpace(newUserName))
+                throw new ArgumentException("New owner user name is required.", nameof(newUserName));
+
+            var target = newUserName.Trim();
+            using var contex = await _db.CreateDbContextAsync();
+
+            var character = await contex.Characters.FirstOrDefaultAsync(c => c.Id == characterId)
+                ?? throw new KeyNotFoundException($"Character #{characterId} was not found.");
+
+            var ownerExists = await contex.ApplicationUsers.AsNoTracking()
+                .AnyAsync(u => u.UserName == target);
+            if (!ownerExists)
+                throw new InvalidOperationException($"User “{target}” was not found.");
+
+            if (string.Equals(character.UserName, target, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            var previousOwner = character.UserName;
+            character.UserName = target;
+
+            // Drop selection for anyone still pointing at this character under the old owner.
+            var staleSelections = await contex.ApplicationUsers
+                .Where(u => u.SelectedCharacterId == characterId
+                            && (previousOwner == null || u.UserName == previousOwner))
+                .ToListAsync();
+            foreach (var user in staleSelections)
+                user.SelectedCharacterId = 0;
+
+            await contex.SaveChangesAsync();
+        }
+
     }
 }

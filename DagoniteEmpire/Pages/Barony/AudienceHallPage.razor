@@ -4,6 +4,7 @@
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 @inject IDialogService _dialogService
 @inject ICampaignRepository _campaignRepository
+@inject IChapterRepository _chapterRepository
 
 <PageTitle>Dagonite Empire | @L["Audience Hall"]</PageTitle>
 
@@ -16,14 +17,34 @@
     {
         <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
     }
-    else if (CanManageAsMg)
-    {
-        <MudAlert Severity="Severity.Info" Class="my-4">
-            @L["The Audience Hall is a baron-only view. Manage audiences and Council as Game Master on the Audiences tab."]
-        </MudAlert>
-    }
     else if (Barony is not null)
     {
+        @if (CanManageAsMg)
+        {
+            <div class="audience-hall__mg-bar d-flex flex-wrap gap-2 mb-3">
+                @if (_mode == HallMode.Audiences)
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="CreateAudienceAsync"
+                               Disabled="_busy">
+                        @L["New audience"]
+                    </MudButton>
+                }
+                else if (_mode == HallMode.Council)
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="CreateCouncilTopicAsync"
+                               Disabled="_busy || _councilAdvisorOptions.Count == 0">
+                        @L["New council topic"]
+                    </MudButton>
+                }
+            </div>
+        }
+
         <div class="audience-hall__hub">
             <div class="audience-hall__stage">
                 @if (_mode == HallMode.Council)
@@ -237,10 +258,16 @@
                             <AudiencePanel @key="CurrentAudience.Id"
                                            Audience="CurrentAudience"
                                            HallLayout="true"
-                                           CanWriteAsBaron="true"
+                                           CanWriteAsGm="CanWriteAsGm"
+                                           CanWriteAsBaron="CanWriteAsBaron"
                                            BaronCharacterName="BaronCharacterName"
                                            Busy="_busy"
-                                           OnSpeak="req => SpeakAsync(CurrentAudience, req)"
+                                           OnSpeak="req => SendReplyAsync(CurrentAudience, req)"
+                                           OnAddResources="() => AddResourcesAsync(CurrentAudience)"
+                                           OnCreateProject="() => CreateProjectAsync(CurrentAudience)"
+                                           OnMakeChapter="() => MakeChapterAsync(CurrentAudience)"
+                                           OnResolve="() => ResolveAsync(CurrentAudience)"
+                                           OnDefer="() => DeferAsync(CurrentAudience)"
                                            OnDismiss="() => DismissAsync(CurrentAudience)" />
                             @if (ActiveAudiences.Count > 1)
                             {
@@ -268,10 +295,16 @@
                                            Audience="CurrentCouncilTopic"
                                            HallLayout="true"
                                            AdvisorIcon="@CurrentCouncilAdvisorIcon"
-                                           CanWriteAsBaron="true"
+                                           CanWriteAsGm="CanWriteAsGm"
+                                           CanWriteAsBaron="CanWriteAsBaron"
                                            BaronCharacterName="BaronCharacterName"
                                            Busy="_busy"
-                                           OnSpeak="req => SpeakAsync(CurrentCouncilTopic, req)"
+                                           CourtSpeakers="_courtSpeakers"
+                                           OnSpeak="req => SendReplyAsync(CurrentCouncilTopic, req)"
+                                           OnAddResources="() => AddResourcesAsync(CurrentCouncilTopic)"
+                                           OnCreateProject="() => CreateProjectAsync(CurrentCouncilTopic)"
+                                           OnMakeChapter="() => MakeChapterAsync(CurrentCouncilTopic)"
+                                           OnResolve="() => ResolveAsync(CurrentCouncilTopic)"
                                            OnDismiss="() => DismissAsync(CurrentCouncilTopic)" />
                             @if (SelectedCouncilTopics.Count > 1)
                             {
@@ -302,6 +335,8 @@
     private HallMode _mode = HallMode.Audiences;
     private List<BaronAudienceDTO> _audiences = new();
     private List<AdvisorDTO> _advisors = new();
+    private List<string> _courtSpeakers = new();
+    private List<string> _councilAdvisorOptions = new();
     private CampaignDTO? _campaign;
     // -1 = no audience picked yet (petitioner ring shows on load, but the parchment stays empty
     // until an icon is clicked); ClampIndexes/StepTopic already treat this as "unselected".
@@ -311,6 +346,8 @@
     private bool _busy;
     private bool _showMorePetitioners;
 
+    private bool CanWriteAsGm => CanManageAsMg;
+    private bool CanWriteAsBaron => CanEdit && !CanManageAsMg;
     private string? BaronCharacterName => UserInfo?.SelectedCharacter?.NPCName;
 
     // All open audiences (baron may have already replied) — shown as icons around the throne.
@@ -321,11 +358,16 @@
             .ThenBy(a => a.Id)
             .ToList();
 
-    // Subset of ActiveAudiences still waiting on the baron's reply — drives the "needs attention" badges.
+    // Subset still waiting on a reply — badge on throne icons.
     private IReadOnlyList<BaronAudienceDTO> PendingAudiences =>
         ActiveAudiences
-            .Where(a => a.LastExchange is null || a.LastExchange.IsFromPetitioner)
+            .Where(AudienceNeedsAttention)
             .ToList();
+
+    private bool AudienceNeedsAttention(BaronAudienceDTO a) =>
+        CanManageAsMg
+            ? a.LastExchange is null || !a.LastExchange.IsFromPetitioner
+            : a.LastExchange is null || a.LastExchange.IsFromPetitioner;
 
     private IReadOnlyList<BaronAudienceDTO> OpenCouncilTopics =>
         _audiences
@@ -372,7 +414,7 @@
                 a.Id,
                 PetitionerIconCatalog.PathFor(a.PetitionerIcon),
                 a.PetitionerName,
-                a.LastExchange is null || a.LastExchange.IsFromPetitioner))
+                AudienceNeedsAttention(a)))
             // Needs-attention (yellow badge) topics stay visible; already-answered ones sink
             // toward the "More" overflow first when there isn't room for every icon.
             .OrderByDescending(p => p.NeedsAttention)
@@ -477,7 +519,7 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadBaronyAsync();
-        if (Barony is not null && !CanManageAsMg)
+        if (Barony is not null)
             await ReloadAsync();
     }
 
@@ -485,6 +527,27 @@
     {
         if (Barony is null)
             return;
+
+        if (CanManageAsMg)
+        {
+            var advisors = await _baronyRepo.GetAvailableAdvisors(Barony.Id);
+            _courtSpeakers = advisors
+                .Select(a => a.Name)
+                .Where(n => !string.IsNullOrWhiteSpace(n))
+                .Select(n => n.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var officeAdvisors = await _baronyRepo.GetAdvisors(Barony.Id);
+            _councilAdvisorOptions = officeAdvisors
+                .Where(a => !a.IsBaron && !string.IsNullOrWhiteSpace(a.PersonName))
+                .Select(a => $"{BaronyCalc.AdvisorRoleLabel(a)} \u2014 {a.PersonName.Trim()}")
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
         _audiences = await _baronyRepo.GetAudiences(BaronyId);
         _advisors = await _baronyRepo.GetAdvisors(Barony.Id);
         var campaigns = (await _campaignRepository.GetAll(Barony.CharacterId)).ToList();
@@ -566,7 +629,7 @@
             _councilIndex = Math.Clamp(_councilIndex + delta, 0, Math.Max(0, SelectedCouncilTopics.Count - 1));
     }
 
-    private async Task SpeakAsync(BaronAudienceDTO? audience, AudiencePanel.SpeakRequest req)
+    private async Task SendReplyAsync(BaronAudienceDTO? audience, AudiencePanel.SpeakRequest req)
     {
         if (audience is null || string.IsNullOrWhiteSpace(req.Body))
             return;
@@ -583,6 +646,358 @@
                 TurnNumber = Barony!.TurnNumber,
             });
             await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task CreateAudienceAsync()
+    {
+        var dialog = await _dialogService.ShowAsync<NewAudienceDialog>("New audience",
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not NewAudienceDialog.NewAudienceResult data)
+            return;
+
+        _busy = true;
+        try
+        {
+            var created = await _baronyRepo.SaveAudience(new BaronAudienceDTO
+            {
+                BaronyId = BaronyId,
+                PetitionerName = data.PetitionerName,
+                PetitionerIcon = data.PetitionerIcon,
+                Title = data.Title,
+                Kind = BaronAudienceKind.Audience,
+                Status = BaronAudienceStatus.Scheduled,
+                TurnNumber = Barony!.TurnNumber,
+            });
+            await _baronyRepo.SaveAudienceExchange(new BaronAudienceExchangeDTO
+            {
+                AudienceId = created.Id,
+                Body = data.OpeningBody,
+                IsFromPetitioner = true,
+                TurnNumber = Barony.TurnNumber,
+            });
+            await ReloadAsync();
+            SelectAudience(created.Id);
+            _snackBar.Add(L["Audience granted."], Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task CreateCouncilTopicAsync()
+    {
+        var dialog = await _dialogService.ShowAsync<NewCouncilTopicDialog>(L["New council topic"],
+            new DialogParameters<NewCouncilTopicDialog> { { x => x.Advisors, _councilAdvisorOptions } },
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not NewCouncilTopicDialog.NewCouncilTopicResult data)
+            return;
+
+        _busy = true;
+        try
+        {
+            var created = await _baronyRepo.SaveAudience(new BaronAudienceDTO
+            {
+                BaronyId = BaronyId,
+                PetitionerName = data.AdvisorLabel,
+                AssignedAdvisorName = data.AdvisorLabel,
+                Title = data.Title,
+                Kind = BaronAudienceKind.Council,
+                Status = BaronAudienceStatus.Scheduled,
+                TurnNumber = Barony!.TurnNumber,
+            });
+            await _baronyRepo.SaveAudienceExchange(new BaronAudienceExchangeDTO
+            {
+                AudienceId = created.Id,
+                Body = data.OpeningBody,
+                IsFromPetitioner = true,
+                SpeakerName = data.AdvisorLabel,
+                TurnNumber = Barony.TurnNumber,
+            });
+            await ReloadAsync();
+            _mode = HallMode.Council;
+            _selectedSeatKey = data.AdvisorLabel;
+            _councilIndex = 0;
+            _snackBar.Add(L["Council topic opened."], Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task AddResourcesAsync(BaronAudienceDTO? a)
+    {
+        if (a is null)
+            return;
+
+        var parameters = new DialogParameters<AudienceResourcesDialog>
+        {
+            { x => x.Audience, a },
+        };
+        var dialog = await _dialogService.ShowAsync<AudienceResourcesDialog>("Add resources", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not AudienceResourcesDialog.AudienceResourcesResult data)
+            return;
+
+        _busy = true;
+        try
+        {
+            var additive = a.Additive?.Clone() ?? new PpbVector();
+            additive.AddInPlace(data.Delta);
+            a.Additive = additive;
+            a.Prestige += data.Prestige;
+            a.Honor += data.Honor;
+            a.Fear += data.Fear;
+            await _baronyRepo.SaveAudience(a);
+
+            var stockDelta = ResourceCatalog.Slice(data.Delta);
+            if (!stockDelta.IsEmpty && Barony is not null)
+            {
+                var stocks = ResourceCatalog.Slice(Barony.ResourceStocks);
+                stocks.AddInPlace(stockDelta);
+                Barony.ResourceStocks = stocks;
+                Barony.FoodInGranaries = stocks[Ppb.Food];
+                Barony.TreasuryGold = stocks[Ppb.Treasury];
+                await _baronyRepo.UpdateBarony(Barony);
+            }
+
+            await _baronyRepo.SaveAudienceExchange(new BaronAudienceExchangeDTO
+            {
+                AudienceId = a.Id,
+                Body = data.Note,
+                IsFromPetitioner = false,
+                IsResourceChange = true,
+                Additive = data.Delta.Clone(),
+                Prestige = data.Prestige,
+                Honor = data.Honor,
+                Fear = data.Fear,
+                TurnNumber = Barony!.TurnNumber,
+            });
+
+            await ReloadAsync();
+            NotifyResourceHud();
+            _snackBar.Add(L["Resources added."], Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task CreateProjectAsync(BaronAudienceDTO? a)
+    {
+        if (a is null)
+            return;
+
+        var draft = new BaronyProjectDTO
+        {
+            BaronyId = BaronyId,
+            Status = ProjectStatus.Draft,
+            OutputKind = ProjectOutputKind.DecreeOrTechnology,
+        };
+        var parameters = new DialogParameters<ProjectEditDialog>
+        {
+            { x => x.Project, draft },
+            { x => x.CanManage, CanWriteAsGm },
+        };
+        var dialog = await _dialogService.ShowAsync<ProjectEditDialog>(
+            L["Add Project"],
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.Large,
+                FullWidth = true,
+            });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronyProjectDTO saved)
+            return;
+
+        _busy = true;
+        try
+        {
+            saved.BaronyId = BaronyId;
+            var created = await _baronyRepo.SaveProject(saved);
+
+            var body = $"Created project \"{created.Name}\".";
+            if (!string.IsNullOrWhiteSpace(created.Description))
+                body += $" {created.Description.Trim()}";
+
+            await _baronyRepo.SaveAudienceExchange(new BaronAudienceExchangeDTO
+            {
+                AudienceId = a.Id,
+                Body = body,
+                IsFromPetitioner = false,
+                SpeakerName = AudiencePanel.ProjectSpeaker,
+                TurnNumber = Barony!.TurnNumber,
+            });
+
+            await ReloadAsync();
+            _snackBar.Add(L["Project added."], Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task MakeChapterAsync(BaronAudienceDTO? a)
+    {
+        if (a is null || Barony is null)
+            return;
+
+        _busy = true;
+        try
+        {
+            var chapterName = BaronAudienceChapter.FormatName(Barony.Year, Barony.Season, a.Title);
+            var campaigns = (await _campaignRepository.GetAll(Barony.CharacterId)).ToList();
+            var campaign = campaigns.FirstOrDefault(c =>
+                                 string.Equals(c.Name, Barony.Name, StringComparison.OrdinalIgnoreCase))
+                           ?? campaigns.OrderByDescending(c => c.CreatedDate).FirstOrDefault();
+
+            if (campaign is null || campaign.Id <= 0)
+            {
+                _snackBar.Add(L["No campaign found for this baron. Create a barony campaign first."], Severity.Warning);
+                return;
+            }
+
+            var existing = (await _chapterRepository.GetAll(campaign.Id))
+                .FirstOrDefault(c => string.Equals(c.Name, chapterName, StringComparison.OrdinalIgnoreCase));
+
+            ChapterDTO chapter;
+            var createdNow = false;
+            if (existing is not null)
+            {
+                chapter = existing;
+            }
+            else
+            {
+                chapter = await _chapterRepository.Create(new ChapterDTO
+                {
+                    CampaignId = campaign.Id,
+                    Name = chapterName,
+                    Description = $"From audience \"{a.Title}\" with {a.PetitionerName} (turn {a.TurnNumber}).",
+                    CreatedDate = DateTime.Now,
+                    Characters = new List<CharacterDTO>
+                    {
+                        new() { Id = Barony.CharacterId },
+                    },
+                });
+                createdNow = true;
+            }
+
+            var alreadyLinked = a.Exchanges.Any(x =>
+                string.Equals(x.SpeakerName, AudiencePanel.ChapterSpeaker, StringComparison.OrdinalIgnoreCase)
+                && x.Body.Contains($"{AudiencePanel.ChapterLinkPrefix}{chapter.Id}", StringComparison.Ordinal));
+
+            if (!alreadyLinked)
+            {
+                await _baronyRepo.SaveAudienceExchange(new BaronAudienceExchangeDTO
+                {
+                    AudienceId = a.Id,
+                    Body = AudiencePanel.FormatChapterExchangeBody(chapter.Name, chapter.Id),
+                    IsFromPetitioner = false,
+                    SpeakerName = AudiencePanel.ChapterSpeaker,
+                    TurnNumber = Barony.TurnNumber,
+                });
+            }
+
+            await ReloadAsync();
+            _snackBar.Add(
+                createdNow
+                    ? $"Chapter created: \"{chapter.Name}\"."
+                    : $"Chapter already exists: \"{chapter.Name}\".",
+                createdNow ? Severity.Success : Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task ResolveAsync(BaronAudienceDTO? a)
+    {
+        if (a is null)
+            return;
+
+        var parameters = new DialogParameters<ResolveAudienceDialog>
+        {
+            { x => x.Subtitle, $"{a.Title} — {a.PetitionerName}" },
+        };
+        var dialog = await _dialogService.ShowAsync<ResolveAudienceDialog>("Resolve audience", parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not ResolveAudienceDialog.ResolveAudienceResult data)
+            return;
+
+        _busy = true;
+        try
+        {
+            await _baronyRepo.ResolveAudience(a.Id, data.GmSummary, data.OutcomeNotes);
+            await ReloadAsync();
+            _snackBar.Add(L["Audience resolved."], Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task DeferAsync(BaronAudienceDTO? a)
+    {
+        if (a is null)
+            return;
+
+        var ok = await _dialogService.ShowMessageBoxAsync(
+            "Defer audience",
+            $"Defer \"{a.Title}\" to next turn? It will reopen with the last exchange.",
+            yesText: "Defer", cancelText: "Cancel");
+        if (ok != true)
+            return;
+
+        _busy = true;
+        try
+        {
+            await _baronyRepo.DeferAudience(a.Id);
+            await ReloadAsync();
+            _snackBar.Add(L["Audience deferred."], Severity.Info);
         }
         catch (Exception ex)
         {

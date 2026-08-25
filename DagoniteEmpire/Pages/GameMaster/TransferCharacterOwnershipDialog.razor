@@ -1,0 +1,60 @@
+@namespace DagoniteEmpire.Pages.GameMaster
+
+<MudDialog>
+    <DialogContent>
+        <MudText Typo="Typo.body2" Class="mb-3">
+            @L["Reassign “{0}” (currently owned by {1}) to another player.",
+                Character.NPCName ?? $"#{Character.Id}",
+                Character.UserName ?? "—"]
+        </MudText>
+        <MudSelect T="string"
+                   @bind-Value="_selectedUserName"
+                   Label="@(L["New owner"])"
+                   Variant="Variant.Outlined"
+                   Dense="true"
+                   Required="true">
+            @foreach (var player in Players)
+            {
+                <MudSelectItem Value="@player.UserName">@player.Label</MudSelectItem>
+            }
+        </MudSelect>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Color="Color.Primary"
+                   Variant="Variant.Filled"
+                   Disabled="@(string.IsNullOrWhiteSpace(_selectedUserName)
+                               || string.Equals(_selectedUserName, Character.UserName, StringComparison.OrdinalIgnoreCase))"
+                   OnClick="Confirm">
+            @L["Transfer"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    public sealed record PlayerOption(string UserName, string Label);
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired] public CharacterDTO Character { get; set; } = default!;
+    [Parameter] public IReadOnlyList<PlayerOption> Players { get; set; } = Array.Empty<PlayerOption>();
+
+    private string? _selectedUserName;
+
+    protected override void OnInitialized()
+    {
+        _selectedUserName = Players
+            .Select(p => p.UserName)
+            .FirstOrDefault(u => !string.Equals(u, Character.UserName, StringComparison.OrdinalIgnoreCase))
+            ?? Players.FirstOrDefault()?.UserName;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Confirm()
+    {
+        if (string.IsNullOrWhiteSpace(_selectedUserName))
+            return;
+        MudDialog.Close(DialogResult.Ok(_selectedUserName.Trim()));
+    }
+}

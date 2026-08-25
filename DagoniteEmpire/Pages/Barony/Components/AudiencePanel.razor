@@ -86,7 +86,46 @@
                     <span>@ComposerCollapsedHint</span>
                 </div>
                 <div class="audience-scroll__dock-expanded">
-                    @if (CanWriteAsBaron)
+                    @if (CanWriteAsGm)
+                    {
+                        <div class="audience-scroll__modes audience-scroll__modes--gm">
+                            <MudSelect T="string"
+                                       @bind-Value="_speakerMode"
+                                       Label="@(L["Speak as"])"
+                                       Variant="Variant.Outlined"
+                                       Margin="Margin.Dense"
+                                       Dense="true"
+                                       Disabled="Busy"
+                                       Class="audience-scroll__gm-select">
+                                @if (HasCourtSpeakers)
+                                {
+                                    @foreach (var name in CourtSpeakerNames)
+                                    {
+                                        <MudSelectItem Value="@name">@name</MudSelectItem>
+                                    }
+                                    <MudSelectItem Value="@BaronCouncilSession.GameMasterSpeaker">@BaronCouncilSession.GameMasterSpeaker</MudSelectItem>
+                                    <MudSelectItem Value="@SpeakerModeOther">@L["Other character"]</MudSelectItem>
+                                }
+                                else
+                                {
+                                    <MudSelectItem Value="@SpeakerModePetitioner">@Audience.PetitionerName (petitioner)</MudSelectItem>
+                                    <MudSelectItem Value="@BaronCouncilSession.GameMasterSpeaker">@BaronCouncilSession.GameMasterSpeaker</MudSelectItem>
+                                    <MudSelectItem Value="@SpeakerModeOther">@L["Other character"]</MudSelectItem>
+                                }
+                            </MudSelect>
+                            @if (_speakerMode == SpeakerModeOther)
+                            {
+                                <MudTextField @bind-Value="_otherSpeaker"
+                                              Label="@(L["Character name"])"
+                                              Variant="Variant.Outlined"
+                                              Margin="Margin.Dense"
+                                              Immediate="true"
+                                              Disabled="Busy"
+                                              Class="audience-scroll__gm-select" />
+                            }
+                        </div>
+                    }
+                    else if (CanWriteAsBaron)
                     {
                         <div class="audience-scroll__modes">
                             <button type="button"
@@ -110,14 +149,56 @@
                               placeholder="@ComposerPlaceholder"
                               @bind="_draft"
                               @bind:event="oninput"></textarea>
-                    <div class="audience-scroll__actions">
+                    <div class="audience-scroll__actions @((CanWriteAsGm ? "audience-scroll__actions--gm" : ""))">
                         <button type="button"
                                 class="audience-hall__ink-btn audience-hall__ink-btn--strong"
                                 disabled="@(Busy || !CanSpeak)"
                                 @onclick="SpeakAsync">
                             @L["Speak"]
                         </button>
-                        @if (CanWriteAsBaron)
+                        @if (CanWriteAsGm)
+                        {
+                            <button type="button"
+                                    class="audience-hall__ink-btn"
+                                    disabled="@Busy"
+                                    @onclick="() => OnAddResources.InvokeAsync()">
+                                @L["Add resources"]
+                            </button>
+                            <button type="button"
+                                    class="audience-hall__ink-btn"
+                                    disabled="@Busy"
+                                    @onclick="() => OnCreateProject.InvokeAsync()">
+                                @L["Add Project"]
+                            </button>
+                            <button type="button"
+                                    class="audience-hall__ink-btn"
+                                    disabled="@Busy"
+                                    @onclick="() => OnMakeChapter.InvokeAsync()">
+                                @L["Make chapter"]
+                            </button>
+                            <button type="button"
+                                    class="audience-hall__ink-btn"
+                                    disabled="@Busy"
+                                    @onclick="() => OnResolve.InvokeAsync()">
+                                @L["Resolve"]
+                            </button>
+                            @if (!IsCouncil)
+                            {
+                                <button type="button"
+                                        class="audience-hall__ink-btn"
+                                        disabled="@Busy"
+                                        @onclick="() => OnDefer.InvokeAsync()">
+                                    @L["Defer to next turn"]
+                                </button>
+                            }
+                            <button type="button"
+                                    class="audience-hall__ink-btn"
+                                    disabled="@Busy"
+                                    @onclick="() => OnDismiss.InvokeAsync()">
+                                @L["Dismiss"]
+                            </button>
+                        }
+                        else if (CanWriteAsBaron)
                         {
                             <button type="button"
                                     class="audience-hall__ink-btn"
@@ -488,9 +569,11 @@ else
     private int _lastScrolledExchangeCount = -1;
 
     private string ComposerCollapsedHint =>
-        _baronSpeakerMode == BaronCouncilSession.QuestionToGmSpeaker
-            ? L["Click to ask the GM…"].Value
-            : L["Click to write your reply…"].Value;
+        CanWriteAsGm
+            ? L["Click to speak as petitioner, advisor, or GM…"].Value
+            : _baronSpeakerMode == BaronCouncilSession.QuestionToGmSpeaker
+                ? L["Click to ask the GM…"].Value
+                : L["Click to write your reply…"].Value;
 
     private bool IsCouncil => BaronAudienceKind.IsCouncil(Audience.Kind);
 

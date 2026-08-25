@@ -30,6 +30,60 @@
                     <MudSelectItem Value="@kind">@L[kind]</MudSelectItem>
                 }
             </MudSelect>
+
+            @if (IsStandardKind)
+            {
+                <MudSelect @bind-Value="_standardSubtype"
+                           Label="@(L["Standard project subtype"])"
+                           HelperText="@(L["Resource exchange template for this project."])"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Class="baron-influence-field">
+                    @foreach (var subtype in ProjectStandardSubtype.All)
+                    {
+                        <MudSelectItem Value="@subtype">@L[subtype]</MudSelectItem>
+                    }
+                </MudSelect>
+
+                @if (IsBuyProductionSubtype)
+                {
+                    <MudPaper Class="pa-3 mb-3" Outlined="true">
+                        <MudText Typo="Typo.subtitle2" Class="mb-2">@L["Buy Production"]</MudText>
+                        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                            @L["Spend gold from Treasury to gain Production. 1 Production costs {0} imperials. Maximum purchase: floor(Loyalty ÷ 2) = {1} Production (Loyalty: {2}).",
+                                ProjectStandardFormulas.BuyProductionGoldPerUnit,
+                                _maxProduction,
+                                PpbFormat.Additive(LoyaltyTotal)]
+                        </MudText>
+                        @if (_maxProduction <= 0)
+                        {
+                            <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-2">
+                                @L["Loyalty is too low to buy Production (need at least 2 Loyalty)."]
+                            </MudAlert>
+                        }
+                        else
+                        {
+                            <MudSlider T="int"
+                                       Value="_buyProductionGold"
+                                       ValueChanged="OnBuyProductionGoldChanged"
+                                       Min="0"
+                                       Max="@_maxGoldSpend"
+                                       Step="@ProjectStandardFormulas.BuyProductionGoldPerUnit"
+                                       Color="Color.Primary"
+                                       Class="mb-2" />
+                            <div class="d-flex flex-wrap gap-3">
+                                <MudText Typo="Typo.body2">
+                                    @L["Gold spent"]: <strong>@_buyProductionGold</strong>
+                                </MudText>
+                                <MudText Typo="Typo.body2">
+                                    @L["Production gained"]: <strong>@_buyProductionAmount</strong>
+                                </MudText>
+                            </div>
+                        }
+                    </MudPaper>
+                }
+            }
+
             <MudTextField @bind-Value="_resultDescription"
                           Label="@(L["Output summary"])"
                           HelperText="@ResultSummaryHelper"
@@ -64,56 +118,69 @@
                                  Margin="Margin.Dense"
                                  Min="0"
                                  Class="baron-influence-field" />
-                <MudTextField @bind-Value="_notes"
-                              Label="@(L["Notes"])"
-                              Variant="Variant.Outlined"
-                              Margin="Margin.Dense"
-                              Lines="2"
-                              Class="baron-influence-field" />
-                <MudSelect @bind-Value="_allowedCostModes"
-                           Label="@(L["Payment options"])"
-                           HelperText="@(L["Which ways players can cover this project's cost."])"
-                           Variant="Variant.Outlined"
-                           Margin="Margin.Dense"
-                           Class="baron-influence-field">
-                    @foreach (var option in ProjectAllowedCostModes.All)
+                @if (!IsStandardKind)
+                {
+                    <MudTextField @bind-Value="_notes"
+                                  Label="@(L["Notes"])"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Lines="2"
+                                  Class="baron-influence-field" />
+                    <MudSelect @bind-Value="_allowedCostModes"
+                               Label="@(L["Payment options"])"
+                               HelperText="@(L["Which ways players can cover this project's cost."])"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               Class="baron-influence-field">
+                        @foreach (var option in ProjectAllowedCostModes.All)
+                        {
+                            <MudSelectItem Value="@option">@AllowedCostModesLabel(option)</MudSelectItem>
+                        }
+                    </MudSelect>
+                    <PpbVectorEditor @bind-Value="_costGoldProduction"
+                                     Title="@(L["Cost — Gold & Production"])"
+                                     Compact="true"
+                                     Columns="@ProjectCostCatalog.GoldProduction" />
+                    <PpbVectorEditor @bind-Value="_costMaterials"
+                                     Title="@(L["Cost — Materials"])"
+                                     Compact="true"
+                                     Columns="@ProjectCostCatalog.Materials" />
+                    @if (_outputKind == ProjectOutputKind.OneTimeResources)
                     {
-                        <MudSelectItem Value="@option">@AllowedCostModesLabel(option)</MudSelectItem>
+                        <PpbVectorEditor @bind-Value="_resultAdditive"
+                                         Title="@(L["Resources granted on completion (added to stocks)"])"
+                                         Compact="true"
+                                         Columns="@ResourceCatalog.All" />
                     }
-                </MudSelect>
-                <PpbVectorEditor @bind-Value="_costGoldProduction"
-                                 Title="@(L["Cost — Gold & Production"])"
-                                 Compact="true"
-                                 Columns="@ProjectCostCatalog.GoldProduction" />
-                <PpbVectorEditor @bind-Value="_costMaterials"
-                                 Title="@(L["Cost — Materials"])"
-                                 Compact="true"
-                                 Columns="@ProjectCostCatalog.Materials" />
-                @if (_outputKind == ProjectOutputKind.OneTimeResources)
-                {
-                    <PpbVectorEditor @bind-Value="_resultAdditive"
-                                     Title="@(L["Resources granted on completion (added to stocks)"])"
-                                     Compact="true"
-                                     Columns="@ResourceCatalog.All" />
-                }
-                else if (!IsOtherKind)
-                {
-                    <PpbVectorEditor @bind-Value="_resultAdditive"
-                                     Title="@(L["Expected output — additive (+)"])"
-                                     Compact="true" />
-                    <PpbVectorEditor @bind-Value="_resultPercent"
-                                     Title="@(L["Expected output — percent (%)"])"
-                                     Compact="true"
-                                     Percent="true" />
+                    else if (!IsOtherKind)
+                    {
+                        <PpbVectorEditor @bind-Value="_resultAdditive"
+                                         Title="@(L["Expected output — additive (+)"])"
+                                         Compact="true" />
+                        <PpbVectorEditor @bind-Value="_resultPercent"
+                                         Title="@(L["Expected output — percent (%)"])"
+                                         Compact="true"
+                                         Percent="true" />
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-1">
+                            @L["Other projects grant no automatic resources or PPB — only the description / output summary when completed."]
+                        </MudText>
+                    }
                 }
                 else
                 {
-                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-1">
-                        @L["Other projects grant no automatic resources or PPB — only the description / output summary when completed."]
-                    </MudText>
+                    <MudTextField @bind-Value="_notes"
+                                  Label="@(L["Notes"])"
+                                  HelperText="@(L["Optional MG notes. Subtype is stored automatically."])"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Lines="2"
+                                  Class="baron-influence-field" />
                 }
             }
-            else
+            else if (!IsStandardKind)
             {
                 <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
                     @L["New projects are saved as Draft. The game master sets costs, PPB output, and status."]
@@ -133,10 +200,14 @@
     [Parameter] public BaronyProjectDTO Project { get; set; } = new();
     /// <summary>When false, only player-facing draft fields are editable (create flow).</summary>
     [Parameter] public bool CanManage { get; set; }
+    /// <summary>Domain Panel Loyalty total — caps Buy Production projects.</summary>
+    [Parameter] public decimal LoyaltyTotal { get; set; }
 
     private string _name = string.Empty;
     private string? _description;
     private string _outputKind = ProjectOutputKind.DecreeOrTechnology;
+    private string _standardSubtype = ProjectStandardSubtype.BuyProduction;
+    private int _buyProductionGold;
     private string _status = ProjectStatus.Draft;
     private int _turnsRemaining;
     private string? _resultDescription;
@@ -148,16 +219,30 @@
     private PpbVector _resultAdditive = new();
     private PpbVector _resultPercent = new();
 
+    private bool IsStandardKind =>
+        ProjectStandardFormulas.IsStandardKind(_outputKind);
+
+    private bool IsBuyProductionSubtype =>
+        string.Equals(_standardSubtype, ProjectStandardSubtype.BuyProduction, StringComparison.OrdinalIgnoreCase);
+
     private bool IsOtherKind =>
         string.Equals(_outputKind, ProjectOutputKind.Other, StringComparison.OrdinalIgnoreCase);
 
-    private string OutputKindHelper => IsOtherKind
-        ? L["Like one-time resources, but no stock grant is required — only the description / output summary."]
-        : L["What this project becomes when completed."];
+    private int _maxProduction => ProjectStandardFormulas.MaxProductionFromLoyalty(LoyaltyTotal);
+    private int _maxGoldSpend => ProjectStandardFormulas.GoldForProduction(_maxProduction);
+    private int _buyProductionAmount => ProjectStandardFormulas.ProductionFromGold(_buyProductionGold);
 
-    private string ResultSummaryHelper => IsOtherKind
-        ? L["What the project achieves when completed (narrative only — no automatic bonuses)."]
-        : L["Short description of the expected result (decree, event, building, etc.)."];
+    private string OutputKindHelper => IsStandardKind
+        ? L["Exchange one resource for another when the project is funded and completed."]
+        : IsOtherKind
+            ? L["Like one-time resources, but no stock grant is required — only the description / output summary."]
+            : L["What this project becomes when completed."];
+
+    private string ResultSummaryHelper => IsStandardKind
+        ? L["Short summary of the exchange (auto-filled for Buy Production)."]
+        : IsOtherKind
+            ? L["What the project achieves when completed (narrative only — no automatic bonuses)."]
+            : L["Short description of the expected result (decree, event, building, etc.)."];
 
     protected override void OnInitialized()
     {
@@ -178,15 +263,78 @@
         _costMaterials = ProjectCostCatalog.SliceMaterials(Project.CostMaterials).Clone();
         _resultAdditive = Project.ResultAdditive.Clone();
         _resultPercent = Project.ResultPercent.Clone();
+
+        _standardSubtype = ProjectStandardNotes.GetSubtype(Project.Notes)
+            ?? ProjectStandardSubtype.BuyProduction;
+
+        if (IsStandardKind && IsBuyProductionSubtype)
+        {
+            var gold = (int)_costGoldProduction[Ppb.Treasury];
+            _buyProductionGold = ProjectStandardFormulas.ClampGoldSpend(gold, LoyaltyTotal);
+        }
+    }
+
+    private void OnBuyProductionGoldChanged(int value)
+    {
+        _buyProductionGold = ProjectStandardFormulas.ClampGoldSpend(value, LoyaltyTotal);
     }
 
     private void Cancel() => MudDialog.Cancel();
+
+    private bool TryApplyStandardExchange(out string? error)
+    {
+        error = null;
+        if (!IsStandardKind)
+            return true;
+
+        if (!IsBuyProductionSubtype)
+        {
+            error = L["This standard project subtype is not configured yet."];
+            return false;
+        }
+
+        if (_maxProduction <= 0)
+        {
+            error = L["Loyalty is too low to buy Production (need at least 2 Loyalty)."];
+            return false;
+        }
+
+        if (_buyProductionGold <= 0)
+        {
+            error = L["Select how much gold to spend on Production."];
+            return false;
+        }
+
+        _costGoldProduction = new();
+        _costMaterials = new();
+        _resultAdditive = new();
+        _resultPercent = new();
+        _costGoldProduction[Ppb.Treasury] = _buyProductionGold;
+        _resultAdditive[Ppb.Production] = _buyProductionAmount;
+        _allowedCostModes = ProjectAllowedCostModes.GoldProductionOnly;
+        _turnsRemaining = 0;
+        _notes = ProjectStandardNotes.SetSubtype(_notes, _standardSubtype);
+
+        if (string.IsNullOrWhiteSpace(_resultDescription))
+        {
+            _resultDescription = L["Buy {0} Production for {1} imperials.",
+                _buyProductionAmount, _buyProductionGold];
+        }
+
+        return true;
+    }
 
     private void Save()
     {
         if (string.IsNullOrWhiteSpace(_name))
         {
             _snackBar.Add(L["Name is required."], Severity.Warning);
+            return;
+        }
+
+        if (IsStandardKind && !TryApplyStandardExchange(out var standardError))
+        {
+            _snackBar.Add(standardError!, Severity.Warning);
             return;
         }
 
@@ -218,8 +366,12 @@
             }
             else if (IsOtherKind)
             {
-                // Same funding / turn flow as one-time resources, but no automatic grants.
                 Project.ResultAdditive = new();
+                Project.ResultPercent = new();
+            }
+            else if (IsStandardKind)
+            {
+                Project.ResultAdditive = ResourceCatalog.Slice(_resultAdditive);
                 Project.ResultPercent = new();
             }
             else
@@ -228,9 +380,22 @@
                 Project.ResultPercent = _resultPercent.Clone();
             }
         }
+        else if (IsStandardKind)
+        {
+            Project.Status = ProjectStatus.Draft;
+            Project.TurnsRemaining = 0;
+            Project.HideResultFromBaron = false;
+            Project.AllowedCostModes = ProjectAllowedCostModes.GoldProductionOnly;
+            Project.CostGoldProduction = ProjectCostCatalog.SliceGoldProduction(_costGoldProduction).Clone();
+            Project.CostMaterials = new();
+            Project.ResultAdditive = ResourceCatalog.Slice(_resultAdditive);
+            Project.ResultPercent = new();
+            Project.Notes = ProjectStandardNotes.SetSubtype(null, _standardSubtype);
+            Project.Allocated = new();
+            Project.SelectedCostMode = null;
+        }
         else
         {
-            // Baron may only propose a draft; GM fills costs / output / status later.
             Project.Status = ProjectStatus.Draft;
             Project.TurnsRemaining = 0;
             Project.Notes = null;

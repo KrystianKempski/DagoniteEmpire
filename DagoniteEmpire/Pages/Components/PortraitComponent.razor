@@ -46,7 +46,20 @@
         @if (AllParams.Character.IsApproved == false || UserInfo?.IsAdminOrMG == true)
         {
             <label class="points-label">@L["Avalible attribute points:"]</label>
-            <span class="points-indicator ml-auto">@AllParams.Character.AttributePoints</span>
+            @if (UserInfo?.IsAdminOrMG == true && AllParams.Character.IsApproved == false)
+            {
+                <span class="points-indicator ml-auto">
+                    <MudNumericField Margin="0"
+                                    Class="dense-numeric-field"
+                                    Min="0"
+                                    @bind-Value="AllParams.Character.AttributePoints"
+                                    @bind-Value:after="ChangeParams" />
+                </span>
+            }
+            else
+            {
+                <span class="points-indicator ml-auto">@AllParams.Character.AttributePoints</span>
+            }
         }
     </div>
         </div>

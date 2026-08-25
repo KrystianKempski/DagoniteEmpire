@@ -779,15 +779,25 @@ namespace DA_Common.Barony
         /// Completion records the description / output summary; no PPB, decree, event, or building.
         /// </summary>
         public const string Other = "Other";
+        /// <summary>Convert resources (subtype in project Notes — see <see cref="ProjectStandardSubtype"/>).</summary>
+        public const string Standard = "Standard project";
         public const string UnitTraining = "Unit Training";
         public const string UnitReinforce = "Unit Reinforce";
         public const string UnitChangeEquipment = "Unit Change Equipment";
 
         public static readonly string[] All =
         {
-            DecreeOrTechnology, Event, OneTimeResources, Building, Improvement, Other,
+            DecreeOrTechnology, Event, OneTimeResources, Building, Improvement, Other, Standard,
             UnitTraining, UnitReinforce, UnitChangeEquipment,
         };
+    }
+
+    /// <summary>Subtypes for <see cref="ProjectOutputKind.Standard"/> projects.</summary>
+    public readonly struct ProjectStandardSubtype
+    {
+        public const string BuyProduction = "Buy Production";
+
+        public static readonly string[] All = { BuyProduction };
     }
 
     /// <summary>Sections on the Relations tab.</summary>

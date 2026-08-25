@@ -1,0 +1,169 @@
+@namespace DagoniteEmpire.Pages.GameMaster
+@using Microsoft.EntityFrameworkCore
+@inject ICharacterRepository _characterRepo
+@inject UserManager<ApplicationUser> _userManager
+@inject IDialogService _dialogService
+@inject ISnackbar _snackBar
+
+<MudPaper Class="pa-4 mb-4" Elevation="2">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-2">
+        <MudIcon Icon="@Icons.Material.Filled.SwitchAccount" Class="mr-1" />
+        <MudText Typo="Typo.h6">@L["Character ownership"]</MudText>
+        <MudSpacer />
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Secondary"
+                   Size="Size.Small"
+                   StartIcon="@Icons.Material.Filled.Refresh"
+                   Disabled="@_loading"
+                   OnClick="LoadAsync">
+            @L["Refresh"]
+        </MudButton>
+    </MudStack>
+    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="pb-3">
+        @L["Transfer a character sheet to another player account (e.g. a courtier created by a baron reassigned to a Hero player). Ownership is the UserName on the character."]
+    </MudText>
+
+    <MudStack Row="true" Class="mb-3" Spacing="2">
+        <MudTextField @bind-Value="_filter"
+                      Label="@(L["Filter"])"
+                      Variant="Variant.Outlined"
+                      Dense="true"
+                      Immediate="true"
+                      Adornment="Adornment.Start"
+                      AdornmentIcon="@Icons.Material.Filled.Search"
+                      Class="flex-grow-1"
+                      Style="max-width: 22rem;" />
+    </MudStack>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate="true" Class="mb-2" />
+    }
+
+    <MudTable Items="@FilteredCharacters" Dense="true" Hover="true" Bordered="true" Elevation="0" RowsPerPage="12">
+        <HeaderContent>
+            <MudTh>@L["Character"]</MudTh>
+            <MudTh>@L["Owner"]</MudTh>
+            <MudTh>@L["Type"]</MudTh>
+            <MudTh>@L["Status"]</MudTh>
+            <MudTh Style="width:140px">@L["Actions"]</MudTh>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="@L["Character"]">
+                <strong>@(string.IsNullOrWhiteSpace(context.NPCName) ? $"#{context.Id}" : context.NPCName)</strong>
+            </MudTd>
+            <MudTd DataLabel="@L["Owner"]">@(context.UserName ?? "—")</MudTd>
+            <MudTd DataLabel="@L["Type"]">@(context.NPCType ?? "—")</MudTd>
+            <MudTd DataLabel="@L["Status"]">
+                @if (context.IsApproved)
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Success">@L["Finished"]</MudChip>
+                }
+                else
+                {
+                    <MudChip T="string" Size="Size.Small" Color="Color.Warning">@L["Draft"]</MudChip>
+                }
+            </MudTd>
+            <MudTd DataLabel="@L["Actions"]">
+                <MudButton Variant="Variant.Outlined"
+                           Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.PersonSearch"
+                           OnClick="@(() => TransferAsync(context))">
+                    @L["Transfer"]
+                </MudButton>
+            </MudTd>
+        </RowTemplate>
+        <NoRecordsContent>
+            <MudText Typo="Typo.body2" Color="Color.Secondary">@L["No characters match the filter."]</MudText>
+        </NoRecordsContent>
+        <PagerContent>
+            <MudTablePager />
+        </PagerContent>
+    </MudTable>
+</MudPaper>
+
+@code {
+    private List<CharacterDTO> _characters = new();
+    private bool _loading = true;
+    private string _filter = string.Empty;
+
+    private IEnumerable<CharacterDTO> FilteredCharacters
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(_filter))
+                return _characters;
+            var q = _filter.Trim();
+            return _characters.Where(c =>
+                (c.NPCName?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false)
+                || (c.UserName?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false)
+                || (c.NPCType?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false));
+        }
+    }
+
+    protected override async Task OnInitializedAsync() => await LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _loading = true;
+        try
+        {
+            _characters = (await _characterRepo.GetAll())
+                .OrderBy(c => c.UserName, StringComparer.OrdinalIgnoreCase)
+                .ThenBy(c => c.NPCName, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(L["Failed to load characters: "] + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private async Task TransferAsync(CharacterDTO character)
+    {
+        var players = await _userManager.Users
+            .AsNoTracking()
+            .OrderBy(u => u.UserName)
+            .Select(u => new TransferCharacterOwnershipDialog.PlayerOption(
+                u.UserName ?? string.Empty,
+                string.IsNullOrWhiteSpace(u.Name) ? (u.UserName ?? string.Empty) : $"{u.Name} ({u.UserName})"))
+            .ToListAsync();
+
+        players = players
+            .Where(p => !string.IsNullOrWhiteSpace(p.UserName))
+            .Where(p => !SD.IsDemoUserName(p.UserName))
+            .ToList();
+
+        var parameters = new DialogParameters<TransferCharacterOwnershipDialog>
+        {
+            { x => x.Character, character },
+            { x => x.Players, players },
+        };
+
+        var dialog = await _dialogService.ShowAsync<TransferCharacterOwnershipDialog>(
+            L["Transfer ownership"],
+            parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not string newOwner)
+            return;
+
+        try
+        {
+            await _characterRepo.TransferOwnership(character.Id, newOwner);
+            _snackBar.Add(
+                L["Ownership of “{0}” transferred to {1}.", character.NPCName ?? $"#{character.Id}", newOwner],
+                Severity.Success);
+            await LoadAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(L["Could not transfer ownership: "] + ex.Message, Severity.Error);
+        }
+    }
+}

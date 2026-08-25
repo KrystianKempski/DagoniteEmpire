@@ -103,6 +103,7 @@
     [Parameter] public PpbVector ResourceStocks { get; set; } = new();
     [Parameter] public bool CanEdit { get; set; }
     [Parameter] public bool CanManage { get; set; }
+    [Parameter] public decimal LoyaltyTotal { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
 
     private List<BaronyProjectDTO> ActiveProjects =>
@@ -230,6 +231,7 @@
         {
             { x => x.Project, draft },
             { x => x.CanManage, CanManage },
+            { x => x.LoyaltyTotal, LoyaltyTotal },
         };
 
         var dialog = await _dialogService.ShowAsync<ProjectEditDialog>(
@@ -238,7 +240,7 @@
             new DialogOptions
             {
                 CloseOnEscapeKey = true,
-                MaxWidth = CanManage ? MaxWidth.Large : MaxWidth.Small,
+                MaxWidth = CanManage || isNew ? MaxWidth.Large : MaxWidth.Small,
                 FullWidth = true,
             });
 
@@ -254,17 +256,20 @@
                 return;
             }
 
-            saved.Status = ProjectStatus.Draft;
-            saved.TurnsRemaining = 0;
-            saved.Notes = null;
-            saved.HideResultFromBaron = false;
-            saved.AllowedCostModes = ProjectAllowedCostModes.PlayerChoice;
-            saved.CostGoldProduction = new();
-            saved.CostMaterials = new();
-            saved.ResultAdditive = new();
-            saved.ResultPercent = new();
-            saved.Allocated = new();
-            saved.SelectedCostMode = null;
+            if (!ProjectStandardFormulas.IsStandardKind(saved.OutputKind))
+            {
+                saved.Status = ProjectStatus.Draft;
+                saved.TurnsRemaining = 0;
+                saved.Notes = null;
+                saved.HideResultFromBaron = false;
+                saved.AllowedCostModes = ProjectAllowedCostModes.PlayerChoice;
+                saved.CostGoldProduction = new();
+                saved.CostMaterials = new();
+                saved.ResultAdditive = new();
+                saved.ResultPercent = new();
+                saved.Allocated = new();
+                saved.SelectedCostMode = null;
+            }
         }
 
         try
