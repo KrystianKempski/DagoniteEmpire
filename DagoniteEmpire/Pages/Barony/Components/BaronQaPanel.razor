@@ -8,11 +8,11 @@
         <aside class="baron-qa__threads">
             <div class="baron-qa__threads-head">
                 <span>@L["Questions"]</span>
-                @if (CanWriteAsBaron)
+                @if (CanCreateThread)
                 {
                     <MudIconButton Icon="@Icons.Material.Filled.Add"
                                    Size="Size.Small"
-                                   aria-label='@(L["New question"])'
+                                   aria-label='@(CanManageAsMg ? L["New thread to baron"] : L["New question"])'
                                    Disabled="_busy"
                                    OnClick="NewThreadAsync" />
                 }
@@ -49,11 +49,13 @@
                 <div class="baron-qa__placeholder">
                     <MudIcon Icon="@Icons.Material.Filled.Forum" Size="Size.Large" />
                     <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
-                        @(CanWriteAsBaron
-                            ? L["Ask the Game Master a question — start a new thread."]
-                            : L["No question selected."])
+                        @(CanManageAsMg
+                            ? L["Start a new thread with the baron — ask a question or share a note."]
+                            : CanWriteAsBaron
+                                ? L["Ask the Game Master a question — start a new thread."]
+                                : L["No question selected."])
                     </MudText>
-                    @if (CanWriteAsBaron)
+                    @if (CanCreateThread)
                     {
                         <MudButton Variant="Variant.Filled"
                                    Class="barony-turn-btn barony-turn-btn--solid"
@@ -61,7 +63,7 @@
                                    StartIcon="@Icons.Material.Filled.Add"
                                    Disabled="_busy"
                                    OnClick="NewThreadAsync">
-                            @L["New question"]
+                            @(CanManageAsMg ? L["New thread to baron"] : L["New question"])
                         </MudButton>
                     }
                 </div>
@@ -126,6 +128,7 @@
     [Parameter] public bool CanEdit { get; set; }
 
     private bool CanWriteAsBaron => CanEdit && !CanManageAsMg;
+    private bool CanCreateThread => CanWriteAsBaron || CanManageAsMg;
 
     private string ThreadItemClass(BaronQaThreadDTO t) =>
         _selected?.Id == t.Id
@@ -178,11 +181,16 @@
 
     private async Task NewThreadAsync()
     {
-        if (!CanWriteAsBaron)
+        if (!CanCreateThread)
             return;
 
+        var parameters = new DialogParameters<NewBaronQaThreadDialog>
+        {
+            { x => x.OpenAsGameMaster, CanManageAsMg },
+        };
         var dialog = await _dialogService.ShowAsync<NewBaronQaThreadDialog>(
-            L["New question"],
+            CanManageAsMg ? L["New thread to baron"] : L["New question"],
+            parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
         var result = await dialog.Result;
         if (result is null || result.Canceled || result.Data is not NewBaronQaThreadDialog.NewQaThreadResult data)
@@ -201,11 +209,12 @@
             {
                 ThreadId = created.Id,
                 Body = data.OpeningBody,
-                IsFromGm = false,
+                IsFromGm = CanManageAsMg,
+                SpeakerName = CanManageAsMg ? L["Game Master"].Value : null,
                 TurnNumber = CurrentTurn,
             });
             await ReloadAsync(created.Id);
-            _snackBar.Add(L["Question posted."], Severity.Success);
+            _snackBar.Add(CanManageAsMg ? L["Thread started."] : L["Question posted."], Severity.Success);
         }
         catch (Exception ex)
         {

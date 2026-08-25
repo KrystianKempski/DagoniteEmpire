@@ -627,6 +627,7 @@ namespace DagoniteEmpire.Pages.Barony.Components
                     {
                         new BaronyHelpSection("Game Master controls", new[]
                         {
+                            "Start a new thread to reach out to the baron with a question, clarification, or off-turn note.",
                             "Read and reply in baron question threads; unread baron messages are marked until you open the thread.",
                             "Delete a thread when the exchange is finished.",
                         }),

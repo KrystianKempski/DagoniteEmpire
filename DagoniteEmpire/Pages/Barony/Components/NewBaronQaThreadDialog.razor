@@ -2,36 +2,38 @@
 
 <MudDialog Class="barony-dialog">
     <TitleContent>
-        <MudText Typo="Typo.h6">@L["New question"]</MudText>
+        <MudText Typo="Typo.h6">@(OpenAsGameMaster ? L["New thread to baron"] : L["New question"])</MudText>
     </TitleContent>
     <DialogContent>
         <div class="barony-dialog-theme">
             <MudTextField @bind-Value="_title"
-                          Label='@(L["Question title"])'
+                          Label='@(OpenAsGameMaster ? L["Thread title"] : L["Question title"])'
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Immediate="true"
-                          HelperText='@(L["Short subject for the Game Master"])'
+                          HelperText='@(OpenAsGameMaster ? L["Short subject for the baron"] : L["Short subject for the Game Master"])'
                           Class="mb-2" />
             <MudTextField @bind-Value="_opening"
-                          Label='@(L["Your question"])'
+                          Label='@(OpenAsGameMaster ? L["Your message"] : L["Your question"])'
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="5"
                           Immediate="true"
-                          HelperText='@(L["What do you want to ask?"])' />
+                          HelperText='@(OpenAsGameMaster ? L["What do you want to say?"] : L["What do you want to ask?"])' />
         </div>
     </DialogContent>
     <DialogActions>
         <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
         <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Submit" Disabled="@(!CanSubmit)">
-            @L["Ask"]
+            @(OpenAsGameMaster ? L["Send"] : L["Ask"])
         </MudButton>
     </DialogActions>
 </MudDialog>
 
 @code {
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public bool OpenAsGameMaster { get; set; }
 
     private string _title = "";
     private string _opening = "";
