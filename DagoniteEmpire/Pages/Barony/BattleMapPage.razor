@@ -222,7 +222,8 @@ else
                      || (CanManageAsMg && IsSetupPhase)
                      || (CanManageAsMg && IsMovementPhase && !_isResolvingMovement && !_isResolvingCombat)
                      || (CanManageAsMg && IsCombatPhase)
-                     || (IsAttackPlanningPhase && (CanEdit || CanManageAsMg) && !_isResolvingCombat))
+                     || (IsAttackPlanningPhase && (CanEdit || CanManageAsMg) && !_isResolvingCombat)
+                     || ShowGeneralActives)
                 {
                     <div class="bbm-map-overlay-actions">
                         @if (CanManageAsMg && IsSetupPhase)
@@ -232,6 +233,38 @@ else
                                     @onclick="BeginBattle">
                                 @L["Begin battle"]
                             </button>
+                            @if (BattleGeneralAura.HasAny)
+                            {
+                                <span class="bbm-map-general-aura"
+                                      title="@($"{BattleGeneralDisplayName} — {BattleGeneralAuraSummary}")">
+                                    @L["General"]: @BattleGeneralDisplayName · @BattleGeneralAuraSummary
+                                </span>
+                            }
+                        }
+                        @if (ShowGeneralActives)
+                        {
+                            @if (_pickingRallyingCryTarget)
+                            {
+                                <span class="bbm-map-general-aura">@L["Click an allied unit to rally."]</span>
+                                <button type="button"
+                                        class="bbm-map-btn bbm-map-btn--ghost"
+                                        @onclick="CancelRallyingCryPick">
+                                    @L["Cancel"]
+                                </button>
+                            }
+                            else if (CanStartRallyingCry)
+                            {
+                                <button type="button"
+                                        class="bbm-map-btn bbm-map-btn--ghost"
+                                        title="@L["Once per battle: chosen allied unit heals 12 HP (16 if below 40% HP)."]"
+                                        @onclick="StartRallyingCryPick">
+                                    @L["Rallying Cry"]
+                                </button>
+                            }
+                            else if (HasRallyingCryUnlocked && Map?.TurnState.RallyingCryUsed == true)
+                            {
+                                <span class="bbm-map-general-aura">@L["Rallying Cry"] — @L["used"]</span>
+                            }
                         }
                         @if (ShowMovementControls)
                         {
@@ -355,6 +388,39 @@ else
             </section>
 
             <aside class="bbm-side-pane">
+                @if (IsSetupPhase && (CanEdit || CanManageAsMg))
+                {
+                    <BaronySection Title="@(L["Battle general"])">
+                        <div class="bbm-general-pick">
+                            <label class="bbm-general-pick__label">
+                                <span>@L["General"]</span>
+                                <select class="bbm-input"
+                                        value="@GeneralSelectionKey"
+                                        @onchange="OnGeneralSelectionChangedAsync">
+                                    <option value="baron">@L["Baron"]</option>
+                                    @foreach (var c in GeneralCandidateCourtiers)
+                                    {
+                                        <option value="@($"advisor:{c.Id}")">@c.Name</option>
+                                    }
+                                </select>
+                            </label>
+                            <div class="bbm-general-pick__meta">
+                                <span>@BattleGeneralDisplayName</span>
+                                @if (BattleGeneralAura.HasAny)
+                                {
+                                    <span class="bbm-map-general-aura"
+                                          title="@BattleGeneralAuraSummary">
+                                        @L["General aura"]: @BattleGeneralAuraSummary
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="bbm-general-pick__hint">@L["No general aura unlocked."]</span>
+                                }
+                            </div>
+                        </div>
+                    </BaronySection>
+                }
                 <BaronySection Title="@(L["Your forces"])">
                     <div class="bbm-force-list">
                         @foreach (var unit in _activeUnits)
@@ -725,6 +791,7 @@ else
     private bool _battleLogCollapsed;
     private bool _showThreatRadius;
     private string? _shownXpSummaryId;
+    private bool _pickingRallyingCryTarget;
     /// <summary>Ally unitId → HP at Begin battle.</summary>
     private readonly Dictionary<int, int> _allyStartHp = new();
     /// <summary>Ally unitId → final HP (0 if fled).</summary>
@@ -819,6 +886,23 @@ else
         && ActiveToken is not null
         && CanControlToken(ActiveToken);
 
+    private bool ShowGeneralActives =>
+        IsBattlePhase
+        && !_isResolvingMovement
+        && !_isResolvingCombat
+        && (CanEdit || CanManageAsMg)
+        && (HasRallyingCryUnlocked || _pickingRallyingCryTarget);
+
+    private bool HasRallyingCryUnlocked =>
+        BattleGeneralSheet?.UnlockedCommanderAbilities?.Any(k =>
+            string.Equals(k, "rallying-cry", StringComparison.OrdinalIgnoreCase)) == true;
+
+    private bool CanStartRallyingCry =>
+        ShowGeneralActives
+        && HasRallyingCryUnlocked
+        && Map?.TurnState.RallyingCryUsed != true
+        && !_pickingRallyingCryTarget;
+
     /// <summary>Movement phase, but the unit on the clock is not ours to order.</summary>
     private bool WaitingForOpponentOrder =>
         IsMovementPhase
@@ -871,6 +955,7 @@ else
             var units = await _baronyRepo.GetUnits(BaronyId);
             _activeUnits = units.Where(u => u.IsActive).OrderBy(u => u.Name).ToList();
             _courtiers = await _baronyRepo.GetAvailableAdvisors(BaronyId);
+            EnsureGeneralSelectionDefaults();
             foreach (var u in _activeUnits)
             {
                 if (!_allyIconKeys.ContainsKey(u.Id))
@@ -1078,7 +1163,82 @@ else
 
     private void SelectToken(string id)
     {
+        if (_pickingRallyingCryTarget)
+        {
+            _ = TryCompleteRallyingCryOnTokenAsync(id);
+            return;
+        }
         _selectedTokenId = _selectedTokenId == id ? null : id;
+        RefreshRange();
+    }
+
+    private void StartRallyingCryPick()
+    {
+        if (!CanStartRallyingCry)
+            return;
+        CancelFacingEdit();
+        CancelChargeEdit();
+        _pickingRallyingCryTarget = true;
+        _snackBar.Add(L["Click an allied unit to rally."], Severity.Info);
+    }
+
+    private void CancelRallyingCryPick()
+    {
+        _pickingRallyingCryTarget = false;
+    }
+
+    private async Task TryCompleteRallyingCryAtAsync(int x, int y)
+    {
+        var token = GetTokenAt(x, y);
+        if (token is null)
+        {
+            _snackBar.Add(L["Click an allied unit to rally."], Severity.Warning);
+            return;
+        }
+        await TryCompleteRallyingCryOnTokenAsync(token.Id);
+    }
+
+    private async Task TryCompleteRallyingCryOnTokenAsync(string tokenId)
+    {
+        if (Map is null || !_pickingRallyingCryTarget)
+            return;
+        if (!HasRallyingCryUnlocked || Map.TurnState.RallyingCryUsed)
+        {
+            _pickingRallyingCryTarget = false;
+            return;
+        }
+
+        var token = Map.Tokens.FirstOrDefault(t => t.Id == tokenId);
+        if (token is null || token.IsEnemy)
+        {
+            _snackBar.Add(L["Rallying Cry targets an allied unit."], Severity.Warning);
+            return;
+        }
+        if (token.Hp <= 0)
+        {
+            _snackBar.Add(L["Cannot rally a fled unit."], Severity.Warning);
+            return;
+        }
+        if (token.Hp >= token.MaxHp)
+        {
+            _snackBar.Add(L["That unit is already at full HP."], Severity.Info);
+            return;
+        }
+
+        var belowForty = token.MaxHp > 0 && token.Hp < token.MaxHp * 0.4m;
+        var heal = belowForty ? 16 : 12;
+        var before = token.Hp;
+        token.Hp = Math.Min(token.MaxHp, token.Hp + heal);
+        var gained = token.Hp - before;
+
+        Map.TurnState.RallyingCryUsed = true;
+        _pickingRallyingCryTarget = false;
+        _selectedTokenId = token.Id;
+
+        AppendLocalLog(string.Empty, "phase",
+            $"{BattleGeneralDisplayName} — Rallying Cry on {token.Label}: +{gained} HP ({before}→{token.Hp}/{token.MaxHp}).");
+        await SaveAsync(systemMessage:
+            $"{L["Rallying Cry"]}: {token.Label} +{gained} HP ({before}→{token.Hp}/{token.MaxHp}).");
         RefreshRange();
     }
 
@@ -1087,6 +1247,12 @@ else
         if (Map is null)
             return;
         var (x, y) = pos;
+
+        if (_pickingRallyingCryTarget)
+        {
+            await TryCompleteRallyingCryAtAsync(x, y);
+            return;
+        }
 
         if (_deployUnitId is int deployId && IsSetupPhase && CanEdit)
         {
@@ -1276,6 +1442,7 @@ else
             Pierce = Math.Max(0, UnitWeaponCatalog.Find(unit.Weapon1Key)?.Pierce ?? 0),
         };
         ApplyCommanderBattleFlags(token, unit);
+        ApplyGeneralAura(token, BattleGeneralAura);
         Map.Tokens.Add(token);
         _deployUnitId = null;
         _selectedTokenId = token.Id;
@@ -3307,13 +3474,17 @@ else
         }
 
         var rng = Random.Shared;
+        var generalAura = BattleGeneralAura;
         foreach (var token in Map.Tokens)
         {
             if (token.UnitId is int uid)
             {
                 var unit = _activeUnits.FirstOrDefault(u => u.Id == uid);
                 if (unit is not null)
+                {
                     ApplyCommanderBattleFlags(token, unit);
+                    ApplyGeneralAura(token, generalAura);
+                }
             }
             else if (token.IsEnemy)
             {
@@ -3335,6 +3506,7 @@ else
             .Select(t => t.Id)
             .ToList();
 
+        var (generalIsBaron, generalAdvisorId) = CaptureGeneralSelection();
         Map.Phase = BaronyBattlePhases.Battle;
         Map.TurnState = new BaronyBattleTurnStateDTO
         {
@@ -3342,7 +3514,11 @@ else
             CurrentIndex = 0,
             SubPhase = BaronyBattleSubPhases.Movement,
             Round = 1,
+            GeneralIsBaron = generalIsBaron,
+            GeneralAvailableAdvisorId = generalAdvisorId,
+            RallyingCryUsed = false,
         };
+        _pickingRallyingCryTarget = false;
         foreach (var token in Map.Tokens)
             token.EngagedEnemyIds.Clear();
         _tool = "token";
@@ -3357,6 +3533,32 @@ else
         await SaveAsync(systemMessage: "Battle begins — movement phase (low → high initiative). " + string.Join("; ", lines));
         _selectedTokenId = ActiveTokenId;
         RefreshRange();
+    }
+
+    private (bool GeneralIsBaron, int? GeneralAdvisorId) CaptureGeneralSelection()
+    {
+        EnsureGeneralSelectionDefaults();
+        if (Map is null)
+            return (true, null);
+        if (Map.TurnState.GeneralIsBaron)
+            return (true, null);
+        if (Map.TurnState.GeneralAvailableAdvisorId is int id)
+            return (false, id);
+        return (true, null);
+    }
+
+    private void ResetTurnStatePreservingGeneral()
+    {
+        if (Map is null)
+            return;
+        var (generalIsBaron, generalAdvisorId) = CaptureGeneralSelection();
+        Map.TurnState = new BaronyBattleTurnStateDTO
+        {
+            GeneralIsBaron = generalIsBaron,
+            GeneralAvailableAdvisorId = generalAdvisorId,
+            RallyingCryUsed = false,
+        };
+        _pickingRallyingCryTarget = false;
     }
 
     private void SnapshotAllyStartHp()
@@ -3763,6 +3965,177 @@ else
             .ToList();
     }
 
+    /// <summary>Resolve sheet for the designated battle general (baron or courtier).</summary>
+    private CourtCharacterSheet? BattleGeneralSheet
+    {
+        get
+        {
+            EnsureGeneralSelectionDefaults();
+            if (Map is null)
+                return Barony?.CommanderSheet;
+            if (Map.TurnState.GeneralIsBaron)
+                return Barony?.CommanderSheet;
+            if (Map.TurnState.GeneralAvailableAdvisorId is int id)
+                return _courtiers.FirstOrDefault(c => c.Id == id)?.Sheet;
+            return Barony?.CommanderSheet;
+        }
+    }
+
+    private GeneralAuraResult BattleGeneralAura =>
+        CourtCommanderFormulas.ComputeGeneralAura(BattleGeneralSheet);
+
+    private IEnumerable<AvailableAdvisorDTO> GeneralCandidateCourtiers =>
+        _courtiers
+            .Where(c => !string.IsNullOrWhiteSpace(c.Name))
+            .OrderBy(c => c.Name, StringComparer.OrdinalIgnoreCase);
+
+    private string GeneralSelectionKey
+    {
+        get
+        {
+            EnsureGeneralSelectionDefaults();
+            if (Map is null || Map.TurnState.GeneralIsBaron)
+                return "baron";
+            if (Map.TurnState.GeneralAvailableAdvisorId is int id)
+                return $"advisor:{id}";
+            return "baron";
+        }
+    }
+
+    private string BattleGeneralDisplayName
+    {
+        get
+        {
+            EnsureGeneralSelectionDefaults();
+            if (Map is null || Map.TurnState.GeneralIsBaron)
+                return L["Baron"].Value;
+            if (Map.TurnState.GeneralAvailableAdvisorId is int id)
+            {
+                var name = _courtiers.FirstOrDefault(c => c.Id == id)?.Name;
+                if (!string.IsNullOrWhiteSpace(name))
+                    return name.Trim();
+            }
+            return L["Baron"].Value;
+        }
+    }
+
+    private void EnsureGeneralSelectionDefaults()
+    {
+        if (Map is null)
+            return;
+        if (!Map.TurnState.GeneralIsBaron && Map.TurnState.GeneralAvailableAdvisorId is null)
+            Map.TurnState.GeneralIsBaron = true;
+        else if (Map.TurnState.GeneralAvailableAdvisorId is int id
+                 && _courtiers.Count > 0
+                 && _courtiers.All(c => c.Id != id))
+        {
+            // Courtiers list loaded and selection is stale → fall back to baron.
+            Map.TurnState.GeneralIsBaron = true;
+            Map.TurnState.GeneralAvailableAdvisorId = null;
+        }
+    }
+
+    private async Task OnGeneralSelectionChangedAsync(ChangeEventArgs e)
+    {
+        if (Map is null || !IsSetupPhase)
+            return;
+
+        var key = (e.Value?.ToString() ?? "baron").Trim();
+        if (string.Equals(key, "baron", StringComparison.OrdinalIgnoreCase))
+        {
+            Map.TurnState.GeneralIsBaron = true;
+            Map.TurnState.GeneralAvailableAdvisorId = null;
+        }
+        else if (key.StartsWith("advisor:", StringComparison.OrdinalIgnoreCase)
+                 && int.TryParse(key["advisor:".Length..], out var advisorId)
+                 && advisorId > 0
+                 && _courtiers.Any(c => c.Id == advisorId))
+        {
+            Map.TurnState.GeneralIsBaron = false;
+            Map.TurnState.GeneralAvailableAdvisorId = advisorId;
+        }
+        else
+        {
+            Map.TurnState.GeneralIsBaron = true;
+            Map.TurnState.GeneralAvailableAdvisorId = null;
+        }
+
+        RefreshAllyGeneralAuras();
+        await SaveAsync(systemMessage: $"{L["Battle general"]}: {BattleGeneralDisplayName}.");
+    }
+
+    private void RefreshAllyGeneralAuras()
+    {
+        if (Map is null)
+            return;
+        var aura = BattleGeneralAura;
+        foreach (var token in Map.Tokens.Where(t => !t.IsEnemy && t.UnitId is int))
+        {
+            if (token.UnitId is not int uid)
+                continue;
+            var unit = _activeUnits.FirstOrDefault(u => u.Id == uid);
+            if (unit is not null)
+                ApplyCommanderBattleFlags(token, unit);
+            ApplyGeneralAura(token, aura);
+        }
+    }
+
+    private string BattleGeneralAuraSummary
+    {
+        get
+        {
+            var aura = BattleGeneralAura;
+            if (!aura.HasAny)
+                return "";
+            var parts = new List<string>();
+            if (aura.Discipline != 0) parts.Add($"Disc {aura.Discipline:+#;-#;0}");
+            if (aura.Hp != 0) parts.Add($"HP {aura.Hp:+#;-#;0}");
+            if (aura.Attack != 0) parts.Add($"Atk {aura.Attack:+#;-#;0}");
+            if (aura.Defense != 0) parts.Add($"Def {aura.Defense:+#;-#;0}");
+            if (aura.Damage != 0) parts.Add($"Dmg {aura.Damage:+#;-#;0}");
+            return string.Join(", ", parts);
+        }
+    }
+
+    private void ApplyGeneralAura(BaronyBattleTokenDTO token, GeneralAuraResult aura)
+    {
+        if (token.IsEnemy)
+            return;
+
+        if (!token.AllyCombatBaseCaptured)
+        {
+            token.AllyBaseAttack = token.Attack;
+            token.AllyBaseDefense = token.Defense;
+            token.AllyBaseDamage = token.Damage;
+            token.AllyBaseMaxHp = token.MaxHp;
+            token.AllyCombatBaseCaptured = true;
+        }
+
+        // Discipline is rebuilt from captain flags; strip prior aura then re-add.
+        token.Discipline = Math.Max(0, token.Discipline - token.GenAuraDiscipline);
+        var prevHpBonus = token.GenAuraHp;
+
+        token.GenAuraDiscipline = aura.Discipline;
+        token.GenAuraHp = aura.Hp;
+        token.GenAuraAttack = aura.Attack;
+        token.GenAuraDefense = aura.Defense;
+        token.GenAuraDamage = aura.Damage;
+
+        token.Discipline = Math.Max(0, token.Discipline + aura.Discipline);
+        token.Attack = token.AllyBaseAttack + aura.Attack;
+        token.Defense = token.AllyBaseDefense + aura.Defense;
+        token.Damage = token.AllyBaseDamage + aura.Damage;
+        token.MaxHp = Math.Max(1, token.AllyBaseMaxHp + aura.Hp);
+
+        var hpDelta = aura.Hp - prevHpBonus;
+        if (token.Hp > 0 && hpDelta != 0)
+            token.Hp = Math.Clamp(token.Hp + hpDelta, 1, token.MaxHp);
+        else
+            token.Hp = Math.Clamp(token.Hp, 0, token.MaxHp);
+
+        token.AllyGeneralAbilities = aura.AbilityKeys.ToList();
+    }
+
     private static int ChargeAttackBonus(BaronyBattleTokenDTO token) =>
         token.ThunderCharge ? 3 : 2;
 
@@ -3877,7 +4250,7 @@ else
         }
 
         Map.Phase = BaronyBattlePhases.Setup;
-        Map.TurnState = new();
+        ResetTurnStatePreservingGeneral();
 
         AppendLocalLog(string.Empty, "phase", PhaseBanner($"End of Battle (round {round})"));
         foreach (var line in summaryLines)
@@ -3963,7 +4336,7 @@ else
         }
 
         Map.Phase = BaronyBattlePhases.Setup;
-        Map.TurnState = new();
+        ResetTurnStatePreservingGeneral();
         foreach (var t in Map.Tokens)
         {
             t.RemainingMove = t.Move;
@@ -4987,7 +5360,7 @@ else
         Map.Cells.Clear();
         Map.Tokens.Clear();
         Map.Phase = BaronyBattlePhases.Setup;
-        Map.TurnState = new();
+        ResetTurnStatePreservingGeneral();
         _selectedTokenId = null;
         await SaveAsync(systemMessage: "Map cleared.");
         RefreshRange();
@@ -5749,6 +6122,11 @@ else
         Add(token.CmdIronclad, "ironclad");
         // Passive abilities have no per-token flag, so they are captured separately at deploy.
         foreach (var key in token.AllyCommanderAbilities ?? Enumerable.Empty<string>())
+        {
+            if (!keys.Contains(key))
+                keys.Add(key);
+        }
+        foreach (var key in token.AllyGeneralAbilities ?? Enumerable.Empty<string>())
         {
             if (!keys.Contains(key))
                 keys.Add(key);

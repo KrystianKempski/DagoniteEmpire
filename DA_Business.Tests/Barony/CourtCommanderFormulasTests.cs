@@ -325,4 +325,55 @@ public class CourtCommanderFormulasTests
         riding.BaseBonus = 5;
         Assert.True(CourtCommanderFormulas.CanUnlock(sheet, "shock-lance", out var reason, gate), reason);
     }
+
+    [Fact]
+    public void GeneralBranch_RequiresTwoTrunkT2()
+    {
+        var sheet = CourtCharacterSheet.CreateDefault();
+        sheet.Main[CourtMainSkill.Command] = 12;
+        sheet.Secondary =
+        [
+            new CourtSecondaryEntry { Key = CourtSecondarySkill.StrategyTactics, Value = 8 },
+        ];
+        sheet.CommanderXp = 40;
+
+        Assert.False(CourtCommanderFormulas.CanUnlock(sheet, "field-presence", out _));
+
+        Assert.True(CourtCommanderFormulas.TryUnlock(sheet, "hold-the-line", out _));
+        Assert.True(CourtCommanderFormulas.TryUnlock(sheet, "discipline-boost", out _));
+        Assert.True(CourtCommanderFormulas.TryUnlock(sheet, "fighting-withdrawal", out _));
+        Assert.False(CourtCommanderFormulas.CanUnlock(sheet, "field-presence", out _),
+            "Still need a second Trunk T2");
+
+        Assert.True(CourtCommanderFormulas.TryUnlock(sheet, "march-cadence", out _));
+        Assert.True(CourtCommanderFormulas.TryUnlock(sheet, "second-wind", out var gateReason), gateReason);
+        Assert.True(CourtCommanderFormulas.CanUnlock(sheet, "field-presence", out var ready), ready);
+    }
+
+    [Fact]
+    public void ComputeGeneralAura_WiresFieldPresenceAndSteadyRanks()
+    {
+        var sheet = CourtCharacterSheet.CreateDefault();
+        sheet.Main[CourtMainSkill.Command] = 12;
+        sheet.Secondary =
+        [
+            new CourtSecondaryEntry { Key = CourtSecondarySkill.StrategyTactics, Value = 8 },
+        ];
+        sheet.CommanderXp = 40;
+        Assert.True(CourtCommanderFormulas.TryUnlock(sheet, "hold-the-line", out _));
+        Assert.True(CourtCommanderFormulas.TryUnlock(sheet, "discipline-boost", out _));
+        Assert.True(CourtCommanderFormulas.TryUnlock(sheet, "fighting-withdrawal", out _));
+        Assert.True(CourtCommanderFormulas.TryUnlock(sheet, "second-wind", out _));
+        Assert.True(CourtCommanderFormulas.TryUnlock(sheet, "field-presence", out var a), a);
+        Assert.True(CourtCommanderFormulas.TryUnlock(sheet, "steady-ranks", out var b), b);
+        Assert.True(CourtCommanderFormulas.TryUnlock(sheet, "clear-orders", out var c), c);
+
+        var aura = CourtCommanderFormulas.ComputeGeneralAura(sheet);
+        Assert.Equal(1, aura.Discipline);
+        Assert.Equal(4, aura.Hp);
+        Assert.Equal(1, aura.Attack);
+        Assert.Contains("field-presence", aura.AbilityKeys);
+        Assert.Contains("steady-ranks", aura.AbilityKeys);
+        Assert.Contains("clear-orders", aura.AbilityKeys);
+    }
 }

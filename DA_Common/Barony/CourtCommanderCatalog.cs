@@ -10,6 +10,8 @@ public static class CourtCommanderBranch
     public const string Line = "line";
     public const string Skirmish = "skirmish";
     public const string Cunning = "cunning";
+    /// <summary>Army-wide general path; entry gated by Trunk progress.</summary>
+    public const string General = "general";
 }
 
 /// <summary>A single skill minimum shared by every ability in a branch+tier.</summary>
@@ -128,6 +130,24 @@ public sealed class CommanderBonusResult
     }
 }
 
+/// <summary>
+/// Army-wide bonuses from a battle general's unlocked General-branch abilities.
+/// Applied to every allied token while that general leads the battle.
+/// </summary>
+public sealed class GeneralAuraResult
+{
+    public int Discipline { get; set; }
+    public int Hp { get; set; }
+    public int Attack { get; set; }
+    public int Defense { get; set; }
+    public int Damage { get; set; }
+    public List<string> AbilityKeys { get; set; } = new();
+
+    public bool HasAny =>
+        Discipline != 0 || Hp != 0 || Attack != 0 || Defense != 0 || Damage != 0
+        || AbilityKeys.Count > 0;
+}
+
 /// <summary>Catalog + unlock rules for court commander abilities (model B).</summary>
 public static class CourtCommanderCatalog
 {
@@ -135,6 +155,10 @@ public static class CourtCommanderCatalog
     public const int SoftCapCmdAttack = 2;
     public const int SoftCapCmdDefense = 2;
     public const int SoftCapMove = 2;
+    public const int SoftCapGenDiscipline = 2;
+    public const int SoftCapGenAttack = 1;
+    public const int SoftCapGenDefense = 1;
+    public const int SoftCapGenHp = 8;
 
     /// <summary>
     /// Abilities temporarily disabled: not unlockable and their battle effect is neutralised
@@ -379,6 +403,17 @@ public static class CourtCommanderFormulas
             if (t3Count >= CourtCommanderCatalog.MaxTier3
                 && unlocked.All(a => !string.Equals(a.Key, ability.Key, StringComparison.OrdinalIgnoreCase)))
                 return false;
+        }
+
+        var isGeneral = string.Equals(
+            ability.Branch, CourtCommanderBranch.General, StringComparison.OrdinalIgnoreCase);
+
+        // General entry: army path opens only after a solid Trunk foundation.
+        if (isGeneral && ability.Tier <= 1)
+        {
+            return unlocked.Count(a =>
+                string.Equals(a.Branch, CourtCommanderBranch.Trunk, StringComparison.OrdinalIgnoreCase)
+                && a.Tier == 2) >= 2;
         }
 
         if (ability.Tier <= 1)
@@ -626,6 +661,53 @@ public static class CourtCommanderFormulas
         result.OtherMove = Math.Min(result.OtherMove, CourtCommanderCatalog.SoftCapMove);
         result.CommanderAttack = Math.Min(result.CommanderAttack, CourtCommanderCatalog.SoftCapCmdAttack);
         result.CommanderDefense = Math.Min(result.CommanderDefense, CourtCommanderCatalog.SoftCapCmdDefense);
+        return result;
+    }
+
+    /// <summary>
+    /// Army-wide aura from General-branch unlocks on the designated battle general's sheet.
+    /// Independent of per-unit captain bonuses.
+    /// </summary>
+    public static GeneralAuraResult ComputeGeneralAura(CourtCharacterSheet? sheet)
+    {
+        var result = new GeneralAuraResult();
+        if (sheet is null)
+            return result;
+        sheet.Normalize();
+
+        foreach (var key in sheet.UnlockedCommanderAbilities)
+        {
+            if (CourtCommanderCatalog.IsDisabled(key))
+                continue;
+            var ability = CourtCommanderCatalog.Find(key);
+            if (ability is null
+                || !string.Equals(ability.Branch, CourtCommanderBranch.General, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            switch (key.Trim().ToLowerInvariant())
+            {
+                case "field-presence":
+                    result.Discipline += 1;
+                    result.AbilityKeys.Add(ability.Key);
+                    break;
+                case "steady-ranks":
+                    result.Hp += 4;
+                    result.AbilityKeys.Add(ability.Key);
+                    break;
+                case "clear-orders":
+                    result.Attack += 1;
+                    result.AbilityKeys.Add(ability.Key);
+                    break;
+            }
+        }
+
+        result.Discipline = Math.Min(result.Discipline, CourtCommanderCatalog.SoftCapGenDiscipline);
+        result.Attack = Math.Min(result.Attack, CourtCommanderCatalog.SoftCapGenAttack);
+        result.Defense = Math.Min(result.Defense, CourtCommanderCatalog.SoftCapGenDefense);
+        result.Hp = Math.Min(result.Hp, CourtCommanderCatalog.SoftCapGenHp);
+        result.AbilityKeys = result.AbilityKeys
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
         return result;
     }
 }

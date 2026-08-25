@@ -14,8 +14,12 @@
       "softCaps": {
         "cmdAttack": 2,
         "cmdDefense": 2,
-        "move": 2
-      }
+        "move": 2,
+        "genDiscipline": 2,
+        "genAttack": 1,
+        "genDefense": 1
+      },
+      "generalEntry": "General T1 requires ≥2 Trunk T2 in addition to skill floors"
     },
     "characterRequirements": "PC/linked: SumAbsolute on base/special skills; court sheet uses requirements (Armor→Athletics, Perception→Observation, Riding capped at secondary max 6)"
   },
@@ -415,6 +419,96 @@
         {
           "skill": "Perception",
           "min": 5,
+          "kind": "base"
+        }
+      ]
+    },
+    {
+      "branch": "general",
+      "tier": 1,
+      "cxCost": 1,
+      "requirementsText": "Command ≥ 8, Strategy/tactics ≥ 4 — also requires ≥2 Trunk T2",
+      "requirements": [
+        {
+          "skill": "Command",
+          "min": 8,
+          "kind": "main"
+        },
+        {
+          "skill": "Strategy / tactics",
+          "min": 4,
+          "kind": "secondary"
+        }
+      ],
+      "characterRequirements": [
+        {
+          "skill": "Command",
+          "min": 8,
+          "kind": "base"
+        },
+        {
+          "skill": "Knowledge",
+          "min": 4,
+          "kind": "base"
+        }
+      ]
+    },
+    {
+      "branch": "general",
+      "tier": 2,
+      "cxCost": 2,
+      "requirementsText": "Command ≥ 10, Strategy/tactics ≥ 6",
+      "requirements": [
+        {
+          "skill": "Command",
+          "min": 10,
+          "kind": "main"
+        },
+        {
+          "skill": "Strategy / tactics",
+          "min": 6,
+          "kind": "secondary"
+        }
+      ],
+      "characterRequirements": [
+        {
+          "skill": "Command",
+          "min": 10,
+          "kind": "base"
+        },
+        {
+          "skill": "Knowledge",
+          "min": 6,
+          "kind": "base"
+        }
+      ]
+    },
+    {
+      "branch": "general",
+      "tier": 3,
+      "cxCost": 3,
+      "requirementsText": "Command ≥ 12, Strategy/tactics ≥ 8",
+      "requirements": [
+        {
+          "skill": "Command",
+          "min": 12,
+          "kind": "main"
+        },
+        {
+          "skill": "Strategy / tactics",
+          "min": 8,
+          "kind": "secondary"
+        }
+      ],
+      "characterRequirements": [
+        {
+          "skill": "Command",
+          "min": 12,
+          "kind": "base"
+        },
+        {
+          "skill": "Knowledge",
+          "min": 8,
           "kind": "base"
         }
       ]
@@ -948,6 +1042,94 @@
       "effects": "HideMoveGhost",
       "status": "proposal",
       "notes": "Moved to T3."
+    },
+    {
+      "key": "field-presence",
+      "name": "Field Presence",
+      "branch": "general",
+      "tier": 1,
+      "cxCost": 1,
+      "description": "All allied units: +1 Discipline while this general leads the battle.",
+      "effects": "AuraDiscipline+1",
+      "status": "in-code",
+      "notes": "MVP general aura. Requires ≥2 Trunk T2 to unlock."
+    },
+    {
+      "key": "steady-ranks",
+      "name": "Steady Ranks",
+      "branch": "general",
+      "tier": 1,
+      "cxCost": 1,
+      "description": "All allied units: +4 Max HP while this general leads the battle.",
+      "effects": "AuraHp+4",
+      "status": "in-code",
+      "notes": "MVP general aura."
+    },
+    {
+      "key": "clear-orders",
+      "name": "Clear Orders",
+      "branch": "general",
+      "tier": 1,
+      "cxCost": 1,
+      "description": "All allied units: +1 Attack while this general leads the battle.",
+      "effects": "AuraAttack+1",
+      "status": "in-code",
+      "notes": "MVP general aura (Attack)."
+    },
+    {
+      "key": "rallying-cry",
+      "name": "Rallying Cry",
+      "branch": "general",
+      "tier": 2,
+      "cxCost": 2,
+      "description": "Once per battle: chosen allied unit heals 12 HP (16 if below 40% HP).",
+      "effects": "ActiveHealTarget12",
+      "status": "in-code",
+      "notes": "Once per battle; pick allied living unit; heal 12 (16 if below 40% Max HP)."
+    },
+    {
+      "key": "push-the-assault",
+      "name": "Push the Assault",
+      "branch": "general",
+      "tier": 2,
+      "cxCost": 2,
+      "description": "Once per combat round: chosen allied unit gains +2 Attack until the round ends.",
+      "effects": "ActiveTargetAttack+2ThisRound",
+      "status": "proposal",
+      "notes": ""
+    },
+    {
+      "key": "hold-fast",
+      "name": "Hold Fast",
+      "branch": "general",
+      "tier": 2,
+      "cxCost": 2,
+      "description": "Once per combat round: chosen allied unit gains +2 Defense until the round ends.",
+      "effects": "ActiveTargetDefense+2ThisRound",
+      "status": "proposal",
+      "notes": ""
+    },
+    {
+      "key": "iron-discipline",
+      "name": "Iron Discipline",
+      "branch": "general",
+      "tier": 3,
+      "cxCost": 3,
+      "description": "Allied aura: additional +1 Discipline; side Exposure against allies reduced by 0.5.",
+      "effects": "AuraDiscipline+1;ExposureVsSide-0.5",
+      "status": "proposal",
+      "notes": ""
+    },
+    {
+      "key": "decisive-strike",
+      "name": "Decisive Strike",
+      "branch": "general",
+      "tier": 3,
+      "cxCost": 3,
+      "description": "Once per battle: chosen allied unit gains +2 Damage and +1 Attack on its next exchange.",
+      "effects": "ActiveTargetNextExchangeAtk+1Dmg+2",
+      "status": "proposal",
+      "notes": ""
     }
   ],
   "related": {

@@ -151,6 +151,7 @@
         CourtCommanderBranch.Line,
         CourtCommanderBranch.Skirmish,
         CourtCommanderBranch.Cunning,
+        CourtCommanderBranch.General,
     ];
 
     private CourtCharacterSheet _sheet = CourtCharacterSheet.CreateDefault();
@@ -208,6 +209,7 @@
         CourtCommanderBranch.Line => "Line",
         CourtCommanderBranch.Skirmish => "Skirmish",
         CourtCommanderBranch.Cunning => "Cunning",
+        CourtCommanderBranch.General => "General",
         _ => branch,
     };
 
@@ -218,7 +220,8 @@
         CourtCommanderBranch.Line => Icons.Material.Filled.Shield,
         CourtCommanderBranch.Skirmish => Icons.Material.Filled.GpsFixed,
         CourtCommanderBranch.Cunning => Icons.Material.Filled.Visibility,
-        _ => Icons.Material.Filled.MilitaryTech,
+        CourtCommanderBranch.General => Icons.Material.Filled.MilitaryTech,
+        _ => Icons.Material.Filled.Star,
     };
 
     private bool IsUnlocked(CourtCommanderAbility ability) =>

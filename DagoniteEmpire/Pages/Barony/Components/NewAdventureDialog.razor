@@ -1,0 +1,85 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Common.Barony
+@inject IDialogService _dialogService
+
+<MudDialog Class="barony-dialog">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@L["Add adventure"]</MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="barony-dialog-theme">
+            <div class="new-audience-icon-row">
+                <button type="button"
+                        class="new-audience-icon-row__pick"
+                        title="@L["Choose icon"]"
+                        @onclick="PickIconAsync">
+                    <img src="@("/" + IconPath)" alt="" />
+                    <span>@L["Choose icon"]</span>
+                </button>
+                <MudTextField @bind-Value="_name"
+                              Label="@(L["Adventure name"])"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Immediate="true"
+                              HelperText="@(L["Name shown on the Adventures ring"])"
+                              Class="flex-grow-1" />
+            </div>
+            <MudTextField @bind-Value="_linkUrl"
+                          Label="@(L["Adventure link"])"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Immediate="true"
+                          HelperText="@(L["Chapter id or path, e.g. 12 or /chapter/12"])"
+                          Class="mt-2" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Submit" Disabled="_busy || !CanSubmit">
+            @L["Add adventure"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private const string DefaultIcon = "icons/bookmarklet.svg";
+
+    private string _name = "";
+    private string _linkUrl = "";
+    private string _iconPath = DefaultIcon;
+    private bool _busy;
+
+    private string IconPath => PetitionerIconCatalog.PathFor(_iconPath);
+
+    private bool CanSubmit =>
+        !string.IsNullOrWhiteSpace(_name)
+        && !string.IsNullOrWhiteSpace(_linkUrl);
+
+    private async Task PickIconAsync()
+    {
+        var dialog = await _dialogService.ShowAsync<PetitionerIconPickerDialog>(
+            "Choose icon",
+            new DialogParameters<PetitionerIconPickerDialog> { { x => x.SelectedPath, _iconPath } },
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not string path || string.IsNullOrWhiteSpace(path))
+            return;
+        _iconPath = path;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit()
+    {
+        if (!CanSubmit) return;
+        _busy = true;
+        MudDialog.Close(DialogResult.Ok(new NewAdventureResult(
+            _name.Trim(),
+            IconPath,
+            _linkUrl.Trim())));
+    }
+
+    public sealed record NewAdventureResult(string Name, string IconPath, string LinkUrl);
+}

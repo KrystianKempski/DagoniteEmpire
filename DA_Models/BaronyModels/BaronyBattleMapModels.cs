@@ -292,6 +292,21 @@ namespace DA_Models.BaronyModels
         /// </summary>
         public List<string> AllyCommanderAbilities { get; set; } = new();
 
+        /// <summary>General-branch aura keys currently boosting this allied token.</summary>
+        public List<string> AllyGeneralAbilities { get; set; } = new();
+
+        /// <summary>Pre-aura combat baseline so general auras re-apply idempotently.</summary>
+        public bool AllyCombatBaseCaptured { get; set; }
+        public int AllyBaseAttack { get; set; }
+        public int AllyBaseDefense { get; set; }
+        public int AllyBaseDamage { get; set; }
+        public int AllyBaseMaxHp { get; set; }
+        public int GenAuraDiscipline { get; set; }
+        public int GenAuraHp { get; set; }
+        public int GenAuraAttack { get; set; }
+        public int GenAuraDefense { get; set; }
+        public int GenAuraDamage { get; set; }
+
         /// <summary>
         /// Grid cell where the charge segment begins (after any pre-charge march).
         /// Kept across collision path truncates so arrows/validation still know the split.
@@ -351,6 +366,15 @@ namespace DA_Models.BaronyModels
         /// Baron confirms their attack orders are done; only the Game Master advances the phase.
         /// </summary>
         public bool BaronPhaseReady { get; set; }
+
+        /// <summary>When true, the baron's CommanderSheet is the battle general.</summary>
+        public bool GeneralIsBaron { get; set; }
+
+        /// <summary>Courtier id for the battle general when <see cref="GeneralIsBaron"/> is false.</summary>
+        public int? GeneralAvailableAdvisorId { get; set; }
+
+        /// <summary>Rallying Cry (general T2) already spent this battle.</summary>
+        public bool RallyingCryUsed { get; set; }
     }
 
     public class BaronyBattleLogEntryDTO

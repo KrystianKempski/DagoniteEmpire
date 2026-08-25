@@ -137,6 +137,11 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<BaronAudienceDTO> ResolveAudience(int audienceId, string? gmSummary, string? outcomeNotes);
         Task<BaronAudienceDTO> DismissAudience(int audienceId, string? gmSummary = null);
 
+        // --- Audience Hall adventures (MG-curated pins) ---
+        Task<List<BaronyHallAdventureDTO>> GetHallAdventures(int baronyId);
+        Task<BaronyHallAdventureDTO> SaveHallAdventure(BaronyHallAdventureDTO dto);
+        Task<int> DeleteHallAdventure(int id);
+
         // --- Offices influence ---
         Task<List<AdvisorInfluenceModifierDTO>> GetAdvisorInfluenceModifiers(int baronyId);
         Task<AdvisorInfluenceModifierDTO> SaveAdvisorInfluenceModifier(AdvisorInfluenceModifierDTO dto);

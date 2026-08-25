@@ -3540,6 +3540,94 @@ namespace DA_Business.Repository.BaronyRepos
             }
         }
 
+        // ---------------- Audience Hall adventures ----------------
+        public async Task<List<BaronyHallAdventureDTO>> GetHallAdventures(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var rows = await ctx.BaronyHallAdventures.AsNoTracking()
+                    .Where(a => a.BaronyId == baronyId)
+                    .OrderBy(a => a.SortOrder)
+                    .ThenBy(a => a.Id)
+                    .ToListAsync();
+                return rows.Select(ToHallAdventureDto).ToList();
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetHallAdventures)); }
+        }
+
+        public async Task<BaronyHallAdventureDTO> SaveHallAdventure(BaronyHallAdventureDTO dto)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var now = DateTime.UtcNow;
+                BaronyHallAdventure e;
+                if (dto.Id > 0)
+                {
+                    e = await ctx.BaronyHallAdventures.FirstOrDefaultAsync(x => x.Id == dto.Id)
+                        ?? throw new InvalidOperationException("Hall adventure not found.");
+                    e.Name = (dto.Name ?? "").Trim();
+                    e.IconPath = string.IsNullOrWhiteSpace(dto.IconPath) ? "icons/bookmarklet.svg" : dto.IconPath.Trim().TrimStart('/');
+                    e.LinkUrl = (dto.LinkUrl ?? "").Trim();
+                    e.SortOrder = dto.SortOrder;
+                    e.UpdatedAtUtc = now;
+                }
+                else
+                {
+                    var maxSort = await ctx.BaronyHallAdventures
+                        .Where(a => a.BaronyId == dto.BaronyId)
+                        .Select(a => (int?)a.SortOrder)
+                        .MaxAsync() ?? 0;
+                    e = new BaronyHallAdventure
+                    {
+                        BaronyId = dto.BaronyId,
+                        Name = (dto.Name ?? "").Trim(),
+                        IconPath = string.IsNullOrWhiteSpace(dto.IconPath) ? "icons/bookmarklet.svg" : dto.IconPath.Trim().TrimStart('/'),
+                        LinkUrl = (dto.LinkUrl ?? "").Trim(),
+                        SortOrder = dto.SortOrder > 0 ? dto.SortOrder : maxSort + 1,
+                        CreatedAtUtc = now,
+                        UpdatedAtUtc = now,
+                    };
+                    ctx.BaronyHallAdventures.Add(e);
+                }
+
+                await ctx.SaveChangesAsync();
+                return ToHallAdventureDto(e);
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(SaveHallAdventure));
+            }
+        }
+
+        public async Task<int> DeleteHallAdventure(int id)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.BaronyHallAdventures.FirstOrDefaultAsync(x => x.Id == id);
+                if (e is null)
+                    return 0;
+                ctx.BaronyHallAdventures.Remove(e);
+                await ctx.SaveChangesAsync();
+                return 1;
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(DeleteHallAdventure)); }
+        }
+
+        private static BaronyHallAdventureDTO ToHallAdventureDto(BaronyHallAdventure e) => new()
+        {
+            Id = e.Id,
+            BaronyId = e.BaronyId,
+            Name = e.Name,
+            IconPath = e.IconPath,
+            LinkUrl = e.LinkUrl,
+            SortOrder = e.SortOrder,
+            CreatedAtUtc = e.CreatedAtUtc,
+            UpdatedAtUtc = e.UpdatedAtUtc,
+        };
+
         private static async Task<BaronAudienceDTO> LoadAudienceDtoAsync(ApplicationDbContext ctx, int id)
         {
             var e = await ctx.BaronAudiences.AsNoTracking().FirstAsync(a => a.Id == id);

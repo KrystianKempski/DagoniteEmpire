@@ -42,6 +42,16 @@
                         @L["New council topic"]
                     </MudButton>
                 }
+                else if (_mode == HallMode.Adventures)
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="CreateAdventureAsync"
+                               Disabled="_busy">
+                        @L["Add adventure"]
+                    </MudButton>
+                }
             </div>
         }
 
@@ -169,27 +179,27 @@
                 {
                     <div class="audience-hall__ring">
                         <div class="audience-hall__satellites audience-hall__satellites--left">
-                            @foreach (var c in LeftChapterSatellites)
+                            @foreach (var a in LeftAdventureSatellites)
                             {
                                 <button type="button"
                                         class="audience-hall__advisor"
-                                        title="@c.Label"
-                                        @onclick="() => SelectChapter(c.Id)">
-                                    <img src="@("/" + MyIcon.Bookmark)" alt="" />
-                                    <span>@c.Label</span>
+                                        title="@a.Label"
+                                        @onclick="() => OpenAdventure(a)">
+                                    <img src="@("/" + a.Icon)" alt="" />
+                                    <span>@a.Label</span>
                                 </button>
                             }
                         </div>
                         <img src="@("/" + MyIcon.AdventureCamp)" class="audience-hall__throne audience-hall__throne--zoom" alt="" />
                         <div class="audience-hall__satellites audience-hall__satellites--right">
-                            @foreach (var c in RightChapterSatellites)
+                            @foreach (var a in RightAdventureSatellites)
                             {
                                 <button type="button"
                                         class="audience-hall__advisor"
-                                        title="@c.Label"
-                                        @onclick="() => SelectChapter(c.Id)">
-                                    <img src="@("/" + MyIcon.Bookmark)" alt="" />
-                                    <span>@c.Label</span>
+                                        title="@a.Label"
+                                        @onclick="() => OpenAdventure(a)">
+                                    <img src="@("/" + a.Icon)" alt="" />
+                                    <span>@a.Label</span>
                                 </button>
                             }
                         </div>
@@ -230,9 +240,9 @@
                             class="audience-hall__tile @(_mode == HallMode.Adventures ? "is-on" : "")"
                             disabled="@(_mode == HallMode.Adventures)"
                             @onclick="ToggleAdventures">
-                        @if (CampaignChapters.Count > 0)
+                        @if (_hallAdventures.Count > 0)
                         {
-                            <span class="audience-hall__badge">@CampaignChapters.Count</span>
+                            <span class="audience-hall__badge">@_hallAdventures.Count</span>
                         }
                         <img src="@("/" + MyIcon.Bookmark)" alt="" />
                         <span>@L["Adventures"]</span>
@@ -330,14 +340,14 @@
     private sealed record CouncilSeat(string Key, string Label, string ShortLabel, string Icon, List<BaronAudienceDTO> Topics);
 
     private sealed record PetitionerSatellite(int Id, string Icon, string Label, bool NeedsAttention);
-    private sealed record ChapterSatellite(int Id, string Label);
+    private sealed record AdventureSatellite(int Id, string Icon, string Label, string LinkUrl);
 
     private HallMode _mode = HallMode.Audiences;
     private List<BaronAudienceDTO> _audiences = new();
+    private List<BaronyHallAdventureDTO> _hallAdventures = new();
     private List<AdvisorDTO> _advisors = new();
     private List<string> _courtSpeakers = new();
     private List<string> _councilAdvisorOptions = new();
-    private CampaignDTO? _campaign;
     // -1 = no audience picked yet (petitioner ring shows on load, but the parchment stays empty
     // until an icon is clicked); ClampIndexes/StepTopic already treat this as "unselected".
     private int _audienceIndex = -1;
@@ -374,12 +384,6 @@
             .Where(a => BaronAudienceKind.IsCouncil(a.Kind) && a.IsActive)
             .OrderBy(a => a.TurnNumber)
             .ThenBy(a => a.Id)
-            .ToList();
-
-    private IReadOnlyList<ChapterDTO> CampaignChapters =>
-        (_campaign?.Chapters ?? Array.Empty<ChapterDTO>())
-            .OrderBy(c => c.DateNumber)
-            .ThenBy(c => c.Id)
             .ToList();
 
     private IReadOnlyList<BaronAudienceDTO> UnassignedCouncilTopics =>
@@ -440,14 +444,20 @@
     private List<PetitionerSatellite> RightPetitionerSatellites =>
         HasPetitionerOverflow ? SplitSides(VisiblePetitionerSatellites).Left : SplitSides(VisiblePetitionerSatellites).Right;
 
-    private List<ChapterSatellite> ChapterSatellites =>
-        CampaignChapters
-            .Select(c => new ChapterSatellite(c.Id, c.Name))
+    private List<AdventureSatellite> AdventureSatellites =>
+        _hallAdventures
+            .OrderBy(a => a.SortOrder)
+            .ThenBy(a => a.Id)
+            .Select(a => new AdventureSatellite(
+                a.Id,
+                PetitionerIconCatalog.PathFor(a.IconPath),
+                a.Name,
+                a.LinkUrl))
             .ToList();
 
-    private List<ChapterSatellite> LeftChapterSatellites => SplitSides(ChapterSatellites).Left;
+    private List<AdventureSatellite> LeftAdventureSatellites => SplitSides(AdventureSatellites).Left;
 
-    private List<ChapterSatellite> RightChapterSatellites => SplitSides(ChapterSatellites).Right;
+    private List<AdventureSatellite> RightAdventureSatellites => SplitSides(AdventureSatellites).Right;
 
     /// <summary>Alternates items left/right so both flanks of the throne stay balanced as the list grows.</summary>
     private static (List<T> Left, List<T> Right) SplitSides<T>(IReadOnlyList<T> items)
@@ -550,10 +560,7 @@
 
         _audiences = await _baronyRepo.GetAudiences(BaronyId);
         _advisors = await _baronyRepo.GetAdvisors(Barony.Id);
-        var campaigns = (await _campaignRepository.GetAll(Barony.CharacterId)).ToList();
-        _campaign = campaigns.FirstOrDefault(c =>
-                        string.Equals(c.Name, Barony.Name, StringComparison.OrdinalIgnoreCase))
-                    ?? campaigns.OrderByDescending(c => c.CreatedDate).FirstOrDefault();
+        _hallAdventures = await _baronyRepo.GetHallAdventures(BaronyId);
         ClampIndexes();
     }
 
@@ -616,9 +623,40 @@
         }
     }
 
-    private void SelectChapter(int chapterId)
+    private void OpenAdventure(AdventureSatellite adventure)
     {
-        _navigationManager.NavigateTo($"/chapter/{chapterId}");
+        var url = ResolveAdventureLink(adventure.LinkUrl);
+        if (url is null)
+        {
+            _snackBar.Add(L["Adventure link is invalid."], Severity.Warning);
+            return;
+        }
+
+        var forceLoad = url.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+                        || url.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
+        _navigationManager.NavigateTo(url, forceLoad);
+    }
+
+    private static string? ResolveAdventureLink(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            return null;
+
+        var t = raw.Trim();
+        if (Uri.TryCreate(t, UriKind.Absolute, out var abs)
+            && (abs.Scheme == Uri.UriSchemeHttp || abs.Scheme == Uri.UriSchemeHttps))
+            return abs.ToString();
+
+        if (int.TryParse(t, out var chapterId) && chapterId > 0)
+            return $"/chapter/{chapterId}";
+
+        if (t.StartsWith('/'))
+            return t;
+
+        if (t.StartsWith("chapter/", StringComparison.OrdinalIgnoreCase))
+            return "/" + t;
+
+        return "/" + t.TrimStart('/');
     }
 
     private void StepTopic(int delta)
@@ -688,6 +726,38 @@
             await ReloadAsync();
             SelectAudience(created.Id);
             _snackBar.Add(L["Audience granted."], Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task CreateAdventureAsync()
+    {
+        var dialog = await _dialogService.ShowAsync<NewAdventureDialog>(L["Add adventure"],
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not NewAdventureDialog.NewAdventureResult data)
+            return;
+
+        _busy = true;
+        try
+        {
+            await _baronyRepo.SaveHallAdventure(new BaronyHallAdventureDTO
+            {
+                BaronyId = BaronyId,
+                Name = data.Name,
+                IconPath = data.IconPath,
+                LinkUrl = data.LinkUrl,
+            });
+            await ReloadAsync();
+            _mode = HallMode.Adventures;
+            _snackBar.Add(L["Adventure added."], Severity.Success);
         }
         catch (Exception ex)
         {

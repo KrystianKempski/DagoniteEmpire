@@ -92,6 +92,7 @@ namespace DA_DataAccess.Data
         public DbSet<BaronLetterMessage> BaronLetterMessages { get; set; }
         public DbSet<BaronAudience> BaronAudiences { get; set; }
         public DbSet<BaronAudienceExchange> BaronAudienceExchanges { get; set; }
+        public DbSet<BaronyHallAdventure> BaronyHallAdventures { get; set; }
         public DbSet<BaronyUnit> BaronyUnits { get; set; }
         public DbSet<BaronyBattleMap> BaronyBattleMaps { get; set; }
         public DbSet<MarchMapState> MarchMapStates { get; set; }
@@ -209,6 +210,11 @@ namespace DA_DataAccess.Data
             modelBuilder.Entity<BaronAudienceExchange>(entity =>
             {
                 entity.HasIndex(e => e.AudienceId);
+            });
+
+            modelBuilder.Entity<BaronyHallAdventure>(entity =>
+            {
+                entity.HasIndex(e => e.BaronyId);
             });
 
             modelBuilder.Entity<BaronyUnit>(entity =>
