@@ -38,6 +38,16 @@ MaxWidth="MaxWidth.Large" />
         </MudHidden>
 
         <MudSpacer />
+        <AuthorizeView Roles="@(SD.Role_Admin + "," + SD.Role_HeroPlayer + "," + SD.Role_DukePlayer + "," + SD.Role_GameMaster)">
+            <Authorized>
+                <MudTooltip Text="@(L["Chat"])">
+                    <MudIconButton Icon="@Icons.Material.Filled.Chat"
+                                   Color="Color.Inherit"
+                                   OnClick="ToggleChat" />
+                </MudTooltip>
+                <Chat @bind-ContactsOpen="_chatContactsOpen" />
+            </Authorized>
+        </AuthorizeView>
         <LanguageSwitcher />
         <LoginDisplay />
     </MudAppBar>
@@ -60,14 +70,15 @@ MaxWidth="MaxWidth.Large" />
 @code {
 
     private MudTheme Theme = new MudTheme();
+    private bool _drawerOpen;
+    private bool _chatContactsOpen;
 
     void DrawerStartToggle()
     {
         _drawerOpen = !_drawerOpen;
     }
 
-    bool _drawerOpen;
-
+    private void ToggleChat() => _chatContactsOpen = !_chatContactsOpen;
 
     private void DrawerChange()
     {

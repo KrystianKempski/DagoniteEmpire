@@ -1,0 +1,491 @@
+@using System.Security.Claims
+@using Microsoft.AspNetCore.SignalR.Client
+@implements IAsyncDisposable
+@inject IChatManager _chatManager
+@inject IJSRuntime _jsRuntime
+@inject NavigationManager _navigationManager
+@inject AuthenticationStateProvider _authState
+@inject ISnackbar _snackBar
+
+@attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_HeroPlayer + "," + SD.Role_DukePlayer + "," + SD.Role_GameMaster)]
+
+@* Single contact drawer — Temporary works on desktop and mobile (no duplicated markup). *@
+<MudDrawer Open="_contactsOpen"
+           OpenChanged="OnContactsOpenChanged"
+           Anchor="Anchor.End"
+           Elevation="2"
+           Variant="DrawerVariant.Temporary"
+           ClipMode="DrawerClipMode.Always"
+           Width="280px"
+           Class="user-chat-drawer">
+    <MudDrawerHeader Class="user-chat-drawer__header">
+        <MudIcon Icon="@Icons.Material.Filled.Chat" Class="mr-2" />
+        <MudText Typo="Typo.h6">@L["Chat"]</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Close"
+                       Size="Size.Small"
+                       OnClick="CloseContacts" />
+    </MudDrawerHeader>
+
+    <MudTextField @bind-Value="_contactFilter"
+                  Placeholder="@(L["Filter"])"
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense"
+                  Immediate="true"
+                  Adornment="Adornment.Start"
+                  AdornmentIcon="@Icons.Material.Filled.Search"
+                  Class="mx-3 mb-2" />
+
+    <MudList T="string" Dense="true" Class="user-chat-drawer__list pa-0">
+        @foreach (var user in FilteredContacts)
+        {
+            var id = user.Id;
+            <MudListItem T="string"
+                         Value="@id"
+                         OnClick="@(() => OpenConversationAsync(id))"
+                         Class="@ContactItemClass(id)">
+                <div class="user-chat-drawer__row">
+                    <MudBadge Visible="@(user.ShowBadge)"
+                              Content="@user.BadgeContent"
+                              Color="Color.Primary"
+                              Origin="Origin.TopLeft"
+                              Overlap="true">
+                        <MudAvatar Color="@(IsActiveContact(id) ? Color.Secondary : Color.Dark)"
+                                   Size="Size.Medium">
+                            @Initial(user.UserName)
+                        </MudAvatar>
+                    </MudBadge>
+                    <MudText Typo="Typo.body2" Class="user-chat-drawer__name">
+                        @(user.UserName ?? user.Name)
+                    </MudText>
+                </div>
+            </MudListItem>
+        }
+    </MudList>
+
+    @if (FilteredContacts.Count == 0)
+    {
+        <MudText Typo="Typo.caption" Color="Color.Secondary" Class="pa-4">
+            @L["No contacts."]
+        </MudText>
+    }
+</MudDrawer>
+
+@* Desktop: one or more docked conversation boxes. Mobile: CSS shows only the active box fullscreen. *@
+<div class="user-chat @(_conversations.Count > 0 ? "user-chat--open" : "")">
+    @foreach (var box in _conversations)
+    {
+        var isActive = string.Equals(box.ContactId, _activeContactId, StringComparison.Ordinal);
+        <div class="user-chat__box @(isActive ? "user-chat__box--active" : "")"
+             @key="box.ContactId">
+            <header class="user-chat__header">
+                <MudAvatar Color="Color.Dark" Size="Size.Small">@Initial(box.UserName)</MudAvatar>
+                <MudText Typo="Typo.subtitle2" Class="user-chat__title">@box.UserName</MudText>
+                <MudIconButton Icon="@Icons.Material.Filled.Close"
+                               Size="Size.Small"
+                               Class="user-chat__close"
+                               OnClick="@(() => CloseConversation(box.ContactId))" />
+            </header>
+
+            <div class="user-chat__messages" id="@MessagePaneId(box.ContactId)">
+                @foreach (var message in box.Messages)
+                {
+                    var mine = IsMine(message);
+                    <div class="user-chat__msg @(mine ? "user-chat__msg--mine" : "user-chat__msg--theirs")">
+                        <span class="user-chat__msg-meta">
+                            @SpeakerName(message, box) · @FormatTime(message.CreatedDate)
+                        </span>
+                        <div class="user-chat__bubble">@message.Message</div>
+                    </div>
+                }
+            </div>
+
+            <footer class="user-chat__composer">
+                <MudTextField @bind-Value="box.Draft"
+                              Placeholder="@(L["Enter your message..."])"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Immediate="true"
+                              Disabled="@(!_hubReady)"
+                              OnKeyDown="@(e => OnComposerKeyDown(e, box))"
+                              Class="user-chat__input" />
+                <MudIconButton Icon="@Icons.Material.Filled.Send"
+                               Color="Color.Primary"
+                               Disabled="@(!_hubReady || string.IsNullOrWhiteSpace(box.Draft))"
+                               OnClick="@(() => SendAsync(box))" />
+            </footer>
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>Open/close the contacts drawer from the parent (e.g. MainLayout app-bar button).</summary>
+    [Parameter] public bool ContactsOpen { get; set; }
+    [Parameter] public EventCallback<bool> ContactsOpenChanged { get; set; }
+
+    private bool _contactsOpen;
+    private string _contactFilter = string.Empty;
+    private string? _currentUserId;
+    private string? _currentUserName;
+    private string? _activeContactId;
+    private bool _hubReady;
+    private bool _scrollPending;
+    private HubConnection? _hub;
+    private List<ApplicationUser> _contacts = new();
+    private readonly List<ConversationBox> _conversations = new();
+
+    private sealed class ConversationBox
+    {
+        public string ContactId { get; init; } = string.Empty;
+        public string UserName { get; init; } = string.Empty;
+        public List<ChatMessage> Messages { get; set; } = new();
+        public string Draft { get; set; } = string.Empty;
+    }
+
+    private IReadOnlyList<ApplicationUser> FilteredContacts
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(_contactFilter))
+                return _contacts;
+            var q = _contactFilter.Trim();
+            return _contacts
+                .Where(u => (u.UserName?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false)
+                            || (u.Name?.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false))
+                .ToList();
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        _contactsOpen = ContactsOpen;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var state = await _authState.GetAuthenticationStateAsync();
+            var user = state.User;
+            if (user.Identity?.IsAuthenticated != true)
+                return;
+
+            _currentUserId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            _currentUserName = user.Identity?.Name
+                ?? user.FindFirstValue(ClaimTypes.Name)
+                ?? user.FindFirstValue("name");
+
+            await EnsureHubAsync();
+            await ReloadContactsAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(L["Error while init chat: "] + ex.Message, Severity.Error);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_scrollPending || string.IsNullOrEmpty(_activeContactId))
+            return;
+
+        _scrollPending = false;
+        try
+        {
+            await _jsRuntime.ScrollToBottom(MessagePaneId(_activeContactId));
+        }
+        catch
+        {
+            // Pane may not be in the DOM yet — ignore.
+        }
+    }
+
+    public void OpenContacts() => _ = SetContactsOpenAsync(true);
+
+    private Task CloseContacts() => SetContactsOpenAsync(false);
+
+    private async Task OnContactsOpenChanged(bool open) => await SetContactsOpenAsync(open);
+
+    private async Task SetContactsOpenAsync(bool open)
+    {
+        if (_contactsOpen == open && ContactsOpen == open)
+            return;
+        _contactsOpen = open;
+        if (ContactsOpen != open)
+            await ContactsOpenChanged.InvokeAsync(open);
+    }
+
+    private async Task EnsureHubAsync()
+    {
+        if (_hub is not null)
+            return;
+
+        _hub = new HubConnectionBuilder()
+            .WithUrl(_navigationManager.ToAbsoluteUri(ChatHub.HubUrl))
+            .WithAutomaticReconnect()
+            .Build();
+
+        _hub.On<string, ChatMessage>("SendMessage", OnMessageReceived);
+        _hub.Reconnected += async _ =>
+        {
+            _hubReady = true;
+            try { await _hub.SendAsync("JoinChatUserGroup"); }
+            catch { /* auth may be mid-refresh */ }
+            await InvokeAsync(StateHasChanged);
+        };
+        _hub.Closed += _ =>
+        {
+            _hubReady = false;
+            return InvokeAsync(StateHasChanged);
+        };
+
+        await _hub.StartAsync();
+        _hubReady = _hub.State == HubConnectionState.Connected;
+        if (_hubReady)
+            await _hub.SendAsync("JoinChatUserGroup");
+    }
+
+    private async Task ReloadContactsAsync()
+    {
+        var users = await _chatManager.GetUsersAsync();
+        _contacts = users
+            .Where(u => !SD.IsDemoUserName(u.UserName))
+            .OrderBy(u => u.UserName, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private async Task OpenConversationAsync(string contactId)
+    {
+        if (string.IsNullOrEmpty(contactId) || string.IsNullOrEmpty(_currentUserId))
+            return;
+
+        var existing = _conversations.FirstOrDefault(c => c.ContactId == contactId);
+        if (existing is not null)
+        {
+            // Second click on the same contact closes that box (desktop habit from the old chat).
+            if (string.Equals(_activeContactId, contactId, StringComparison.Ordinal))
+            {
+                CloseConversation(contactId);
+                return;
+            }
+
+            _activeContactId = contactId;
+            await MarkReadAsync(contactId);
+            RequestScroll();
+            return;
+        }
+
+        var contact = await _chatManager.GetUserDetailsAsync(contactId);
+        if (contact is null)
+            return;
+
+        var history = await _chatManager.GetConversationAsync(contactId);
+        var box = new ConversationBox
+        {
+            ContactId = contact.Id,
+            UserName = contact.UserName ?? contact.Name ?? contactId,
+            Messages = history,
+        };
+
+        // Cap open desktop boxes so they stay on screen (~320px each).
+        const int maxBoxes = 3;
+        while (_conversations.Count >= maxBoxes)
+            _conversations.RemoveAt(0);
+
+        _conversations.Add(box);
+        _activeContactId = box.ContactId;
+        await MarkReadAsync(box.ContactId);
+        RequestScroll();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void CloseConversation(string contactId)
+    {
+        _conversations.RemoveAll(c => c.ContactId == contactId);
+        if (string.Equals(_activeContactId, contactId, StringComparison.Ordinal))
+            _activeContactId = _conversations.LastOrDefault()?.ContactId;
+    }
+
+    private async Task SendAsync(ConversationBox box)
+    {
+        var text = box.Draft?.Trim();
+        if (string.IsNullOrEmpty(text)
+            || string.IsNullOrEmpty(_currentUserId)
+            || _hub is null
+            || _hub.State != HubConnectionState.Connected)
+            return;
+
+        var payload = new ChatMessage
+        {
+            Message = text,
+            FromUserId = _currentUserId,
+            ToUserId = box.ContactId,
+            CreatedDate = DateTime.UtcNow,
+        };
+
+        try
+        {
+            // Persist first; broadcast only to the two participants (hub groups).
+            await _chatManager.SaveMessageAsync(payload);
+            AppendLocal(box, payload);
+            box.Draft = string.Empty;
+            RequestScroll();
+            await _hub.SendAsync("SendMessage", _currentUserName ?? string.Empty, payload);
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(L["Error while sending message: "] + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task OnComposerKeyDown(KeyboardEventArgs e, ConversationBox box)
+    {
+        if (e.Key is not ("Enter" or "NumpadEnter") || e.ShiftKey)
+            return;
+        await SendAsync(box);
+    }
+
+    private async Task OnMessageReceived(string _, ChatMessage message)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(_currentUserId))
+                return;
+
+            var involvesMe = string.Equals(message.FromUserId, _currentUserId, StringComparison.Ordinal)
+                             || string.Equals(message.ToUserId, _currentUserId, StringComparison.Ordinal);
+            if (!involvesMe)
+                return;
+
+            var peerId = string.Equals(message.FromUserId, _currentUserId, StringComparison.Ordinal)
+                ? message.ToUserId
+                : message.FromUserId;
+
+            // Own messages are already appended in SendAsync on this circuit.
+            if (string.Equals(message.FromUserId, _currentUserId, StringComparison.Ordinal))
+                return;
+
+            var box = _conversations.FirstOrDefault(c => c.ContactId == peerId);
+            if (box is not null)
+            {
+                AppendLocal(box, message);
+                if (string.Equals(_activeContactId, peerId, StringComparison.Ordinal))
+                    await MarkReadAsync(peerId);
+            }
+            else
+            {
+                await RefreshBadgeAsync(message.FromUserId);
+            }
+
+            RequestScroll();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(L["Error while receive message: "] + ex.Message, Severity.Error);
+        }
+    }
+
+    private void AppendLocal(ConversationBox box, ChatMessage message)
+    {
+        var fromName = string.Equals(message.FromUserId, _currentUserId, StringComparison.Ordinal)
+            ? _currentUserName
+            : box.UserName;
+
+        box.Messages.Add(new ChatMessage
+        {
+            Id = message.Id,
+            Message = message.Message,
+            CreatedDate = message.CreatedDate == default ? DateTime.UtcNow : message.CreatedDate,
+            FromUserId = message.FromUserId,
+            ToUserId = message.ToUserId,
+            IsRead = message.IsRead,
+            FromUser = new ApplicationUser { UserName = fromName ?? string.Empty },
+        });
+    }
+
+    private async Task MarkReadAsync(string contactId)
+    {
+        var contact = _contacts.FirstOrDefault(u => u.Id == contactId);
+        if (contact is not null)
+        {
+            contact.ShowBadge = false;
+            contact.BadgeContent = null;
+        }
+
+        try
+        {
+            await _chatManager.MakeMessageRedAsync(contactId);
+        }
+        catch
+        {
+            // Badge clear is best-effort; read-flag bug is fixed in a later step.
+        }
+    }
+
+    private async Task RefreshBadgeAsync(string fromUserId)
+    {
+        var contact = _contacts.FirstOrDefault(u => u.Id == fromUserId);
+        if (contact is null)
+            return;
+
+        var messages = await _chatManager.GetConversationAsync(fromUserId);
+        var unread = messages.Count(m =>
+            !m.IsRead && string.Equals(m.ToUserId, _currentUserId, StringComparison.Ordinal));
+        contact.ShowBadge = unread > 0;
+        contact.BadgeContent = unread > 0 ? unread : null;
+    }
+
+    private void RequestScroll()
+    {
+        _scrollPending = true;
+    }
+
+    private bool IsActiveContact(string id) =>
+        string.Equals(_activeContactId, id, StringComparison.Ordinal);
+
+    private string ContactItemClass(string id) =>
+        IsActiveContact(id) ? "user-chat-drawer__item user-chat-drawer__item--on" : "user-chat-drawer__item";
+
+    private bool IsMine(ChatMessage message) =>
+        string.Equals(message.FromUserId, _currentUserId, StringComparison.Ordinal)
+        || string.Equals(message.FromUser?.UserName, _currentUserName, StringComparison.OrdinalIgnoreCase);
+
+    private string SpeakerName(ChatMessage message, ConversationBox box) =>
+        IsMine(message)
+            ? (_currentUserName ?? L["You"].Value)
+            : (message.FromUser?.UserName ?? box.UserName);
+
+    private static string MessagePaneId(string contactId) => $"user-chat-pane-{contactId}";
+
+    private static string Initial(string? name) =>
+        string.IsNullOrWhiteSpace(name) ? "?" : char.ToUpperInvariant(name.Trim()[0]).ToString();
+
+    private static string FormatTime(DateTime dt)
+    {
+        var local = dt.Kind == DateTimeKind.Utc ? dt.ToLocalTime() : dt;
+        return local.ToString("dd MMM, HH:mm");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hub is null)
+            return;
+
+        try
+        {
+            _hub.Remove("SendMessage");
+            await _hub.DisposeAsync();
+        }
+        catch
+        {
+            // Circuit may already be gone.
+        }
+        finally
+        {
+            _hub = null;
+            _hubReady = false;
+        }
+    }
+}
