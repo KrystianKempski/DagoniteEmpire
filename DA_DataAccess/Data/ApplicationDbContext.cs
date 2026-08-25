@@ -93,6 +93,8 @@ namespace DA_DataAccess.Data
         public DbSet<BaronAudience> BaronAudiences { get; set; }
         public DbSet<BaronAudienceExchange> BaronAudienceExchanges { get; set; }
         public DbSet<BaronyHallAdventure> BaronyHallAdventures { get; set; }
+        public DbSet<BaronQaThread> BaronQaThreads { get; set; }
+        public DbSet<BaronQaMessage> BaronQaMessages { get; set; }
         public DbSet<BaronyUnit> BaronyUnits { get; set; }
         public DbSet<BaronyBattleMap> BaronyBattleMaps { get; set; }
         public DbSet<MarchMapState> MarchMapStates { get; set; }
@@ -215,6 +217,20 @@ namespace DA_DataAccess.Data
             modelBuilder.Entity<BaronyHallAdventure>(entity =>
             {
                 entity.HasIndex(e => e.BaronyId);
+            });
+
+            modelBuilder.Entity<BaronQaThread>(entity =>
+            {
+                entity.HasIndex(e => e.BaronyId);
+                entity.HasMany(e => e.Messages)
+                    .WithOne(e => e.Thread!)
+                    .HasForeignKey(e => e.ThreadId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<BaronQaMessage>(entity =>
+            {
+                entity.HasIndex(e => e.ThreadId);
             });
 
             modelBuilder.Entity<BaronyUnit>(entity =>

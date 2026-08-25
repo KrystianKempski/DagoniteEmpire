@@ -25,9 +25,18 @@ else if (Barony is not null)
         <BaronyPageHeader Title="@(L["Notes"])" HelpKey="notes" ShowSectionToggle="false" />
 
         <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
-            @(IsGmScope
-                ? L["Private Game Master space"]
-                : L["Private planning space — only you can see this. The Game Master has no access."])
+            @if (_activeTab == 3)
+            {
+                @L["Shared with the Game Master — ask questions and read replies here."]
+            }
+            else if (IsGmScope)
+            {
+                @L["Private Game Master space"]
+            }
+            else
+            {
+                @L["Private planning space — only you can see this. The Game Master has no access."]
+            }
         </MudText>
 
         <MudTabs Elevation="0"
@@ -248,6 +257,13 @@ else if (Barony is not null)
                 }
             </div>
         </MudTabPanel>
+
+        <MudTabPanel Text="@(L["Questions for GM"])">
+            <BaronQaPanel BaronyId="BaronyId"
+                          CurrentTurn="CurrentTurn"
+                          CanManageAsMg="CanManageAsMg"
+                          CanEdit="CanEdit" />
+        </MudTabPanel>
     </MudTabs>
     </div>
 }
@@ -352,6 +368,7 @@ else if (Barony is not null)
         {
             "sticky" => 1,
             "reminders" => 2,
+            "qa" or "questions" => 3,
             _ => 0,
         };
     }

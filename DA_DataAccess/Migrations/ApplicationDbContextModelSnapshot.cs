@@ -475,6 +475,80 @@ namespace DA_DataAccess.Migrations
                     b.ToTable("BaronyHallAdventures");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.BaronyData.BaronQaThread", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BaronyId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int>("CreatedTurn")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BaronyId");
+
+                    b.ToTable("BaronQaThreads");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.BaronyData.BaronQaMessage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<bool>("IsFromGm")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("SeenByBaron")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("SeenByGm")
+                        .HasColumnType("boolean");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SpeakerName")
+                        .HasColumnType("text");
+
+                    b.Property<int>("ThreadId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TurnNumber")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ThreadId");
+
+                    b.ToTable("BaronQaMessages");
+                });
+
             modelBuilder.Entity("DA_DataAccess.BaronyData.BaronInfluenceModifier", b =>
                 {
                     b.Property<int>("Id")
@@ -3734,6 +3808,17 @@ namespace DA_DataAccess.Migrations
                     b.Navigation("Thread");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.BaronyData.BaronQaMessage", b =>
+                {
+                    b.HasOne("DA_DataAccess.BaronyData.BaronQaThread", "Thread")
+                        .WithMany("Messages")
+                        .HasForeignKey("ThreadId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Thread");
+                });
+
             modelBuilder.Entity("DA_DataAccess.BaronyData.BaronyRelationModifier", b =>
                 {
                     b.HasOne("DA_DataAccess.BaronyData.BaronyRelation", "Relation")
@@ -4062,6 +4147,11 @@ namespace DA_DataAccess.Migrations
                 });
 
             modelBuilder.Entity("DA_DataAccess.BaronyData.BaronLetterThread", b =>
+                {
+                    b.Navigation("Messages");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.BaronyData.BaronQaThread", b =>
                 {
                     b.Navigation("Messages");
                 });

@@ -328,7 +328,7 @@ namespace DagoniteEmpire.Pages.Barony.Components
                         }),
                         new BaronyHelpSection("Commander CX", new[]
                         {
-                            "Baron and linked character courtiers: CX floor = (permanent Inspire + Strategy and tactics) × 2.",
+                            "Baron and linked character courtiers: CX floor = (permanent Inspire + Strategy and tactics) / 2.",
                             "Simplified court sheets: CX floor = (Command + Strategy/tactics) × 4.",
                         }),
                         new BaronyHelpSection("Working with the Game Master", new[]
@@ -598,20 +598,37 @@ namespace DagoniteEmpire.Pages.Barony.Components
                 ["notes"] = new BaronyHelpEntry(
                     Key: "notes",
                     Title: "Notes",
-                    Short: "Your private planning space — plans, ideas and reminders that only you can see. The baron player and the Game Master each keep their own separate notes.",
+                    Short: "Your planning space: a private Journal, sticky notes and reminders — plus a shared Questions for GM tab where you and the Game Master can exchange messages.",
                     PlayerSections: new[]
                     {
                         new BaronyHelpSection("What you'll find here", new[]
                         {
                             "A Journal for longer free-form text, plus Sticky notes and turn Reminders.",
+                            "A Questions for GM tab — simple threads where you ask the Game Master and read their replies.",
                         }),
                         new BaronyHelpSection("What you can do", new[]
                         {
                             "Write rich-text notes in the Journal; it auto-saves and keeps a local backup so nothing is lost if you leave the page suddenly.",
+                            "Use Sticky notes for quick ideas and Reminders to flag something for a future turn.",
+                        }),
+                        new BaronyHelpSection("Questions for the Game Master", new[]
+                        {
+                            "Open a new question thread with a title and your first message, then continue the conversation in that thread.",
+                            "Unread replies are marked until you open the thread.",
+                            "Use this for quick rules questions, off-turn clarifications, or anything that does not need a formal audience or letter.",
                         }),
                         new BaronyHelpSection("Who can see this", new[]
                         {
-                            "Nothing here is shared — the baron player and the Game Master each have their own private notes and cannot see the other's.",
+                            "The Journal, Sticky notes and Reminders are private — the baron player and the Game Master each have their own and cannot see the other's.",
+                            "Questions for GM is shared: both you and the Game Master see the same threads and can reply.",
+                        }),
+                    },
+                    GmSections: new[]
+                    {
+                        new BaronyHelpSection("Game Master controls", new[]
+                        {
+                            "Read and reply in baron question threads; unread baron messages are marked until you open the thread.",
+                            "Delete a thread when the exchange is finished.",
                         }),
                     }),
             };

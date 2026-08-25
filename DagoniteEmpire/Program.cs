@@ -180,6 +180,7 @@ public class Program
         builder.Services.AddScoped<IBaronyRepository, BaronyRepository>();
         builder.Services.AddScoped<IBaronyBattleMapRepository, BaronyBattleMapRepository>();
         builder.Services.AddScoped<IBaronyPlayerNoteRepository, BaronyPlayerNoteRepository>();
+        builder.Services.AddScoped<IBaronQaRepository, BaronQaRepository>();
         builder.Services.AddScoped<IMarchMapRepository, MarchMapRepository>();
         builder.Services.AddScoped<IUserService, UserService>();
         builder.Services.AddScoped<IDemoBaronyService, DemoBaronyService>();

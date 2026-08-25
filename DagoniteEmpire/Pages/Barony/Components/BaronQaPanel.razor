@@ -1,0 +1,280 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject IBaronQaRepository _qaRepo
+@inject IDialogService _dialogService
+@inject ISnackbar _snackBar
+
+<div class="baron-qa">
+    <div class="baron-qa__layout">
+        <aside class="baron-qa__threads">
+            <div class="baron-qa__threads-head">
+                <span>@L["Questions"]</span>
+                @if (CanWriteAsBaron)
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                   Size="Size.Small"
+                                   aria-label='@(L["New question"])'
+                                   Disabled="_busy"
+                                   OnClick="NewThreadAsync" />
+                }
+            </div>
+            @if (_threads.Count == 0)
+            {
+                <div class="baron-qa__empty">@L["No questions yet."]</div>
+            }
+            else
+            {
+                <ul class="baron-qa__thread-list">
+                    @foreach (var t in _threads)
+                    {
+                        var unread = CanManageAsMg ? t.HasUnreadForGm : t.HasUnreadForBaron;
+                        <li class="@ThreadItemClass(t)"
+                            @onclick="() => SelectThreadAsync(t.Id)">
+                            <span class="baron-qa__thread-title">@t.Title</span>
+                            <span class="baron-qa__thread-meta">
+                                T@(t.CreatedTurn)
+                                @if (unread)
+                                {
+                                    <span class="baron-qa__badge">!</span>
+                                }
+                            </span>
+                        </li>
+                    }
+                </ul>
+            }
+        </aside>
+
+        <section class="baron-qa__pane">
+            @if (_selected is null)
+            {
+                <div class="baron-qa__placeholder">
+                    <MudIcon Icon="@Icons.Material.Filled.Forum" Size="Size.Large" />
+                    <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                        @(CanWriteAsBaron
+                            ? L["Ask the Game Master a question — start a new thread."]
+                            : L["No question selected."])
+                    </MudText>
+                    @if (CanWriteAsBaron)
+                    {
+                        <MudButton Variant="Variant.Filled"
+                                   Class="barony-turn-btn barony-turn-btn--solid"
+                                   Size="Size.Small"
+                                   StartIcon="@Icons.Material.Filled.Add"
+                                   Disabled="_busy"
+                                   OnClick="NewThreadAsync">
+                            @L["New question"]
+                        </MudButton>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="baron-qa__header">
+                    <div class="baron-qa__header-text">
+                        <h3 class="baron-qa__title">@_selected.Title</h3>
+                        <span class="baron-qa__subtitle">T@(_selected.CreatedTurn)</span>
+                    </div>
+                    @if (CanManageAsMg || CanWriteAsBaron)
+                    {
+                        <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
+                                       Size="Size.Small"
+                                       aria-label='@(L["Delete thread"])'
+                                       Disabled="_busy"
+                                       OnClick="DeleteSelectedAsync" />
+                    }
+                </div>
+
+                <div class="baron-qa__messages">
+                    @foreach (var m in _selected.Messages.OrderBy(x => x.SortOrder).ThenBy(x => x.Id))
+                    {
+                        <div class="baron-qa__msg @(m.IsFromGm ? "baron-qa__msg--gm" : "baron-qa__msg--baron")">
+                            <span class="baron-qa__speaker">@(m.IsFromGm ? (m.SpeakerName ?? L["Game Master"].Value) : L["Baron"].Value)</span>
+                            <div class="baron-qa__body">@m.Body</div>
+                            <span class="baron-qa__turn">T@(m.TurnNumber)</span>
+                        </div>
+                    }
+                </div>
+
+                @if (CanWriteAsBaron || CanManageAsMg)
+                {
+                    <div class="baron-qa__composer">
+                        <MudTextField @bind-Value="_draft"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Lines="3"
+                                      Immediate="true"
+                                      Disabled="_busy"
+                                      Placeholder='@(CanManageAsMg ? L["Reply as Game Master…"].Value : L["Write your question or reply…"].Value)'
+                                      Class="baron-qa__draft" />
+                        <MudButton Variant="Variant.Filled"
+                                   Class="barony-turn-btn barony-turn-btn--solid"
+                                   Size="Size.Small"
+                                   Disabled="_busy || string.IsNullOrWhiteSpace(_draft)"
+                                   OnClick="SendAsync">
+                            @L["Send"]
+                        </MudButton>
+                    </div>
+                }
+            }
+        </section>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public int BaronyId { get; set; }
+    [Parameter] public int CurrentTurn { get; set; }
+    [Parameter] public bool CanManageAsMg { get; set; }
+    [Parameter] public bool CanEdit { get; set; }
+
+    private bool CanWriteAsBaron => CanEdit && !CanManageAsMg;
+
+    private string ThreadItemClass(BaronQaThreadDTO t) =>
+        _selected?.Id == t.Id
+            ? "baron-qa__thread-item baron-qa__thread-item--active"
+            : "baron-qa__thread-item";
+
+    private List<BaronQaThreadDTO> _threads = new();
+    private BaronQaThreadDTO? _selected;
+    private string _draft = "";
+    private bool _busy;
+    private int _loadedForBaronyId;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (BaronyId <= 0 || _loadedForBaronyId == BaronyId)
+            return;
+        _loadedForBaronyId = BaronyId;
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync(int? keepSelectedId = null)
+    {
+        _threads = await _qaRepo.GetThreads(BaronyId);
+        var prefer = keepSelectedId ?? _selected?.Id;
+        if (prefer is int id)
+            _selected = _threads.FirstOrDefault(t => t.Id == id);
+        else
+            _selected = _threads.FirstOrDefault();
+
+        if (_selected is not null)
+            await MarkSeenAsync(_selected);
+    }
+
+    private async Task SelectThreadAsync(int id)
+    {
+        _selected = _threads.FirstOrDefault(t => t.Id == id);
+        _draft = "";
+        if (_selected is not null)
+            await MarkSeenAsync(_selected);
+    }
+
+    private async Task MarkSeenAsync(BaronQaThreadDTO thread)
+    {
+        var needs = CanManageAsMg ? thread.HasUnreadForGm : thread.HasUnreadForBaron;
+        if (!needs)
+            return;
+        await _qaRepo.MarkThreadSeen(thread.Id, CanManageAsMg);
+        await ReloadAsync(thread.Id);
+    }
+
+    private async Task NewThreadAsync()
+    {
+        if (!CanWriteAsBaron)
+            return;
+
+        var dialog = await _dialogService.ShowAsync<NewBaronQaThreadDialog>(
+            L["New question"],
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not NewBaronQaThreadDialog.NewQaThreadResult data)
+            return;
+
+        _busy = true;
+        try
+        {
+            var created = await _qaRepo.SaveThread(new BaronQaThreadDTO
+            {
+                BaronyId = BaronyId,
+                Title = data.Title,
+                CreatedTurn = CurrentTurn,
+            });
+            await _qaRepo.SaveMessage(new BaronQaMessageDTO
+            {
+                ThreadId = created.Id,
+                Body = data.OpeningBody,
+                IsFromGm = false,
+                TurnNumber = CurrentTurn,
+            });
+            await ReloadAsync(created.Id);
+            _snackBar.Add(L["Question posted."], Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task SendAsync()
+    {
+        if (_selected is null || string.IsNullOrWhiteSpace(_draft))
+            return;
+        if (!CanWriteAsBaron && !CanManageAsMg)
+            return;
+
+        _busy = true;
+        try
+        {
+            await _qaRepo.SaveMessage(new BaronQaMessageDTO
+            {
+                ThreadId = _selected.Id,
+                Body = _draft.Trim(),
+                IsFromGm = CanManageAsMg,
+                SpeakerName = CanManageAsMg ? L["Game Master"].Value : null,
+                TurnNumber = CurrentTurn,
+            });
+            _draft = "";
+            await ReloadAsync(_selected.Id);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task DeleteSelectedAsync()
+    {
+        if (_selected is null)
+            return;
+
+        var ok = await _dialogService.ShowMessageBoxAsync(
+            L["Delete thread"],
+            string.Format(L["Delete \"{0}\"? This cannot be undone."].Value, _selected.Title),
+            yesText: L["Delete"].Value,
+            cancelText: L["Cancel"].Value);
+        if (ok != true)
+            return;
+
+        _busy = true;
+        try
+        {
+            await _qaRepo.DeleteThread(_selected.Id);
+            _selected = null;
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

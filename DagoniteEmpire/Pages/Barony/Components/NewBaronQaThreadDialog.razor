@@ -1,0 +1,51 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<MudDialog Class="barony-dialog">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@L["New question"]</MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="barony-dialog-theme">
+            <MudTextField @bind-Value="_title"
+                          Label='@(L["Question title"])'
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Immediate="true"
+                          HelperText='@(L["Short subject for the Game Master"])'
+                          Class="mb-2" />
+            <MudTextField @bind-Value="_opening"
+                          Label='@(L["Your question"])'
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="5"
+                          Immediate="true"
+                          HelperText='@(L["What do you want to ask?"])' />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Submit" Disabled="@(!CanSubmit)">
+            @L["Ask"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    private string _title = "";
+    private string _opening = "";
+
+    private bool CanSubmit =>
+        !string.IsNullOrWhiteSpace(_title) && !string.IsNullOrWhiteSpace(_opening);
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit()
+    {
+        if (!CanSubmit) return;
+        MudDialog.Close(DialogResult.Ok(new NewQaThreadResult(_title.Trim(), _opening.Trim())));
+    }
+
+    public sealed record NewQaThreadResult(string Title, string OpeningBody);
+}
