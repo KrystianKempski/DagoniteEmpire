@@ -4,61 +4,77 @@
     @L["Significant skills ({0}/{1})", _selected.Count, EffectiveMax]
 </MudText>
 <MudText Typo="Typo.caption" Class="mb-2 significant-skills-hint">
-    @L["Only selected skills affect barony parameters for this office."]
+    @L["Only selected skills affect barony parameters for this office. You may pick the same skill more than once — each extra pick is half as strong (shared focus)."]
 </MudText>
 <div class="significant-skills-grid">
     @foreach (var info in AdvisorSignificantSkills.SelectableSkills)
     {
         var key = info.Key;
-        var selected = _selected.Contains(key);
-        var disabled = !selected && _selected.Count >= EffectiveMax;
-        <MudCheckBox T="bool"
-                     Value="@selected"
-                     ValueChanged="@(v => Toggle(key, v))"
-                     Disabled="@disabled"
-                     Dense="true"
-                     Class="barony-checkbox"
-                     Color="Color.Default">
-            <span class="@(selected ? "significant-skill--active" : "")">@info.Name</span>
-        </MudCheckBox>
+        var count = CountOf(key);
+        var canAdd = _selected.Count < EffectiveMax;
+        var active = count > 0;
+        <div class="significant-skill-row @(active ? "significant-skill-row--active" : "")">
+            <span class="@(active ? "significant-skill--active" : "")">@info.Name</span>
+            <div class="significant-skill-stepper">
+                <button type="button"
+                        class="significant-skill-stepper__btn"
+                        disabled="@(count <= 0)"
+                        title="@L["Remove one"]"
+                        @onclick="() => AdjustAsync(key, -1)">−</button>
+                <span class="significant-skill-stepper__count">@count</span>
+                <button type="button"
+                        class="significant-skill-stepper__btn"
+                        disabled="@(!canAdd)"
+                        title="@L["Add one"]"
+                        @onclick="() => AdjustAsync(key, 1)">+</button>
+            </div>
+        </div>
     }
 </div>
 
 @code {
     [Parameter] public List<Ppb> Selected { get; set; } = new();
     [Parameter] public EventCallback<List<Ppb>> SelectedChanged { get; set; }
-    /// <summary>Max selectable skills for this office (Main 3, Secondary 1).</summary>
+    /// <summary>Max selectable skill picks for this office (Main 3, Secondary 1). Duplicates allowed.</summary>
     [Parameter] public int MaxCount { get; set; } = AdvisorSignificantSkills.MaxCount;
 
-    private HashSet<Ppb> _selected = new();
+    private List<Ppb> _selected = new();
 
     private int EffectiveMax => Math.Clamp(MaxCount, 1, AdvisorSignificantSkills.MaxCount);
 
+    private int CountOf(Ppb key) => _selected.Count(p => p == key);
+
     protected override void OnParametersSet()
     {
-        _selected = Selected.ToHashSet();
-        if (_selected.Count <= EffectiveMax)
+        var next = Selected?.Where(p => p != Ppb.Treasury).Take(EffectiveMax).ToList() ?? new List<Ppb>();
+        var truncated = Selected is not null && Selected.Count != next.Count;
+        _selected = next;
+        if (!truncated)
             return;
 
-        _selected = _selected.OrderBy(p => (int)p).Take(EffectiveMax).ToHashSet();
-        Selected = _selected.OrderBy(p => (int)p).ToList();
+        Selected = _selected.ToList();
         _ = SelectedChanged.InvokeAsync(Selected);
     }
 
-    private async Task Toggle(Ppb key, bool isChecked)
+    private async Task AdjustAsync(Ppb key, int delta)
     {
-        if (isChecked)
+        if (delta > 0)
         {
             if (_selected.Count >= EffectiveMax)
                 return;
             _selected.Add(key);
         }
-        else
+        else if (delta < 0)
         {
-            _selected.Remove(key);
+            var idx = _selected.FindLastIndex(p => p == key);
+            if (idx < 0)
+                return;
+            _selected.RemoveAt(idx);
         }
+        else
+            return;
 
-        Selected = _selected.OrderBy(p => (int)p).ToList();
+        Selected = _selected.ToList();
         await SelectedChanged.InvokeAsync(Selected);
     }
 }

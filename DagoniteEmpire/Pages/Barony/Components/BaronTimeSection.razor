@@ -41,32 +41,11 @@
                              style="@($"width:{UsedWidth().ToString(System.Globalization.CultureInfo.InvariantCulture)}%")"></div>
                     </div>
                 </div>
-                <div class="baron-time-bar">
-                    <div class="baron-time-bar__label">
-                        <span>@L["Barony management"]</span>
-                        <span>@_budget.ManagementJc / @BaronTimeRules.RequiredManagementJc BT</span>
-                    </div>
-                    <div class="baron-time-bar__track">
-                        <div class="baron-time-bar__fill @ManagementBarClass()"
-                             style="@($"width:{ManagementWidth().ToString(System.Globalization.CultureInfo.InvariantCulture)}%")"></div>
-                        <BaronyTooltip Text="@(L["Required {0} BT", BaronTimeRules.RequiredManagementJc])">
-                            <div class="baron-time-bar__marker"
-                                 style="left:100%;"></div>
-                        </BaronyTooltip>
-                    </div>
-                </div>
             </div>
 
-            @if (_budget.IsManagementShort || _budget.IsExpeditionOverLimit || _budget.IsOverspent)
+            @if (_budget.IsExpeditionOverLimit || _budget.IsOverspent)
             {
                 <div class="baron-time-warnings">
-                    @if (_budget.IsManagementShort)
-                    {
-                        <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-1">
-                            @L["Management shortfall: {0} / {1} BT.", _budget.ManagementJc, BaronTimeRules.RequiredManagementJc]
-                            @L["Expect penalties to stability, loyalty, income, etc."]
-                        </MudAlert>
-                    }
                     @if (_budget.IsExpeditionOverLimit)
                     {
                         <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-1">
@@ -252,17 +231,10 @@
     private double UsedWidth() =>
         _budget.TotalJc <= 0 ? 0 : Math.Min(100d, (double)_budget.SpentJc * 100d / _budget.TotalJc);
 
-    private double ManagementWidth() =>
-        Math.Min(100d, (double)_budget.ManagementJc * 100d / BaronTimeRules.RequiredManagementJc);
-
     private string UsedBarClass() =>
         _budget.IsOverspent ? "baron-time-bar__fill--over"
         : _budget.UsedPercent >= 95m ? "baron-time-bar__fill--full"
         : "baron-time-bar__fill--ok";
-
-    private string ManagementBarClass() =>
-        _budget.IsManagementShort ? "baron-time-bar__fill--short"
-        : "baron-time-bar__fill--mgmt";
 
     private static string PercentClass(decimal percent) =>
         percent > 0 ? "php-cell php-cell--pos"
@@ -290,7 +262,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<BaronTimeActionEditDialog>(
-            isNew ? "Add Action" : "Edit Action",
+            isNew ? L["Add Action"] : L["Edit Action"],
             parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
 

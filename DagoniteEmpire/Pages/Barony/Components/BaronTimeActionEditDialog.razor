@@ -15,7 +15,8 @@
                           Disabled="@Action.IsSystem" />
 
             <MudSelect T="string"
-                       @bind-Value="_kind"
+                       Value="_kind"
+                       ValueChanged="OnKindChanged"
                        Label="@(L["Type"])"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
@@ -34,14 +35,16 @@
                              Variant="Variant.Outlined"
                              Margin="Margin.Dense"
                              Class="baron-influence-field"
-                             Min="0" />
+                             Min="0"
+                             Step="@CostStep" />
 
             <MudTextField @bind-Value="_description"
                           Label="@(L["Description"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="2"
-                          Class="baron-influence-field" />
+                          Class="baron-influence-field"
+                          Disabled="@Action.IsSystem" />
         </div>
     </DialogContent>
     <DialogActions>
@@ -60,28 +63,64 @@
     private int _costJc;
     private string? _description;
 
+    private bool IsManagement
+        => string.Equals(_kind, BaronTimeActionKind.Management, StringComparison.OrdinalIgnoreCase);
+
+    private int CostStep => IsManagement ? BaronTimeRules.JcPerFocusSlot : 1;
+
     private IEnumerable<string> KindOptions =>
         Action.IsSystem
             ? new[] { BaronTimeActionKind.Management }
             : BaronTimeActionKind.All.Where(k => k != BaronTimeActionKind.Management);
 
     private string CostHint =>
-        _kind == BaronTimeActionKind.Adventure
-            ? $"Weekly adventure ≈ {BaronTimeRules.WeeklyExpeditionJc} BT "
-              + $"(safe max {BaronTimeRules.MaxSafeExpeditionWeeks} weeks / {BaronTimeRules.MaxSafeExpeditionJc} BT)."
-            : _kind == BaronTimeActionKind.Hunt
-                ? $"Great Hunt: at least {BaronTimeSuggestedCosts.GreatHuntJc} BT + "
-                  + $"{BaronTimeSuggestedCosts.GreatHuntProduction} Production + {BaronTimeSuggestedCosts.GreatHuntGold} gold."
-            : _kind == BaronTimeActionKind.Management
-                ? $"Required each turn: {BaronTimeRules.RequiredManagementJc} BT."
-                : "BT spent on this action this turn.";
+        IsManagement
+            ? L["Every {0} BT → +1 Domain PPB focus (default {1} BT = {2} focuses). Step: {0} BT.",
+                BaronTimeRules.JcPerFocusSlot,
+                BaronTimeRules.RequiredManagementJc,
+                BaronTimeRules.FocusSlotCount(BaronTimeRules.RequiredManagementJc)].Value
+            : _kind == BaronTimeActionKind.Adventure
+                ? L["Weekly adventure ≈ {0} BT (safe max {1} weeks / {2} BT).",
+                    BaronTimeRules.WeeklyExpeditionJc,
+                    BaronTimeRules.MaxSafeExpeditionWeeks,
+                    BaronTimeRules.MaxSafeExpeditionJc].Value
+                : _kind == BaronTimeActionKind.Hunt
+                    ? L["Great Hunt: at least {0} BT + {1} Production + {2} gold.",
+                        BaronTimeSuggestedCosts.GreatHuntJc,
+                        BaronTimeSuggestedCosts.GreatHuntProduction,
+                        BaronTimeSuggestedCosts.GreatHuntGold].Value
+                    : L["BT spent on this action this turn."].Value;
 
     protected override void OnInitialized()
     {
-        _name = Action.Name;
         _kind = string.IsNullOrWhiteSpace(Action.Kind) ? BaronTimeActionKind.Other : Action.Kind;
-        _costJc = Action.CostJc;
-        _description = Action.Description;
+        _name = Action.IsSystem ? L[Action.Name].Value : Action.Name;
+        _costJc = SnapCost(Action.CostJc);
+        _description = Action.IsSystem && IsManagement
+            ? L["Essential governance each turn. Every {0} BT unlocks one Domain Panel PPB focus (full baron effect; unfocused PPBs at half). {1} BT → {2} focuses.",
+                BaronTimeRules.JcPerFocusSlot,
+                BaronTimeRules.RequiredManagementJc,
+                BaronTimeRules.FocusSlotCount(BaronTimeRules.RequiredManagementJc)].Value
+            : Action.Description;
+    }
+
+    private void OnKindChanged(string kind)
+    {
+        _kind = string.IsNullOrWhiteSpace(kind) ? BaronTimeActionKind.Other : kind;
+        _costJc = SnapCost(_costJc);
+    }
+
+    private int SnapCost(int value)
+    {
+        if (!IsManagement)
+            return Math.Max(0, value);
+
+        var step = BaronTimeRules.JcPerFocusSlot;
+        if (step <= 0)
+            return Math.Max(0, value);
+
+        var snapped = (int)(Math.Round(value / (double)step) * step);
+        return Math.Max(0, snapped);
     }
 
     private void Cancel() => MudDialog.Cancel();
@@ -98,10 +137,19 @@
         {
             Action.Name = _name.Trim();
             Action.Kind = string.IsNullOrWhiteSpace(_kind) ? BaronTimeActionKind.Other : _kind;
+            Action.Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim();
+        }
+        else if (IsManagement)
+        {
+            // Keep canonical English in DB; UI shows localized copy.
+            Action.Description =
+                "Essential governance each turn. Every "
+                + $"{BaronTimeRules.JcPerFocusSlot} BT spent here unlocks one Domain Panel PPB focus "
+                + $"(full baron effect; unfocused PPBs apply at half). "
+                + $"{BaronTimeRules.RequiredManagementJc} BT → {BaronTimeRules.FocusSlotCount(BaronTimeRules.RequiredManagementJc)} focuses.";
         }
 
-        Action.CostJc = Math.Max(0, _costJc);
-        Action.Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim();
+        Action.CostJc = SnapCost(_costJc);
         MudDialog.Close(DialogResult.Ok(Action));
     }
 }

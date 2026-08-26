@@ -174,7 +174,11 @@ else if (_overview is not null)
     </BaronyPageHeader>
 
     @* --- Modifier sections (PPB tables) --- *@
-    <AdvisorSection Advisors="@_advisorsForSection" />
+    <AdvisorSection Advisors="@_advisorsForSection"
+                    BaronFocus="@_baronFocus"
+                    ManagementJc="@_managementJc"
+                    CanEditFocus="@CanEdit"
+                    BaronFocusChanged="OnBaronFocusChangedAsync" />
     <CityBuildingsSection BaronyId="@BaronyId"
                           SavedBuildings="@_savedBuildings"
                           Improvements="@_overview.Improvements"
@@ -272,6 +276,8 @@ else if (_overview is not null)
 @code {
     private BaronyOverviewDTO? _overview;
     private List<AdvisorDTO> _advisorsForSection = new();
+    private List<Ppb> _baronFocus = new();
+    private int _managementJc = BaronTimeRules.RequiredManagementJc;
 
     private List<PpbModifierRow> _advisorRows = new();
     private List<PpbModifierRow> _buildingRows = new();
@@ -304,6 +310,11 @@ else if (_overview is not null)
         var advisorModifiers = await _baronyRepo.GetAdvisorInfluenceModifiers(Barony.Id);
         await _baronyRepo.EnsureBaronTimeDefaults(Barony.Id);
         var managementJc = BaronyCalc.ManagementJcSpent(await _baronyRepo.GetBaronTimeActions(Barony.Id));
+        _managementJc = managementJc;
+        _baronFocus = await EnsureBaronFocusAsync(Barony, managementJc);
+        if (_overview.Barony is not null)
+            _overview.Barony.BaronFocusPpbs = Barony.BaronFocusPpbs.ToList();
+
         var battleSuppresses = await IsBattleSuppressingActionsAsync(Barony.Id);
         var panel = BaronyCalc.BuildDomainPanelRows(
             _overview, character, baronModifiers, advisorModifiers, managementJc, battleSuppresses);
@@ -341,6 +352,11 @@ else if (_overview is not null)
         var advisorModifiers = await _baronyRepo.GetAdvisorInfluenceModifiers(Barony.Id);
         await _baronyRepo.EnsureBaronTimeDefaults(Barony.Id);
         var managementJc = BaronyCalc.ManagementJcSpent(await _baronyRepo.GetBaronTimeActions(Barony.Id));
+        _managementJc = managementJc;
+        _baronFocus = await EnsureBaronFocusAsync(Barony, managementJc);
+        if (_overview.Barony is not null)
+            _overview.Barony.BaronFocusPpbs = Barony.BaronFocusPpbs.ToList();
+
         var battleSuppresses = await IsBattleSuppressingActionsAsync(Barony.Id);
         var panel = BaronyCalc.BuildDomainPanelRows(
             _overview, character, baronModifiers, advisorModifiers, managementJc, battleSuppresses);
@@ -359,6 +375,39 @@ else if (_overview is not null)
         ApplyPanelTotals(panel);
         NotifyResourceHud();
         StateHasChanged();
+    }
+
+    private async Task<List<Ppb>> EnsureBaronFocusAsync(BaronyDTO barony, int managementJc)
+    {
+        // Clamp to current slot count (management BT / 20). Empty list = all ×½ (intentional).
+        var clamped = BaronFocusPpbs.Effective(barony.BaronFocusPpbs, managementJc);
+        if (clamped.Count == barony.BaronFocusPpbs.Count
+            && clamped.SequenceEqual(barony.BaronFocusPpbs))
+            return clamped;
+
+        barony.BaronFocusPpbs = clamped;
+        await _baronyRepo.UpdateBarony(barony);
+        return clamped;
+    }
+
+    private async Task OnBaronFocusChangedAsync(List<Ppb> focus)
+    {
+        if (Barony is null)
+            return;
+
+        var slots = BaronTimeRules.FocusSlotCount(_managementJc);
+        var next = focus
+            .Where(BaronFocusPpbs.IsFocusable)
+            .Distinct()
+            .Take(slots)
+            .ToList();
+
+        Barony.BaronFocusPpbs = next;
+        if (_overview?.Barony is not null)
+            _overview.Barony.BaronFocusPpbs = next.ToList();
+        await _baronyRepo.UpdateBarony(Barony);
+        _baronFocus = next;
+        await ReloadOverviewAsync();
     }
 
     private async Task<bool> IsBattleSuppressingActionsAsync(int baronyId)

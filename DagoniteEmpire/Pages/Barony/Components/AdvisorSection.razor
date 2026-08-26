@@ -5,6 +5,12 @@
         <PpbSummaryChips Vector="@Glance" />
     </Summary>
     <ChildContent>
+        @if (FocusSlotCount > 0 || CanEditFocus)
+        {
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                @L["Baron PPB focus: {0}/{1} (full effect). Unchecked → ×½. Gold has no baron focus.", FocusedCount, FocusSlotCount]
+            </MudText>
+        }
         @if (AdvisorList.Count == 0)
         {
             <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">@L["No baron or advisors assigned yet."]</MudText>
@@ -28,7 +34,24 @@
                             <th rowspan="2" class="ppb-row-label advisor-col-name">@L["Name"]</th>
                             @foreach (var info in PpbCatalog.All)
                             {
-                                <th colspan="2"><BaronyTooltip Text="@info.Name">@PpbShort(info.Key)</BaronyTooltip></th>
+                                <th colspan="2">
+                                    <div class="baron-ppb-focus-head">
+                                        @if (BaronFocusPpbs.IsFocusable(info.Key))
+                                        {
+                                            var focused = IsFocused(info.Key);
+                                            <MudCheckBox T="bool"
+                                                         Value="@focused"
+                                                         ValueChanged="@(v => ToggleFocusAsync(info.Key, v))"
+                                                         Disabled="@(!CanToggle(info.Key, focused))"
+                                                         Dense="true"
+                                                         Class="barony-checkbox baron-ppb-focus-check"
+                                                         Color="Color.Default" />
+                                        }
+                                        <BaronyTooltip Text="@FocusHeaderTip(info)">
+                                            <span class="@(IsFocused(info.Key) ? "baron-ppb-focus-label--on" : "")">@PpbShort(info.Key)</span>
+                                        </BaronyTooltip>
+                                    </div>
+                                </th>
                             }
                         </tr>
                         <tr>
@@ -104,11 +127,11 @@
                                     var add = advisor.Additive[info.Key];
                                     var pct = advisor.Percent[info.Key];
                                     var addTip = advisor.IsBaron
-                                        ? BaronSkillPpbFormulas.ExplainAdvisorAdditive(info.Key)
-                                        : BaronyCalc.ExplainOfficeAdvisorAdditive(advisor, info.Key);
+                                        ? BaronAddTip(info.Key)
+                                        : BaronyCalc.ExplainOfficeAdvisorAdditive(advisor, info.Key, AdvisorList);
                                     var pctTip = advisor.IsBaron
-                                        ? BaronSkillPpbFormulas.ExplainAdvisorPercent(info.Key)
-                                        : BaronyCalc.ExplainOfficeAdvisorPercent(advisor, info.Key);
+                                        ? BaronPctTip(info.Key)
+                                        : BaronyCalc.ExplainOfficeAdvisorPercent(advisor, info.Key, AdvisorList);
                                     <td class="@PpbCellStyle.ValueClass(info.Key, add)">
                                         @if (addTip is not null)
                                         {
@@ -153,11 +176,94 @@
 
 @code {
     [Parameter] public IEnumerable<AdvisorDTO>? Advisors { get; set; }
+    [Parameter] public List<Ppb>? BaronFocus { get; set; }
+    [Parameter] public int ManagementJc { get; set; } = BaronTimeRules.RequiredManagementJc;
+    [Parameter] public bool CanEditFocus { get; set; }
+    [Parameter] public EventCallback<List<Ppb>> BaronFocusChanged { get; set; }
+
+    private List<Ppb> _focus = new();
 
     private List<AdvisorDTO> AdvisorList => BaronyCalc.OrderAdvisors(Advisors);
     private PpbVector AdditiveSum => BaronyCalc.SumAdvisorAdditive(AdvisorList);
     private PpbVector PercentSum => BaronyCalc.SumAdvisorPercent(AdvisorList);
     private PpbVector Glance => BaronyCalc.SectionGlance(BaronyCalc.AdvisorRows(AdvisorList));
+
+    private int FocusSlotCount => BaronTimeRules.FocusSlotCount(ManagementJc);
+    private int FocusedCount => _focus.Count;
+
+    protected override void OnParametersSet()
+    {
+        _focus = BaronFocusPpbs.Effective(BaronFocus, ManagementJc).ToList();
+    }
+
+    private bool IsFocused(Ppb key)
+        => BaronFocusPpbs.IsFocusable(key) && _focus.Contains(key);
+
+    private bool CanToggle(Ppb key, bool currentlyFocused)
+    {
+        if (!CanEditFocus || !BaronFocusPpbs.IsFocusable(key))
+            return false;
+        if (currentlyFocused)
+            return true;
+        return _focus.Count < FocusSlotCount;
+    }
+
+    private async Task ToggleFocusAsync(Ppb key, bool wantFocused)
+    {
+        if (!CanEditFocus || !BaronFocusPpbs.IsFocusable(key))
+            return;
+
+        var next = _focus.ToList();
+        if (wantFocused)
+        {
+            if (next.Contains(key) || next.Count >= FocusSlotCount)
+                return;
+            next.Add(key);
+        }
+        else
+        {
+            next.Remove(key);
+        }
+
+        _focus = next;
+        await BaronFocusChanged.InvokeAsync(next.ToList());
+    }
+
+    private string FocusHeaderTip(PpbInfo info)
+    {
+        if (!BaronFocusPpbs.IsFocusable(info.Key))
+            return info.Name;
+        var share = BaronFocusPpbs.ShareFor(info.Key, _focus);
+        return share >= 1m
+            ? L["{0} — baron focus (full effect)", info.Name].Value
+            : L["{0} — no baron focus (×½ effect)", info.Name].Value;
+    }
+
+    private string? BaronAddTip(Ppb key)
+    {
+        var tip = BaronSkillPpbFormulas.ExplainAdvisorAdditive(key);
+        var focus = FocusShareTip(key);
+        if (tip is null) return focus;
+        return focus is null ? tip : $"{tip}\n{focus}";
+    }
+
+    private string? BaronPctTip(Ppb key)
+    {
+        var tip = BaronSkillPpbFormulas.ExplainAdvisorPercent(key);
+        var focus = FocusShareTip(key);
+        if (tip is null) return focus;
+        return focus is null ? tip : $"{tip}\n{focus}";
+    }
+
+    private string? FocusShareTip(Ppb key)
+    {
+        if (!BaronFocusPpbs.IsFocusable(key))
+            return null;
+        var share = BaronFocusPpbs.ShareFor(key, _focus);
+        return share >= 1m
+            ? L["Baron focus: full effect."].Value
+            : L["Baron focus: ×½ effect."].Value;
+    }
 
     private static string DisplayName(AdvisorDTO advisor)
         => string.IsNullOrWhiteSpace(advisor.PersonName) ? "Unassigned" : advisor.PersonName;

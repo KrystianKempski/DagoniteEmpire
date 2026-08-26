@@ -52,7 +52,8 @@ else if (Barony is not null)
                                     AllAdvisors="@_offices"
                                     CanEdit="@CanEdit"
                                     CanManage="@CanManageAsMg"
-                                    OnChanged="ReloadAsync" />
+                                    OnChanged="ReloadAsync"
+                                    OnStructureChanged="OnOfficeStructureChangedAsync" />
             }
         </ChildContent>
     </BaronySection>
@@ -113,6 +114,7 @@ else if (Barony is not null)
         var parameters = new DialogParameters<AddOfficeDialog>
         {
             { x => x.BaronyId, Barony.Id },
+            { x => x.ExistingOffices, _offices },
         };
 
         var dialog = await _dialogService.ShowAsync<AddOfficeDialog>(
@@ -125,10 +127,21 @@ else if (Barony is not null)
             return;
 
         var saved = await _baronyRepo.SaveAdvisor(draft);
-        BaronyCalc.SyncAdvisorAdditive(saved, null, _availableAdvisors);
+        var allOffices = _offices.Append(saved).ToList();
+        BaronyCalc.SyncAdvisorAdditive(saved, null, _availableAdvisors, allOffices);
         await _baronyRepo.SaveAdvisor(saved);
         _snackBar.Add(L["Office created."], Severity.Success);
         await ReloadAsync();
+    }
+
+    private async Task OnOfficeStructureChangedAsync()
+    {
+        await ReloadAsync();
+        foreach (var office in _offices)
+        {
+            BaronyCalc.SyncAdvisorAdditive(office, ModifiersFor(office.Id), _availableAdvisors, _offices);
+            await _baronyRepo.SaveAdvisor(office);
+        }
     }
 
     private async Task AddAvailableAdvisorAsync()

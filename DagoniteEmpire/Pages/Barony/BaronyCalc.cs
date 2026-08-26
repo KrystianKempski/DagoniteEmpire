@@ -90,12 +90,14 @@ namespace DagoniteEmpire.Pages.Barony
                 .GroupBy(m => m.AdvisorId)
                 .ToDictionary(g => g.Key, g => (IEnumerable<AdvisorInfluenceModifierDTO>)g.ToList());
 
-            var offices = OrderAdvisors(advisors?.Where(a => !a.IsBaron))
+            var officeList = advisors?.Where(a => !a.IsBaron).ToList()
+                             ?? new List<AdvisorDTO>();
+            var offices = OrderAdvisors(officeList)
                 .Select(a =>
                 {
                     var row = CloneAdvisorForPanel(a);
                     var mods = modsByAdvisor.GetValueOrDefault(a.Id);
-                    ApplyAdvisorSkillInfluence(row, mods, courtiers);
+                    ApplyAdvisorSkillInfluence(row, mods, courtiers, officeList);
                     ApplyOfficeGoldCostToPanelRow(row, mods);
                     return row;
                 })
@@ -142,16 +144,17 @@ namespace DagoniteEmpire.Pages.Barony
             AdvisorDTO? existingBaronAdvisor = null,
             int managementJc = BaronTimeRules.RequiredManagementJc)
         {
-            // Same skill-unit total as Baron Card (skills ± management + PHP + custom sources),
-            // then Domain Panel Additive/Percent from the skill→PPB formulas.
+            // Same skill-unit total as Baron Card (skills + PHP + custom sources),
+            // then Domain focus (full / ×½), then skill→PPB formulas.
             var influenceRows = BuildInfluenceRows(
                 character,
                 barony.Prestige,
                 barony.Honor,
                 barony.Fear,
-                baronModifiers,
-                managementJc);
+                baronModifiers);
             var totalSkills = SumInfluenceRows(influenceRows);
+            var focused = BaronFocusPpbs.Effective(barony.BaronFocusPpbs, managementJc);
+            BaronFocusPpbs.ApplyToSkillTotals(totalSkills, focused);
 
             var name = !string.IsNullOrWhiteSpace(character?.NPCName)
                 ? character!.NPCName
@@ -159,8 +162,7 @@ namespace DagoniteEmpire.Pages.Barony
                     ? existingBaronAdvisor!.PersonName
                     : "Baron";
 
-            var factor = BaronTimeRules.ManagementSkillFactor(managementJc);
-            var factorPct = decimal.Round(factor * 100m, 0, MidpointRounding.AwayFromZero);
+            var slots = BaronTimeRules.FocusSlotCount(managementJc);
 
             return new AdvisorDTO
             {
@@ -173,9 +175,10 @@ namespace DagoniteEmpire.Pages.Barony
                 Additive = BaronSkillPpbFormulas.MapToAdvisorAdditive(totalSkills),
                 Percent = BaronSkillPpbFormulas.MapToAdvisorPercent(totalSkills),
                 Description = BaronSkillPpbFormulas.BaronAdvisorNameTooltip
-                    + (factor < 1m
-                        ? $" Skill PPB applied at {factorPct}% ({managementJc}/{BaronTimeRules.RequiredManagementJc} management BT)."
-                        : ""),
+                    + Loc.T(
+                        " Management BT {0} → {1} PPB focus(es) (full effect); other PPBs at ×½.",
+                        managementJc,
+                        slots),
             };
         }
 
@@ -1274,6 +1277,9 @@ namespace DagoniteEmpire.Pages.Barony
             IEnumerable<BaronInfluenceModifierDTO>? customModifiers,
             int managementJc = BaronTimeRules.RequiredManagementJc)
         {
+            // managementJc retained for call-site compatibility; focus is applied on Domain Panel only.
+            _ = managementJc;
+
             var skills = InfluenceFromSkills(character);
             var rows = new List<BaronInfluenceRow>
             {
@@ -1286,25 +1292,6 @@ namespace DagoniteEmpire.Pages.Barony
                     ValueTooltip = BaronSkillPpbFormulas.ExplainAdditive,
                 },
             };
-
-            var penalty = ManagementSkillPenalty(skills, managementJc);
-            if (!penalty.IsEmpty)
-            {
-                var factor = BaronTimeRules.ManagementSkillFactor(managementJc);
-                var factorPct = decimal.Round(factor * 100m, 0, MidpointRounding.AwayFromZero);
-                rows.Add(new BaronInfluenceRow
-                {
-                    Source = BaronInfluenceSource.FromManagementTime,
-                    Values = penalty,
-                    IsSystem = true,
-                    Description =
-                        $"Skill PPB scaled by management BT. "
-                        + $"{managementJc}/{BaronTimeRules.RequiredManagementJc} BT = {factorPct}% of From Skills. "
-                        + "Penalty values are rounded to whole numbers.",
-                    Formula =
-                        $"management BT {managementJc}/{BaronTimeRules.RequiredManagementJc} → {factorPct}% skills",
-                });
-            }
 
             rows.Add(new BaronInfluenceRow
             {
@@ -1363,21 +1350,19 @@ namespace DagoniteEmpire.Pages.Barony
             return result;
         }
 
-        /// <summary>Effective skill PPB after management BT factor (0–100%).</summary>
-        public static PpbVector ApplyManagementSkillFactor(PpbVector skills, int managementJc) =>
-            ScalePpbToIntegers(skills ?? new PpbVector(), BaronTimeRules.ManagementSkillFactor(managementJc));
+        /// <summary>No-op legacy helper — management now unlocks PPB focus slots instead of a global scale.</summary>
+        public static PpbVector ApplyManagementSkillFactor(PpbVector skills, int managementJc)
+        {
+            _ = managementJc;
+            return skills?.Clone() ?? new PpbVector();
+        }
 
-        /// <summary>
-        /// Integer penalty so that From Skills + penalty ≈ skills × (managementJc/100).
-        /// Each component: Round(full × (factor − 1)).
-        /// </summary>
+        /// <summary>No-op legacy helper — management penalties removed in favor of focus slots.</summary>
         public static PpbVector ManagementSkillPenalty(PpbVector fullSkills, int managementJc)
         {
-            var factor = BaronTimeRules.ManagementSkillFactor(managementJc);
-            if (factor >= 1m || fullSkills is null)
-                return new PpbVector();
-
-            return ScalePpbToIntegers(fullSkills, factor - 1m);
+            _ = fullSkills;
+            _ = managementJc;
+            return new PpbVector();
         }
 
         public static PpbVector InfluenceFromSkills(CharacterDTO? character)
@@ -1932,7 +1917,7 @@ namespace DagoniteEmpire.Pages.Barony
         {
             var values = new PpbVector();
             var skills = domainSkills ?? new PpbVector();
-            foreach (var key in significant ?? Enumerable.Empty<Ppb>())
+            foreach (var key in (significant ?? Enumerable.Empty<Ppb>()).Distinct())
             {
                 if (key == Ppb.Treasury)
                     continue;
@@ -2026,13 +2011,14 @@ namespace DagoniteEmpire.Pages.Barony
 
         /// <summary>
         /// Domain Panel office row: sum skills + bonus sources (skill units), mask to active skills,
-        /// then map that total through the skill→PPB Additive/Percent formulas.
-        /// Office overhead (flat Corruption) is added to Additive only.
+        /// dilute overlapping focus (1st full, 2nd ×½, 3rd ×¼, …), then map through skill→PPB formulas.
+        /// Office overhead (flat Corruption) is added to Additive only and is not diluted.
         /// </summary>
         public static void ApplyAdvisorSkillInfluence(
             AdvisorDTO advisor,
             IEnumerable<AdvisorInfluenceModifierDTO>? customModifiers,
-            IEnumerable<AvailableAdvisorDTO>? courtiers = null)
+            IEnumerable<AvailableAdvisorDTO>? courtiers = null,
+            IEnumerable<AdvisorDTO>? allOffices = null)
         {
             if (advisor.IsBaron)
                 return;
@@ -2041,6 +2027,7 @@ namespace DagoniteEmpire.Pages.Barony
             var rows = BuildAdvisorInfluenceRows(advisor, customModifiers, courtiers);
             var skillRows = rows.Where(r => r.SystemKind != AdvisorInfluenceSystemKind.OfficeOverhead);
             var totalSkills = SumAdvisorInfluenceRows(skillRows, active);
+            ApplyFocusDilution(advisor, totalSkills, allOffices);
 
             advisor.Additive = BaronSkillPpbFormulas.MapToAdvisorAdditive(totalSkills);
             advisor.Percent = BaronSkillPpbFormulas.MapToAdvisorPercent(totalSkills);
@@ -2049,19 +2036,160 @@ namespace DagoniteEmpire.Pages.Barony
                 advisor.Additive.AddInPlace(overhead.Values);
         }
 
+        /// <summary>
+        /// Focus rank / share for significant skill picks. Each list entry is a separate claim
+        /// (picking the same skill twice is like two offices on that focus: 1 then ×½, etc.).
+        /// Core offices first, then customs by Id. A draft office (not in list) ranks after existing claims.
+        /// <see cref="OfficeFocusShare"/> sums multipliers of this office's claims on <paramref name="key"/>.
+        /// </summary>
+        public static int OfficeFocusRank(
+            AdvisorDTO advisor,
+            Ppb key,
+            IEnumerable<AdvisorDTO>? allOffices)
+        {
+            if (key == Ppb.Treasury)
+                return 0;
+
+            var ranks = OfficeFocusClaimRanks(advisor, key, allOffices);
+            return ranks.Count > 0 ? ranks[0] : 0;
+        }
+
+        public static decimal OfficeFocusMultiplier(int zeroBasedRank)
+        {
+            if (zeroBasedRank <= 0)
+                return 1m;
+            var exp = Math.Min(zeroBasedRank, 16);
+            return 1m / (decimal)Math.Pow(2, exp);
+        }
+
+        /// <summary>Sum of 1/2^rank for every significant-skill pick of <paramref name="key"/> on this office.</summary>
+        public static decimal OfficeFocusShare(
+            AdvisorDTO advisor,
+            Ppb key,
+            IEnumerable<AdvisorDTO>? allOffices)
+        {
+            var ranks = OfficeFocusClaimRanks(advisor, key, allOffices);
+            if (ranks.Count == 0)
+                return 0m;
+            decimal share = 0m;
+            foreach (var rank in ranks)
+                share += OfficeFocusMultiplier(rank);
+            return share;
+        }
+
+        public static int SignificantPickCount(AdvisorDTO advisor, Ppb key)
+            => AdvisorSignificantSkills.PickCount(EffectiveSignificantSkills(advisor), key);
+
+        /// <summary>Global zero-based ranks of this office's picks of <paramref name="key"/>.</summary>
+        public static IReadOnlyList<int> OfficeFocusClaimRanks(
+            AdvisorDTO advisor,
+            Ppb key,
+            IEnumerable<AdvisorDTO>? allOffices)
+        {
+            if (key == Ppb.Treasury || SignificantPickCount(advisor, key) == 0)
+                return Array.Empty<int>();
+
+            var ordered = OfficesForFocusRanking(allOffices, advisor);
+            var ranks = new List<int>();
+            var rank = 0;
+            foreach (var office in ordered)
+            {
+                foreach (var skill in EffectiveSignificantSkills(office))
+                {
+                    if (skill != key)
+                        continue;
+                    if (SameFocusOffice(office, advisor))
+                        ranks.Add(rank);
+                    rank++;
+                }
+            }
+            return ranks;
+        }
+
+        /// <summary>Existing offices that already focus <paramref name="key"/> (for create-office warnings).</summary>
+        public static IReadOnlyList<AdvisorDTO> OfficesFocusing(
+            Ppb key,
+            IEnumerable<AdvisorDTO>? allOffices)
+            => OrderOfficesForFocus(allOffices)
+                .Where(o => EffectiveSignificantSkills(o).Contains(key))
+                .ToList();
+
+        private static List<AdvisorDTO> OrderOfficesForFocus(IEnumerable<AdvisorDTO>? offices)
+            => (offices ?? Enumerable.Empty<AdvisorDTO>())
+                .Where(o => !o.IsBaron)
+                .OrderBy(RankAdvisor)
+                .ThenBy(o => o.Id)
+                .ThenBy(o => o.Title ?? "", StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+        /// <summary>Ordered offices for focus ranking; ensures <paramref name="include"/> is present (draft appended).</summary>
+        private static List<AdvisorDTO> OfficesForFocusRanking(
+            IEnumerable<AdvisorDTO>? allOffices,
+            AdvisorDTO include)
+        {
+            var list = OrderOfficesForFocus(allOffices).ToList();
+            if (include.Id > 0)
+            {
+                var idx = list.FindIndex(o => o.Id == include.Id);
+                if (idx >= 0)
+                {
+                    list[idx] = include;
+                    return list;
+                }
+            }
+            else
+            {
+                // Drop any placeholder Id≤0 so the draft isn't doubled.
+                list.RemoveAll(o => o.Id <= 0);
+            }
+
+            list.Add(include);
+            return list;
+        }
+
+        private static bool SameFocusOffice(AdvisorDTO a, AdvisorDTO b)
+        {
+            if (a.Id > 0 && b.Id > 0)
+                return a.Id == b.Id;
+            return ReferenceEquals(a, b);
+        }
+
+        private static void ApplyFocusDilution(
+            AdvisorDTO advisor,
+            PpbVector skills,
+            IEnumerable<AdvisorDTO>? allOffices)
+        {
+            if (skills is null)
+                return;
+
+            foreach (var key in EffectiveSignificantSkills(advisor).Distinct())
+            {
+                if (key == Ppb.Treasury)
+                    continue;
+                var share = OfficeFocusShare(advisor, key, allOffices);
+                if (share == 1m)
+                    continue;
+                skills[key] *= share;
+            }
+        }
+
         public static int OfficeCorruptionBonus(AdvisorDTO advisor)
             => advisor.IsBaron ? 0 : OfficeLevel.CorruptionBonus(advisor.OfficeLevel);
 
         public static void SyncAdvisorAdditive(
             AdvisorDTO advisor,
             IEnumerable<AdvisorInfluenceModifierDTO>? customModifiers,
-            IEnumerable<AvailableAdvisorDTO>? courtiers = null)
-            => ApplyAdvisorSkillInfluence(advisor, customModifiers, courtiers);
+            IEnumerable<AvailableAdvisorDTO>? courtiers = null,
+            IEnumerable<AdvisorDTO>? allOffices = null)
+            => ApplyAdvisorSkillInfluence(advisor, customModifiers, courtiers, allOffices);
 
         public static string? ExplainAssistantInfluence(Ppb key)
             => Loc.T("= floor({0} / {1})", PpbCatalog.Name(key), CourtDutyAssistant.DomainPointsPerBonus);
 
-        public static string? ExplainOfficeAdvisorAdditive(AdvisorDTO advisor, Ppb key)
+        public static string? ExplainOfficeAdvisorAdditive(
+            AdvisorDTO advisor,
+            Ppb key,
+            IEnumerable<AdvisorDTO>? allOffices = null)
         {
             if (advisor.IsBaron)
                 return null;
@@ -2073,6 +2201,13 @@ namespace DagoniteEmpire.Pages.Barony
             var parts = new List<string>();
             if (skillTip is not null)
                 parts.Add(skillTip);
+
+            if (IsActiveSkill(advisor, key))
+            {
+                var focusTip = ExplainOfficeFocusShare(advisor, key, allOffices);
+                if (focusTip is not null)
+                    parts.Add(focusTip);
+            }
 
             if (key == Ppb.Treasury && advisor.UpkeepGold != 0m)
                 parts.Add(Loc.T("Office upkeep: −{0} gold.", PpbFormat.Number(advisor.UpkeepGold)));
@@ -2087,11 +2222,52 @@ namespace DagoniteEmpire.Pages.Barony
             return parts.Count == 0 ? null : string.Join("\n", parts);
         }
 
-        public static string? ExplainOfficeAdvisorPercent(AdvisorDTO advisor, Ppb key)
+        public static string? ExplainOfficeFocusShare(
+            AdvisorDTO advisor,
+            Ppb key,
+            IEnumerable<AdvisorDTO>? allOffices = null)
+        {
+            var picks = SignificantPickCount(advisor, key);
+            if (picks <= 0)
+                return null;
+
+            var share = OfficeFocusShare(advisor, key, allOffices);
+            if (picks <= 1 && share == 1m)
+                return null;
+
+            return Loc.T(
+                "Focus on {0}: {1}× → ×{2} Domain effect.",
+                PpbCatalog.Name(key),
+                picks,
+                FormatFocusMultiplier(share));
+        }
+
+        public static string FormatFocusMultiplier(decimal share)
+        {
+            if (share == 1m) return "1";
+            if (share == 0.5m) return "½";
+            if (share == 0.25m) return "¼";
+            if (share == 0.125m) return "⅛";
+            if (share == 1.5m) return "1½";
+            if (share == 1.75m) return "1¾";
+            if (share == 1.25m) return "1¼";
+            if (share == 0.75m) return "¾";
+            return share.ToString("0.###");
+        }
+
+        public static string? ExplainOfficeAdvisorPercent(
+            AdvisorDTO advisor,
+            Ppb key,
+            IEnumerable<AdvisorDTO>? allOffices = null)
         {
             if (advisor.IsBaron || !IsOfficeAssigned(advisor) || !IsActiveSkill(advisor, key))
                 return null;
-            return BaronSkillPpbFormulas.ExplainAdvisorPercent(key);
+
+            var tip = BaronSkillPpbFormulas.ExplainAdvisorPercent(key);
+            var focus = ExplainOfficeFocusShare(advisor, key, allOffices);
+            if (focus is null)
+                return tip;
+            return tip is null ? focus : $"{tip}\n{focus}";
         }
 
         private static bool IsActiveSkill(AdvisorDTO advisor, Ppb key)

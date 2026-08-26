@@ -2,7 +2,7 @@
 @inject ISnackbar _snackBar
 @inject IDialogService _dialogService
 
-<MudDialog Class="baron-influence-dialog"
+<MudDialog Class="baron-influence-dialog add-office-dialog"
            ContentClass="baron-influence-dialog-content"
            ActionsClass="baron-influence-dialog-actions">
     <DialogContent>
@@ -67,6 +67,18 @@
             </div>
 
             <SignificantSkillsPicker @bind-Selected="_significantSkills" MaxCount="@RequiredSkillCount" />
+
+            <div class="add-office-focus-notes">
+                @foreach (var warning in FocusWarnings)
+                {
+                    <MudAlert Severity="Severity.Warning"
+                              Dense="true"
+                              Class="add-office-focus-notes__alert"
+                              Variant="Variant.Outlined">
+                        @warning
+                    </MudAlert>
+                }
+            </div>
         </div>
     </DialogContent>
     <DialogActions>
@@ -79,6 +91,7 @@
     [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
 
     [Parameter] public int BaronyId { get; set; }
+    [Parameter] public IEnumerable<AdvisorDTO>? ExistingOffices { get; set; }
 
     private string _title = string.Empty;
     private string? _description;
@@ -97,6 +110,48 @@
         : L["Main office: affects 3 domain parameters, minimum {0} gold upkeep, +{1} Corruption.",
             OfficeLevel.MinUpkeepGold(OfficeLevel.Main),
             OfficeLevel.CorruptionBonus(OfficeLevel.Main)];
+
+    private IEnumerable<string> FocusWarnings
+    {
+        get
+        {
+            var draft = new AdvisorDTO
+            {
+                Id = 0,
+                SignificantSkills = _significantSkills.ToList(),
+            };
+
+            foreach (var key in _significantSkills.Distinct().OrderBy(k => (int)k))
+            {
+                var picks = _significantSkills.Count(k => k == key);
+                var share = BaronyCalc.OfficeFocusShare(draft, key, ExistingOffices);
+                var holders = BaronyCalc.OfficesFocusing(key, ExistingOffices);
+
+                if (holders.Count == 0 && picks <= 1 && share == 1m)
+                    continue;
+
+                if (holders.Count > 0)
+                {
+                    var names = string.Join(", ", holders.Select(o =>
+                        string.IsNullOrWhiteSpace(o.Title) ? BaronyCalc.AdvisorRoleLabel(o) : o.Title));
+                    yield return L[
+                        "{0} is already a focus of {1}. This office: {2}× → ×{3} Domain effect.",
+                        PpbCatalog.Name(key),
+                        names,
+                        picks,
+                        BaronyCalc.FormatFocusMultiplier(share)].Value;
+                }
+                else
+                {
+                    yield return L[
+                        "Selecting {0} {1}× → ×{2} Domain effect (each extra pick is half as strong as the previous).",
+                        PpbCatalog.Name(key),
+                        picks,
+                        BaronyCalc.FormatFocusMultiplier(share)].Value;
+                }
+            }
+        }
+    }
 
     private void OnLevelChanged(string level)
     {

@@ -833,6 +833,10 @@ namespace DA_DataAccess.Migrations
                     b.Property<decimal>("BaronPurseGold")
                         .HasColumnType("numeric");
 
+                    b.Property<string>("BaronFocusPpbJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("BaseParametersJson")
                         .IsRequired()
                         .HasColumnType("text");

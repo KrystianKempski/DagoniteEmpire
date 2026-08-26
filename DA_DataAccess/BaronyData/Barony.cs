@@ -81,6 +81,12 @@ namespace DA_DataAccess.BaronyData
         public int Honor { get; set; }
         public int Fear { get; set; }
 
+        /// <summary>
+        /// JSON array of PPB names the baron focuses this turn (full Domain effect).
+        /// Unfocused PPBs apply at half. Gold is never listed. Slot count = management BT / 20.
+        /// </summary>
+        public string BaronFocusPpbJson { get; set; } = "[\"Food\",\"Economy\",\"Production\",\"Loyalty\",\"Stability\"]";
+
         /// <summary>Bazowe wartości PPB (przed modyfikatorami) — JSON PpbVector.</summary>
         public string BaseParametersJson { get; set; } = "{}";
 

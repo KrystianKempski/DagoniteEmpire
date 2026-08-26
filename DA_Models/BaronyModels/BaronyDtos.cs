@@ -62,6 +62,12 @@ namespace DA_Models.BaronyModels
         public int Honor { get; set; }
         public int Fear { get; set; }
 
+        /// <summary>
+        /// Domain Panel PPB focuses for the baron (full effect). Others at ×½. Not Gold.
+        /// Slot count comes from management BT / 20.
+        /// </summary>
+        public List<Ppb> BaronFocusPpbs { get; set; } = new();
+
         public PpbVector BaseParameters { get; set; } = new();
 
         public string? Notes { get; set; }

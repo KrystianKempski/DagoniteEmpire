@@ -153,6 +153,7 @@ namespace DagoniteEmpire.Pages.Barony.Components
                         new BaronyHelpSection("What you can do", new[]
                         {
                             "Read every section's contribution and drill into the Barony Summary to see how each PPB value is built up.",
+                            "In Baron and Advisors, tick PPB focuses for the baron (slots = management BT ÷ 20). Focused PPBs get full baron effect; others ×½. Gold is not focusable.",
                             "Toggle decrees on or off for the turn to adjust their effect on your PPB.",
                             "End the turn (or undo it) and mark yourself Ready so the Game Master knows you have finished planning.",
                             "Use the section expand/collapse default switch in the header to show summaries only or full tables.",
@@ -286,12 +287,13 @@ namespace DagoniteEmpire.Pages.Barony.Components
                             "An office passes only its significant domain skills into the Domain Panel (from the assigned person's Domain Skills).",
                             "Main office: choose 3 significant skills; minimum upkeep 25 gold; adds +3 Corruption as Office overhead (independent of the holder).",
                             "Secondary office: choose 1 significant skill; minimum upkeep 5 gold; adds +1 Corruption as Office overhead.",
+                            "Shared focus: when several offices claim the same significant skill — or one office picks it more than once — each claim is diluted: first full effect, second ×½, third ×¼, and so on. Core offices rank before custom ones. Office overhead Corruption is never diluted.",
                             "Hover the assigned person's name to see their bio; the text under the office title is the office description.",
                         }),
                         new BaronyHelpSection("What you can do", new[]
                         {
                             "View each court person's sheet and each office's influence sources.",
-                            "Add Office — create a Main or Secondary office (title, icon, significant skills, upkeep, required description).",
+                            "Add Office — create a Main or Secondary office (title, icon, significant skills, upkeep, required description). The same skill may be picked multiple times; overlapping focuses show a warning with the reduced share.",
                             "Assign a person from Court to an office, or dismiss them.",
                             "See how domain skills, Corruption overhead and upkeep recalculate as you assign or dismiss advisors.",
                         }),
@@ -332,7 +334,7 @@ namespace DagoniteEmpire.Pages.Barony.Components
                                                         "Open the commander skill tree and unlock abilities when you have CX.",
 "Add, edit or delete custom time actions — expeditions, adventures and other pursuits that cost Baron Time.",
                             "Add, edit or delete time pool modifiers (percent effects from illness, blessings or events).",
-                            "Track time spent versus remaining, with warnings when management is under-covered or you overspend.",
+                            "Track time spent versus remaining. Management BT unlocks Domain Panel PPB focuses (20 BT → 1 focus; unfocused PPBs at half).",
                             "Assign trophies, treasures and artifacts to Lord's Seat chambers (adding new items is done by the Game Master).",
                             "Review your Prestige/Honor/Fear sources, artifact placements and reputation tiers with their barony and character bonuses.",
                         }),

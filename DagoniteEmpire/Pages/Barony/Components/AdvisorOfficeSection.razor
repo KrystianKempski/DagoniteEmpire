@@ -52,16 +52,7 @@
                                         CanEdit="@CanManage"
                                         OnEdit="EditRowAsync"
                                         OnDelete="DeleteRowAsync"
-                                        CellTooltip="@((row, key) => row.SystemKind switch
-                                        {
-                                            AdvisorInfluenceSystemKind.Skills => CourtPpbFormulas.FormulaLabel(key),
-                                            AdvisorInfluenceSystemKind.Assistant => BaronyCalc.ExplainAssistantInfluence(key),
-                                            AdvisorInfluenceSystemKind.OfficeOverhead =>
-                                                key == Ppb.Corruption
-                                                    ? L["Office overhead: +{0} Corruption.", (int)row.Values[Ppb.Corruption]].Value
-                                                    : null,
-                                            _ => null,
-                                        })" />
+                                        CellTooltip="@CellTooltip" />
             }
             else if (!BaronyCalc.IsOfficeAssigned(Advisor))
             {
@@ -70,6 +61,16 @@
                 </MudText>
             }
         </div>
+
+        @if (_focusNotes.Count > 0)
+        {
+            <div class="mt-2">
+                @foreach (var note in _focusNotes)
+                {
+                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">@note</MudText>
+                }
+            </div>
+        }
 
         @if (CanManage)
         {
@@ -100,6 +101,8 @@
     /// <summary>MG/Admin — bonus sources, office CRUD. Baron uses CanEdit only to assign/dismiss.</summary>
     [Parameter] public bool CanManage { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
+    /// <summary>Fired after create/delete of an office so parent can re-sync focus shares.</summary>
+    [Parameter] public EventCallback OnStructureChanged { get; set; }
 
     [Inject] private IBaronyRepository _baronyRepo { get; set; } = default!;
     [Inject] private ISnackbar _snackBar { get; set; } = default!;
@@ -108,6 +111,7 @@
     private PpbVector _total = new();
     private decimal _totalCost;
     private HashSet<Ppb> _significantSkills = new();
+    private List<string> _focusNotes = new();
 
     private string? OfficeDescription => BaronyCalc.ResolveOfficeDescription(Advisor);
     private string? PersonDescription =>
@@ -126,6 +130,43 @@
         _rows = BaronyCalc.BuildAdvisorInfluenceRows(Advisor, CustomModifiers, AvailableAdvisors);
         _total = BaronyCalc.SumAdvisorInfluenceRows(_rows, _significantSkills);
         _totalCost = BaronyCalc.OfficeTableCost(Advisor, CustomModifiers, AvailableAdvisors);
+        _focusNotes = BuildFocusNotes();
+    }
+
+    private List<string> BuildFocusNotes()
+    {
+        var notes = new List<string>();
+        foreach (var key in _significantSkills.OrderBy(k => (int)k))
+        {
+            var tip = BaronyCalc.ExplainOfficeFocusShare(Advisor, key, AllOffices);
+            if (tip is not null)
+                notes.Add(tip);
+        }
+        return notes;
+    }
+
+    private string? CellTooltip(AdvisorInfluenceRow row, Ppb key)
+    {
+        string? baseTip = row.SystemKind switch
+        {
+            AdvisorInfluenceSystemKind.Skills => CourtPpbFormulas.FormulaLabel(key),
+            AdvisorInfluenceSystemKind.Assistant => BaronyCalc.ExplainAssistantInfluence(key),
+            AdvisorInfluenceSystemKind.OfficeOverhead =>
+                key == Ppb.Corruption
+                    ? L["Office overhead: +{0} Corruption.", (int)row.Values[Ppb.Corruption]].Value
+                    : null,
+            _ => null,
+        };
+
+        if (row.SystemKind is AdvisorInfluenceSystemKind.Skills or AdvisorInfluenceSystemKind.Assistant
+            && _significantSkills.Contains(key))
+        {
+            var focus = BaronyCalc.ExplainOfficeFocusShare(Advisor, key, AllOffices);
+            if (focus is not null)
+                return baseTip is null ? focus : $"{baseTip}\n{focus}";
+        }
+
+        return baseTip;
     }
 
     private async Task EditProfileAsync()
@@ -145,9 +186,14 @@
         };
 
         var dialog = await _dialogService.ShowAsync<AdvisorProfileEditDialog>(
-            "Edit Advisor Profile",
+            L["Edit advisor profile"],
             parameters,
-            DialogOptions());
+            new DialogOptions
+            {
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                CloseOnEscapeKey = true,
+            });
 
         var result = await dialog.Result;
         if (result is null || result.Canceled || result.Data is not AdvisorDTO saved)
@@ -222,7 +268,7 @@
                 mods.Add(savedDto);
         }
 
-        BaronyCalc.SyncAdvisorAdditive(Advisor, mods, AvailableAdvisors);
+        BaronyCalc.SyncAdvisorAdditive(Advisor, mods, AvailableAdvisors, AllOffices);
         await _baronyRepo.SaveAdvisor(Advisor);
         _snackBar.Add(L["Bonus source saved."], Severity.Success);
         await OnChanged.InvokeAsync();
@@ -235,7 +281,7 @@
 
         await _baronyRepo.DeleteAdvisorInfluenceModifier(row.ModifierId.Value);
         var mods = CustomModifiers.Where(m => m.Id != row.ModifierId).ToList();
-        BaronyCalc.SyncAdvisorAdditive(Advisor, mods, AvailableAdvisors);
+        BaronyCalc.SyncAdvisorAdditive(Advisor, mods, AvailableAdvisors, AllOffices);
         await _baronyRepo.SaveAdvisor(Advisor);
         _snackBar.Add(L["Bonus source removed."], Severity.Success);
         await OnChanged.InvokeAsync();
@@ -251,12 +297,12 @@
 
         await _baronyRepo.DeleteAdvisor(Advisor.Id);
         _snackBar.Add(L["Office removed."], Severity.Success);
-        await OnChanged.InvokeAsync();
+        await OnStructureChanged.InvokeAsync();
     }
 
     private async Task PersistAdvisorAsync()
     {
-        BaronyCalc.SyncAdvisorAdditive(Advisor, CustomModifiers, AvailableAdvisors);
+        BaronyCalc.SyncAdvisorAdditive(Advisor, CustomModifiers, AvailableAdvisors, AllOffices);
         await _baronyRepo.SaveAdvisor(Advisor);
         _snackBar.Add(L["Office updated."], Severity.Success);
         await OnChanged.InvokeAsync();

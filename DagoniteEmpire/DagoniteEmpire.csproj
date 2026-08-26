@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -7,6 +7,8 @@
     <UserSecretsId>9a3c55b2-09c2-4342-8905-6c957b9faa98</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <WarningsNotAsErrors>$(WarningsNotAsErrors);MUD0002;MUD0012;NU1902</WarningsNotAsErrors>
+    <!-- MudBlazor analyzer: casing mismatches on valid attributes (Dense, Title, …) — noise, not defects. -->
+    <NoWarn>$(NoWarn);MUD0002;MUD0012</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

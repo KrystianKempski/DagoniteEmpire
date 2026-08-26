@@ -1092,9 +1092,10 @@ namespace DA_Business.Repository.BaronyRepos
                     Kind = BaronTimeActionKind.Management,
                     CostJc = BaronTimeRules.RequiredManagementJc,
                     Description =
-                        "Essential governance each turn. Spending fewer than "
-                        + $"{BaronTimeRules.RequiredManagementJc} BT causes management penalties "
-                        + "(stability, loyalty, income, etc.).",
+                        "Essential governance each turn. Every "
+                        + $"{BaronTimeRules.JcPerFocusSlot} BT spent here unlocks one Domain Panel PPB focus "
+                        + $"(full baron effect; unfocused PPBs apply at half). "
+                        + $"{BaronTimeRules.RequiredManagementJc} BT → {BaronTimeRules.FocusSlotCount(BaronTimeRules.RequiredManagementJc)} focuses.",
                     SortOrder = 0,
                     IsSystem = true,
                 });
@@ -1104,6 +1105,11 @@ namespace DA_Business.Repository.BaronyRepos
                 management.CostJc = BaronTimeRules.RequiredManagementJc;
                 management.Name = BaronTimeRules.ManagementActionName;
                 management.Kind = BaronTimeActionKind.Management;
+                management.Description =
+                    "Essential governance each turn. Every "
+                    + $"{BaronTimeRules.JcPerFocusSlot} BT spent here unlocks one Domain Panel PPB focus "
+                    + $"(full baron effect; unfocused PPBs apply at half). "
+                    + $"{BaronTimeRules.RequiredManagementJc} BT → {BaronTimeRules.FocusSlotCount(BaronTimeRules.RequiredManagementJc)} focuses.";
             }
         }
 
@@ -3048,9 +3054,10 @@ namespace DA_Business.Repository.BaronyRepos
                     Kind = BaronTimeActionKind.Management,
                     CostJc = BaronTimeRules.RequiredManagementJc,
                     Description =
-                        "Essential governance each turn. Spending fewer than "
-                        + $"{BaronTimeRules.RequiredManagementJc} BT causes management penalties "
-                        + "(stability, loyalty, income, etc.).",
+                        "Essential governance each turn. Every "
+                        + $"{BaronTimeRules.JcPerFocusSlot} BT spent here unlocks one Domain Panel PPB focus "
+                        + $"(full baron effect; unfocused PPBs apply at half). "
+                        + $"{BaronTimeRules.RequiredManagementJc} BT → {BaronTimeRules.FocusSlotCount(BaronTimeRules.RequiredManagementJc)} focuses.",
                     SortOrder = 0,
                     IsSystem = true,
                 });
@@ -5249,6 +5256,7 @@ namespace DA_Business.Repository.BaronyRepos
                 Prestige = e.Prestige,
                 Honor = e.Honor,
                 Fear = e.Fear,
+                BaronFocusPpbs = DA_Common.Barony.BaronFocusPpbs.Deserialize(e.BaronFocusPpbJson),
                 BaseParameters = De(e.BaseParametersJson),
                 Notes = e.Notes,
                 TradeGoodMgOverrideKeys = TradeGoodAvailability.NormalizeOverrideKeys(ParseTradeGoodKeys(e.AvailableTradeGoodsJson))
@@ -5292,6 +5300,7 @@ namespace DA_Business.Repository.BaronyRepos
             e.Prestige = d.Prestige;
             e.Honor = d.Honor;
             e.Fear = d.Fear;
+            e.BaronFocusPpbJson = DA_Common.Barony.BaronFocusPpbs.Serialize(d.BaronFocusPpbs);
             e.BaseParametersJson = Ser(d.BaseParameters);
             e.Notes = d.Notes;
             e.PlayerTurnReady = d.PlayerTurnReady;

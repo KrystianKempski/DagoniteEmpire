@@ -38,11 +38,12 @@ namespace DA_Models.BaronyModels
         int AdventureJc,
         decimal ExpeditionWeeks)
     {
-        public bool IsManagementShort => ManagementJc < DA_Common.Barony.BaronTimeRules.RequiredManagementJc;
+        public bool IsManagementShort => false;
         public bool IsExpeditionOverLimit =>
             AdventureJc > DA_Common.Barony.BaronTimeRules.MaxSafeExpeditionJc;
         public bool IsOverspent => SpentJc > TotalJc;
         public decimal UsedPercent => TotalJc <= 0 ? 0m : Math.Min(100m, SpentJc * 100m / TotalJc);
+        public int FocusSlots => DA_Common.Barony.BaronTimeRules.FocusSlotCount(ManagementJc);
         public decimal ManagementPercent =>
             DA_Common.Barony.BaronTimeRules.RequiredManagementJc <= 0
                 ? 0m

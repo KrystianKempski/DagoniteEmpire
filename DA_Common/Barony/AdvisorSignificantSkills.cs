@@ -20,9 +20,15 @@ namespace DA_Common.Barony
         public static IEnumerable<PpbInfo> SelectableSkills
             => PpbCatalog.All.Where(p => p.Key != Ppb.Treasury);
 
+        /// <summary>
+        /// Persist significant skill picks. Duplicates are allowed (each pick is a focus claim).
+        /// </summary>
         public static string Serialize(IEnumerable<Ppb>? skills)
         {
-            var list = skills?.Distinct().ToList() ?? new List<Ppb>();
+            var list = (skills ?? Enumerable.Empty<Ppb>())
+                .Where(p => p != Ppb.Treasury)
+                .Take(MaxCount)
+                .ToList();
             return JsonSerializer.Serialize(list.Select(p => p.ToString()).ToList(), JsonOptions);
         }
 
@@ -37,6 +43,8 @@ namespace DA_Common.Barony
                 var result = new List<Ppb>();
                 foreach (var name in names)
                 {
+                    if (result.Count >= MaxCount)
+                        break;
                     if (Enum.TryParse<Ppb>(name, ignoreCase: true, out var ppb) && ppb != Ppb.Treasury)
                         result.Add(ppb);
                 }
@@ -61,5 +69,8 @@ namespace DA_Common.Barony
             }
             return masked;
         }
+
+        public static int PickCount(IEnumerable<Ppb>? significant, Ppb key)
+            => significant?.Count(p => p == key) ?? 0;
     }
 }
