@@ -30,7 +30,7 @@ namespace DA_Business.Repository.BaronyRepos
                 totals[def.Key] = parentTotal + attr + bas + oth;
             }
 
-            // Riding sits alone in Excel but totals like a Melee specialization (parent = Melee Razem).
+            // Riding sits alone in Excel and totals as: attr + base + other (no hidden parent).
             var riding = UnitSkillTree.Find(UnitSkillKey.Riding);
             if (riding is not null)
             {
@@ -39,8 +39,7 @@ namespace DA_Business.Repository.BaronyRepos
                 var attr = UnitCombatFormulas.AttrValue(
                     dto.EffectiveBuild, dto.EffectiveAgility, dto.EffectiveWill, dto.EffectivePerception,
                     riding.LinkedAttr);
-                var parentTotal = totals.GetValueOrDefault(UnitSkillKey.Melee);
-                totals[riding.Key] = parentTotal + attr + bas + oth;
+                totals[riding.Key] = attr + bas + oth;
             }
 
             return totals;

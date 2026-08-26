@@ -10,15 +10,12 @@ public class CourtPpbFormulasTests
         var sheet = CourtCharacterSheet.CreateDefault();
         var ppb = CourtPpbFormulas.Compute(sheet);
 
-        // Knowledge 3 + 0 + 0
-        Assert.Equal(3m, ppb[Ppb.Food]);
-        // Administration 3
-        Assert.Equal(3m, ppb[Ppb.Economy]);
-        Assert.Equal(3m, ppb[Ppb.Stability]);
-        // Magic 0
+        // All mains default to 0
+        Assert.Equal(0m, ppb[Ppb.Food]);
+        Assert.Equal(0m, ppb[Ppb.Economy]);
+        Assert.Equal(0m, ppb[Ppb.Stability]);
         Assert.Equal(0m, ppb[Ppb.Magic]);
-        // Deceit 3 → Corruption -3
-        Assert.Equal(-3m, ppb[Ppb.Corruption]);
+        Assert.Equal(0m, ppb[Ppb.Corruption]);
         Assert.Equal(0m, ppb[Ppb.Treasury]);
     }
 
@@ -38,15 +35,15 @@ public class CourtPpbFormulasTests
 
         var ppb = CourtPpbFormulas.Compute(sheet);
 
-        Assert.Equal(11m, ppb[Ppb.Food]); // 5+4+2
-        Assert.Equal(17m, ppb[Ppb.Defense]); // 8+6+3
+        Assert.Equal(11m, ppb[Ppb.Food]); // 5+4+2+0 alchemy
+        Assert.Equal(14m, ppb[Ppb.Defense]); // 8+6+0 logistics+0 smithing
     }
 
     [Fact]
     public void ClampRejectsOutOfRangeValues()
     {
         var sheet = CourtCharacterSheet.CreateDefault();
-        sheet.Main[CourtMainSkill.Melee] = 1; // below min → 3
+        sheet.Main[CourtMainSkill.Melee] = -2; // below min → 0
         sheet.Main[CourtMainSkill.Magic] = 99; // → 10
         sheet.Secondary =
         [
@@ -54,7 +51,7 @@ public class CourtPpbFormulasTests
         ];
         sheet.Normalize();
 
-        Assert.Equal(3, sheet.GetMain(CourtMainSkill.Melee));
+        Assert.Equal(0, sheet.GetMain(CourtMainSkill.Melee));
         Assert.Equal(10, sheet.GetMain(CourtMainSkill.Magic));
         Assert.Equal(6, sheet.GetSecondary(CourtSecondarySkill.Trade));
     }
@@ -78,9 +75,9 @@ public class CourtPpbFormulasTests
         var fromSkills = CourtPpbFormulas.Compute(sheet);
         var total = CourtPpbFormulas.ComputeTotal(sheet);
 
-        Assert.Equal(3m, fromSkills[Ppb.Economy]);
-        Assert.Equal(7m, total[Ppb.Economy]);
-        Assert.Equal(5m, total[Ppb.Loyalty]);
+        Assert.Equal(0m, fromSkills[Ppb.Economy]);
+        Assert.Equal(4m, total[Ppb.Economy]);
+        Assert.Equal(2m, total[Ppb.Loyalty]);
         Assert.Equal(4m, sheet.SumDomainOther()[Ppb.Economy]);
     }
 
@@ -136,7 +133,7 @@ public class CourtPpbFormulasTests
         ];
 
         var combat = CourtCombatFormulas.Compute(sheet);
-        Assert.Equal(3, combat.Attack); // default melee 3 + athletics 0
+        Assert.Equal(0, combat.Attack); // default melee 0 + athletics 0
         Assert.Equal(2, sheet.GetCombatOtherSum(CourtCombatSkill.Attack));
         Assert.Equal(1, sheet.GetCombatOtherSum(CourtCombatSkill.Dodge));
         Assert.Equal(0, sheet.GetCombatOtherSum(CourtCombatSkill.Shooting));

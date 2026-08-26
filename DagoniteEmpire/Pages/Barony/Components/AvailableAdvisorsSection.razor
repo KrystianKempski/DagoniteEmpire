@@ -353,12 +353,11 @@
     {
         <div class="court-person-card__block">
             <h4 class="project-card__panel-title @(person.IsLinkedCharacter ? null : "court-person-card__subpanel-title")">@L["Command skill"]</h4>
-            @if (person.IsLinkedCharacter)
-            {
-                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                    @L["CX = (permanent Inspire + Strategy and tactics) / 2."]
-                </MudText>
-            }
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                @(person.IsLinkedCharacter
+                    ? L["CX = (permanent Inspire + Strategy and tactics) / 2."]
+                    : L["CX = Command + Strategy/tactics."])
+            </MudText>
             <div class="court-commander-panel__cx">
                 <span class="court-commander-panel__cx-label">@L["CX pool"]</span>
                 @if (CanManage)

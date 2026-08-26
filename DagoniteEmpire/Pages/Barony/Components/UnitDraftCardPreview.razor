@@ -12,7 +12,6 @@
          role="@(Collapsible ? "button" : null)"
          aria-expanded="@(Collapsible ? _isOpen : null)">
         <div class="unit-draft-card__title-main">
-            <span>@ResolvedTitleEyebrow</span>
             @if (CanEditIcon)
             {
                 <BaronyTooltip Text="@(L["Choose icon"])">
@@ -51,6 +50,7 @@
                           @onclick:stopPropagation="true">(@Unit.CaptainName)</span>
                 </BaronyTooltip>
             }
+            <span class="unit-draft-card__title-status">@ResolvedTitleEyebrow</span>
         </div>
         @if (TitleActions is not null)
         {
@@ -383,7 +383,7 @@
     private string ResolvedTitleEyebrow =>
         !string.IsNullOrWhiteSpace(TitleEyebrow)
             ? TitleEyebrow!
-            : Unit.IsActive ? L["Active unit"]
+            : Unit.IsActive ? L["Active"]
             : Unit.IsTraining ? L["In training"]
             : L[Unit.Status];
 

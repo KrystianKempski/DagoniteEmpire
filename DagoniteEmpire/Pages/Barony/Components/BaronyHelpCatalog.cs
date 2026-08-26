@@ -329,7 +329,7 @@ namespace DagoniteEmpire.Pages.Barony.Components
                         new BaronyHelpSection("Commander CX", new[]
                         {
                             "Baron and linked character courtiers: CX floor = (permanent Inspire + Strategy and tactics) / 2.",
-                            "Simplified court sheets: CX floor = (Command + Strategy/tactics) × 4.",
+                            "Simplified court sheets: CX floor = Command + Strategy/tactics.",
                         }),
                         new BaronyHelpSection("Working with the Game Master", new[]
                         {

@@ -19,7 +19,7 @@
 
         <MudText Typo="Typo.subtitle2" Class="mb-1">@L["Main skills"]</MudText>
         <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-            @L["Range 3–10 (Magic 0–10). Defaults start at 3 / Magic 0."]
+            @L["Range 0–10. Defaults start at 0."]
         </MudText>
         <div class="court-skill-table-wrap mb-3">
             <table class="ppb-table ppb-table--lined court-skill-table court-skill-table--edit court-skill-table--main-row">
@@ -43,8 +43,8 @@
                                 <MudNumericField T="int"
                                                  Value="@_main[skill.Key]"
                                                  ValueChanged="v => SetMain(skill.Key, v)"
-                                                 Min="@(skill.Key == CourtMainSkill.Magic ? CourtSkillCatalog.MagicMin : CourtSkillCatalog.MainMin)"
-                                                 Max="@(skill.Key == CourtMainSkill.Magic ? CourtSkillCatalog.MagicMax : CourtSkillCatalog.MainMax)"
+                                                 Min="@CourtSkillCatalog.MainMin"
+                                                 Max="@CourtSkillCatalog.MainMax"
                                                  Variant="Variant.Outlined"
                                                  Margin="Margin.Dense"
                                                  HideSpinButtons="false"

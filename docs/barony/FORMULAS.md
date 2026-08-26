@@ -262,7 +262,7 @@ Logic: `CourtPpbFormulas.Compute` / `ComputeTotal` (`DA_Common/Barony/CourtChara
 UI: Offices → **Court** (`AvailableAdvisors` pool with `SheetJson`).
 
 Ranges:
-- Main skills (always present): **3–10**, except **Magic 0–10**. New person defaults: mains **3**, Magic **0**.
+- Main skills (always present): **0–10**. New person defaults: all mains **0**.
 - Secondary skills (optional, typically 2–3): **0–6**. Missing secondary counts as **0**.
 - Main skills table also has an **Other** row: named bonuses (`MainOther`) per main skill. Values are summed in the row; source names appear only in tooltips / the edit dialog. These do **not** feed Domain Skills.
 - Domain Skills table: **From skill** = `Compute(sheet)` from mains + secondaries; **Other** = sum of named `DomainOther` PPB vectors. Stored `AvailableAdvisor.Skills` = `ComputeTotal` = From skill + Other.

@@ -7,11 +7,10 @@ namespace DA_Business.Repository.BaronyRepos
     /// <summary>
     /// Starting / floor Commander XP (CX) from skills.
     /// Character sheets (baron, linked courtiers): floor((Inspire + Strategy and tactics) / 2).
-    /// Court sheets: (Command + Strategy/tactics) × 4.
+    /// Court sheets: max(0, Command + Strategy/tactics).
     /// </summary>
     public static class CommanderCxFormulas
     {
-        public const int CourtSheetMultiplier = 4;
 
         /// <summary>Permanent special-skill total (excludes wounds and temporary bonuses on the skill).</summary>
         public static int PermanentSpecialSkill(CharacterDTO? character, string skillName) =>
@@ -114,7 +113,7 @@ namespace DA_Business.Repository.BaronyRepos
             sheet.Normalize();
             var command = sheet.GetMain(CourtMainSkill.Command) + sheet.GetMainOtherSum(CourtMainSkill.Command);
             var strategy = sheet.GetSecondary(CourtSecondarySkill.StrategyTactics);
-            return Math.Max(0, command + strategy) * CourtSheetMultiplier;
+            return Math.Max(0, command + strategy);
         }
 
         /// <summary>Raise the CX pool to at least <paramref name="baseCx"/> (keeps battle/MG surplus).</summary>

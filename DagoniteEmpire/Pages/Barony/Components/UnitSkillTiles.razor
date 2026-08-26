@@ -156,7 +156,7 @@
                 <span>@L["Other"]</span>
             </BaronyTooltip>
             <BaronyTooltip Title="@(L["Total"])"
-                           Text="@(L["Base skills: Base + Other. Specializations: parent Total + From + Base + Other."])"
+                           Text="@(L["Base skills: Base + Other. Specializations: parent Total + From + Base + Other. Riding: From + Base + Other."])"
                            Placement="Placement.Top">
                 <span>@L["Total"]</span>
             </BaronyTooltip>
@@ -178,6 +178,17 @@
 
     private string AttrTitle(string linkedAttr) =>
         $"{AttrLetter(linkedAttr)} — {UnitCatalogDisplay.AttrLabel(linkedAttr, L)}";
+
+    private string RowTip(UnitSkillDef def, bool isHeader, bool usesAttr)
+    {
+        if (def.Key == UnitSkillKey.Riding)
+            return L["Riding — Total = From + Base + Other (no parent skill)."].Value;
+        if (!usesAttr)
+            return L["Base skill — Total = Base + Other (no attribute)."].Value;
+        if (!isHeader)
+            return L["Specialization — Total = parent + From + Base + Other."].Value;
+        return AttrTitle(def.LinkedAttr);
+    }
 
     private RenderFragment SkillTile(UnitSkillDef baseDef, IReadOnlyList<UnitSkillDef> children) => __builder =>
     {
@@ -212,7 +223,7 @@
         <div class="unit-draft-skill-tile__cols @(isHeader ? "unit-draft-skill-tile__cols--head" : null) @(rowHot ? "unit-draft-skill-tile__row--hot" : null)">
             <span class="unit-draft-skill-tile__name-row">
                 <BaronyTooltip Title="@skillName"
-                               Text="@(usesAttr ? AttrTitle(def.LinkedAttr) : (isHeader ? L["Base skill — Total = Base + Other (no attribute)."] : L["Specialization — Total = parent + From + Base + Other."]))"
+                               Text="@RowTip(def, isHeader, usesAttr)"
                                Placement="Placement.Right">
                     <span class="@(isHeader ? "unit-draft-skill-tile__name" : "unit-draft-skill-tile__child")">
                         @skillName

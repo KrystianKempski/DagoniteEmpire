@@ -64,13 +64,13 @@ public sealed class CourtSkillInfo
 /// <summary>Catalog + value ranges for court character sheets.</summary>
 public static class CourtSkillCatalog
 {
-    public const int MainMin = 3;
+    public const int MainMin = 0;
     public const int MainMax = 10;
     public const int MagicMin = 0;
     public const int MagicMax = 10;
     public const int SecondaryMin = 0;
     public const int SecondaryMax = 6;
-    public const int DefaultMain = 3;
+    public const int DefaultMain = 0;
     public const int DefaultMagic = 0;
 
     public static readonly IReadOnlyList<CourtSkillInfo> Main = new List<CourtSkillInfo>
@@ -121,12 +121,8 @@ public static class CourtSkillCatalog
     public static CourtSkillInfo? FindSecondary(string key) =>
         Secondary.FirstOrDefault(s => string.Equals(s.Key, key, StringComparison.OrdinalIgnoreCase));
 
-    public static int ClampMain(string key, int value)
-    {
-        if (string.Equals(key, CourtMainSkill.Magic, StringComparison.OrdinalIgnoreCase))
-            return Math.Clamp(value, MagicMin, MagicMax);
-        return Math.Clamp(value, MainMin, MainMax);
-    }
+    public static int ClampMain(string key, int value) =>
+        Math.Clamp(value, MainMin, MainMax);
 
     public static int ClampSecondary(int value) => Math.Clamp(value, SecondaryMin, SecondaryMax);
 }
@@ -182,11 +178,7 @@ public sealed class CourtCharacterSheet
     {
         var sheet = new CourtCharacterSheet();
         foreach (var skill in CourtSkillCatalog.Main)
-        {
-            sheet.Main[skill.Key] = string.Equals(skill.Key, CourtMainSkill.Magic, StringComparison.OrdinalIgnoreCase)
-                ? CourtSkillCatalog.DefaultMagic
-                : CourtSkillCatalog.DefaultMain;
-        }
+            sheet.Main[skill.Key] = CourtSkillCatalog.DefaultMain;
         return sheet;
     }
 
@@ -194,9 +186,7 @@ public sealed class CourtCharacterSheet
     {
         if (Main.TryGetValue(key, out var value))
             return CourtSkillCatalog.ClampMain(key, value);
-        return string.Equals(key, CourtMainSkill.Magic, StringComparison.OrdinalIgnoreCase)
-            ? CourtSkillCatalog.DefaultMagic
-            : CourtSkillCatalog.DefaultMain;
+        return CourtSkillCatalog.DefaultMain;
     }
 
     public int GetSecondary(string key)
