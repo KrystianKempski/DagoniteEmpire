@@ -71,8 +71,10 @@
                                     {
                                         <span class="audience-hall__badge">@seat.Topics.Count</span>
                                     }
-                                    <img src="@("/" + seat.Icon)" alt="" />
-                                    <span>@seat.ShortLabel</span>
+                                    <span class="audience-hall__advisor-icon">
+                                        <img src="@("/" + seat.Icon)" alt="" />
+                                    </span>
+                                    <span class="audience-hall__advisor-label">@seat.ShortLabel</span>
                                 </button>
                             }
                         </div>
@@ -95,8 +97,10 @@
                                     {
                                         <span class="audience-hall__badge">@seat.Topics.Count</span>
                                     }
-                                    <img src="@("/" + seat.Icon)" alt="" />
-                                    <span>@seat.ShortLabel</span>
+                                    <span class="audience-hall__advisor-icon">
+                                        <img src="@("/" + seat.Icon)" alt="" />
+                                    </span>
+                                    <span class="audience-hall__advisor-label">@seat.ShortLabel</span>
                                 </button>
                             }
                         </div>
@@ -116,8 +120,10 @@
                                     {
                                         <span class="audience-hall__badge audience-hall__badge--flag">!</span>
                                     }
-                                    <img src="@("/" + p.Icon)" alt="" />
-                                    <span>@p.Label</span>
+                                    <span class="audience-hall__advisor-icon">
+                                        <img src="@("/" + p.Icon)" alt="" />
+                                    </span>
+                                    <span class="audience-hall__advisor-label">@p.Label</span>
                                 </button>
                             }
                         </div>
@@ -133,8 +139,10 @@
                                     {
                                         <span class="audience-hall__badge audience-hall__badge--flag">!</span>
                                     }
-                                    <img src="@("/" + p.Icon)" alt="" />
-                                    <span>@p.Label</span>
+                                    <span class="audience-hall__advisor-icon">
+                                        <img src="@("/" + p.Icon)" alt="" />
+                                    </span>
+                                    <span class="audience-hall__advisor-label">@p.Label</span>
                                 </button>
                             }
                             @if (OverflowPetitionerSatellites.Count > 0)
@@ -151,8 +159,10 @@
                                                 title="@L["More petitioners"]"
                                                 @onclick="() => _showMorePetitioners = true">
                                             <span class="audience-hall__badge">@OverflowPetitionerSatellites.Count</span>
-                                            <MudIcon Icon="@Icons.Material.Filled.MoreHoriz" Style="width:3rem;height:3rem;" />
-                                            <span>@L["More"]</span>
+                                            <span class="audience-hall__advisor-icon">
+                                                <MudIcon Icon="@Icons.Material.Filled.MoreHoriz" />
+                                            </span>
+                                            <span class="audience-hall__advisor-label">@L["More"]</span>
                                         </button>
                                     </ActivatorContent>
                                     <ChildContent>
@@ -185,8 +195,10 @@
                                         class="audience-hall__advisor"
                                         title="@a.Label"
                                         @onclick="() => OpenAdventure(a)">
-                                    <img src="@("/" + a.Icon)" alt="" />
-                                    <span>@a.Label</span>
+                                    <span class="audience-hall__advisor-icon">
+                                        <img src="@("/" + a.Icon)" alt="" />
+                                    </span>
+                                    <span class="audience-hall__advisor-label">@a.Label</span>
                                 </button>
                             }
                         </div>
@@ -198,8 +210,10 @@
                                         class="audience-hall__advisor"
                                         title="@a.Label"
                                         @onclick="() => OpenAdventure(a)">
-                                    <img src="@("/" + a.Icon)" alt="" />
-                                    <span>@a.Label</span>
+                                    <span class="audience-hall__advisor-icon">
+                                        <img src="@("/" + a.Icon)" alt="" />
+                                    </span>
+                                    <span class="audience-hall__advisor-label">@a.Label</span>
                                 </button>
                             }
                         </div>
@@ -401,7 +415,7 @@
                 var name = advisor.PersonName.Trim();
                 var label = $"{role} \u2014 {name}";
                 var matched = topics.Where(t => TopicBelongsTo(t, label, name)).ToList();
-                seats.Add(new CouncilSeat(label, label, role, AdvisorIconCatalog.IconFor(advisor.OfficeType, advisor.Id), matched));
+                seats.Add(new CouncilSeat(label, label, role, AdvisorIconCatalog.IconFor(advisor.OfficeType, advisor.Id, advisor.IconPath), matched));
             }
 
             return seats;

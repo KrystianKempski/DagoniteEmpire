@@ -5,7 +5,7 @@ namespace DA_Common.Barony
     /// <summary>Which administrative skills matter for a given advisor office.</summary>
     public static class AdvisorSignificantSkills
     {
-        public const int MaxCount = 4;
+        public const int MaxCount = 3;
 
         private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 

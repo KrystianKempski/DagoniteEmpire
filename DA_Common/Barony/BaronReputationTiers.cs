@@ -97,8 +97,8 @@ namespace DA_Common.Barony
             new()
             {
                 Name = "Famous",
-                MinRequired = 3000,
-                ThresholdLabel = "3000",
+                MinRequired = 5000,
+                ThresholdLabel = "5000",
                 BaronyBonus = Vec(
                     (Ppb.Stability, 8), (Ppb.Loyalty, 8),
                     (Ppb.Culture, 15), (Ppb.Science, 15), (Ppb.Magic, 15)),
@@ -109,8 +109,8 @@ namespace DA_Common.Barony
             new()
             {
                 Name = "Known by everyone",
-                MinRequired = 5000,
-                ThresholdLabel = "5000",
+                MinRequired = 15000,
+                ThresholdLabel = "15000",
                 BaronyBonus = Vec(
                     (Ppb.Stability, 12), (Ppb.Loyalty, 12),
                     (Ppb.Culture, 30), (Ppb.Science, 30), (Ppb.Magic, 30)),
@@ -121,8 +121,8 @@ namespace DA_Common.Barony
             new()
             {
                 Name = "Living Legend",
-                MinRequired = 10000,
-                ThresholdLabel = "10000",
+                MinRequired = 40000,
+                ThresholdLabel = "40000",
                 BaronyBonus = Vec(
                     (Ppb.Stability, 15), (Ppb.Loyalty, 15),
                     (Ppb.Culture, 50), (Ppb.Science, 50), (Ppb.Magic, 50)),
@@ -138,7 +138,7 @@ namespace DA_Common.Barony
             {
                 Name = "Lying traitor",
                 MinRequired = int.MinValue,
-                ThresholdLabel = "−150",
+                ThresholdLabel = "−1000",
                 BaronyBonus = Vec(
                     (Ppb.Loyalty, -15), (Ppb.Corruption, 5),
                     (Ppb.Economy, -15), (Ppb.Defense, -15), (Ppb.Intelligence, -15)),
@@ -149,8 +149,8 @@ namespace DA_Common.Barony
             new()
             {
                 Name = "Without a shred of honor",
-                MinRequired = -100,
-                ThresholdLabel = "−100",
+                MinRequired = -300,
+                ThresholdLabel = "−300",
                 BaronyBonus = Vec(
                     (Ppb.Loyalty, -8), (Ppb.Corruption, 3),
                     (Ppb.Economy, -8), (Ppb.Defense, -8), (Ppb.Intelligence, -8)),
@@ -161,8 +161,8 @@ namespace DA_Common.Barony
             new()
             {
                 Name = "Of doubtful nature",
-                MinRequired = -50,
-                ThresholdLabel = "−50",
+                MinRequired = -100,
+                ThresholdLabel = "−100",
                 BaronyBonus = Vec(
                     (Ppb.Loyalty, -3), (Ppb.Corruption, 1),
                     (Ppb.Economy, -3), (Ppb.Defense, -3), (Ppb.Intelligence, -3)),
@@ -192,8 +192,8 @@ namespace DA_Common.Barony
             new()
             {
                 Name = "Honest",
-                MinRequired = 300,
-                ThresholdLabel = "300",
+                MinRequired = 500,
+                ThresholdLabel = "500",
                 BaronyBonus = Vec(
                     (Ppb.Loyalty, 5), (Ppb.Corruption, -3),
                     (Ppb.Economy, 8), (Ppb.Defense, 8), (Ppb.Intelligence, 8)),
@@ -204,8 +204,8 @@ namespace DA_Common.Barony
             new()
             {
                 Name = "Honorable",
-                MinRequired = 600,
-                ThresholdLabel = "600",
+                MinRequired = 1500,
+                ThresholdLabel = "1500",
                 BaronyBonus = Vec(
                     (Ppb.Loyalty, 8), (Ppb.Corruption, -5),
                     (Ppb.Economy, 15), (Ppb.Defense, 15), (Ppb.Intelligence, 15)),
@@ -216,8 +216,8 @@ namespace DA_Common.Barony
             new()
             {
                 Name = "Immaculate",
-                MinRequired = 1000,
-                ThresholdLabel = "1000",
+                MinRequired = 4000,
+                ThresholdLabel = "4000",
                 BaronyBonus = Vec(
                     (Ppb.Loyalty, 15), (Ppb.Corruption, -10),
                     (Ppb.Economy, 30), (Ppb.Defense, 30), (Ppb.Intelligence, 30)),
@@ -233,7 +233,7 @@ namespace DA_Common.Barony
             {
                 Name = "Joke",
                 MinRequired = int.MinValue,
-                ThresholdLabel = "−150",
+                ThresholdLabel = "−1000",
                 BaronyBonus = Vec(
                     (Ppb.Stability, -15), (Ppb.Law, -15),
                     (Ppb.Production, -15), (Ppb.Food, -15), (Ppb.Defense, -15)),
@@ -244,8 +244,8 @@ namespace DA_Common.Barony
             new()
             {
                 Name = "Warm dumpling",
-                MinRequired = -100,
-                ThresholdLabel = "−100",
+                MinRequired = -300,
+                ThresholdLabel = "−300",
                 BaronyBonus = Vec(
                     (Ppb.Stability, -8), (Ppb.Law, -8),
                     (Ppb.Production, -8), (Ppb.Food, -8), (Ppb.Defense, -8)),
@@ -256,8 +256,8 @@ namespace DA_Common.Barony
             new()
             {
                 Name = "Harmless",
-                MinRequired = -50,
-                ThresholdLabel = "−50",
+                MinRequired = -100,
+                ThresholdLabel = "−100",
                 BaronyBonus = Vec(
                     (Ppb.Stability, -3), (Ppb.Law, -3),
                     (Ppb.Production, -3), (Ppb.Food, -3), (Ppb.Defense, -3)),
@@ -287,8 +287,8 @@ namespace DA_Common.Barony
             new()
             {
                 Name = "Dangerous",
-                MinRequired = 300,
-                ThresholdLabel = "300",
+                MinRequired = 500,
+                ThresholdLabel = "500",
                 BaronyBonus = Vec(
                     (Ppb.Stability, 5), (Ppb.Law, 5),
                     (Ppb.Production, 8), (Ppb.Food, 8), (Ppb.Defense, 8)),
@@ -299,8 +299,8 @@ namespace DA_Common.Barony
             new()
             {
                 Name = "Terror",
-                MinRequired = 600,
-                ThresholdLabel = "600",
+                MinRequired = 1500,
+                ThresholdLabel = "1500",
                 BaronyBonus = Vec(
                     (Ppb.Stability, 8), (Ppb.Law, 8),
                     (Ppb.Production, 15), (Ppb.Food, 15), (Ppb.Defense, 15)),
@@ -311,8 +311,8 @@ namespace DA_Common.Barony
             new()
             {
                 Name = "Walking terror",
-                MinRequired = 1000,
-                ThresholdLabel = "1000",
+                MinRequired = 4000,
+                ThresholdLabel = "4000",
                 BaronyBonus = Vec(
                     (Ppb.Stability, 15), (Ppb.Law, 15),
                     (Ppb.Production, 30), (Ppb.Food, 30), (Ppb.Defense, 30)),

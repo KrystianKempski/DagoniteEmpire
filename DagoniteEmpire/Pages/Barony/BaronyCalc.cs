@@ -121,6 +121,8 @@ namespace DagoniteEmpire.Pages.Barony
             FormulaText = source.FormulaText,
             Description = source.Description,
             PersonDescription = source.PersonDescription,
+            IconPath = source.IconPath,
+            OfficeLevel = source.OfficeLevel,
             UpkeepGold = source.UpkeepGold,
         };
 
@@ -1835,7 +1837,7 @@ namespace DagoniteEmpire.Pages.Barony
             => advisor.UpkeepGold + (customModifiers?.Sum(m => m.CostGold) ?? 0m);
 
         public static string OfficeSectionTitle(AdvisorDTO advisor)
-            => Loc.T("{0} - Skills", AdvisorRoleLabel(advisor));
+            => AdvisorRoleLabel(advisor);
 
         public static bool IsCoreOffice(AdvisorDTO advisor)
             => !advisor.IsBaron && OfficeType.Core.Contains(advisor.OfficeType);
@@ -1901,6 +1903,22 @@ namespace DagoniteEmpire.Pages.Barony
                           + "then Domain Panel Additive/Percent from the skill→PPB formulas."
                         : modifier.Description,
                     Cost = modifier.CostGold,
+                });
+            }
+
+            var corruptionBonus = OfficeCorruptionBonus(advisor);
+            if (corruptionBonus > 0)
+            {
+                var overhead = new PpbVector();
+                overhead[Ppb.Corruption] = corruptionBonus;
+                rows.Add(new AdvisorInfluenceRow
+                {
+                    Source = AdvisorInfluenceSource.OfficeOverhead,
+                    Values = overhead,
+                    IsSystem = true,
+                    SystemKind = AdvisorInfluenceSystemKind.OfficeOverhead,
+                    Description = Loc.T(
+                        "Flat Corruption from holding this office. Independent of the advisor's domain skills."),
                 });
             }
 
@@ -1991,6 +2009,13 @@ namespace DagoniteEmpire.Pages.Barony
             var sum = new PpbVector();
             foreach (var row in rows)
             {
+                // Office overhead is flat Domain PPB (not skill units) and ignores the significant mask.
+                if (row.SystemKind == AdvisorInfluenceSystemKind.OfficeOverhead)
+                {
+                    sum.AddInPlace(row.Values);
+                    continue;
+                }
+
                 var values = significantSkills is not null
                     ? AdvisorSignificantSkills.MaskToSignificant(row.Values, significantSkills)
                     : row.Values;
@@ -2002,6 +2027,7 @@ namespace DagoniteEmpire.Pages.Barony
         /// <summary>
         /// Domain Panel office row: sum skills + bonus sources (skill units), mask to active skills,
         /// then map that total through the skill→PPB Additive/Percent formulas.
+        /// Office overhead (flat Corruption) is added to Additive only.
         /// </summary>
         public static void ApplyAdvisorSkillInfluence(
             AdvisorDTO advisor,
@@ -2012,13 +2038,19 @@ namespace DagoniteEmpire.Pages.Barony
                 return;
 
             var active = EffectiveSignificantSkills(advisor);
-            var totalSkills = SumAdvisorInfluenceRows(
-                BuildAdvisorInfluenceRows(advisor, customModifiers, courtiers),
-                active);
+            var rows = BuildAdvisorInfluenceRows(advisor, customModifiers, courtiers);
+            var skillRows = rows.Where(r => r.SystemKind != AdvisorInfluenceSystemKind.OfficeOverhead);
+            var totalSkills = SumAdvisorInfluenceRows(skillRows, active);
 
             advisor.Additive = BaronSkillPpbFormulas.MapToAdvisorAdditive(totalSkills);
             advisor.Percent = BaronSkillPpbFormulas.MapToAdvisorPercent(totalSkills);
+
+            foreach (var overhead in rows.Where(r => r.SystemKind == AdvisorInfluenceSystemKind.OfficeOverhead))
+                advisor.Additive.AddInPlace(overhead.Values);
         }
+
+        public static int OfficeCorruptionBonus(AdvisorDTO advisor)
+            => advisor.IsBaron ? 0 : OfficeLevel.CorruptionBonus(advisor.OfficeLevel);
 
         public static void SyncAdvisorAdditive(
             AdvisorDTO advisor,
@@ -2038,13 +2070,21 @@ namespace DagoniteEmpire.Pages.Barony
             if (IsOfficeAssigned(advisor) && IsActiveSkill(advisor, key))
                 skillTip = BaronSkillPpbFormulas.ExplainAdvisorAdditive(key);
 
+            var parts = new List<string>();
+            if (skillTip is not null)
+                parts.Add(skillTip);
+
             if (key == Ppb.Treasury && advisor.UpkeepGold != 0m)
+                parts.Add(Loc.T("Office upkeep: −{0} gold.", PpbFormat.Number(advisor.UpkeepGold)));
+
+            if (key == Ppb.Corruption)
             {
-                var upkeep = $"Office upkeep: −{PpbFormat.Number(advisor.UpkeepGold)} gold.";
-                return skillTip is null ? upkeep : $"{skillTip}\n{upkeep}";
+                var corr = OfficeCorruptionBonus(advisor);
+                if (corr != 0)
+                    parts.Add(Loc.T("Office overhead: +{0} Corruption.", corr));
             }
 
-            return skillTip;
+            return parts.Count == 0 ? null : string.Join("\n", parts);
         }
 
         public static string? ExplainOfficeAdvisorPercent(AdvisorDTO advisor, Ppb key)

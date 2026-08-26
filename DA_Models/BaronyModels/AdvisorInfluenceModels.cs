@@ -19,6 +19,7 @@ namespace DA_Models.BaronyModels
         Skills,
         Assistant,
         Other,
+        OfficeOverhead,
     }
 
     /// <summary>Single row in an advisor office influence table.</summary>

@@ -105,7 +105,7 @@ namespace DA_Models.BaronyModels
         public string PersonName { get; set; } = string.Empty;
         public bool IsBaron { get; set; }
         public PpbVector Skills { get; set; } = new();
-        /// <summary>Administrative skills that affect barony parameters (up to 4).</summary>
+        /// <summary>Administrative skills that affect barony parameters (Main: 3, Secondary: 1).</summary>
         public List<Ppb> SignificantSkills { get; set; } = new();
         public PpbVector Additive { get; set; } = new();
         public PpbVector Percent { get; set; } = new();
@@ -114,6 +114,10 @@ namespace DA_Models.BaronyModels
         public string? Description { get; set; }
         /// <summary>Assigned person's bio (from Available Advisors pool; not persisted on Advisor).</summary>
         public string? PersonDescription { get; set; }
+        /// <summary>Optional custom icon path (wwwroot-relative). Core offices fall back to catalog icons.</summary>
+        public string? IconPath { get; set; }
+        /// <summary><see cref="DA_Common.Barony.OfficeLevel"/> for custom offices (Main / Secondary).</summary>
+        public string? OfficeLevel { get; set; }
         public decimal UpkeepGold { get; set; }
     }
 

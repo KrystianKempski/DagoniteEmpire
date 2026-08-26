@@ -277,18 +277,27 @@ namespace DagoniteEmpire.Pages.Barony.Components
                     {
                         new BaronyHelpSection("What you'll find here", new[]
                         {
-                            "A section per office (Chancellor, Marshal, and so on) showing the assigned advisor and their contribution.",
-                            "The pool of available advisors you can assign, and the total court upkeep in the summary.",
+                            "Advisors — each office (Chancellor, Steward, Guard Captain, and custom ones) with its icon, description, assigned person, influence table and upkeep.",
+                            "Court — the pool of available people you can assign to offices, with their main, secondary, domain and combat skills.",
+                            "Total court upkeep (offices + court wages) in the page summary.",
+                        }),
+                        new BaronyHelpSection("Offices", new[]
+                        {
+                            "An office passes only its significant domain skills into the Domain Panel (from the assigned person's Domain Skills).",
+                            "Main office: choose 3 significant skills; minimum upkeep 25 gold; adds +3 Corruption as Office overhead (independent of the holder).",
+                            "Secondary office: choose 1 significant skill; minimum upkeep 5 gold; adds +1 Corruption as Office overhead.",
+                            "Hover the assigned person's name to see their bio; the text under the office title is the office description.",
                         }),
                         new BaronyHelpSection("What you can do", new[]
                         {
-                            "View each advisor's name, description, and main, secondary, domain and combat skills.",
-                            "Edit an advisor's profile — name, description — and assign a person from the available pool to an office, or dismiss them.",
-                            "See how domain skills and upkeep recalculate as you assign or dismiss advisors.",
+                            "View each court person's sheet and each office's influence sources.",
+                            "Add Office — create a Main or Secondary office (title, icon, significant skills, upkeep, required description).",
+                            "Assign a person from Court to an office, or dismiss them.",
+                            "See how domain skills, Corruption overhead and upkeep recalculate as you assign or dismiss advisors.",
                         }),
                         new BaronyHelpSection("Working with the Game Master", new[]
                         {
-                            "Adding or removing offices, managing the pool of available court people, and editing custom skill/influence/upkeep sources are Game Master actions.",
+                            "Managing the Court pool (add/edit/remove people), editing custom influence sources, and removing offices are Game Master actions.",
                             "Ask the Game Master to introduce new advisors or adjust an office's bonuses.",
                             "The Game Master can attach approved NPC/PC characters as courtiers from Panel MG; their Domain Skills follow the character sheet like the baron's.",
                         }),
@@ -297,7 +306,8 @@ namespace DagoniteEmpire.Pages.Barony.Components
                     {
                         new BaronyHelpSection("Game Master controls", new[]
                         {
-                            "Add/remove offices; add/edit/delete available court people; edit custom skill, influence and upkeep sources per office.",
+                            "The baron can also Add Office (Main/Secondary). You can still create offices the same way.",
+                            "Add/edit/delete Court people; edit custom influence sources per office; remove custom offices.",
                             "From Panel MG → Attach courtier: pick a barony and an approved character. The person appears in Court with Domain Skills from base + special skills. Detach by removing them from Court.",
                         }),
                     }),

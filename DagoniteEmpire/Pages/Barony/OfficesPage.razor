@@ -27,16 +27,35 @@ else if (Barony is not null)
         </Summary>
     </BaronyPageHeader>
 
-    @foreach (var advisor in _offices)
-    {
-        <AdvisorOfficeSection Advisor="@advisor"
-                            CustomModifiers="@ModifiersFor(advisor.Id)"
-                            AvailableAdvisors="@_availableAdvisors"
-                            AllAdvisors="@_offices"
-                            CanEdit="@CanEdit"
-                            CanManage="@CanManageAsMg"
-                            OnChanged="ReloadAsync" />
-    }
+    <BaronySection Title="@(L["Advisors"])">
+        <Summary>
+            <span class="projects-summary">
+                <span class="projects-summary__item">@L["{0} offices", _offices.Count]</span>
+            </span>
+        </Summary>
+        <ChildContent>
+            @if (CanEdit)
+            {
+                <MudButton Variant="Variant.Outlined"
+                           Class="mb-3"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="AddOfficeAsync">
+                    @L["Add Office"]
+                </MudButton>
+            }
+
+            @foreach (var advisor in _offices)
+            {
+                <AdvisorOfficeSection Advisor="@advisor"
+                                    CustomModifiers="@ModifiersFor(advisor.Id)"
+                                    AvailableAdvisors="@_availableAdvisors"
+                                    AllAdvisors="@_offices"
+                                    CanEdit="@CanEdit"
+                                    CanManage="@CanManageAsMg"
+                                    OnChanged="ReloadAsync" />
+            }
+        </ChildContent>
+    </BaronySection>
 
     <AvailableAdvisorsSection Advisors="@_availableAdvisors"
                               Offices="@_offices"
@@ -48,15 +67,6 @@ else if (Barony is not null)
                               OnAdd="AddAvailableAdvisorAsync"
                               OnSheetChanged="SaveCourtSheetAsync" />
 
-    @if (CanManageAsMg)
-    {
-        <MudButton Variant="Variant.Outlined"
-                   Class="mt-2"
-                   StartIcon="@Icons.Material.Filled.Add"
-                   OnClick="AddOfficeAsync">
-            @L["Add Office"]
-        </MudButton>
-    }
 }
 
 @code {
@@ -97,7 +107,7 @@ else if (Barony is not null)
 
     private async Task AddOfficeAsync()
     {
-        if (Barony is null || !CanManageAsMg)
+        if (Barony is null || !CanEdit)
             return;
 
         var parameters = new DialogParameters<AddOfficeDialog>
@@ -106,7 +116,7 @@ else if (Barony is not null)
         };
 
         var dialog = await _dialogService.ShowAsync<AddOfficeDialog>(
-            "Add Office",
+            L["Add Office"],
             parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
 
@@ -114,7 +124,9 @@ else if (Barony is not null)
         if (result is null || result.Canceled || result.Data is not AdvisorDTO draft)
             return;
 
-        await _baronyRepo.SaveAdvisor(draft);
+        var saved = await _baronyRepo.SaveAdvisor(draft);
+        BaronyCalc.SyncAdvisorAdditive(saved, null, _availableAdvisors);
+        await _baronyRepo.SaveAdvisor(saved);
         _snackBar.Add(L["Office created."], Severity.Success);
         await ReloadAsync();
     }

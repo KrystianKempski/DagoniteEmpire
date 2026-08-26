@@ -24,13 +24,23 @@ namespace DA_Common.Barony
         };
 
         /// <summary>Icon path (relative to wwwroot) for an office holder.</summary>
-        public static string IconFor(string officeType, int stableId) => officeType switch
+        public static string IconFor(string officeType, int stableId, string? iconPath = null)
         {
-            OfficeType.Baron => Baron,
-            OfficeType.Chancellor => Chancellor,
-            OfficeType.GuardCaptain => GuardCaptain,
-            OfficeType.Steward => Steward,
-            _ => CustomPool[Math.Abs(stableId) % CustomPool.Length],
-        };
+            if (!string.IsNullOrWhiteSpace(iconPath))
+            {
+                var path = iconPath.Trim().TrimStart('/');
+                if (path.Length > 0)
+                    return path;
+            }
+
+            return officeType switch
+            {
+                OfficeType.Baron => Baron,
+                OfficeType.Chancellor => Chancellor,
+                OfficeType.GuardCaptain => GuardCaptain,
+                OfficeType.Steward => Steward,
+                _ => CustomPool[Math.Abs(stableId) % CustomPool.Length],
+            };
+        }
     }
 }

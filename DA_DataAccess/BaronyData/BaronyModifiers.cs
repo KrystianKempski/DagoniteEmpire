@@ -39,6 +39,12 @@ namespace DA_DataAccess.BaronyData
         public string? FormulaText { get; set; }
         public string? Description { get; set; }
 
+        /// <summary>Optional custom icon path (wwwroot-relative).</summary>
+        public string? IconPath { get; set; }
+
+        /// <summary><see cref="DA_Common.Barony.OfficeLevel"/> for custom offices.</summary>
+        public string? OfficeLevel { get; set; }
+
         /// <summary>Koszt utrzymania w złocie na turę.</summary>
         public decimal UpkeepGold { get; set; }
     }

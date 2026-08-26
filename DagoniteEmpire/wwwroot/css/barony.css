@@ -4908,6 +4908,15 @@ a.city-building-name-text--link:hover {
     margin-right: 8px;
 }
 
+.barony-section__title-icon {
+    display: block;
+    width: 1.35rem;
+    height: 1.35rem;
+    object-fit: contain;
+    flex: 0 0 auto;
+    margin-right: 2px;
+}
+
 .barony-section__summary {
     flex: 1 1 auto;
     overflow-x: auto;
@@ -5135,7 +5144,76 @@ a.city-building-name-text--link:hover {
     color: inherit;
 }
 
-/* Barony-themed radio (luxury goods access tiers). */
+/* Add Office dialog — compact icon picker row */
+.add-office-meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 20px;
+    margin: 4px 0 14px;
+}
+
+.add-office-icon-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--barony-ink);
+    font: inherit;
+    flex: 0 0 auto;
+}
+
+.add-office-icon-row__tile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    padding: 5px;
+    border: 1px solid var(--barony-border);
+    border-radius: 4px;
+    background: var(--barony-surface);
+    flex: 0 0 auto;
+}
+
+.add-office-icon-row:hover .add-office-icon-row__tile {
+    border-color: var(--barony-accent, #9c7a33);
+    background: var(--barony-accent-soft);
+}
+
+.add-office-icon-row__tile img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.add-office-icon-row__label {
+    font-size: 0.92rem;
+    color: var(--barony-ink);
+}
+
+.add-office-upkeep {
+    flex: 1 1 12rem;
+    min-width: 10rem;
+    max-width: 18rem;
+}
+
+.add-office-level {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+}
+
+.add-office-level .mud-radio {
+    margin-inline-end: 0;
+}
+
+/* Barony-themed radio (luxury goods access tiers / office level). */
 .barony-radio .mud-icon-root {
     color: rgba(47, 42, 36, 0.35);
 }

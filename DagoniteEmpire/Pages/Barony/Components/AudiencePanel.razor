@@ -258,7 +258,7 @@ else
                     {
                         <img src="@("/" + PetitionerIconSrc)" class="baron-audience__petitioner-icon" alt="" />
                     }
-                    <span class="project-output-badge">@Audience.PetitionerName</span>
+                <span class="project-output-badge">@Audience.PetitionerName</span>
                 }
                 <span class="baron-audience__status baron-audience__status--@StatusCss">@Audience.StatusDisplay</span>
                 @if (Audience.ContinuedFromAudienceId is not null)
@@ -379,7 +379,7 @@ else
                                 }
                                 else
                                 {
-                                    <MudSelectItem Value="@SpeakerModePetitioner">@Audience.PetitionerName (petitioner)</MudSelectItem>
+                                <MudSelectItem Value="@SpeakerModePetitioner">@Audience.PetitionerName (petitioner)</MudSelectItem>
                                     <MudSelectItem Value="@BaronCouncilSession.GameMasterSpeaker">@BaronCouncilSession.GameMasterSpeaker</MudSelectItem>
                                     <MudSelectItem Value="@SpeakerModeOther">@L["Other character"]</MudSelectItem>
                                 }
@@ -455,10 +455,10 @@ else
                                        OnClick="() => OnResolve.InvokeAsync()">@L["Resolve"]</MudButton>
                             @if (!IsCouncil)
                             {
-                                <MudButton Size="Size.Small"
-                                           Variant="Variant.Outlined"
-                                           Class="barony-turn-btn barony-turn-btn--ghost"
-                                           Disabled="Busy"
+                            <MudButton Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       Class="barony-turn-btn barony-turn-btn--ghost"
+                                       Disabled="Busy"
                                            OnClick="() => OnDefer.InvokeAsync()">@L["Defer to next turn"]</MudButton>
                             }
                             <MudButton Size="Size.Small"
@@ -759,9 +759,9 @@ else
                 ? "baron-audience__exchange--question"
                 : IsGameMaster(x)
                     ? "baron-audience__exchange--gm-master"
-                    : x.IsFromPetitioner
-                        ? "baron-audience__exchange--gm"
-                        : "baron-audience__exchange--baron";
+            : x.IsFromPetitioner
+                ? "baron-audience__exchange--gm"
+                : "baron-audience__exchange--baron";
 
     private string SpeakerLabel(BaronAudienceExchangeDTO x)
     {
@@ -819,7 +819,7 @@ else
         if (isGm)
         {
             if (_speakerMode == SpeakerModeOther)
-                speaker = _otherSpeaker.Trim();
+            speaker = _otherSpeaker.Trim();
             else if (string.Equals(_speakerMode, BaronCouncilSession.GameMasterSpeaker, StringComparison.OrdinalIgnoreCase))
                 speaker = BaronCouncilSession.GameMasterSpeaker;
             else if (HasCourtSpeakers)

@@ -1,6 +1,8 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 
-<MudText Typo="Typo.subtitle2" Class="mb-1">Significant skills (up to @AdvisorSignificantSkills.MaxCount)</MudText>
+<MudText Typo="Typo.subtitle2" Class="mb-1">
+    @L["Significant skills ({0}/{1})", _selected.Count, EffectiveMax]
+</MudText>
 <MudText Typo="Typo.caption" Class="mb-2 significant-skills-hint">
     @L["Only selected skills affect barony parameters for this office."]
 </MudText>
@@ -9,7 +11,7 @@
     {
         var key = info.Key;
         var selected = _selected.Contains(key);
-        var disabled = !selected && _selected.Count >= AdvisorSignificantSkills.MaxCount;
+        var disabled = !selected && _selected.Count >= EffectiveMax;
         <MudCheckBox T="bool"
                      Value="@selected"
                      ValueChanged="@(v => Toggle(key, v))"
@@ -17,7 +19,7 @@
                      Dense="true"
                      Class="barony-checkbox"
                      Color="Color.Default">
-            <span class="@(selected ? "significant-skill--active" : "")">@info.NamePl</span>
+            <span class="@(selected ? "significant-skill--active" : "")">@info.Name</span>
         </MudCheckBox>
     }
 </div>
@@ -25,17 +27,29 @@
 @code {
     [Parameter] public List<Ppb> Selected { get; set; } = new();
     [Parameter] public EventCallback<List<Ppb>> SelectedChanged { get; set; }
+    /// <summary>Max selectable skills for this office (Main 3, Secondary 1).</summary>
+    [Parameter] public int MaxCount { get; set; } = AdvisorSignificantSkills.MaxCount;
 
     private HashSet<Ppb> _selected = new();
 
+    private int EffectiveMax => Math.Clamp(MaxCount, 1, AdvisorSignificantSkills.MaxCount);
+
     protected override void OnParametersSet()
-        => _selected = Selected.ToHashSet();
+    {
+        _selected = Selected.ToHashSet();
+        if (_selected.Count <= EffectiveMax)
+            return;
+
+        _selected = _selected.OrderBy(p => (int)p).Take(EffectiveMax).ToHashSet();
+        Selected = _selected.OrderBy(p => (int)p).ToList();
+        _ = SelectedChanged.InvokeAsync(Selected);
+    }
 
     private async Task Toggle(Ppb key, bool isChecked)
     {
         if (isChecked)
         {
-            if (_selected.Count >= AdvisorSignificantSkills.MaxCount)
+            if (_selected.Count >= EffectiveMax)
                 return;
             _selected.Add(key);
         }

@@ -1,7 +1,8 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @inject IDialogService _dialogService
 
-<BaronySection Title="@BaronyCalc.OfficeSectionTitle(Advisor)">
+<BaronySection Title="@BaronyCalc.OfficeSectionTitle(Advisor)"
+               TitleIconUrl="@OfficeIconPath">
     <Summary>
         @if (_rows.Count > 0)
         {
@@ -16,9 +17,19 @@
 
         <div class="advisor-office-header">
             <div class="advisor-office-header__row">
-                <MudText Typo="Typo.subtitle1" Class="advisor-office-name">
-                    @(string.IsNullOrWhiteSpace(Advisor.PersonName) ? "Unassigned" : Advisor.PersonName)
-                </MudText>
+                @{
+                    var personName = string.IsNullOrWhiteSpace(Advisor.PersonName) ? L["Unassigned"].Value : Advisor.PersonName;
+                }
+                @if (!string.IsNullOrWhiteSpace(PersonDescription))
+                {
+                    <BaronyTooltip Title="@personName" Text="@PersonDescription">
+                        <MudText Typo="Typo.subtitle1" Class="advisor-office-name">@personName</MudText>
+                    </BaronyTooltip>
+                }
+                else
+                {
+                    <MudText Typo="Typo.subtitle1" Class="advisor-office-name">@personName</MudText>
+                }
                 @if (CanEdit)
                 {
                     <BaronyTooltip Text="@(L["Edit advisor profile"])">
@@ -28,10 +39,6 @@
                     </BaronyTooltip>
                 }
             </div>
-            @if (!string.IsNullOrWhiteSpace(PersonDescription))
-            {
-                <MudText Typo="Typo.body2" Class="advisor-person-description">@PersonDescription</MudText>
-            }
         </div>
 
         <div style="overflow-x:auto;">
@@ -49,6 +56,10 @@
                                         {
                                             AdvisorInfluenceSystemKind.Skills => CourtPpbFormulas.FormulaLabel(key),
                                             AdvisorInfluenceSystemKind.Assistant => BaronyCalc.ExplainAssistantInfluence(key),
+                                            AdvisorInfluenceSystemKind.OfficeOverhead =>
+                                                key == Ppb.Corruption
+                                                    ? L["Office overhead: +{0} Corruption.", (int)row.Values[Ppb.Corruption]].Value
+                                                    : null,
                                             _ => null,
                                         })" />
             }
@@ -104,6 +115,8 @@
         ?? (Advisor.AvailableAdvisorId is int aid
             ? AvailableAdvisors.FirstOrDefault(a => a.Id == aid)?.Description
             : null);
+    private string OfficeIconPath =>
+        AdvisorIconCatalog.IconFor(Advisor.OfficeType, Advisor.Id, Advisor.IconPath);
 
     protected override void OnParametersSet() => RebuildRows();
 
@@ -259,6 +272,8 @@
         PersonName = Advisor.PersonName,
         Description = Advisor.Description,
         PersonDescription = Advisor.PersonDescription,
+        IconPath = Advisor.IconPath,
+        OfficeLevel = Advisor.OfficeLevel,
         UpkeepGold = Advisor.UpkeepGold,
         IsBaron = Advisor.IsBaron,
         Skills = Advisor.Skills.Clone(),

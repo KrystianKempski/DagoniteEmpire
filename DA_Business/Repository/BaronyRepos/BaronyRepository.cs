@@ -5326,7 +5326,8 @@ namespace DA_Business.Repository.BaronyRepos
             PersonName = e.PersonName, IsBaron = e.IsBaron, AvailableAdvisorId = e.AvailableAdvisorId,
             Skills = De(e.SkillsJson), SignificantSkills = AdvisorSignificantSkills.Deserialize(e.SignificantSkillsJson),
             Additive = De(e.AdditiveJson),
-            Percent = De(e.PercentJson), FormulaText = e.FormulaText, Description = e.Description, UpkeepGold = e.UpkeepGold,
+            Percent = De(e.PercentJson), FormulaText = e.FormulaText, Description = e.Description,
+            IconPath = e.IconPath, OfficeLevel = e.OfficeLevel, UpkeepGold = e.UpkeepGold,
         };
 
         private static Advisor ToEntity(AdvisorDTO d) { var e = new Advisor(); ApplyAdvisor(e, d); e.Id = d.Id; return e; }
@@ -5342,7 +5343,13 @@ namespace DA_Business.Repository.BaronyRepos
             e.FormulaText = d.FormulaText;
             // Never persist person bios as office Description for core offices.
             e.Description = OfficeDescriptions.For(d.OfficeType) ?? d.Description;
-            e.UpkeepGold = d.UpkeepGold;
+            e.IconPath = string.IsNullOrWhiteSpace(d.IconPath) ? null : d.IconPath.Trim().TrimStart('/');
+            e.OfficeLevel = OfficeLevel.Normalize(d.OfficeLevel) switch
+            {
+                "" => null,
+                var level => level,
+            };
+            e.UpkeepGold = OfficeLevel.ClampUpkeep(d.OfficeLevel, d.UpkeepGold);
         }
 
         private static AvailableAdvisorDTO ToDTO(AvailableAdvisor e)

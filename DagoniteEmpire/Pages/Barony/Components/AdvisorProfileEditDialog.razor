@@ -41,7 +41,7 @@
                                  Label="@(L["Upkeep cost (gold / turn)"])"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
-                                 Min="0"
+                                 Min="@_minUpkeep"
                                  Class="baron-influence-field mt-2" />
             }
         </div>
@@ -64,6 +64,7 @@
 
     private string _title = string.Empty;
     private decimal _upkeepGold;
+    private decimal _minUpkeep;
     private int _selectedAvailableId;
 
     private IEnumerable<AvailableAdvisorDTO> SelectableAvailableAdvisors =>
@@ -80,7 +81,8 @@
     {
         _selectedAvailableId = Advisor.AvailableAdvisorId ?? 0;
         _title = Advisor.Title;
-        _upkeepGold = Advisor.UpkeepGold;
+        _minUpkeep = OfficeLevel.MinUpkeepGold(Advisor.OfficeLevel);
+        _upkeepGold = Math.Max(_minUpkeep, Advisor.UpkeepGold);
     }
 
     private void Cancel() => MudDialog.Cancel();
@@ -94,7 +96,7 @@
         }
 
         if (AllowUpkeepEdit)
-            Advisor.UpkeepGold = _upkeepGold;
+            Advisor.UpkeepGold = OfficeLevel.ClampUpkeep(Advisor.OfficeLevel, _upkeepGold);
         if (AllowTitleEdit)
             Advisor.Title = _title.Trim();
 

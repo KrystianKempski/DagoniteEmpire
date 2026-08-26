@@ -101,7 +101,6 @@
 .audience-hall__satellites {
     display: flex;
     flex-direction: column;
-    align-items: center;
     justify-content: center;
     gap: .7rem;
     flex: 1 1 0;
@@ -116,14 +115,27 @@
     align-items: flex-start;
 }
 
+/* Fixed card width + fixed icon slot: label length must not shift the icon. */
 .audience-hall__advisor {
+    --advisor-card-width: 110px;
+    --advisor-card-height: 80px;
+    --advisor-icon-size: 3rem;
     position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: .3rem;
-    max-width: 6.5rem;
-    padding: .2rem .3rem;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-rows: var(--advisor-icon-size) minmax(0, 1fr);
+    justify-items: center;
+    align-content: start;
+    gap: .2rem;
+    width: var(--advisor-card-width);
+    min-width: var(--advisor-card-width);
+    max-width: var(--advisor-card-width);
+    height: var(--advisor-card-height);
+    min-height: var(--advisor-card-height);
+    max-height: var(--advisor-card-height);
+    flex: 0 0 var(--advisor-card-width);
+    padding: .2rem .35rem;
+    overflow: hidden;
     background: transparent;
     border: none;
     cursor: pointer;
@@ -142,17 +154,34 @@
     transform: scale(.96);
 }
 
-.audience-hall__advisor img {
-    width: 3rem;
-    height: 3rem;
+.audience-hall__advisor-icon {
+    display: grid;
+    place-items: center;
+    width: var(--advisor-icon-size);
+    height: var(--advisor-icon-size);
+    min-width: var(--advisor-icon-size);
+    min-height: var(--advisor-icon-size);
+}
+
+.audience-hall__advisor-icon img,
+.audience-hall__advisor-icon .mud-icon-root {
+    display: block;
+    width: var(--advisor-icon-size) !important;
+    height: var(--advisor-icon-size) !important;
     object-fit: contain;
 }
 
-.audience-hall__advisor span {
+.audience-hall__advisor-label {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    padding: 0 .1rem;
+    text-align: center;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 100%;
 }
 
 .audience-hall__advisor.is-on,
@@ -329,12 +358,9 @@
     }
 
     .audience-hall__advisor {
-        max-width: 4.5rem;
+        --advisor-card-width: 110px;
+        --advisor-card-height: 80px;
+        --advisor-icon-size: 2.35rem;
         font-size: .78rem;
-    }
-
-    .audience-hall__advisor img {
-        width: 2.35rem;
-        height: 2.35rem;
     }
 }

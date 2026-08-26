@@ -1,5 +1,6 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @inject ISnackbar _snackBar
+@inject IDialogService _dialogService
 
 <MudDialog Class="baron-influence-dialog"
            ContentClass="baron-influence-dialog-content"
@@ -12,25 +13,60 @@
                           Margin="Margin.Dense"
                           Class="baron-influence-field"
                           Required="true" />
-            <MudTextField @bind-Value="_personName"
-                          Label="@(L["Advisor name"])"
-                          Variant="Variant.Outlined"
-                          Margin="Margin.Dense"
-                          Class="baron-influence-field" />
+
             <MudTextField @bind-Value="_description"
                           Label="@(L["Office description"])"
                           Variant="Variant.Outlined"
                           Margin="Margin.Dense"
                           Lines="3"
-                          Class="baron-influence-field" />
-            <MudNumericField T="decimal"
-                             @bind-Value="_upkeepGold"
-                             Label="@(L["Upkeep cost (gold / turn)"])"
-                             Variant="Variant.Outlined"
-                             Margin="Margin.Dense"
-                             Min="0"
-                             Class="baron-influence-field" />
-            <SignificantSkillsPicker @bind-Selected="_significantSkills" />
+                          Required="true"
+                          Class="baron-influence-field mt-2" />
+
+            <MudRadioGroup T="string"
+                           Value="_officeLevel"
+                           ValueChanged="OnLevelChanged"
+                           Class="add-office-level mt-2 mb-1">
+                <MudRadio T="string"
+                          Value="@OfficeLevel.Main"
+                          Color="Color.Default"
+                          Dense="true"
+                          Class="barony-radio">
+                    @L["Main office"]
+                </MudRadio>
+                <MudRadio T="string"
+                          Value="@OfficeLevel.Secondary"
+                          Color="Color.Default"
+                          Dense="true"
+                          Class="barony-radio">
+                    @L["Secondary office"]
+                </MudRadio>
+            </MudRadioGroup>
+
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                @LevelHint
+            </MudText>
+
+            <div class="add-office-meta-row">
+                <button type="button"
+                        class="add-office-icon-row"
+                        title="@L["Choose icon"]"
+                        @onclick="PickIconAsync">
+                    <span class="add-office-icon-row__tile">
+                        <img src="/@_iconPath" alt="" />
+                    </span>
+                    <span class="add-office-icon-row__label">@L["Office icon"]</span>
+                </button>
+
+                <MudNumericField T="decimal"
+                                 @bind-Value="_upkeepGold"
+                                 Label="@(L["Upkeep cost (gold / turn)"])"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Min="@MinUpkeep"
+                                 Class="baron-influence-field add-office-upkeep" />
+            </div>
+
+            <SignificantSkillsPicker @bind-Selected="_significantSkills" MaxCount="@RequiredSkillCount" />
         </div>
     </DialogContent>
     <DialogActions>
@@ -45,12 +81,49 @@
     [Parameter] public int BaronyId { get; set; }
 
     private string _title = string.Empty;
-    private string _personName = "Unassigned";
     private string? _description;
-    private decimal _upkeepGold;
+    private string _iconPath = PetitionerIconCatalog.DefaultPath;
+    private string _officeLevel = OfficeLevel.Main;
+    private decimal _upkeepGold = OfficeLevel.MinUpkeepGold(OfficeLevel.Main);
     private List<Ppb> _significantSkills = new();
 
+    private int RequiredSkillCount => OfficeLevel.SignificantSkillCount(_officeLevel);
+    private decimal MinUpkeep => OfficeLevel.MinUpkeepGold(_officeLevel);
+
+    private string LevelHint => _officeLevel == OfficeLevel.Secondary
+        ? L["Secondary office: affects 1 domain parameter, minimum {0} gold upkeep, +{1} Corruption.",
+            OfficeLevel.MinUpkeepGold(OfficeLevel.Secondary),
+            OfficeLevel.CorruptionBonus(OfficeLevel.Secondary)]
+        : L["Main office: affects 3 domain parameters, minimum {0} gold upkeep, +{1} Corruption.",
+            OfficeLevel.MinUpkeepGold(OfficeLevel.Main),
+            OfficeLevel.CorruptionBonus(OfficeLevel.Main)];
+
+    private void OnLevelChanged(string level)
+    {
+        var previousMin = MinUpkeep;
+        _officeLevel = OfficeLevel.Normalize(level) is { Length: > 0 } normalized
+            ? normalized
+            : OfficeLevel.Main;
+        var min = MinUpkeep;
+        if (_upkeepGold < min || _upkeepGold == previousMin)
+            _upkeepGold = min;
+        if (_significantSkills.Count > RequiredSkillCount)
+            _significantSkills = _significantSkills.Take(RequiredSkillCount).ToList();
+    }
+
     private void Cancel() => MudDialog.Cancel();
+
+    private async Task PickIconAsync()
+    {
+        var dialog = await _dialogService.ShowAsync<PetitionerIconPickerDialog>(
+            L["Choose icon"],
+            new DialogParameters<PetitionerIconPickerDialog> { { x => x.SelectedPath, _iconPath } },
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseOnEscapeKey = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not string path)
+            return;
+        _iconPath = PetitionerIconCatalog.PathFor(path);
+    }
 
     private void Save()
     {
@@ -60,9 +133,31 @@
             return;
         }
 
-        if (_significantSkills.Count == 0)
+        if (string.IsNullOrWhiteSpace(_description))
         {
-            _snackBar.Add(L["Select at least one significant skill."], Severity.Warning);
+            _snackBar.Add(L["Office description is required."], Severity.Warning);
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_iconPath))
+        {
+            _snackBar.Add(L["Choose an office icon."], Severity.Warning);
+            return;
+        }
+
+        var level = OfficeLevel.Normalize(_officeLevel);
+        if (string.IsNullOrEmpty(level))
+        {
+            _snackBar.Add(L["Select office level."], Severity.Warning);
+            return;
+        }
+
+        var required = OfficeLevel.SignificantSkillCount(level);
+        if (_significantSkills.Count != required)
+        {
+            _snackBar.Add(
+                L["Select exactly {0} significant skill(s) for this office.", required],
+                Severity.Warning);
             return;
         }
 
@@ -70,10 +165,12 @@
         {
             BaronyId = BaronyId,
             OfficeType = OfficeType.Custom,
+            OfficeLevel = level,
             Title = _title.Trim(),
-            PersonName = string.IsNullOrWhiteSpace(_personName) ? "Unassigned" : _personName.Trim(),
-            Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim(),
-            UpkeepGold = _upkeepGold,
+            PersonName = string.Empty,
+            Description = _description.Trim(),
+            IconPath = PetitionerIconCatalog.PathFor(_iconPath),
+            UpkeepGold = OfficeLevel.ClampUpkeep(level, _upkeepGold),
             SignificantSkills = _significantSkills.ToList(),
         }));
     }

@@ -166,6 +166,8 @@ namespace DA_Business.Repository.BaronyRepos
                     PercentJson = s.PercentJson,
                     FormulaText = s.FormulaText,
                     Description = s.Description,
+                    IconPath = s.IconPath,
+                    OfficeLevel = s.OfficeLevel,
                     UpkeepGold = s.UpkeepGold,
                 }))
                 .ToList();
@@ -695,6 +697,8 @@ namespace DA_Business.Repository.BaronyRepos
             public string PercentJson { get; set; } = "{}";
             public string? FormulaText { get; set; }
             public string? Description { get; set; }
+            public string? IconPath { get; set; }
+            public string? OfficeLevel { get; set; }
             public decimal UpkeepGold { get; set; }
         }
 

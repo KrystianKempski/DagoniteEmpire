@@ -4,5 +4,6 @@ namespace DA_Common.Barony
     public readonly struct AdvisorInfluenceSource
     {
         public const string FromSkills = "From Skills";
+        public const string OfficeOverhead = "Office overhead";
     }
 }

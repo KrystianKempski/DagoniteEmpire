@@ -16,6 +16,51 @@ namespace DA_Common.Barony
         public static readonly string[] All = { Baron, Chancellor, GuardCaptain, Steward, Custom };
     }
 
+    /// <summary>Custom office weight: Main (3 skills) or Secondary (1 skill).</summary>
+    public readonly struct OfficeLevel
+    {
+        public const string Main = "Main";
+        public const string Secondary = "Secondary";
+
+        public static readonly string[] All = { Main, Secondary };
+
+        public static string Normalize(string? level)
+        {
+            if (string.Equals(level, Secondary, StringComparison.OrdinalIgnoreCase))
+                return Secondary;
+            if (string.Equals(level, Main, StringComparison.OrdinalIgnoreCase))
+                return Main;
+            return string.Empty;
+        }
+
+        public static int SignificantSkillCount(string? level) =>
+            Normalize(level) switch
+            {
+                Secondary => 1,
+                Main => 3,
+                _ => AdvisorSignificantSkills.MaxCount,
+            };
+
+        public static decimal MinUpkeepGold(string? level) =>
+            Normalize(level) switch
+            {
+                Secondary => 5m,
+                Main => 25m,
+                _ => 0m,
+            };
+
+        public static int CorruptionBonus(string? level) =>
+            Normalize(level) switch
+            {
+                Secondary => 1,
+                Main => 3,
+                _ => 0,
+            };
+
+        public static decimal ClampUpkeep(string? level, decimal upkeep) =>
+            Math.Max(MinUpkeepGold(level), Math.Max(0m, upkeep));
+    }
+
     /// <summary>Court person's assigned function (Dwór — Funkcja).</summary>
     public readonly struct CourtDutyKind
     {
