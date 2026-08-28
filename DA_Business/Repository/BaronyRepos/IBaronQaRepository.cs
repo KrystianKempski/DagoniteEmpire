@@ -9,5 +9,7 @@ namespace DA_Business.Repository.BaronyRepos
         Task<int> DeleteThread(int threadId);
         Task<BaronQaMessageDTO> SaveMessage(BaronQaMessageDTO dto);
         Task MarkThreadSeen(int threadId, bool asGm);
+        Task<BaronQaInboxBadgeDTO> GetInboxBadgeForBaron(int baronyId);
+        Task<BaronQaInboxBadgeDTO> GetInboxBadgeForGm(int baronyId);
     }
 }

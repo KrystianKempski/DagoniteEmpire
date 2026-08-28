@@ -50,6 +50,8 @@ namespace DagoniteEmpire.Pages.Barony
                     return;
                 }
 
+                CanManageAsMg = isAdminOrMg;
+
                 var characterId = UserInfo?.SelectedCharacter?.Id ?? 0;
                 if (characterId > 0 && characterId != -1)
                     Barony = await _baronyRepo.GetByCharacterId(characterId);
@@ -92,7 +94,6 @@ namespace DagoniteEmpire.Pages.Barony
                 }
 
                 CanEdit = isAdminOrMg || isBaron;
-                CanManageAsMg = isAdminOrMg;
             }
             catch (System.Exception ex)
             {

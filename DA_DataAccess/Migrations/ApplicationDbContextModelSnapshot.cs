@@ -475,6 +475,143 @@ namespace DA_DataAccess.Migrations
                     b.ToTable("BaronyHallAdventures");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.BaronyData.BaronyHallEvent", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime?>("AcknowledgedAtUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<int?>("AudienceId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("BaronyId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("ChapterId")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("ConsequenceEndTurn")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ConsequenceAdditiveJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ConsequencePercentJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("IconPath")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("PublishAtTurn")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ResponseBody")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TriggerKind")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("TurnNumber")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BaronyId");
+
+                    b.HasIndex("BaronyId", "Status");
+
+                    b.ToTable("BaronyHallEvents");
+                });
+
+            modelBuilder.Entity("DA_DataAccess.BaronyData.BaronyHallEventTemplate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BaronyId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("ConsequenceEndTurn")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ConsequenceAdditiveJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ConsequencePercentJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("IconPath")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("TriggerKind")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BaronyId");
+
+                    b.ToTable("BaronyHallEventTemplates");
+                });
+
             modelBuilder.Entity("DA_DataAccess.BaronyData.BaronQaThread", b =>
                 {
                     b.Property<int>("Id")

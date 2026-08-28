@@ -1047,6 +1047,10 @@ namespace DA_Business.Repository.BaronyRepos
                 // 8c) Council: archive any still-open session for the ending turn
                 await AdvanceCouncilSessionsAsync(ctx, baronyId);
 
+                // 8d) Scheduled hall events → pending for the new turn
+                report.ScheduledHallEventsPublished = await PublishScheduledHallEventsAsync(
+                    ctx, baronyId, nextCal.TurnNumber);
+
                 // 9) Depleted units regenerate troops toward full strength
                 report.UnitTroopRegenerations = await RegenerateDepletedUnitsAsync(ctx, baronyId);
 
@@ -1812,6 +1816,9 @@ namespace DA_Business.Repository.BaronyRepos
 
             if (r.UnitActionResults.Count > 0)
                 lines.Add("Unit actions: " + string.Join("; ", r.UnitActionResults) + ".");
+
+            if (r.ScheduledHallEventsPublished > 0)
+                lines.Add($"Hall events published: {r.ScheduledHallEventsPublished}.");
 
             if (r.LoyaltyTestRan)
             {
@@ -3622,6 +3629,417 @@ namespace DA_Business.Repository.BaronyRepos
             }
             catch (System.Exception ex) { throw Err(ex, nameof(DeleteHallAdventure)); }
         }
+
+        // ---------------- Audience Hall narrative events ----------------
+        public async Task<List<BaronyHallEventDTO>> GetHallEvents(
+            int baronyId,
+            bool includeArchived = false,
+            bool includeScheduled = false,
+            bool includeConverted = false)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var q = ctx.BaronyHallEvents.AsNoTracking().Where(e => e.BaronyId == baronyId);
+                if (!includeArchived)
+                    q = q.Where(e => e.Status != BaronyHallEventStatus.Archived);
+                if (!includeScheduled)
+                    q = q.Where(e => e.Status != BaronyHallEventStatus.Scheduled);
+                if (!includeConverted)
+                    q = q.Where(e => e.Status != BaronyHallEventStatus.Converted);
+
+                var rows = await q
+                    .OrderByDescending(e => e.Status == BaronyHallEventStatus.Pending)
+                    .ThenByDescending(e => e.Status == BaronyHallEventStatus.Scheduled)
+                    .ThenBy(e => e.SortOrder)
+                    .ThenBy(e => e.Id)
+                    .ToListAsync();
+                return rows.Select(ToHallEventDto).ToList();
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetHallEvents)); }
+        }
+
+        public async Task<BaronyHallEventDTO> SaveHallEvent(BaronyHallEventDTO dto, bool scheduleForNextTurn = false)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var now = DateTime.UtcNow;
+                BaronyHallEvent e;
+                if (dto.Id > 0)
+                {
+                    e = await ctx.BaronyHallEvents.FirstOrDefaultAsync(x => x.Id == dto.Id)
+                        ?? throw new InvalidOperationException("Hall event not found.");
+                    if (!BaronyHallEventStatus.CanMgEdit(e.Status))
+                        throw new InvalidOperationException("Only scheduled or pending hall events can be edited.");
+
+                    ApplyHallEventFields(e, dto);
+                    e.UpdatedAtUtc = now;
+                }
+                else
+                {
+                    var barony = await ctx.Baronies.AsNoTracking()
+                        .Where(b => b.Id == dto.BaronyId)
+                        .Select(b => new { b.TurnNumber })
+                        .FirstOrDefaultAsync()
+                        ?? throw new InvalidOperationException("Barony not found.");
+
+                    var maxSort = await ctx.BaronyHallEvents
+                        .Where(x => x.BaronyId == dto.BaronyId)
+                        .Select(x => (int?)x.SortOrder)
+                        .MaxAsync() ?? 0;
+
+                    var publishTurn = scheduleForNextTurn ? barony.TurnNumber + 1 : barony.TurnNumber;
+                    e = new BaronyHallEvent
+                    {
+                        BaronyId = dto.BaronyId,
+                        Status = scheduleForNextTurn
+                            ? BaronyHallEventStatus.Scheduled
+                            : BaronyHallEventStatus.Pending,
+                        TurnNumber = publishTurn,
+                        PublishAtTurn = scheduleForNextTurn ? publishTurn : null,
+                        TriggerKind = scheduleForNextTurn
+                            ? BaronyHallEventTriggerKind.TurnStart
+                            : BaronyHallEventTriggerKind.Normalize(dto.TriggerKind),
+                        SortOrder = maxSort + 1,
+                        CreatedAtUtc = now,
+                        UpdatedAtUtc = now,
+                    };
+                    ApplyHallEventFields(e, dto);
+                    if (!scheduleForNextTurn)
+                        e.TriggerKind = BaronyHallEventTriggerKind.Normalize(dto.TriggerKind);
+                    ctx.BaronyHallEvents.Add(e);
+                }
+
+                await ctx.SaveChangesAsync();
+                return ToHallEventDto(e);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(SaveHallEvent)); }
+        }
+
+        public async Task<HallEventAcknowledgeResultDTO> AcknowledgeHallEvent(int eventId, string responseBody)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.BaronyHallEvents.FirstOrDefaultAsync(x => x.Id == eventId)
+                    ?? throw new InvalidOperationException("Hall event not found.");
+                if (!BaronyHallEventStatus.IsPending(e.Status))
+                    throw new InvalidOperationException("This hall event no longer requires a response.");
+
+                var body = (responseBody ?? "").Trim();
+                if (string.IsNullOrWhiteSpace(body))
+                    throw new InvalidOperationException("A response is required.");
+
+                var barony = await ctx.Baronies.AsNoTracking()
+                    .Where(b => b.Id == e.BaronyId)
+                    .Select(b => new { b.TurnNumber, b.CharacterId })
+                    .FirstOrDefaultAsync()
+                    ?? throw new InvalidOperationException("Barony not found.");
+
+                string? baronName = null;
+                if (barony.CharacterId > 0)
+                {
+                    baronName = await ctx.Characters.AsNoTracking()
+                        .Where(c => c.Id == barony.CharacterId)
+                        .Select(c => c.NPCName)
+                        .FirstOrDefaultAsync();
+                }
+
+                var now = DateTime.UtcNow;
+                var turnNumber = e.TurnNumber > 0 ? e.TurnNumber : barony.TurnNumber;
+                var openingSpeaker = string.IsNullOrWhiteSpace(e.Title) ? "Hall event" : e.Title.Trim();
+                var baronSpeaker = BaronHallEventAudience.FormatBaronSpeaker(baronName);
+
+                var audience = new BaronAudience
+                {
+                    BaronyId = e.BaronyId,
+                    Title = e.Title,
+                    PetitionerName = BaronHallEventAudience.PetitionerLabel,
+                    PetitionerIcon = NormalizeHallEventIconPath(e.IconPath),
+                    Kind = BaronAudienceKind.Audience,
+                    Status = BaronAudienceStatus.InProgress,
+                    TurnNumber = turnNumber,
+                    CreatedAtUtc = now,
+                    UpdatedAtUtc = now,
+                };
+                ctx.BaronAudiences.Add(audience);
+                await ctx.SaveChangesAsync();
+
+                ctx.BaronAudienceExchanges.AddRange(
+                    new BaronAudienceExchange
+                    {
+                        AudienceId = audience.Id,
+                        Body = e.Body,
+                        IsFromPetitioner = true,
+                        SpeakerName = openingSpeaker,
+                        TurnNumber = turnNumber,
+                        SortOrder = 1,
+                        CreatedAtUtc = now,
+                    },
+                    new BaronAudienceExchange
+                    {
+                        AudienceId = audience.Id,
+                        Body = body,
+                        IsFromPetitioner = false,
+                        SpeakerName = baronSpeaker,
+                        TurnNumber = turnNumber,
+                        SortOrder = 2,
+                        CreatedAtUtc = now,
+                    });
+
+                e.ResponseBody = body;
+                e.Status = BaronyHallEventStatus.Converted;
+                e.AudienceId = audience.Id;
+                e.AcknowledgedAtUtc = now;
+                e.UpdatedAtUtc = now;
+
+                var additive = De(e.ConsequenceAdditiveJson);
+                var percent = De(e.ConsequencePercentJson);
+                if (!additive.IsEmpty || !percent.IsEmpty)
+                {
+                    ctx.BaronyEvents.Add(new BaronyEvent
+                    {
+                        BaronyId = e.BaronyId,
+                        Name = e.Title,
+                        StartTurn = barony.TurnNumber,
+                        EndTurn = e.ConsequenceEndTurn,
+                        AdditiveJson = e.ConsequenceAdditiveJson,
+                        PercentJson = e.ConsequencePercentJson,
+                        Description = $"Hall event response ({e.Title}).",
+                    });
+                }
+
+                await ctx.SaveChangesAsync();
+
+                var audienceDto = await LoadAudienceDtoAsync(ctx, audience.Id);
+                return new HallEventAcknowledgeResultDTO
+                {
+                    HallEvent = ToHallEventDto(e),
+                    Audience = audienceDto,
+                };
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(AcknowledgeHallEvent)); }
+        }
+
+        public async Task<BaronyHallEventDTO> ArchiveHallEvent(int eventId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.BaronyHallEvents.FirstOrDefaultAsync(x => x.Id == eventId)
+                    ?? throw new InvalidOperationException("Hall event not found.");
+                e.Status = BaronyHallEventStatus.Archived;
+                e.UpdatedAtUtc = DateTime.UtcNow;
+                await ctx.SaveChangesAsync();
+                return ToHallEventDto(e);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(ArchiveHallEvent)); }
+        }
+
+        public async Task<BaronyHallEventDTO> LinkHallEventChapter(int eventId, int chapterId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.BaronyHallEvents.FirstOrDefaultAsync(x => x.Id == eventId)
+                    ?? throw new InvalidOperationException("Hall event not found.");
+                e.ChapterId = chapterId > 0 ? chapterId : null;
+                e.UpdatedAtUtc = DateTime.UtcNow;
+                await ctx.SaveChangesAsync();
+                return ToHallEventDto(e);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(LinkHallEventChapter)); }
+        }
+
+        public async Task<int> DeleteHallEvent(int id)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.BaronyHallEvents.FirstOrDefaultAsync(x => x.Id == id);
+                if (e is null)
+                    return 0;
+                ctx.BaronyHallEvents.Remove(e);
+                await ctx.SaveChangesAsync();
+                return 1;
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(DeleteHallEvent)); }
+        }
+
+        public async Task<BaronyHallEventInboxBadgeDTO> GetHallEventInboxBadge(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var pending = await ctx.BaronyHallEvents.AsNoTracking()
+                    .Where(e => e.BaronyId == baronyId && e.Status == BaronyHallEventStatus.Pending)
+                    .OrderBy(e => e.SortOrder)
+                    .ThenBy(e => e.Id)
+                    .Select(e => e.Id)
+                    .ToListAsync();
+                return new BaronyHallEventInboxBadgeDTO
+                {
+                    PendingCount = pending.Count,
+                    LatestPendingEventId = pending.FirstOrDefault() is int id && id > 0 ? id : null,
+                };
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetHallEventInboxBadge)); }
+        }
+
+        public async Task<List<BaronyHallEventTemplateDTO>> GetHallEventTemplates(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var rows = await ctx.BaronyHallEventTemplates.AsNoTracking()
+                    .Where(t => t.BaronyId == baronyId)
+                    .OrderBy(t => t.SortOrder)
+                    .ThenBy(t => t.Name)
+                    .ThenBy(t => t.Id)
+                    .ToListAsync();
+                return rows.Select(ToHallEventTemplateDto).ToList();
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetHallEventTemplates)); }
+        }
+
+        public async Task<BaronyHallEventTemplateDTO> SaveHallEventTemplate(BaronyHallEventTemplateDTO dto)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var now = DateTime.UtcNow;
+                BaronyHallEventTemplate t;
+                if (dto.Id > 0)
+                {
+                    t = await ctx.BaronyHallEventTemplates.FirstOrDefaultAsync(x => x.Id == dto.Id)
+                        ?? throw new InvalidOperationException("Hall event template not found.");
+                }
+                else
+                {
+                    var maxSort = await ctx.BaronyHallEventTemplates
+                        .Where(x => x.BaronyId == dto.BaronyId)
+                        .Select(x => (int?)x.SortOrder)
+                        .MaxAsync() ?? 0;
+                    t = new BaronyHallEventTemplate
+                    {
+                        BaronyId = dto.BaronyId,
+                        SortOrder = maxSort + 1,
+                        CreatedAtUtc = now,
+                    };
+                    ctx.BaronyHallEventTemplates.Add(t);
+                }
+
+                t.Name = (dto.Name ?? "").Trim();
+                t.Title = (dto.Title ?? "").Trim();
+                t.Body = (dto.Body ?? "").Trim();
+                t.TriggerKind = BaronyHallEventTriggerKind.Normalize(dto.TriggerKind);
+                t.IconPath = NormalizeHallEventIconPath(dto.IconPath);
+                t.ConsequenceAdditiveJson = Ser(dto.ConsequenceAdditive ?? new PpbVector());
+                t.ConsequencePercentJson = Ser(dto.ConsequencePercent ?? new PpbVector());
+                t.ConsequenceEndTurn = dto.ConsequenceEndTurn;
+                t.UpdatedAtUtc = now;
+                await ctx.SaveChangesAsync();
+                return ToHallEventTemplateDto(t);
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(SaveHallEventTemplate)); }
+        }
+
+        public async Task<int> DeleteHallEventTemplate(int id)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var t = await ctx.BaronyHallEventTemplates.FirstOrDefaultAsync(x => x.Id == id);
+                if (t is null)
+                    return 0;
+                ctx.BaronyHallEventTemplates.Remove(t);
+                await ctx.SaveChangesAsync();
+                return 1;
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(DeleteHallEventTemplate)); }
+        }
+
+        private static async Task<int> PublishScheduledHallEventsAsync(
+            ApplicationDbContext ctx,
+            int baronyId,
+            int newTurnNumber)
+        {
+            var scheduled = await ctx.BaronyHallEvents
+                .Where(e => e.BaronyId == baronyId
+                            && e.Status == BaronyHallEventStatus.Scheduled
+                            && e.PublishAtTurn == newTurnNumber)
+                .ToListAsync();
+            if (scheduled.Count == 0)
+                return 0;
+
+            var now = DateTime.UtcNow;
+            foreach (var e in scheduled)
+            {
+                e.Status = BaronyHallEventStatus.Pending;
+                e.TurnNumber = newTurnNumber;
+                e.UpdatedAtUtc = now;
+            }
+
+            return scheduled.Count;
+        }
+
+        private static void ApplyHallEventFields(BaronyHallEvent e, BaronyHallEventDTO dto)
+        {
+            e.Title = (dto.Title ?? "").Trim();
+            e.Body = (dto.Body ?? "").Trim();
+            if (!BaronyHallEventStatus.IsScheduled(e.Status))
+                e.TriggerKind = BaronyHallEventTriggerKind.Normalize(dto.TriggerKind);
+            e.IconPath = NormalizeHallEventIconPath(dto.IconPath);
+            e.ConsequenceAdditiveJson = Ser(dto.ConsequenceAdditive ?? new PpbVector());
+            e.ConsequencePercentJson = Ser(dto.ConsequencePercent ?? new PpbVector());
+            e.ConsequenceEndTurn = dto.ConsequenceEndTurn;
+        }
+
+        private static string NormalizeHallEventIconPath(string? path) =>
+            string.IsNullOrWhiteSpace(path)
+                ? "icons/vertical-banner.svg"
+                : path.Trim().TrimStart('/');
+
+        private static BaronyHallEventDTO ToHallEventDto(BaronyHallEvent e) => new()
+        {
+            Id = e.Id,
+            BaronyId = e.BaronyId,
+            Title = e.Title,
+            Body = e.Body,
+            TriggerKind = e.TriggerKind,
+            Status = e.Status,
+            TurnNumber = e.TurnNumber,
+            IconPath = e.IconPath,
+            ResponseBody = e.ResponseBody,
+            ChapterId = e.ChapterId,
+            AudienceId = e.AudienceId,
+            PublishAtTurn = e.PublishAtTurn,
+            ConsequenceAdditive = De(e.ConsequenceAdditiveJson),
+            ConsequencePercent = De(e.ConsequencePercentJson),
+            ConsequenceEndTurn = e.ConsequenceEndTurn,
+            SortOrder = e.SortOrder,
+            CreatedAtUtc = e.CreatedAtUtc,
+            UpdatedAtUtc = e.UpdatedAtUtc,
+            AcknowledgedAtUtc = e.AcknowledgedAtUtc,
+        };
+
+        private static BaronyHallEventTemplateDTO ToHallEventTemplateDto(BaronyHallEventTemplate t) => new()
+        {
+            Id = t.Id,
+            BaronyId = t.BaronyId,
+            Name = t.Name,
+            Title = t.Title,
+            Body = t.Body,
+            TriggerKind = t.TriggerKind,
+            IconPath = t.IconPath,
+            ConsequenceAdditive = De(t.ConsequenceAdditiveJson),
+            ConsequencePercent = De(t.ConsequencePercentJson),
+            ConsequenceEndTurn = t.ConsequenceEndTurn,
+            SortOrder = t.SortOrder,
+            CreatedAtUtc = t.CreatedAtUtc,
+            UpdatedAtUtc = t.UpdatedAtUtc,
+        };
 
         private static BaronyHallAdventureDTO ToHallAdventureDto(BaronyHallAdventure e) => new()
         {

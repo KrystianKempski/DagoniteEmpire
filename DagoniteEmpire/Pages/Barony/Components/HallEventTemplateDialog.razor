@@ -1,0 +1,166 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Common.Barony
+@using DA_Models.BaronyModels
+@inject IDialogService _dialogService
+@inject ISnackbar _snackBar
+
+<MudDialog Class="barony-dialog">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@(_isEdit ? L["Edit hall event template"] : L["New hall event template"])</MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="barony-dialog-theme">
+            <MudTextField @bind-Value="_name"
+                          Label="@(L["Template name"])"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Immediate="true"
+                          HelperText="@(L["Internal label for the MG list — not shown to the baron."])"
+                          Class="mb-2" />
+
+            <div class="new-audience-icon-row">
+                <button type="button"
+                        class="new-audience-icon-row__pick"
+                        title="@L["Choose icon"]"
+                        @onclick="PickIconAsync">
+                    <img src="@("/" + IconPath)" alt="" />
+                    <span>@L["Choose icon"]</span>
+                </button>
+                <MudTextField @bind-Value="_title"
+                              Label="@(L["Title"])"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Immediate="true"
+                              Class="flex-grow-1" />
+            </div>
+            <MudSelect T="string"
+                       @bind-Value="_triggerKind"
+                       Label="@(L["Trigger"])"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Dense="true"
+                       Class="mt-2">
+                @foreach (var kind in BaronyHallEventTriggerKind.All)
+                {
+                    <MudSelectItem Value="@kind">@L[BaronyHallEventTriggerKind.DisplayName(kind)]</MudSelectItem>
+                }
+            </MudSelect>
+            <MudTextField @bind-Value="_body"
+                          Label="@(L["Event text"])"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="10"
+                          Immediate="true"
+                          Class="mt-2 hall-event-dialog__body" />
+
+            <MudExpansionPanels Class="mt-2 hall-event-dialog__ppb">
+                <MudExpansionPanel Text="@(L["PPB consequence (optional)"])">
+                    <PpbVectorEditor @bind-Value="_consequenceAdditive" Title="@(L["PPB additive (+)"])" Compact="true" />
+                    <PpbVectorEditor @bind-Value="_consequencePercent" Title="@(L["PPB percent (%)"])" Compact="true" Percent="true" />
+                    <div class="event-turn-fields mt-2">
+                        <MudCheckBox T="bool"
+                                     @bind-Value="_consequenceOngoing"
+                                     Label="@(L["Ongoing (no end turn)"])"
+                                     Color="Color.Default"
+                                     Dense="true"
+                                     Class="barony-checkbox" />
+                        @if (!_consequenceOngoing)
+                        {
+                            <MudNumericField T="int"
+                                             @bind-Value="_consequenceEndTurn"
+                                             Label="@(L["To turn"])"
+                                             Variant="Variant.Outlined"
+                                             Margin="Margin.Dense"
+                                             Min="1"
+                                             Class="baron-influence-field" />
+                        }
+                    </div>
+                </MudExpansionPanel>
+            </MudExpansionPanels>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Submit" Disabled="!CanSubmit">
+            @L["Save"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public BaronyHallEventTemplateDTO? Existing { get; set; }
+    [Parameter] public int CurrentTurn { get; set; } = 1;
+
+    private const string DefaultIcon = "icons/vertical-banner.svg";
+
+    private bool _isEdit => Existing is not null && Existing.Id > 0;
+    private string _name = "";
+    private string _title = "";
+    private string _body = "";
+    private string _triggerKind = BaronyHallEventTriggerKind.Manual;
+    private string _iconPath = DefaultIcon;
+    private PpbVector _consequenceAdditive = new();
+    private PpbVector _consequencePercent = new();
+    private bool _consequenceOngoing = true;
+    private int _consequenceEndTurn = 1;
+
+    private string IconPath => PetitionerIconCatalog.PathFor(_iconPath);
+
+    private bool CanSubmit =>
+        !string.IsNullOrWhiteSpace(_name)
+        && !string.IsNullOrWhiteSpace(_title)
+        && !string.IsNullOrWhiteSpace(_body);
+
+    protected override void OnParametersSet()
+    {
+        _consequenceEndTurn = Math.Max(1, CurrentTurn);
+        if (Existing is null)
+            return;
+
+        _name = Existing.Name;
+        _title = Existing.Title;
+        _body = Existing.Body;
+        _triggerKind = BaronyHallEventTriggerKind.Normalize(Existing.TriggerKind);
+        _iconPath = string.IsNullOrWhiteSpace(Existing.IconPath) ? DefaultIcon : Existing.IconPath;
+        _consequenceAdditive = Existing.ConsequenceAdditive.Clone();
+        _consequencePercent = Existing.ConsequencePercent.Clone();
+        _consequenceOngoing = Existing.ConsequenceEndTurn is null;
+        _consequenceEndTurn = Existing.ConsequenceEndTurn ?? Math.Max(1, CurrentTurn);
+    }
+
+    private async Task PickIconAsync()
+    {
+        var dialog = await _dialogService.ShowAsync<PetitionerIconPickerDialog>(
+            L["Choose icon"],
+            new DialogParameters<PetitionerIconPickerDialog> { { x => x.SelectedPath, _iconPath } },
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not string path || string.IsNullOrWhiteSpace(path))
+            return;
+        _iconPath = path;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Submit()
+    {
+        if (!CanSubmit)
+        {
+            _snackBar.Add(L["Name is required."], Severity.Warning);
+            return;
+        }
+
+        var dto = Existing ?? new BaronyHallEventTemplateDTO();
+        dto.Name = _name.Trim();
+        dto.Title = _title.Trim();
+        dto.Body = _body.Trim();
+        dto.TriggerKind = _triggerKind;
+        dto.IconPath = IconPath;
+        dto.ConsequenceAdditive = _consequenceAdditive.Clone();
+        dto.ConsequencePercent = _consequencePercent.Clone();
+        dto.ConsequenceEndTurn = _consequenceOngoing ? null : _consequenceEndTurn;
+        MudDialog.Close(DialogResult.Ok(dto));
+    }
+}

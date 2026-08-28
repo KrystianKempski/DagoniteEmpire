@@ -109,7 +109,7 @@ else if (Barony is not null)
                                     <tr>
                                         <td class="ppb-row-label city-building-col-name">
                                             <strong>@a.Title</strong>
-                                            <span class="baron-audience__petitioner"> · @a.PetitionerName</span>
+                                            <span class="baron-audience__petitioner"> · @AudiencePetitionerLabel(a)</span>
                                         </td>
                                         @foreach (var info in PpbCatalog.All)
                                         {
@@ -197,7 +197,7 @@ else if (Barony is not null)
                             <AudiencePanel Audience="topic"
                                            CanWriteAsGm="CanWriteAsGm"
                                            CanWriteAsBaron="CanWriteAsBaron"
-                                           BaronCharacterName="BaronCharacterName"
+                                           BaronCharacterName="@BaronCharacterName"
                                            Busy="_busy"
                                            CourtSpeakers="_courtSpeakers"
                                            OnSpeak="req => SendReplyAsync(topic, req)"
@@ -260,7 +260,7 @@ else if (Barony is not null)
                             <AudiencePanel Audience="a"
                                            CanWriteAsGm="CanWriteAsGm"
                                            CanWriteAsBaron="CanWriteAsBaron"
-                                           BaronCharacterName="BaronCharacterName"
+                                           BaronCharacterName="@BaronCharacterName"
                                            Busy="_busy"
                                            OnSpeak="req => SendReplyAsync(a, req)"
                                            OnAddResources="() => AddResourcesAsync(a)"
@@ -283,7 +283,7 @@ else if (Barony is not null)
                                            ReadOnly="true"
                                            CanWriteAsGm="CanWriteAsGm"
                                            CanWriteAsBaron="CanWriteAsBaron"
-                                           BaronCharacterName="BaronCharacterName"
+                                           BaronCharacterName="@BaronCharacterName"
                                            Busy="_busy"
                                            OnMakeChapter="() => MakeChapterAsync(a)" />
                         }
@@ -291,6 +291,119 @@ else if (Barony is not null)
                 }
             </ChildContent>
         </BaronySection>
+
+        @if (CanManageAsMg)
+        {
+            <BaronySection Title="@(L["Hall events"])" DefaultOpen="true">
+                <Summary>
+                    <span class="projects-summary">
+                        <span class="projects-summary__item">@PendingHallEvents.Count @L["pending"]</span>
+                        <span class="projects-summary__item">@ScheduledHallEvents.Count @L["scheduled"]</span>
+                        <span class="projects-summary__item">@ActiveHallEvents.Count @L["active"]</span>
+                        @if (_showArchivedHallEvents)
+                        {
+                            <span class="projects-summary__item">@ArchivedHallEvents.Count @L["Archived"]</span>
+                        }
+                    </span>
+                </Summary>
+                <ChildContent>
+                    <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                        <MudButton Variant="Variant.Outlined"
+                                   StartIcon="@Icons.Material.Filled.Add"
+                                   OnClick="CreateHallEventAsync"
+                                   Disabled="_busy">
+                            @L["New hall event"]
+                        </MudButton>
+                        <MudSwitch @bind-Value="_showArchivedHallEvents"
+                                   Label="@(L["Show archived"])"
+                                   Color="Color.Primary" />
+                    </div>
+
+                    @if (_hallEventTemplates.Count > 0)
+                    {
+                        <div class="hall-event-templates mb-3">
+                            <MudText Typo="Typo.subtitle2" Class="mb-2">@L["Hall event templates"]</MudText>
+                            <div class="hall-event-templates__list">
+                                @foreach (var template in _hallEventTemplates)
+                                {
+                                    <div class="hall-event-templates__item">
+                                        <span class="hall-event-templates__name">@template.Name</span>
+                                        <span class="hall-event-templates__title">@template.Title</span>
+                                        <span class="hall-event-templates__actions">
+                                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                           Size="Size.Small"
+                                                           OnClick="() => EditHallEventTemplateAsync(template)" />
+                                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                                           Size="Size.Small"
+                                                           Color="Color.Error"
+                                                           OnClick="() => DeleteHallEventTemplateAsync(template)" />
+                                        </span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <MudButton Variant="Variant.Text"
+                               StartIcon="@Icons.Material.Filled.BookmarkAdd"
+                               OnClick="CreateHallEventTemplateAsync"
+                               Disabled="_busy"
+                               Class="mb-3">
+                        @L["New hall event template"]
+                    </MudButton>
+
+                    @if (HallEventFolders.Count == 0)
+                    {
+                        <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">@L["No hall events right now."]</MudText>
+                    }
+                    else
+                    {
+                        @foreach (var folder in HallEventFolders)
+                        {
+                            var open = _expandedHallEventTurns.Contains(folder.Turn);
+                            <div class="baron-audience__folder @(open ? "baron-audience__folder--open" : "")">
+                                <button type="button"
+                                        class="baron-audience__folder-summary"
+                                        @onclick="@(() => ToggleHallEventFolder(folder.Turn))">
+                                    <span>@(open ? "▾" : "▸")</span>
+                                    <span>@L["Turn {0}", folder.Turn]</span>
+                                    <span class="baron-audience__folder-count">@folder.Items.Count</span>
+                                </button>
+                                @if (open)
+                                {
+                                    <div class="hall-event-mgmt-grid">
+                                        @foreach (var ev in folder.Items)
+                                        {
+                                            <div class="hall-event-mgmt-card">
+                                                <HallEventPanel Event="ev"
+                                                                ReadOnly="true"
+                                                                CanManage="true"
+                                                                Busy="_busy"
+                                                                OnEdit="() => EditHallEventAsync(ev)"
+                                                                OnMakeChapter="() => MakeChapterFromHallEventAsync(ev)"
+                                                                OnArchive="() => ArchiveHallEventAsync(ev)" />
+                                                @if (ev.IsArchived)
+                                                {
+                                                    <div class="hall-event-mgmt-card__footer">
+                                                        <MudButton Variant="Variant.Text"
+                                                                   Size="Size.Small"
+                                                                   Color="Color.Error"
+                                                                   Disabled="_busy"
+                                                                   OnClick="() => DeleteHallEventAsync(ev)">
+                                                            @L["Delete"]
+                                                        </MudButton>
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                </ChildContent>
+            </BaronySection>
+        }
 
         <BaronySection Title="@(L["Archive"])" DefaultOpen="false">
             <Summary>
@@ -326,7 +439,7 @@ else if (Barony is not null)
                                                        ShowSummary="true"
                                                        CanWriteAsGm="CanWriteAsGm"
                                                        CanWriteAsBaron="CanWriteAsBaron"
-                                                       BaronCharacterName="BaronCharacterName"
+                                                       BaronCharacterName="@BaronCharacterName"
                                                        Busy="_busy"
                                                        OnMakeChapter="() => MakeChapterAsync(a)" />
                                     }
@@ -341,14 +454,23 @@ else if (Barony is not null)
 
 @code {
     private List<BaronAudienceDTO> _audiences = new();
+    private List<BaronyHallEventDTO> _hallEvents = new();
+    private List<BaronyHallEventTemplateDTO> _hallEventTemplates = new();
     private List<string> _courtSpeakers = new();
     private List<string> _councilAdvisorOptions = new();
     private readonly HashSet<int> _expandedArchiveTurns = new();
+    private readonly HashSet<int> _expandedHallEventTurns = new();
+    private bool _showArchivedHallEvents;
     private bool _busy;
 
     private bool CanWriteAsGm => CanManageAsMg;
     private bool CanWriteAsBaron => CanEdit && !CanManageAsMg;
     private string? BaronCharacterName => UserInfo?.SelectedCharacter?.NPCName;
+
+    private string AudiencePetitionerLabel(BaronAudienceDTO a) =>
+        BaronHallEventAudience.IsHallEventPetitioner(a.PetitionerName)
+            ? L["Hall event"]
+            : a.PetitionerName;
 
     private IEnumerable<BaronAudienceDTO> AudienceOnly =>
         _audiences.Where(a => BaronAudienceKind.IsAudience(a.Kind));
@@ -465,6 +587,28 @@ else if (Barony is not null)
         return _audiences.Any(c => c.ContinuedFromAudienceId == a.Id);
     }
 
+    private IReadOnlyList<BaronyHallEventDTO> ActiveHallEvents =>
+        _hallEvents.Where(e => !e.IsArchived && !e.IsConverted).ToList();
+
+    private IReadOnlyList<BaronyHallEventDTO> ArchivedHallEvents =>
+        _hallEvents.Where(e => e.IsArchived).ToList();
+
+    private IReadOnlyList<BaronyHallEventDTO> PendingHallEvents =>
+        ActiveHallEvents.Where(e => e.IsPending).ToList();
+
+    private IReadOnlyList<BaronyHallEventDTO> ScheduledHallEvents =>
+        _hallEvents.Where(e => e.IsScheduled).ToList();
+
+    private IReadOnlyList<BaronyHallEventDTO> VisibleHallEventsForMgmt =>
+        _showArchivedHallEvents ? _hallEvents : _hallEvents.Where(e => !e.IsArchived).ToList();
+
+    private IReadOnlyList<(int Turn, List<BaronyHallEventDTO> Items)> HallEventFolders =>
+        VisibleHallEventsForMgmt
+            .GroupBy(e => e.TurnNumber)
+            .OrderByDescending(g => g.Key)
+            .Select(g => (g.Key, g.OrderByDescending(e => e.UpdatedAtUtc).ThenByDescending(e => e.Id).ToList()))
+            .ToList();
+
     protected override async Task OnInitializedAsync()
     {
         await LoadBaronyAsync();
@@ -495,7 +639,15 @@ else if (Barony is not null)
         }
 
         _audiences = await _baronyRepo.GetAudiences(BaronyId);
+        _hallEvents = await _baronyRepo.GetHallEvents(BaronyId, includeArchived: true, includeScheduled: true, includeConverted: true);
+        _hallEventTemplates = await _baronyRepo.GetHallEventTemplates(BaronyId);
         StateHasChanged();
+    }
+
+    private void ToggleHallEventFolder(int turn)
+    {
+        if (!_expandedHallEventTurns.Add(turn))
+            _expandedHallEventTurns.Remove(turn);
     }
 
     private async Task CreateCouncilTopicAsync()
@@ -915,4 +1067,287 @@ else if (Barony is not null)
         + (value > 0 ? " php-cell--pos" : value < 0 ? " php-cell--neg" : "");
 
     private static string PpbShort(Ppb p) => PpbCatalog.Short(p);
+
+    private static BaronyHallEventDTO FromHallEventDialog(
+        int baronyId,
+        HallEventDialog.HallEventDialogResult data,
+        BaronyHallEventDTO? existing = null,
+        int? turnNumber = null) =>
+        new()
+        {
+            Id = existing?.Id ?? 0,
+            BaronyId = baronyId,
+            Title = data.Title,
+            Body = data.Body,
+            TriggerKind = data.TriggerKind,
+            IconPath = data.IconPath,
+            TurnNumber = turnNumber ?? existing?.TurnNumber ?? 0,
+            ConsequenceAdditive = data.ConsequenceAdditive,
+            ConsequencePercent = data.ConsequencePercent,
+            ConsequenceEndTurn = data.ConsequenceEndTurn,
+        };
+
+    private async Task CreateHallEventAsync()
+    {
+        var dialog = await _dialogService.ShowAsync<HallEventDialog>(L["New hall event"],
+            new DialogParameters<HallEventDialog>
+            {
+                { x => x.Templates, _hallEventTemplates },
+                { x => x.CurrentTurn, Barony?.TurnNumber ?? 1 },
+            },
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not HallEventDialog.HallEventDialogResult data)
+            return;
+
+        _busy = true;
+        try
+        {
+            await _baronyRepo.SaveHallEvent(
+                FromHallEventDialog(BaronyId, data, turnNumber: Barony!.TurnNumber),
+                scheduleForNextTurn: data.ScheduleForNextTurn);
+            await ReloadAsync();
+            _snackBar.Add(
+                data.ScheduleForNextTurn ? L["Hall event scheduled."] : L["Hall event published."],
+                Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task EditHallEventAsync(BaronyHallEventDTO hallEvent)
+    {
+        if (!hallEvent.CanMgEdit)
+            return;
+
+        var dialog = await _dialogService.ShowAsync<HallEventDialog>(L["Edit hall event"],
+            new DialogParameters<HallEventDialog>
+            {
+                { x => x.Existing, hallEvent },
+                { x => x.Templates, _hallEventTemplates },
+                { x => x.CurrentTurn, Barony?.TurnNumber ?? 1 },
+            },
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not HallEventDialog.HallEventDialogResult data)
+            return;
+
+        _busy = true;
+        try
+        {
+            await _baronyRepo.SaveHallEvent(FromHallEventDialog(BaronyId, data, hallEvent));
+            await ReloadAsync();
+            _snackBar.Add(L["Hall event updated."], Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task CreateHallEventTemplateAsync()
+    {
+        var dialog = await _dialogService.ShowAsync<HallEventTemplateDialog>(L["New hall event template"],
+            new DialogParameters<HallEventTemplateDialog>
+            {
+                { x => x.CurrentTurn, Barony?.TurnNumber ?? 1 },
+            },
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronyHallEventTemplateDTO dto)
+            return;
+
+        _busy = true;
+        try
+        {
+            dto.BaronyId = BaronyId;
+            await _baronyRepo.SaveHallEventTemplate(dto);
+            await ReloadAsync();
+            _snackBar.Add(L["Hall event template saved."], Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task EditHallEventTemplateAsync(BaronyHallEventTemplateDTO template)
+    {
+        var dialog = await _dialogService.ShowAsync<HallEventTemplateDialog>(L["Edit hall event template"],
+            new DialogParameters<HallEventTemplateDialog>
+            {
+                { x => x.Existing, template },
+                { x => x.CurrentTurn, Barony?.TurnNumber ?? 1 },
+            },
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronyHallEventTemplateDTO dto)
+            return;
+
+        _busy = true;
+        try
+        {
+            dto.Id = template.Id;
+            dto.BaronyId = BaronyId;
+            await _baronyRepo.SaveHallEventTemplate(dto);
+            await ReloadAsync();
+            _snackBar.Add(L["Hall event template saved."], Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task DeleteHallEventTemplateAsync(BaronyHallEventTemplateDTO template)
+    {
+        var ok = await _dialogService.ShowMessageBoxAsync(
+            L["Delete hall event template"],
+            L["Delete \"{0}\" permanently?", template.Name],
+            yesText: L["Delete"], cancelText: L["Cancel"]);
+        if (ok != true)
+            return;
+
+        _busy = true;
+        try
+        {
+            await _baronyRepo.DeleteHallEventTemplate(template.Id);
+            await ReloadAsync();
+            _snackBar.Add(L["Hall event template deleted."], Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task ArchiveHallEventAsync(BaronyHallEventDTO hallEvent)
+    {
+        _busy = true;
+        try
+        {
+            await _baronyRepo.ArchiveHallEvent(hallEvent.Id);
+            await ReloadAsync();
+            _snackBar.Add(L["Hall event archived."], Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task DeleteHallEventAsync(BaronyHallEventDTO hallEvent)
+    {
+        var ok = await _dialogService.ShowMessageBoxAsync(
+            L["Delete hall event"],
+            L["Delete \"{0}\" permanently?", hallEvent.Title],
+            yesText: L["Delete"], cancelText: L["Cancel"]);
+        if (ok != true)
+            return;
+
+        _busy = true;
+        try
+        {
+            await _baronyRepo.DeleteHallEvent(hallEvent.Id);
+            await ReloadAsync();
+            _snackBar.Add(L["Hall event deleted."], Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task MakeChapterFromHallEventAsync(BaronyHallEventDTO ev)
+    {
+        if (Barony is null)
+            return;
+
+        _busy = true;
+        try
+        {
+            var chapterName = BaronyHallEventChapter.FormatName(Barony.Year, Barony.Season, ev.Title);
+            var campaigns = (await _campaignRepository.GetAll(Barony.CharacterId)).ToList();
+            var campaign = campaigns.FirstOrDefault(c =>
+                                 string.Equals(c.Name, Barony.Name, StringComparison.OrdinalIgnoreCase))
+                           ?? campaigns.OrderByDescending(c => c.CreatedDate).FirstOrDefault();
+
+            if (campaign is null || campaign.Id <= 0)
+            {
+                _snackBar.Add(L["No campaign found for this baron. Create a barony campaign first."], Severity.Warning);
+                return;
+            }
+
+            var existing = (await _chapterRepository.GetAll(campaign.Id))
+                .FirstOrDefault(c => string.Equals(c.Name, chapterName, StringComparison.OrdinalIgnoreCase));
+
+            ChapterDTO chapter;
+            var createdNow = false;
+            if (existing is not null)
+            {
+                chapter = existing;
+            }
+            else
+            {
+                chapter = await _chapterRepository.Create(new ChapterDTO
+                {
+                    CampaignId = campaign.Id,
+                    Name = chapterName,
+                    Description = $"From hall event \"{ev.Title}\" (turn {ev.TurnNumber}).",
+                    CreatedDate = DateTime.Now,
+                    Characters = new List<CharacterDTO>
+                    {
+                        new() { Id = Barony.CharacterId },
+                    },
+                });
+                createdNow = true;
+            }
+
+            await _baronyRepo.LinkHallEventChapter(ev.Id, chapter.Id);
+            await ReloadAsync();
+            _snackBar.Add(
+                createdNow
+                    ? $"Chapter created: \"{chapter.Name}\"."
+                    : $"Chapter already exists: \"{chapter.Name}\".",
+                createdNow ? Severity.Success : Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
 }

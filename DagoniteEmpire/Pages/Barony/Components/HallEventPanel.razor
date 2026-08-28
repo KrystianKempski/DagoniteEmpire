@@ -1,0 +1,176 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@using DA_Common.Barony
+@using DA_Models.BaronyModels
+
+<div class="hall-event-panel">
+    <div class="hall-event-panel__sheet">
+        <div class="hall-event-panel__header">
+            <span class="hall-event-panel__icon-wrap" aria-hidden="true">
+                <img src="@("/" + IconSrc)"
+                     class="hall-event-panel__icon"
+                     width="38"
+                     height="38"
+                     alt="" />
+            </span>
+            <div class="hall-event-panel__header-text">
+                <p class="hall-event-panel__meta">
+                    <span>@L["Hall event"]</span>
+                    <span>· T@(Event.TurnNumber)</span>
+                    <span>· @L[BaronyHallEventTriggerKind.DisplayName(Event.TriggerKind)]</span>
+                    @if (Event.IsScheduled)
+                    {
+                        <span class="hall-event-panel__status hall-event-panel__status--scheduled">@L["Scheduled"] · T@(Event.PublishAtTurn ?? Event.TurnNumber)</span>
+                    }
+                    else if (Event.IsPending)
+                    {
+                        <span class="hall-event-panel__status hall-event-panel__status--pending">@L["Awaiting response"]</span>
+                    }
+                    else if (Event.IsAcknowledged)
+                    {
+                        <span class="hall-event-panel__status">@L[BaronyHallEventStatus.DisplayName(Event.Status)]</span>
+                    }
+                    else if (Event.IsConverted)
+                    {
+                        <span class="hall-event-panel__status">@L[BaronyHallEventStatus.DisplayName(Event.Status)]</span>
+                    }
+                </p>
+                <h2 class="hall-event-panel__title">@Event.Title</h2>
+            </div>
+            @if (ShowMinimize)
+            {
+                <button type="button"
+                        class="hall-event-panel__minimize"
+                        title="@L["Minimize"]"
+                        @onclick="OnMinimize">
+                    <MudIcon Icon="@Icons.Material.Filled.Minimize" Size="Size.Small" />
+                </button>
+            }
+        </div>
+
+        <div class="hall-event-panel__scroll">
+            <div class="hall-event-panel__body hall-event-panel__body--md">@((MarkupString)BodyHtml)</div>
+            @if (Event.ChapterId is int chapterId and > 0)
+            {
+                <div class="hall-event-panel__chapter-link">
+                    <a href="@($"/chapter/{chapterId}")">@L["Open chapter"]</a>
+                </div>
+            }
+            @if (Event.IsConverted && Event.AudienceId is int audienceId and > 0)
+            {
+                <div class="hall-event-panel__chapter-link">
+                    <a href="@($"/barony/audience-hall")">@L["Continues as audience #{0}", audienceId]</a>
+                </div>
+            }
+            @if (Event.IsAcknowledged && !string.IsNullOrWhiteSpace(Event.ResponseBody))
+            {
+                <div class="hall-event-panel__response">
+                    <span class="hall-event-panel__response-label">@L["Your response"]</span>
+                    <div class="hall-event-panel__response-body">@Event.ResponseBody</div>
+                </div>
+            }
+            @if (CanManage && Event.HasConsequence)
+            {
+                <div class="hall-event-panel__consequence">
+                    <span class="hall-event-panel__response-label">@L["PPB on response"]</span>
+                    @if (!Event.ConsequenceAdditive.IsEmpty)
+                    {
+                        <div class="hall-event-panel__consequence-row">
+                            <span class="hall-event-panel__consequence-kind">+</span>
+                            <PpbSummaryChips Vector="@Event.ConsequenceAdditive" />
+                        </div>
+                    }
+                    @if (!Event.ConsequencePercent.IsEmpty)
+                    {
+                        <div class="hall-event-panel__consequence-row">
+                            <span class="hall-event-panel__consequence-kind">%</span>
+                            <PpbSummaryChips Vector="@Event.ConsequencePercent" />
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (CanRespond)
+        {
+            <div class="hall-event-panel__composer">
+                <MudTextField @bind-Value="_responseDraft"
+                              Label="@(L["Your response"])"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Lines="4"
+                              Immediate="true"
+                              Disabled="Busy"
+                              HelperText="@(L["Reply to close this event screen."])" />
+                <div class="hall-event-panel__actions">
+                    <MudButton Variant="Variant.Filled"
+                               Class="baron-influence-save-btn"
+                               Disabled="Busy || string.IsNullOrWhiteSpace(_responseDraft)"
+                               OnClick="SubmitResponseAsync">
+                        @L["Send response"]
+                    </MudButton>
+                </div>
+            </div>
+        }
+        else if (CanManage)
+        {
+            <div class="hall-event-panel__mg-actions">
+                @if (Event.CanMgEdit)
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
+                               Disabled="Busy"
+                               OnClick="OnEdit">
+                        @L["Edit"]
+                    </MudButton>
+                }
+                @if (Event.ChapterId is null or <= 0)
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
+                               Disabled="Busy"
+                               OnClick="OnMakeChapter">
+                        @L["Make chapter"]
+                    </MudButton>
+                }
+                @if (!Event.IsArchived)
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
+                               Color="Color.Default"
+                               Disabled="Busy"
+                               OnClick="OnArchive">
+                        @L["Archive event"]
+                    </MudButton>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public BaronyHallEventDTO Event { get; set; } = default!;
+    [Parameter] public bool CanRespond { get; set; }
+    [Parameter] public bool CanManage { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public bool ShowMinimize { get; set; }
+    [Parameter] public EventCallback<string> OnRespond { get; set; }
+    [Parameter] public EventCallback OnEdit { get; set; }
+    [Parameter] public EventCallback OnMakeChapter { get; set; }
+    [Parameter] public EventCallback OnArchive { get; set; }
+    [Parameter] public EventCallback OnMinimize { get; set; }
+
+    private string _responseDraft = "";
+
+    private string IconSrc =>
+        string.IsNullOrWhiteSpace(Event.IconPath) ? "icons/vertical-banner.svg" : Event.IconPath.TrimStart('/');
+
+    private string BodyHtml => BaronyMarkdown.ToHtml(Event.Body);
+
+    private async Task SubmitResponseAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_responseDraft))
+            return;
+        await OnRespond.InvokeAsync(_responseDraft.Trim());
+    }
+}

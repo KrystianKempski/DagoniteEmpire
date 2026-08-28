@@ -93,6 +93,8 @@ namespace DA_DataAccess.Data
         public DbSet<BaronAudience> BaronAudiences { get; set; }
         public DbSet<BaronAudienceExchange> BaronAudienceExchanges { get; set; }
         public DbSet<BaronyHallAdventure> BaronyHallAdventures { get; set; }
+        public DbSet<BaronyHallEvent> BaronyHallEvents { get; set; }
+        public DbSet<BaronyHallEventTemplate> BaronyHallEventTemplates { get; set; }
         public DbSet<BaronQaThread> BaronQaThreads { get; set; }
         public DbSet<BaronQaMessage> BaronQaMessages { get; set; }
         public DbSet<BaronyUnit> BaronyUnits { get; set; }
@@ -215,6 +217,17 @@ namespace DA_DataAccess.Data
             });
 
             modelBuilder.Entity<BaronyHallAdventure>(entity =>
+            {
+                entity.HasIndex(e => e.BaronyId);
+            });
+
+            modelBuilder.Entity<BaronyHallEvent>(entity =>
+            {
+                entity.HasIndex(e => e.BaronyId);
+                entity.HasIndex(e => new { e.BaronyId, e.Status });
+            });
+
+            modelBuilder.Entity<BaronyHallEventTemplate>(entity =>
             {
                 entity.HasIndex(e => e.BaronyId);
             });

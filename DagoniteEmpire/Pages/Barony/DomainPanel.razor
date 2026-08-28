@@ -14,6 +14,16 @@
 }
 else if (LoadError is not null)
 {
+    @if (CanManageAsMg)
+    {
+        <div class="barony-meta-bar barony-meta-bar--switcher-only" aria-label="@(L["Barony status"])">
+            <BaronyHudTip Title="@(L["Barony"])"
+                          Text="@BaronyUiTooltips.MetaBaronyNameMg"
+                          Align="BaronyHudTip.HudTipAlign.Start">
+                <BaronySwitcher />
+            </BaronyHudTip>
+        </div>
+    }
     <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
 }
 else if (_overview is not null)
@@ -21,7 +31,9 @@ else if (_overview is not null)
     <div class="barony-meta-bar" aria-label="@(L["Barony status"])">
         @if (CanManageAsMg)
         {
-            <BaronyHudTip Title="@(L["Barony"])" Text="@BaronyUiTooltips.MetaBaronyNameMg">
+            <BaronyHudTip Title="@(L["Barony"])"
+                          Text="@BaronyUiTooltips.MetaBaronyNameMg"
+                          Align="BaronyHudTip.HudTipAlign.Start">
                 <BaronySwitcher />
             </BaronyHudTip>
         }
@@ -33,10 +45,22 @@ else if (_overview is not null)
         }
         <div class="barony-meta-bar__stats">
             <BaronyHudTip Title="@(L["Year"])" Text="@BaronyUiTooltips.MetaYear">
-                <span class="barony-meta-bar__stat">
-                    <span class="barony-meta-bar__label">@L["Year"]</span>
-                    <span class="barony-meta-bar__value">@_overview.Barony.Year</span>
-                </span>
+                @if (CanManageAsMg)
+                {
+                    <button type="button"
+                            class="barony-meta-bar__stat barony-meta-bar__stat--clickable"
+                            @onclick="EditYearAsync">
+                        <span class="barony-meta-bar__label">@L["Year"]</span>
+                        <span class="barony-meta-bar__value">@_overview.Barony.Year</span>
+                    </button>
+                }
+                else
+                {
+                    <span class="barony-meta-bar__stat">
+                        <span class="barony-meta-bar__label">@L["Year"]</span>
+                        <span class="barony-meta-bar__value">@_overview.Barony.Year</span>
+                    </span>
+                }
             </BaronyHudTip>
             <BaronyHudTip Title="@(L["Season"])" Text="@BaronyUiTooltips.MetaSeason">
                 <span class="barony-meta-bar__stat">
@@ -439,6 +463,45 @@ else if (_overview is not null)
         => conj > EconomyConjunctureFormulas.ConjunctureNeutral ? "barony-meta-bar__value--pos"
             : conj < EconomyConjunctureFormulas.ConjunctureNeutral ? "barony-meta-bar__value--neg"
             : "";
+
+    private async Task EditYearAsync()
+    {
+        if (!CanManageAsMg || _overview is null)
+            return;
+
+        var parameters = new DialogParameters<YearEditDialog>
+        {
+            { x => x.Year, _overview.Barony.Year },
+        };
+
+        var dialog = await _dialogService.ShowAsync<YearEditDialog>(
+            L["Year"],
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.ExtraSmall,
+                FullWidth = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not int year)
+            return;
+
+        try
+        {
+            _overview.Barony.Year = Math.Clamp(year, 1, 9999);
+            await _baronyRepo.UpdateBarony(_overview.Barony);
+            if (Barony is not null)
+                Barony.Year = _overview.Barony.Year;
+            _snackBar.Add(L["Year updated."], Severity.Success);
+            await ReloadOverviewAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(L["Could not save year: "] + ex.Message, Severity.Error);
+        }
+    }
 
     private async Task EditUnrestAsync()
     {

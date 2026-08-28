@@ -12,7 +12,7 @@ namespace DA_Common.Barony
             Loc.T("Click to switch which barony you are managing.");
 
         public static string MetaYear =>
-            Loc.T("Campaign calendar year.");
+            Loc.T("Campaign calendar year. MG can click to edit.");
 
         public static string MetaMonth =>
             Loc.T("Current month in the barony calendar.");

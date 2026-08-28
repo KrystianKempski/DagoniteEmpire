@@ -1,0 +1,210 @@
+.hall-event-panel {
+    width: 100%;
+    max-width: 42rem;
+    margin: 0 auto;
+}
+
+.hall-event-panel__sheet {
+    background: linear-gradient(180deg, #f4e8cf 0%, #e8d4b0 100%);
+    border: 2px solid rgba(92, 68, 40, .45);
+    border-radius: .35rem;
+    box-shadow: 0 8px 28px rgba(47, 42, 36, .28);
+    display: flex;
+    flex-direction: column;
+    max-height: min(72dvh, 640px);
+    overflow: hidden;
+}
+
+.hall-event-panel__header {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    padding: .85rem 1rem .65rem;
+    border-bottom: 1px solid rgba(92, 68, 40, .22);
+    flex-shrink: 0;
+}
+
+.hall-event-panel__icon-wrap {
+    width: 2.4rem;
+    height: 2.4rem;
+    flex: 0 0 2.4rem;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hall-event-panel__icon {
+    width: 2.4rem !important;
+    height: 2.4rem !important;
+    max-width: 2.4rem !important;
+    max-height: 2.4rem !important;
+    object-fit: contain;
+    flex-shrink: 0;
+    display: block;
+}
+
+.hall-event-panel__header-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    text-align: left;
+}
+
+.hall-event-panel__meta {
+    margin: 0;
+    font-size: .78rem;
+    color: rgba(47, 42, 36, .72);
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+}
+
+.hall-event-panel__status--pending {
+    color: #8b2e2e;
+    font-weight: 600;
+}
+
+.hall-event-panel__status--scheduled {
+    color: #4a6a8b;
+    font-weight: 600;
+}
+
+.hall-event-panel__title {
+    margin: .15rem 0 0;
+    font-size: 1.15rem;
+    line-height: 1.25;
+    color: #2f2a24;
+}
+
+.hall-event-panel__minimize {
+    border: none;
+    background: rgba(47, 42, 36, .08);
+    border-radius: .25rem;
+    padding: .25rem .35rem;
+    cursor: pointer;
+    color: #2f2a24;
+    flex-shrink: 0;
+}
+
+.hall-event-panel__minimize:hover {
+    background: rgba(47, 42, 36, .14);
+}
+
+.hall-event-panel__scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: .85rem 1rem;
+    text-align: left;
+}
+
+.hall-event-panel__body {
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.55;
+    font-size: .95rem;
+    color: #2f2a24;
+}
+
+.hall-event-panel__response {
+    margin-top: 1.25rem;
+    padding-top: .85rem;
+    border-top: 1px dashed rgba(92, 68, 40, .35);
+}
+
+.hall-event-panel__response-label {
+    display: block;
+    font-size: .78rem;
+    font-weight: 600;
+    color: rgba(47, 42, 36, .72);
+    margin-bottom: .35rem;
+}
+
+.hall-event-panel__response-body {
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.5;
+    font-size: .92rem;
+    color: #2f2a24;
+}
+
+.hall-event-panel__consequence {
+    margin-top: .75rem;
+    padding-top: .65rem;
+    border-top: 1px dashed rgba(92, 68, 40, .35);
+}
+
+.hall-event-panel__consequence-row {
+    display: flex;
+    align-items: flex-start;
+    gap: .5rem;
+    margin-top: .35rem;
+}
+
+.hall-event-panel__consequence-kind {
+    font-weight: 700;
+    min-width: 1rem;
+    color: rgba(47, 42, 36, .72);
+}
+
+.hall-event-panel__composer {
+    flex-shrink: 0;
+    padding: .65rem 1rem .85rem;
+    border-top: 1px solid rgba(92, 68, 40, .22);
+    background: rgba(244, 232, 207, .65);
+}
+
+.hall-event-panel__actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: .5rem;
+}
+
+.hall-event-panel__mg-actions {
+    flex-shrink: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .5rem;
+    justify-content: flex-end;
+    padding: .65rem 1rem .85rem;
+    border-top: 1px solid rgba(92, 68, 40, .22);
+}
+
+.hall-event-panel__body--md :is(p, ul, ol, blockquote) {
+    margin: 0 0 .75rem;
+}
+
+.hall-event-panel__body--md :is(p, ul, ol, blockquote):last-child {
+    margin-bottom: 0;
+}
+
+.hall-event-panel__body--md :is(h1, h2, h3) {
+    margin: 1rem 0 .5rem;
+    font-size: 1.05rem;
+    line-height: 1.3;
+    color: #2f2a24;
+}
+
+.hall-event-panel__body--md h1 {
+    font-size: 1.2rem;
+}
+
+.hall-event-panel__body--md ul,
+.hall-event-panel__body--md ol {
+    padding-left: 1.35rem;
+}
+
+.hall-event-panel__body--md blockquote {
+    padding-left: .85rem;
+    border-left: 3px solid rgba(92, 68, 40, .35);
+    color: rgba(47, 42, 36, .85);
+}
+
+.hall-event-panel__chapter-link {
+    margin-top: 1rem;
+    font-size: .9rem;
+}
+
+.hall-event-panel__chapter-link a {
+    color: var(--barony-accent, #7a4a12);
+}

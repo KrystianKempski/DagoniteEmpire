@@ -713,6 +713,8 @@ namespace DA_Models.BaronyModels
         public List<string> UnitTroopRegenerations { get; set; } = new();
         /// <summary>Training XP and demobilization lines applied during Resolve Turn.</summary>
         public List<string> UnitActionResults { get; set; } = new();
+        /// <summary>Hall events moved from Scheduled to Pending for the new turn.</summary>
+        public int ScheduledHallEventsPublished { get; set; }
         public string SummaryText { get; set; } = string.Empty;
     }
 }

@@ -142,6 +142,23 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<BaronyHallAdventureDTO> SaveHallAdventure(BaronyHallAdventureDTO dto);
         Task<int> DeleteHallAdventure(int id);
 
+        // --- Audience Hall narrative events ---
+        Task<List<BaronyHallEventDTO>> GetHallEvents(
+            int baronyId,
+            bool includeArchived = false,
+            bool includeScheduled = false,
+            bool includeConverted = false);
+        Task<BaronyHallEventDTO> SaveHallEvent(BaronyHallEventDTO dto, bool scheduleForNextTurn = false);
+        Task<HallEventAcknowledgeResultDTO> AcknowledgeHallEvent(int eventId, string responseBody);
+        Task<BaronyHallEventDTO> ArchiveHallEvent(int eventId);
+        Task<BaronyHallEventDTO> LinkHallEventChapter(int eventId, int chapterId);
+        Task<int> DeleteHallEvent(int id);
+        Task<BaronyHallEventInboxBadgeDTO> GetHallEventInboxBadge(int baronyId);
+
+        Task<List<BaronyHallEventTemplateDTO>> GetHallEventTemplates(int baronyId);
+        Task<BaronyHallEventTemplateDTO> SaveHallEventTemplate(BaronyHallEventTemplateDTO dto);
+        Task<int> DeleteHallEventTemplate(int id);
+
         // --- Offices influence ---
         Task<List<AdvisorInfluenceModifierDTO>> GetAdvisorInfluenceModifiers(int baronyId);
         Task<AdvisorInfluenceModifierDTO> SaveAdvisorInfluenceModifier(AdvisorInfluenceModifierDTO dto);

@@ -1171,6 +1171,7 @@ namespace DA_Common
         public const string Crane = "icons/crane.svg";
         public const string WaxSeal = "icons/wax-seal.svg";
         public const string TiedScroll = "icons/tied-scroll.svg";
+        public const string QuestionBubble = "icons/uncertainty.svg";
         public const string Goblin = "icons/goblin.svg";
         public const string Attack = "icons/sword-clash.svg";
         public const string AttackWhite = "icons/sword-clash-white.svg";

@@ -149,6 +149,49 @@ namespace DA_Business.Repository.BaronyRepos
             catch (Exception ex) { throw Err(ex, nameof(MarkThreadSeen)); }
         }
 
+        public async Task<BaronQaInboxBadgeDTO> GetInboxBadgeForBaron(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                return await LoadInboxBadgeAsync(ctx, baronyId, asGm: false);
+            }
+            catch (Exception ex) { throw Err(ex, nameof(GetInboxBadgeForBaron)); }
+        }
+
+        public async Task<BaronQaInboxBadgeDTO> GetInboxBadgeForGm(int baronyId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                return await LoadInboxBadgeAsync(ctx, baronyId, asGm: true);
+            }
+            catch (Exception ex) { throw Err(ex, nameof(GetInboxBadgeForGm)); }
+        }
+
+        private static async Task<BaronQaInboxBadgeDTO> LoadInboxBadgeAsync(
+            ApplicationDbContext ctx,
+            int baronyId,
+            bool asGm)
+        {
+            var rows = await (
+                from m in ctx.BaronQaMessages.AsNoTracking()
+                join t in ctx.BaronQaThreads.AsNoTracking() on m.ThreadId equals t.Id
+                where t.BaronyId == baronyId
+                    && (asGm ? !m.IsFromGm && !m.SeenByGm : m.IsFromGm && !m.SeenByBaron)
+                orderby m.CreatedAtUtc descending, m.Id descending
+                select new { m.ThreadId }
+            ).ToListAsync();
+
+            var latest = rows.FirstOrDefault();
+            return new BaronQaInboxBadgeDTO
+            {
+                UnreadCount = rows.Count,
+                LatestThreadId = latest?.ThreadId,
+                BaronyId = baronyId,
+            };
+        }
+
         private static async Task<List<BaronQaThreadDTO>> LoadThreadDtosAsync(ApplicationDbContext ctx, int baronyId)
         {
             var threads = await ctx.BaronQaThreads.AsNoTracking()

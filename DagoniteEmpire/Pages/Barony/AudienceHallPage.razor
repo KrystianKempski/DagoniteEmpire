@@ -1,10 +1,13 @@
 @page "/barony/audience-hall"
 @layout BaronyLayout
 @inherits BaronyPageBase
+@implements IDisposable
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+@using DA_Business.Services
 @inject IDialogService _dialogService
 @inject ICampaignRepository _campaignRepository
 @inject IChapterRepository _chapterRepository
+@inject CallbackService _callbackService
 
 <PageTitle>Dagonite Empire | @L["Audience Hall"]</PageTitle>
 
@@ -22,17 +25,21 @@
         @if (CanManageAsMg)
         {
             <div class="audience-hall__mg-bar d-flex flex-wrap gap-2 mb-3">
-                @if (_mode == HallMode.Audiences)
-                {
-                    <MudButton Variant="Variant.Outlined"
-                               Size="Size.Small"
-                               StartIcon="@Icons.Material.Filled.Add"
-                               OnClick="CreateAudienceAsync"
-                               Disabled="_busy">
-                        @L["New audience"]
-                    </MudButton>
-                }
-                else if (_mode == HallMode.Council)
+                <MudButton Variant="Variant.Outlined"
+                           Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="CreateAudienceAsync"
+                           Disabled="_busy">
+                    @L["New audience"]
+                </MudButton>
+                <MudButton Variant="Variant.Outlined"
+                           Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="CreateHallEventAsync"
+                           Disabled="_busy">
+                    @L["New hall event"]
+                </MudButton>
+                @if (_mode == HallMode.Council)
                 {
                     <MudButton Variant="Variant.Outlined"
                                Size="Size.Small"
@@ -81,10 +88,6 @@
                         <div class="audience-hall__ring-core audience-hall__ring-core--static"
                              title="@L["General Council"]">
                             <img src="@("/" + MyIcon.CouncilTable)" class="audience-hall__throne" alt="" />
-                            @if (UnassignedCouncilTopics.Count > 0)
-                            {
-                                <span class="audience-hall__badge">@UnassignedCouncilTopics.Count</span>
-                            }
                         </div>
                         <div class="audience-hall__satellites audience-hall__satellites--right">
                             @foreach (var seat in RightCouncilSeats)
@@ -110,42 +113,50 @@
                 {
                     <div class="audience-hall__ring">
                         <div class="audience-hall__satellites audience-hall__satellites--left">
-                            @foreach (var p in LeftPetitionerSatellites)
+                            @foreach (var item in LeftOrbitSatellites)
                             {
                                 <button type="button"
-                                        class="audience-hall__advisor @(CurrentAudience?.Id == p.Id ? "is-on" : "")"
-                                        title="@p.Label"
-                                        @onclick="() => SelectAudience(p.Id)">
-                                    @if (p.NeedsAttention)
+                                        class="audience-hall__advisor @OrbitItemClass(item)"
+                                        title="@OrbitItemTitle(item)"
+                                        @onclick="() => SelectOrbitItem(item)">
+                                    @if (item.Kind == OrbitItemKind.HallEvent && item.NeedsAttention)
+                                    {
+                                        <span class="audience-hall__badge audience-hall__badge--hall-event">!</span>
+                                    }
+                                    else if (item.Kind == OrbitItemKind.Audience && item.NeedsAttention)
                                     {
                                         <span class="audience-hall__badge audience-hall__badge--flag">!</span>
                                     }
                                     <span class="audience-hall__advisor-icon">
-                                        <img src="@("/" + p.Icon)" alt="" />
+                                        <img src="@("/" + item.Icon)" alt="" />
                                     </span>
-                                    <span class="audience-hall__advisor-label">@p.Label</span>
+                                    <span class="audience-hall__advisor-label">@item.Label</span>
                                 </button>
                             }
                         </div>
                         <img src="@("/" + MyIcon.Throne)" class="audience-hall__throne" alt="" />
                         <div class="audience-hall__satellites audience-hall__satellites--right">
-                            @foreach (var p in RightPetitionerSatellites)
+                            @foreach (var item in RightOrbitSatellites)
                             {
                                 <button type="button"
-                                        class="audience-hall__advisor @(CurrentAudience?.Id == p.Id ? "is-on" : "")"
-                                        title="@p.Label"
-                                        @onclick="() => SelectAudience(p.Id)">
-                                    @if (p.NeedsAttention)
+                                        class="audience-hall__advisor @OrbitItemClass(item)"
+                                        title="@OrbitItemTitle(item)"
+                                        @onclick="() => SelectOrbitItem(item)">
+                                    @if (item.Kind == OrbitItemKind.HallEvent && item.NeedsAttention)
+                                    {
+                                        <span class="audience-hall__badge audience-hall__badge--hall-event">!</span>
+                                    }
+                                    else if (item.Kind == OrbitItemKind.Audience && item.NeedsAttention)
                                     {
                                         <span class="audience-hall__badge audience-hall__badge--flag">!</span>
                                     }
                                     <span class="audience-hall__advisor-icon">
-                                        <img src="@("/" + p.Icon)" alt="" />
+                                        <img src="@("/" + item.Icon)" alt="" />
                                     </span>
-                                    <span class="audience-hall__advisor-label">@p.Label</span>
+                                    <span class="audience-hall__advisor-label">@item.Label</span>
                                 </button>
                             }
-                            @if (OverflowPetitionerSatellites.Count > 0)
+                            @if (OverflowOrbitSatellites.Count > 0)
                             {
                                 <MudMenu @bind-Open="_showMorePetitioners"
                                          CloseOnClick="false"
@@ -158,7 +169,7 @@
                                                 class="audience-hall__advisor"
                                                 title="@L["More petitioners"]"
                                                 @onclick="() => _showMorePetitioners = true">
-                                            <span class="audience-hall__badge">@OverflowPetitionerSatellites.Count</span>
+                                            <span class="audience-hall__badge">@OverflowOrbitSatellites.Count</span>
                                             <span class="audience-hall__advisor-icon">
                                                 <MudIcon Icon="@Icons.Material.Filled.MoreHoriz" />
                                             </span>
@@ -166,13 +177,17 @@
                                         </button>
                                     </ActivatorContent>
                                     <ChildContent>
-                                        @foreach (var p in OverflowPetitionerSatellites)
+                                        @foreach (var item in OverflowOrbitSatellites)
                                         {
-                                            <MudMenuItem OnClick="() => SelectAudience(p.Id)">
-                                                <div class="audience-hall__more-item">
-                                                    <img src="@("/" + p.Icon)" alt="" />
-                                                    <span>@p.Label</span>
-                                                    @if (p.NeedsAttention)
+                                            <MudMenuItem OnClick="() => SelectOrbitItem(item)">
+                                                <div class="audience-hall__more-item @OrbitMoreItemClass(item)">
+                                                    <img src="@("/" + item.Icon)" alt="" />
+                                                    <span>@item.Label</span>
+                                                    @if (item.Kind == OrbitItemKind.HallEvent && item.NeedsAttention)
+                                                    {
+                                                        <span class="audience-hall__badge audience-hall__badge--hall-event audience-hall__badge--inline">!</span>
+                                                    }
+                                                    else if (item.Kind == OrbitItemKind.Audience && item.NeedsAttention)
                                                     {
                                                         <span class="audience-hall__badge audience-hall__badge--flag audience-hall__badge--inline">!</span>
                                                     }
@@ -226,15 +241,15 @@
                     </div>
                 }
 
-
+                @* Hall events use the Audiences orbit ring; no separate mode. *@
                 <div class="audience-hall__tiles">
                     <button type="button"
                             class="audience-hall__tile @(_mode == HallMode.Audiences ? "is-on" : "")"
                             disabled="@(_mode == HallMode.Audiences)"
                             @onclick="ToggleAudiences">
-                        @if (PendingAudiences.Count > 0)
+                        @if (PendingAudiencesForTileBadge.Count > 0)
                         {
-                            <span class="audience-hall__badge">@PendingAudiences.Count</span>
+                            <span class="audience-hall__badge">@PendingAudiencesForTileBadge.Count</span>
                         }
                         <img src="@("/" + MyIcon.TiedScroll)" alt="" />
                         <span>@L["Audiences"]</span>
@@ -284,7 +299,7 @@
                                            HallLayout="true"
                                            CanWriteAsGm="CanWriteAsGm"
                                            CanWriteAsBaron="CanWriteAsBaron"
-                                           BaronCharacterName="BaronCharacterName"
+                                           BaronCharacterName="@BaronCharacterName"
                                            Busy="_busy"
                                            OnSpeak="req => SendReplyAsync(CurrentAudience, req)"
                                            OnAddResources="() => AddResourcesAsync(CurrentAudience)"
@@ -321,7 +336,7 @@
                                            AdvisorIcon="@CurrentCouncilAdvisorIcon"
                                            CanWriteAsGm="CanWriteAsGm"
                                            CanWriteAsBaron="CanWriteAsBaron"
-                                           BaronCharacterName="BaronCharacterName"
+                                           BaronCharacterName="@BaronCharacterName"
                                            Busy="_busy"
                                            CourtSpeakers="_courtSpeakers"
                                            OnSpeak="req => SendReplyAsync(CurrentCouncilTopic, req)"
@@ -343,22 +358,63 @@
                 </div>
             }
         </div>
+
+        @if (!_overlayMinimized && OverlayHallEvent is not null)
+        {
+            <div class="hall-event-overlay">
+                <div class="hall-event-overlay__backdrop" @onclick="MinimizeOverlay"></div>
+                <div class="hall-event-overlay__sheet">
+                    <HallEventPanel @key="OverlayHallEvent.Id"
+                                    Event="OverlayHallEvent"
+                                    CanRespond="CanWriteAsBaron && OverlayHallEvent.NeedsBaronResponse"
+                                    CanManage="CanManageAsMg"
+                                    Busy="_busy"
+                                    ShowMinimize="true"
+                                    OnRespond="RespondToOverlayEventAsync"
+                                    OnEdit="() => EditHallEventAsync(OverlayHallEvent)"
+                                    OnMakeChapter="() => MakeChapterFromHallEventAsync(OverlayHallEvent)"
+                                    OnArchive="() => ArchiveHallEventAsync(OverlayHallEvent)"
+                                    OnMinimize="MinimizeOverlay" />
+                    @if (OverlayHallEvents.Count > 1)
+                    {
+                        <div class="audience-hall__pager hall-event-overlay__pager">
+                            <button type="button" class="audience-hall__ink-btn" disabled="@(_overlayEventIndex <= 0)" @onclick="() => StepOverlayEvent(-1)">‹</button>
+                            <span>@(_overlayEventIndex + 1) / @OverlayHallEvents.Count</span>
+                            <button type="button" class="audience-hall__ink-btn" disabled="@(_overlayEventIndex >= OverlayHallEvents.Count - 1)" @onclick="() => StepOverlayEvent(1)">›</button>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
     }
 </div>
 
 @code {
     private enum HallMode { Idle, Audiences, Council, Adventures }
 
+    private enum OrbitItemKind { Audience, HallEvent }
+
     private const string GeneralSeatKey = "";
 
     private sealed record CouncilSeat(string Key, string Label, string ShortLabel, string Icon, List<BaronAudienceDTO> Topics);
 
     private sealed record PetitionerSatellite(int Id, string Icon, string Label, bool NeedsAttention);
+
+    private sealed record OrbitSatellite(
+        OrbitItemKind Kind,
+        int Id,
+        string Icon,
+        string Label,
+        bool NeedsAttention,
+        bool IsScheduled);
+
     private sealed record AdventureSatellite(int Id, string Icon, string Label, string LinkUrl);
 
     private HallMode _mode = HallMode.Audiences;
     private List<BaronAudienceDTO> _audiences = new();
     private List<BaronyHallAdventureDTO> _hallAdventures = new();
+    private List<BaronyHallEventDTO> _hallEvents = new();
+    private List<BaronyHallEventTemplateDTO> _hallEventTemplates = new();
     private List<AdvisorDTO> _advisors = new();
     private List<string> _courtSpeakers = new();
     private List<string> _councilAdvisorOptions = new();
@@ -366,13 +422,23 @@
     // until an icon is clicked); ClampIndexes/StepTopic already treat this as "unselected".
     private int _audienceIndex = -1;
     private int _councilIndex;
+    private int _overlayEventIndex;
     private string? _selectedSeatKey;
     private bool _busy;
     private bool _showMorePetitioners;
+    private bool _overlayMinimized = true;
+    private bool _overlayAutoOpened;
 
     private bool CanWriteAsGm => CanManageAsMg;
     private bool CanWriteAsBaron => CanEdit && !CanManageAsMg;
     private string? BaronCharacterName => UserInfo?.SelectedCharacter?.NPCName;
+
+    private bool IsViewingAsBaronCharacter =>
+        Barony?.CharacterId > 0 && UserInfo?.SelectedCharacter?.Id == Barony.CharacterId;
+
+    /// <summary>Baron player, or MG impersonating this barony's baron character.</summary>
+    private bool ShouldPresentHallEventsToBaron =>
+        CanWriteAsBaron || (CanManageAsMg && IsViewingAsBaronCharacter);
 
     // All open audiences (baron may have already replied) — shown as icons around the throne.
     private IReadOnlyList<BaronAudienceDTO> ActiveAudiences =>
@@ -388,10 +454,20 @@
             .Where(AudienceNeedsAttention)
             .ToList();
 
+    private IReadOnlyList<BaronAudienceDTO> PendingAudiencesForTileBadge =>
+        ActiveAudiences
+            .Where(AudienceNeedsAttentionForTileBadge)
+            .ToList();
+
     private bool AudienceNeedsAttention(BaronAudienceDTO a) =>
         CanManageAsMg
             ? a.LastExchange is null || !a.LastExchange.IsFromPetitioner
             : a.LastExchange is null || a.LastExchange.IsFromPetitioner;
+
+    private bool AudienceNeedsAttentionForTileBadge(BaronAudienceDTO a) =>
+        ShouldPresentHallEventsToBaron
+            ? a.LastExchange is null || a.LastExchange.IsFromPetitioner
+            : AudienceNeedsAttention(a);
 
     private IReadOnlyList<BaronAudienceDTO> OpenCouncilTopics =>
         _audiences
@@ -431,7 +507,7 @@
             .Select(a => new PetitionerSatellite(
                 a.Id,
                 PetitionerIconCatalog.PathFor(a.PetitionerIcon),
-                a.PetitionerName,
+                AudienceOrbitLabel(a),
                 AudienceNeedsAttention(a)))
             // Needs-attention (yellow badge) topics stay visible; already-answered ones sink
             // toward the "More" overflow first when there isn't room for every icon.
@@ -439,24 +515,54 @@
             .ToList();
 
     /// <summary>Only this many icons fit comfortably around the throne. The "More" tile itself
-    /// counts as one of them, so when there's overflow only 5 petitioners show alongside it.</summary>
-    private const int MaxVisiblePetitioners = 6;
+    /// counts as one of them, so when there's overflow only 5 items show alongside it.</summary>
+    private const int MaxVisibleOrbitItems = 6;
 
-    private bool HasPetitionerOverflow => PetitionerSatellites.Count > MaxVisiblePetitioners;
+    private List<OrbitSatellite> HallEventOrbitItems =>
+        OrbitHallEvents
+            .Select(e => new OrbitSatellite(
+                OrbitItemKind.HallEvent,
+                e.Id,
+                PetitionerIconCatalog.PathFor(e.IconPath),
+                e.Title,
+                e.IsPending,
+                e.IsScheduled))
+            .OrderByDescending(o => o.NeedsAttention)
+            .ThenBy(o => o.Id)
+            .ToList();
 
-    private List<PetitionerSatellite> VisiblePetitionerSatellites =>
-        PetitionerSatellites.Take(HasPetitionerOverflow ? MaxVisiblePetitioners - 1 : MaxVisiblePetitioners).ToList();
+    private IReadOnlyList<BaronyHallEventDTO> OrbitHallEvents =>
+        VisibleHallEvents.Where(e => e.ShowsInOrbit).ToList();
 
-    private List<PetitionerSatellite> OverflowPetitionerSatellites =>
-        PetitionerSatellites.Skip(HasPetitionerOverflow ? MaxVisiblePetitioners - 1 : MaxVisiblePetitioners).ToList();
+    private IReadOnlyList<BaronyHallEventDTO> OverlayHallEvents =>
+        PendingHallEvents;
+
+    private List<OrbitSatellite> OrbitSatellites =>
+        HallEventOrbitItems
+            .Concat(PetitionerSatellites.Select(p => new OrbitSatellite(
+                OrbitItemKind.Audience,
+                p.Id,
+                p.Icon,
+                p.Label,
+                p.NeedsAttention,
+                IsScheduled: false)))
+            .ToList();
+
+    private bool HasOrbitOverflow => OrbitSatellites.Count > MaxVisibleOrbitItems;
+
+    private List<OrbitSatellite> VisibleOrbitSatellites =>
+        OrbitSatellites.Take(HasOrbitOverflow ? MaxVisibleOrbitItems - 1 : MaxVisibleOrbitItems).ToList();
+
+    private List<OrbitSatellite> OverflowOrbitSatellites =>
+        OrbitSatellites.Skip(HasOrbitOverflow ? MaxVisibleOrbitItems - 1 : MaxVisibleOrbitItems).ToList();
 
     /// <summary>"More" always renders on the right, so when it's present the right side gets one
-    /// fewer petitioner icon to keep both flanks at 3 total (petitioners + "More").</summary>
-    private List<PetitionerSatellite> LeftPetitionerSatellites =>
-        HasPetitionerOverflow ? SplitSides(VisiblePetitionerSatellites).Right : SplitSides(VisiblePetitionerSatellites).Left;
+    /// fewer orbit icon to keep both flanks balanced.</summary>
+    private List<OrbitSatellite> LeftOrbitSatellites =>
+        HasOrbitOverflow ? SplitSides(VisibleOrbitSatellites).Right : SplitSides(VisibleOrbitSatellites).Left;
 
-    private List<PetitionerSatellite> RightPetitionerSatellites =>
-        HasPetitionerOverflow ? SplitSides(VisiblePetitionerSatellites).Left : SplitSides(VisiblePetitionerSatellites).Right;
+    private List<OrbitSatellite> RightOrbitSatellites =>
+        HasOrbitOverflow ? SplitSides(VisibleOrbitSatellites).Left : SplitSides(VisibleOrbitSatellites).Right;
 
     private List<AdventureSatellite> AdventureSatellites =>
         _hallAdventures
@@ -473,6 +579,21 @@
 
     private List<AdventureSatellite> RightAdventureSatellites => SplitSides(AdventureSatellites).Right;
 
+    private IReadOnlyList<BaronyHallEventDTO> VisibleHallEvents =>
+        _hallEvents
+            .OrderByDescending(e => e.IsPending)
+            .ThenBy(e => e.SortOrder)
+            .ThenBy(e => e.Id)
+            .ToList();
+
+    private IReadOnlyList<BaronyHallEventDTO> PendingHallEvents =>
+        VisibleHallEvents.Where(e => e.IsPending).ToList();
+
+    private BaronyHallEventDTO? OverlayHallEvent =>
+        _overlayEventIndex >= 0 && _overlayEventIndex < OverlayHallEvents.Count
+            ? OverlayHallEvents[_overlayEventIndex]
+            : null;
+
     /// <summary>Alternates items left/right so both flanks of the throne stay balanced as the list grows.</summary>
     private static (List<T> Left, List<T> Right) SplitSides<T>(IReadOnlyList<T> items)
     {
@@ -487,6 +608,11 @@
         }
         return (left, right);
     }
+
+    private string AudienceOrbitLabel(BaronAudienceDTO a) =>
+        BaronHallEventAudience.IsHallEventPetitioner(a.PetitionerName)
+            ? L["Hall event"]
+            : a.PetitionerName;
 
     private static bool TopicBelongsTo(BaronAudienceDTO topic, string label, string personName)
     {
@@ -542,10 +668,26 @@
 
     protected override async Task OnInitializedAsync()
     {
+        _callbackService.OnChange += OnSelectedCharacterChanged;
         await LoadBaronyAsync();
         if (Barony is not null)
             await ReloadAsync();
     }
+
+    private void OnSelectedCharacterChanged()
+    {
+        _ = InvokeAsync(async () =>
+        {
+            _overlayAutoOpened = false;
+            await LoadBaronyAsync();
+            if (Barony is not null)
+                await ReloadAsync();
+            else
+                StateHasChanged();
+        });
+    }
+
+    public void Dispose() => _callbackService.OnChange -= OnSelectedCharacterChanged;
 
     private async Task ReloadAsync()
     {
@@ -575,7 +717,59 @@
         _audiences = await _baronyRepo.GetAudiences(BaronyId);
         _advisors = await _baronyRepo.GetAdvisors(Barony.Id);
         _hallAdventures = await _baronyRepo.GetHallAdventures(BaronyId);
+        _hallEvents = await _baronyRepo.GetHallEvents(
+            BaronyId,
+            includeArchived: CanManageAsMg,
+            includeScheduled: CanManageAsMg,
+            includeConverted: false);
+        if (CanManageAsMg)
+            _hallEventTemplates = await _baronyRepo.GetHallEventTemplates(BaronyId);
         ClampIndexes();
+        EnsureAudiencesModeForPendingHallEvents();
+        ShowPendingOverlayIfNeeded();
+    }
+
+    private void EnsureAudiencesModeForPendingHallEvents()
+    {
+        if (!ShouldPresentHallEventsToBaron || PendingHallEvents.Count == 0)
+            return;
+
+        if (_mode is HallMode.Council or HallMode.Adventures)
+            _mode = HallMode.Audiences;
+    }
+
+    private void ShowPendingOverlayIfNeeded()
+    {
+        if (_overlayAutoOpened || PendingHallEvents.Count == 0 || !ShouldPresentHallEventsToBaron)
+            return;
+
+        OpenHallEventsOverlay(preferPending: true);
+        _overlayAutoOpened = true;
+    }
+
+    private void OpenHallEventsOverlay(bool preferPending = false)
+    {
+        if (OverlayHallEvents.Count == 0)
+        {
+            _snackBar.Add(L["No hall events right now."], Severity.Info);
+            return;
+        }
+
+        if (_mode != HallMode.Audiences)
+            _mode = HallMode.Audiences;
+
+        if (preferPending || PendingHallEvents.Count > 0)
+        {
+            var pending = PendingHallEvents[0];
+            var idx = OverlayHallEvents.ToList().FindIndex(e => e.Id == pending.Id);
+            _overlayEventIndex = idx >= 0 ? idx : 0;
+        }
+        else if (_overlayEventIndex < 0 || _overlayEventIndex >= OverlayHallEvents.Count)
+        {
+            _overlayEventIndex = 0;
+        }
+
+        _overlayMinimized = false;
     }
 
     private void ClampIndexes()
@@ -584,6 +778,8 @@
             _audienceIndex = Math.Max(0, ActiveAudiences.Count - 1);
         if (_councilIndex >= SelectedCouncilTopics.Count)
             _councilIndex = Math.Max(0, SelectedCouncilTopics.Count - 1);
+        if (_overlayEventIndex >= OverlayHallEvents.Count)
+            _overlayEventIndex = Math.Max(0, OverlayHallEvents.Count - 1);
         if (_selectedSeatKey is not null
             && _selectedSeatKey != GeneralSeatKey
             && CouncilSeats.All(s => s.Key != _selectedSeatKey))
@@ -617,6 +813,14 @@
         _mode = HallMode.Adventures;
     }
 
+    private void MinimizeOverlay()
+    {
+        _overlayMinimized = true;
+    }
+
+    private void StepOverlayEvent(int delta) =>
+        _overlayEventIndex = Math.Clamp(_overlayEventIndex + delta, 0, Math.Max(0, OverlayHallEvents.Count - 1));
+
     private void SelectSeat(CouncilSeat seat)
     {
         _selectedSeatKey = seat.Key;
@@ -626,6 +830,7 @@
     private void SelectAudience(int audienceId)
     {
         _showMorePetitioners = false;
+        _overlayMinimized = true;
         var list = ActiveAudiences;
         for (var i = 0; i < list.Count; i++)
         {
@@ -636,6 +841,53 @@
             }
         }
     }
+
+    private void SelectOrbitItem(OrbitSatellite item)
+    {
+        if (item.Kind == OrbitItemKind.HallEvent)
+        {
+            SelectHallEvent(item.Id);
+            return;
+        }
+
+        SelectAudience(item.Id);
+    }
+
+    private void SelectHallEvent(int eventId)
+    {
+        _showMorePetitioners = false;
+        var idx = OverlayHallEvents.ToList().FindIndex(e => e.Id == eventId);
+        if (idx < 0)
+            return;
+
+        _overlayEventIndex = idx;
+        _overlayMinimized = false;
+    }
+
+    private string OrbitItemClass(OrbitSatellite item)
+    {
+        if (item.Kind == OrbitItemKind.HallEvent)
+        {
+            var cls = "audience-hall__advisor--hall-event";
+            if (item.NeedsAttention)
+                cls += " audience-hall__advisor--hall-event-pending";
+            if (item.IsScheduled)
+                cls += " audience-hall__advisor--hall-event-scheduled";
+            if (OverlayHallEvent?.Id == item.Id && !_overlayMinimized)
+                cls += " is-on";
+            return cls;
+        }
+
+        return CurrentAudience?.Id == item.Id ? "is-on" : "";
+    }
+
+    private string OrbitMoreItemClass(OrbitSatellite item) =>
+        item.Kind == OrbitItemKind.HallEvent ? "audience-hall__more-item--hall-event" : "";
+
+    private string OrbitItemTitle(OrbitSatellite item) =>
+        item.Kind == OrbitItemKind.HallEvent
+            ? $"{L["Hall event"]}: {item.Label}"
+            : item.Label;
 
     private void OpenAdventure(AdventureSatellite adventure)
     {
@@ -772,6 +1024,229 @@
             await ReloadAsync();
             _mode = HallMode.Adventures;
             _snackBar.Add(L["Adventure added."], Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task CreateHallEventAsync()
+    {
+        var dialog = await _dialogService.ShowAsync<HallEventDialog>(L["New hall event"],
+            new DialogParameters<HallEventDialog>
+            {
+                { x => x.Templates, _hallEventTemplates },
+                { x => x.CurrentTurn, Barony?.TurnNumber ?? 1 },
+            },
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not HallEventDialog.HallEventDialogResult data)
+            return;
+
+        _busy = true;
+        try
+        {
+            var created = await _baronyRepo.SaveHallEvent(
+                new BaronyHallEventDTO
+                {
+                    BaronyId = BaronyId,
+                    Title = data.Title,
+                    Body = data.Body,
+                    TriggerKind = data.TriggerKind,
+                    IconPath = data.IconPath,
+                    TurnNumber = Barony!.TurnNumber,
+                    ConsequenceAdditive = data.ConsequenceAdditive,
+                    ConsequencePercent = data.ConsequencePercent,
+                    ConsequenceEndTurn = data.ConsequenceEndTurn,
+                },
+                scheduleForNextTurn: data.ScheduleForNextTurn);
+            await ReloadAsync();
+            if (!data.ScheduleForNextTurn)
+            {
+                var idx = OverlayHallEvents.ToList().FindIndex(e => e.Id == created.Id);
+                _overlayEventIndex = idx >= 0 ? idx : 0;
+                _overlayMinimized = false;
+            }
+            _snackBar.Add(
+                data.ScheduleForNextTurn ? L["Hall event scheduled."] : L["Hall event published."],
+                Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task EditHallEventAsync(BaronyHallEventDTO hallEvent)
+    {
+        if (!CanManageAsMg || !hallEvent.CanMgEdit)
+            return;
+
+        var dialog = await _dialogService.ShowAsync<HallEventDialog>(L["Edit hall event"],
+            new DialogParameters<HallEventDialog>
+            {
+                { x => x.Existing, hallEvent },
+                { x => x.Templates, _hallEventTemplates },
+                { x => x.CurrentTurn, Barony?.TurnNumber ?? 1 },
+            },
+            new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true });
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not HallEventDialog.HallEventDialogResult data)
+            return;
+
+        _busy = true;
+        try
+        {
+            await _baronyRepo.SaveHallEvent(new BaronyHallEventDTO
+            {
+                Id = hallEvent.Id,
+                BaronyId = BaronyId,
+                Title = data.Title,
+                Body = data.Body,
+                TriggerKind = data.TriggerKind,
+                IconPath = data.IconPath,
+                TurnNumber = hallEvent.TurnNumber,
+                ConsequenceAdditive = data.ConsequenceAdditive,
+                ConsequencePercent = data.ConsequencePercent,
+                ConsequenceEndTurn = data.ConsequenceEndTurn,
+            });
+            await ReloadAsync();
+            if (hallEvent.IsPending)
+            {
+                var idx = VisibleHallEvents.ToList().FindIndex(e => e.Id == hallEvent.Id);
+                if (idx >= 0)
+                    _overlayEventIndex = idx;
+                _overlayMinimized = false;
+            }
+            _snackBar.Add(L["Hall event updated."], Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task MakeChapterFromHallEventAsync(BaronyHallEventDTO? ev)
+    {
+        if (ev is null || Barony is null)
+            return;
+
+        _busy = true;
+        try
+        {
+            var chapterName = BaronyHallEventChapter.FormatName(Barony.Year, Barony.Season, ev.Title);
+            var campaigns = (await _campaignRepository.GetAll(Barony.CharacterId)).ToList();
+            var campaign = campaigns.FirstOrDefault(c =>
+                                 string.Equals(c.Name, Barony.Name, StringComparison.OrdinalIgnoreCase))
+                           ?? campaigns.OrderByDescending(c => c.CreatedDate).FirstOrDefault();
+
+            if (campaign is null || campaign.Id <= 0)
+            {
+                _snackBar.Add(L["No campaign found for this baron. Create a barony campaign first."], Severity.Warning);
+                return;
+            }
+
+            var existing = (await _chapterRepository.GetAll(campaign.Id))
+                .FirstOrDefault(c => string.Equals(c.Name, chapterName, StringComparison.OrdinalIgnoreCase));
+
+            ChapterDTO chapter;
+            var createdNow = false;
+            if (existing is not null)
+            {
+                chapter = existing;
+            }
+            else
+            {
+                chapter = await _chapterRepository.Create(new ChapterDTO
+                {
+                    CampaignId = campaign.Id,
+                    Name = chapterName,
+                    Description = $"From hall event \"{ev.Title}\" (turn {ev.TurnNumber}).",
+                    CreatedDate = DateTime.Now,
+                    Characters = new List<CharacterDTO>
+                    {
+                        new() { Id = Barony.CharacterId },
+                    },
+                });
+                createdNow = true;
+            }
+
+            await _baronyRepo.LinkHallEventChapter(ev.Id, chapter.Id);
+            await ReloadAsync();
+            var idx = VisibleHallEvents.ToList().FindIndex(e => e.Id == ev.Id);
+            if (idx >= 0)
+                _overlayEventIndex = idx;
+            _snackBar.Add(
+                createdNow
+                    ? $"Chapter created: \"{chapter.Name}\"."
+                    : $"Chapter already exists: \"{chapter.Name}\".",
+                createdNow ? Severity.Success : Severity.Info);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task ArchiveHallEventAsync(BaronyHallEventDTO hallEvent)
+    {
+        if (!CanManageAsMg)
+            return;
+
+        _busy = true;
+        try
+        {
+            await _baronyRepo.ArchiveHallEvent(hallEvent.Id);
+            if (OverlayHallEvent?.Id == hallEvent.Id)
+                _overlayMinimized = true;
+            await ReloadAsync();
+            _snackBar.Add(L["Hall event archived."], Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private Task RespondToOverlayEventAsync(string responseBody) =>
+        AcknowledgeHallEventAsync(OverlayHallEvent, responseBody);
+
+    private async Task AcknowledgeHallEventAsync(BaronyHallEventDTO? hallEvent, string responseBody)
+    {
+        if (hallEvent is null || !CanWriteAsBaron)
+            return;
+
+        _busy = true;
+        try
+        {
+            var result = await _baronyRepo.AcknowledgeHallEvent(hallEvent.Id, responseBody);
+            await ReloadAsync();
+            _overlayMinimized = true;
+            _overlayEventIndex = 0;
+            _mode = HallMode.Audiences;
+            SelectAudience(result.Audience.Id);
+            _snackBar.Add(L["Response sent — continues as an audience."], Severity.Success);
         }
         catch (Exception ex)
         {

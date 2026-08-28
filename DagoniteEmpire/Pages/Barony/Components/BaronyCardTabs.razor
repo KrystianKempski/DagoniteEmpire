@@ -1,6 +1,7 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @implements IAsyncDisposable
 @using DA_Business.Repository.BaronyRepos
+@using DA_Business.Services
 @using DA_Business.Services.Interfaces
 @using DA_Models.ChatModels
 @using Microsoft.AspNetCore.SignalR.Client
@@ -8,6 +9,7 @@
 @inject IUserService _userService
 @inject IBaronyRepository _baronyRepo
 @inject IBaronyBattleMapRepository _battleMapRepo
+@inject CallbackService _callbackService
 
 <nav class="barony-tabbar"
      aria-label="@(L["Barony tabs"])"
@@ -43,6 +45,10 @@
                 <MudIcon Icon="@mudIcon" Size="Size.Small" />
             }
             @L[tab.Label]
+            @if (key == "audience-hall" && _hallEventPendingCount > 0)
+            {
+                <span class="barony-tabbar__badge">@_hallEventPendingCount</span>
+            }
         </div>
         </BaronyTooltip>
     }
@@ -82,16 +88,27 @@
     private bool _showBattleMapTab = true;
     private bool _showNotesTab;
     private bool _showAudienceHallTab;
+    private int _hallEventPendingCount;
     private HubConnection? _hubConnection;
     private int _baronyId;
 
     protected override async Task OnInitializedAsync()
     {
         _navigationManager.LocationChanged += OnLocationChanged;
+        _callbackService.OnChange += OnSelectedCharacterChanged;
         await LoadBattleMapVisibilityAsync();
+        await RefreshHallEventBadgeAsync();
         await LoadOrderAsync();
         await InitializeSignalRAsync();
     }
+
+    private void OnSelectedCharacterChanged() =>
+        InvokeAsync(async () =>
+        {
+            await LoadBattleMapVisibilityAsync();
+            await RefreshHallEventBadgeAsync();
+            StateHasChanged();
+        });
 
     private async Task InitializeSignalRAsync()
     {
@@ -143,6 +160,14 @@
                     if (mgBarony is not null)
                         _baronyId = mgBarony.Id;
                 }
+                else
+                {
+                    var summaries = await _baronyRepo.GetAllSummaries();
+                    if (summaries.Count > 0)
+                        _baronyId = summaries[0].Id;
+                }
+
+                await RefreshHallEventBadgeAsync();
                 return;
             }
 
@@ -175,6 +200,28 @@
             _showBattleMapTab = false;
             _showNotesTab = false;
             _showAudienceHallTab = false;
+            _baronyId = 0;
+        }
+
+        await RefreshHallEventBadgeAsync();
+    }
+
+    private async Task RefreshHallEventBadgeAsync()
+    {
+        if (_baronyId <= 0)
+        {
+            _hallEventPendingCount = 0;
+            return;
+        }
+
+        try
+        {
+            var badge = await _baronyRepo.GetHallEventInboxBadge(_baronyId);
+            _hallEventPendingCount = badge.PendingCount;
+        }
+        catch
+        {
+            _hallEventPendingCount = 0;
         }
     }
 
@@ -375,8 +422,8 @@
         InvokeAsync(async () =>
         {
             await LoadBattleMapVisibilityAsync();
-            _orderedTabs = ApplySavedOrder(
-                await SafeGetTabOrderJson());
+            await RefreshHallEventBadgeAsync();
+            _orderedTabs = ApplySavedOrder(await SafeGetTabOrderJson());
             StateHasChanged();
         });
 
@@ -389,6 +436,7 @@
     public async ValueTask DisposeAsync()
     {
         _navigationManager.LocationChanged -= OnLocationChanged;
+        _callbackService.OnChange -= OnSelectedCharacterChanged;
         if (_hubConnection is not null)
         {
             try { await _hubConnection.DisposeAsync(); }

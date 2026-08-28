@@ -30,4 +30,12 @@ namespace DA_Models.BaronyModels
         public bool SeenByBaron { get; set; } = true;
         public bool SeenByGm { get; set; } = true;
     }
+
+    /// <summary>Lightweight unread badge for the QA FAB (baron or MG, single barony).</summary>
+    public class BaronQaInboxBadgeDTO
+    {
+        public int UnreadCount { get; set; }
+        public int? LatestThreadId { get; set; }
+        public int BaronyId { get; set; }
+    }
 }

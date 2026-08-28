@@ -7,17 +7,17 @@
 
 @if (_visible)
 {
-    <BaronyTooltip Text="@(L["Switch barony"])">
-        <button type="button"
-                class="barony-meta-bar__name barony-meta-bar__name--switch"
-                @onclick="OpenSwitchDialogAsync">
-        @(_selected?.Name ?? "Select barony")
-        </button>
-    </BaronyTooltip>
+    <button type="button"
+            class="barony-meta-bar__name barony-meta-bar__name--switch"
+            disabled="@_busy"
+            @onclick="OpenSwitchDialogAsync">
+        @(_selected?.Name ?? L["Select barony"].Value)
+    </button>
 }
 
 @code {
     private bool _visible;
+    private bool _busy;
     private List<BaronyListItemDTO> _baronies = new();
     private BaronyListItemDTO? _selected;
 
@@ -67,7 +67,7 @@
         };
 
         var dialog = await _dialogService.ShowAsync<BaronySwitchDialog>(
-            "Switch barony",
+            L["Switch barony"],
             parameters,
             new DialogOptions
             {
@@ -88,16 +88,17 @@
         if (_selected is not null && barony.CharacterId == _selected.CharacterId)
             return;
 
+        _busy = true;
         _selected = barony;
         try
         {
             await _userService.SetSelectedCharId(barony.CharacterId);
-            var uri = _navigationManager.Uri;
-            _navigationManager.NavigateTo(uri, forceLoad: true);
+            _navigationManager.NavigateTo(_navigationManager.Uri, forceLoad: true);
         }
         catch (Exception ex)
         {
             _snackBar.Add(L["Failed to switch barony: "] + ex.Message, Severity.Error);
+            _busy = false;
         }
     }
 }

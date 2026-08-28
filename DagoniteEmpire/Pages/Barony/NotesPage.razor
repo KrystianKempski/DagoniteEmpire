@@ -262,7 +262,8 @@ else if (Barony is not null)
             <BaronQaPanel BaronyId="BaronyId"
                           CurrentTurn="CurrentTurn"
                           CanManageAsMg="CanManageAsMg"
-                          CanEdit="CanEdit" />
+                          CanEdit="CanEdit"
+                          InitialThreadId="_qaInitialThreadId" />
         </MudTabPanel>
     </MudTabs>
     </div>
@@ -285,6 +286,7 @@ else if (Barony is not null)
     private int CurrentTurn => Barony?.TurnNumber ?? 0;
 
     private int _activeTab;
+    private int? _qaInitialThreadId;
 
     /// <summary>MG notes live in a separate scope so baron and Game Master never see each other's notes.</summary>
     private bool IsGmScope => CanManageAsMg;
@@ -356,6 +358,16 @@ else if (Barony is not null)
         _reminders = await _notesRepo.GetNotes(BaronyId, BaronyPlayerNoteType.Reminder, NoteScope);
 
         _activeTab = ReadTabFromQuery();
+        _qaInitialThreadId = ReadQaThreadFromQuery();
+    }
+
+    private int? ReadQaThreadFromQuery()
+    {
+        var uri = _navigationManager.ToAbsoluteUri(_navigationManager.Uri);
+        var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        if (!query.TryGetValue("thread", out var thread))
+            return null;
+        return int.TryParse(thread.ToString(), out var id) && id > 0 ? id : null;
     }
 
     private int ReadTabFromQuery()

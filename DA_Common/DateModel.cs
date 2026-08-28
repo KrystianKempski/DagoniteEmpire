@@ -1,4 +1,4 @@
-﻿
+
 namespace DA_Common
 {
     public class DateModel
@@ -10,22 +10,41 @@ namespace DA_Common
 
         public DateModel(int Date)
         {
-            if (Date < 1)
+            if (Date == 0)
                 return;
 
-            Year = SD.Calendar.StartYear + (Date / 365);
+            int yearDelta;
+            int dayOfYear;
+
+            if (Date > 0)
+            {
+                // Epoch: DateNumber 1 = StartYear, day 1 of month 1.
+                // (Date-1) avoids Dec 31 mapping to day 0 of the next year.
+                yearDelta = (Date - 1) / 365;
+                dayOfYear = ((Date - 1) % 365) + 1;
+            }
+            else
+            {
+                // Negative offsets = years before StartYear.
+                // Note: AllDays == 0 is reserved for "unset" (defaults to StartYear);
+                // Dec 31 of StartYear-1 also computes to 0 and cannot round-trip.
+                yearDelta = (int)Math.Floor((Date - 1) / 365.0);
+                dayOfYear = Date - yearDelta * 365;
+            }
+
+            Year = SD.Calendar.StartYear + yearDelta;
             Month = 1;
             Day = 0;
-            Date = Date % 365;
+            var remaining = dayOfYear;
 
             foreach (var m in SD.Calendar.Months)
             {
-                if (Date <= m.Days)
+                if (remaining <= m.Days)
                     break;
-                Date -= m.Days;
+                remaining -= m.Days;
                 Month++;
             }
-            Day = Date;
+            Day = remaining;
         }
 
         public DateModel(int day, int month, int year = SD.Calendar.StartYear)
@@ -42,8 +61,9 @@ namespace DA_Common
         }
         public static int GetDaysFromDate(DateModel date)
         {
-            if (date.Day < 1 || date.Month < 1 || date.Year < SD.Calendar.StartYear)
+            if (date.Day < 1 || date.Month < 1)
                 return 0;
+
             int days = date.Day;
 
             foreach (var m in SD.Calendar.Months)
@@ -51,31 +71,17 @@ namespace DA_Common
                 if (m.Number >= date.Month)
                     break;
                 days += m.Days;
-
             }
 
             return ((date.Year - SD.Calendar.StartYear) * 365) + days;
         }
         public static DateModel? GetDateFromDays(int days)
         {
-            if (days<1)
+            if (days == 0)
                 return null;
 
-            int year = days / 365;
-            int month = 1;
-            int day = 0;
-            days = days % 365;
-
-            foreach (var m in SD.Calendar.Months)
-            {
-                if (days <= m.Days)
-                    break;
-                days -= m.Days;
-                month++;
-            }
-            day = days;
-
-            return new DateModel(day,month,year);
+            // Same epoch as DateModel(int) / GetDaysFromDate.
+            return new DateModel(days);
         }
         public static int operator -(DateModel a, DateModel b)
         {

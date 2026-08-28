@@ -1,0 +1,44 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            <MudText Typo="Typo.body2" Class="mb-2" Style="color:var(--barony-muted);">
+                @L["Calendar year for this barony. Changing it does not advance the turn or season."]
+            </MudText>
+            <MudNumericField @bind-Value="_year"
+                             Label="@(L["Year"])"
+                             HelperText="@(L["Positive year number."])"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="1"
+                             Max="9999"
+                             Immediate="true"
+                             Class="baron-influence-field" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@L["Save"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public int Year { get; set; }
+
+    private int _year;
+
+    protected override void OnInitialized()
+    {
+        _year = Math.Clamp(Year, 1, 9999);
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save() =>
+        MudDialog.Close(DialogResult.Ok(Math.Clamp(_year, 1, 9999)));
+}

@@ -1914,6 +1914,10 @@ button.barony-meta-bar__name--switch:focus-visible {
     outline-offset: 2px;
 }
 
+.barony-meta-bar--switcher-only {
+    margin-bottom: 0.75rem;
+}
+
 .barony-meta-bar__stats {
     display: flex;
     flex-wrap: wrap;
@@ -2038,7 +2042,13 @@ button.barony-meta-bar__stat--clickable:focus-visible {
 
 .barony-hud-tip--start .barony-hud-tip__popup {
     left: 0;
+    right: auto;
     transform: none;
+}
+
+.barony-meta-bar > .barony-hud-tip .barony-hud-tip__popup {
+    top: calc(100% + 6px);
+    bottom: auto;
 }
 
 .barony-hud-tip--end .barony-hud-tip__popup {
@@ -4227,6 +4237,14 @@ a.city-building-name-text--link:hover {
     bottom: 5.5rem;
     /* Below MudDialog overlay (~1300) so the FAB never steals clicks from letter dialogs. */
     z-index: 1050;
+}
+
+.baron-letter-inbox-fab--qa {
+    bottom: 13rem;
+}
+
+.baron-letter-inbox-fab--reminder {
+    bottom: 9.25rem;
 }
 
 .baron-letter-dialog .ql-tooltip {
@@ -6834,6 +6852,7 @@ button.court-duty-name--editable:hover {
 }
 
 .barony-tabbar__tab {
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -6878,6 +6897,22 @@ button.court-duty-name--editable:hover {
     border-bottom: 3px solid var(--barony-accent);
     font-weight: 700;
     margin-top: 0;
+}
+
+.barony-tabbar__badge {
+    position: absolute;
+    top: .15rem;
+    right: .2rem;
+    min-width: 1.1rem;
+    height: 1.1rem;
+    padding: 0 .22rem;
+    border-radius: 999px;
+    background: var(--barony-neg);
+    color: #fff;
+    font-size: .68rem;
+    font-weight: 700;
+    line-height: 1.1rem;
+    text-align: center;
 }
 
 .barony-terrain-grid-wrap {
@@ -10494,6 +10529,26 @@ button.artifact-location-btn {
     align-self: center;
 }
 
+/* Hall event header icon — global so it works even if scoped bundle is cached. */
+.hall-event-panel__icon-wrap {
+    width: 2.4rem;
+    height: 2.4rem;
+    flex: 0 0 2.4rem;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hall-event-panel__icon {
+    width: 2.4rem !important;
+    height: 2.4rem !important;
+    max-width: 2.4rem !important;
+    max-height: 2.4rem !important;
+    object-fit: contain;
+    display: block;
+}
+
 .audience-scroll__meta {
     display: flex;
     align-items: center;
@@ -10744,6 +10799,54 @@ button.artifact-location-btn {
     margin-left: auto;
     font-size: 0.8rem;
     color: var(--barony-muted);
+}
+
+.hall-event-mgmt-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 0.65rem;
+}
+
+.hall-event-mgmt-card {
+    max-width: 44rem;
+}
+
+.hall-event-mgmt-card__footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 0.35rem;
+}
+
+.hall-event-templates__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.hall-event-templates__item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid var(--barony-border, rgba(255, 255, 255, 0.08));
+    border-radius: 4px;
+}
+
+.hall-event-templates__name {
+    font-weight: 600;
+    min-width: 8rem;
+}
+
+.hall-event-templates__title {
+    flex: 1;
+    color: var(--barony-muted);
+    font-size: 0.9rem;
+}
+
+.hall-event-templates__actions {
+    display: flex;
+    gap: 0.15rem;
 }
 
 

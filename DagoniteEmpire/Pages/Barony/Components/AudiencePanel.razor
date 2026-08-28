@@ -21,6 +21,10 @@
                         {
                             <span>@L["Council"]</span>
                         }
+                        else if (IsHallEventAudience)
+                        {
+                            <span>@L["Hall event"]</span>
+                        }
                         else
                         {
                             <span>@Audience.PetitionerName</span>
@@ -34,7 +38,7 @@
                 @foreach (var x in Audience.Exchanges.OrderBy(e => e.SortOrder).ThenBy(e => e.Id))
                 {
                     <div class="audience-scroll__passage @ExchangeThemeClass(x)">
-                        <span class="audience-scroll__speaker">@L[SpeakerLabel(x)]</span>
+                        <span class="audience-scroll__speaker">@ExchangeSpeakerDisplay(x)</span>
                         <div class="audience-scroll__body">
                             @if (TryGetChapterLink(x, out var chapterId, out var chapterLabel))
                             {
@@ -108,7 +112,7 @@
                                 }
                                 else
                                 {
-                                    <MudSelectItem Value="@SpeakerModePetitioner">@Audience.PetitionerName (petitioner)</MudSelectItem>
+                                    <MudSelectItem Value="@SpeakerModePetitioner">@PetitionerDisplayName (petitioner)</MudSelectItem>
                                     <MudSelectItem Value="@BaronCouncilSession.GameMasterSpeaker">@BaronCouncilSession.GameMasterSpeaker</MudSelectItem>
                                     <MudSelectItem Value="@SpeakerModeOther">@L["Other character"]</MudSelectItem>
                                 }
@@ -251,14 +255,21 @@ else
                 {
                     <span class="project-output-badge">@L["Council"]</span>
                 }
-                @if (!IsCouncil
-                    || !string.Equals(Audience.PetitionerName, BaronCouncilSession.PetitionerLabel, StringComparison.OrdinalIgnoreCase))
+                else if (IsHallEventAudience)
                 {
                     @if (!string.IsNullOrWhiteSpace(Audience.PetitionerIcon))
                     {
                         <img src="@("/" + PetitionerIconSrc)" class="baron-audience__petitioner-icon" alt="" />
                     }
-                <span class="project-output-badge">@Audience.PetitionerName</span>
+                    <span class="project-output-badge">@L["Hall event"]</span>
+                }
+                else
+                {
+                    @if (!string.IsNullOrWhiteSpace(Audience.PetitionerIcon))
+                    {
+                        <img src="@("/" + PetitionerIconSrc)" class="baron-audience__petitioner-icon" alt="" />
+                    }
+                    <span class="project-output-badge">@Audience.PetitionerName</span>
                 }
                 <span class="baron-audience__status baron-audience__status--@StatusCss">@Audience.StatusDisplay</span>
                 @if (Audience.ContinuedFromAudienceId is not null)
@@ -287,7 +298,7 @@ else
                 {
                     <div class="baron-audience__exchange @ExchangeThemeClass(x)">
                         <div class="baron-audience__exchange-head">
-                            @SpeakerLabel(x)
+                            @ExchangeSpeakerDisplay(x)
                             <span>· T@(x.TurnNumber)</span>
                         </div>
                         <div class="baron-audience__exchange-body">
@@ -379,7 +390,7 @@ else
                                 }
                                 else
                                 {
-                                <MudSelectItem Value="@SpeakerModePetitioner">@Audience.PetitionerName (petitioner)</MudSelectItem>
+                                <MudSelectItem Value="@SpeakerModePetitioner">@PetitionerDisplayName (petitioner)</MudSelectItem>
                                     <MudSelectItem Value="@BaronCouncilSession.GameMasterSpeaker">@BaronCouncilSession.GameMasterSpeaker</MudSelectItem>
                                     <MudSelectItem Value="@SpeakerModeOther">@L["Other character"]</MudSelectItem>
                                 }
@@ -577,6 +588,11 @@ else
 
     private bool IsCouncil => BaronAudienceKind.IsCouncil(Audience.Kind);
 
+    private bool IsHallEventAudience => BaronHallEventAudience.IsHallEventPetitioner(Audience.PetitionerName);
+
+    private string PetitionerDisplayName =>
+        IsHallEventAudience ? L["Hall event"] : Audience.PetitionerName;
+
     private string PetitionerIconSrc => PetitionerIconCatalog.PathFor(Audience.PetitionerIcon);
 
     private IReadOnlyList<string> CourtSpeakerNames =>
@@ -589,10 +605,10 @@ else
 
     private bool HasCourtSpeakers => CourtSpeakerNames.Count > 0;
 
-    private string BaronLordSpeaker => FormatBaronLordSpeaker(BaronCharacterName);
+    private string BaronLordSpeaker => BaronHallEventAudience.FormatBaronSpeaker(BaronCharacterName);
 
     public static string FormatBaronLordSpeaker(string? characterName) =>
-        string.IsNullOrWhiteSpace(characterName) ? "Lord" : $"Lord {characterName.Trim()}";
+        BaronHallEventAudience.FormatBaronSpeaker(characterName);
 
     private string StatusCss => (Audience.Status ?? "scheduled").ToLowerInvariant();
 
@@ -763,6 +779,11 @@ else
                 ? "baron-audience__exchange--gm"
                 : "baron-audience__exchange--baron";
 
+    private string ExchangeSpeakerDisplay(BaronAudienceExchangeDTO x) =>
+        !string.IsNullOrWhiteSpace(x.SpeakerName)
+            ? x.SpeakerName.Trim()
+            : L[SpeakerLabel(x)];
+
     private string SpeakerLabel(BaronAudienceExchangeDTO x)
     {
         if (x.IsResourceChange)
@@ -770,7 +791,11 @@ else
         if (!string.IsNullOrWhiteSpace(x.SpeakerName))
             return x.SpeakerName.Trim();
         return x.IsFromPetitioner
-            ? (IsCouncil ? BaronCouncilSession.PetitionerLabel : Audience.PetitionerName)
+            ? (IsCouncil
+                ? BaronCouncilSession.PetitionerLabel
+                : IsHallEventAudience
+                    ? "Hall event"
+                    : Audience.PetitionerName)
             : "Lord";
     }
 

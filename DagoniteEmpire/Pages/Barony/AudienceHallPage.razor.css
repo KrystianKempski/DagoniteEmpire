@@ -42,16 +42,10 @@
     filter: drop-shadow(0 6px 14px rgba(47, 42, 36, .34));
 }
 
-/* adventurecamp.svg has a lot of empty margin baked into its viewBox, so object-fit:contain
-   leaves it looking small — zoom it in without resizing the (shared) throne box itself. */
 .audience-hall__throne--zoom {
     transform: scale(1.4);
 }
 
-/* Row layout: left satellites — center icon — right satellites. Puts petitioner/advisor
-   icons "around" the throne without needing absolute-position trigonometry. 70% of the
-   stage's fixed height — always wraps the center icon (even the bare Idle throne) so its
-   own vertical centering is consistent across every mode. */
 .audience-hall__ring {
     flex: 0 0 70%;
     height: 70%;
@@ -91,11 +85,6 @@
 .audience-hall__ring-core--static:hover,
 .audience-hall__ring-core--static:active {
     transform: none;
-}
-
-.audience-hall__ring-core .audience-hall__badge {
-    top: .55rem;
-    right: .55rem;
 }
 
 .audience-hall__satellites {
@@ -169,6 +158,7 @@
     width: var(--advisor-icon-size) !important;
     height: var(--advisor-icon-size) !important;
     object-fit: contain;
+    filter: brightness(0);
 }
 
 .audience-hall__advisor-label {
@@ -189,13 +179,70 @@
     color: var(--barony-accent);
 }
 
-/* Remaining 30% of the fixed-height stage — its own band, so the tiles center inside it
-   instead of relying on the ring's leftover space. */
+/* Hall events in the audience orbit — distinct from petitioners. */
+.audience-hall__advisor--hall-event .audience-hall__advisor-icon img {
+    filter: none;
+}
+
+.audience-hall__advisor--hall-event .audience-hall__advisor-icon {
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(156, 122, 51, .45);
+    background: rgba(244, 232, 207, .55);
+}
+
+.audience-hall__advisor--hall-event-pending .audience-hall__advisor-icon {
+    box-shadow:
+        0 0 0 2px rgba(156, 122, 51, .75),
+        0 0 14px rgba(156, 122, 51, .35);
+    animation: hall-event-orbit-glow 2.4s ease-in-out infinite;
+}
+
+.audience-hall__advisor--hall-event-scheduled .audience-hall__advisor-icon {
+    box-shadow: 0 0 0 2px rgba(74, 106, 139, .55);
+    background: rgba(232, 240, 248, .55);
+}
+
+.audience-hall__advisor--hall-event-scheduled .audience-hall__advisor-label {
+    opacity: .82;
+    font-style: italic;
+}
+
+.audience-hall__badge--hall-event {
+    background: #9c7a33;
+    min-width: 1.1rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    padding: 0;
+    font-size: .82rem;
+    line-height: 1;
+}
+
+.audience-hall__more-item--hall-event img {
+    filter: none;
+    box-shadow: 0 0 0 1px rgba(156, 122, 51, .45);
+    border-radius: 50%;
+    background: rgba(244, 232, 207, .55);
+}
+
+@keyframes hall-event-orbit-glow {
+    0%, 100% {
+        box-shadow:
+            0 0 0 2px rgba(156, 122, 51, .65),
+            0 0 10px rgba(156, 122, 51, .25);
+    }
+    50% {
+        box-shadow:
+            0 0 0 2px rgba(156, 122, 51, .95),
+            0 0 16px rgba(156, 122, 51, .45);
+    }
+}
+
 .audience-hall__tiles {
     flex: 0 0 30%;
     height: 30%;
+    min-height: 0;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     gap: 1.4rem;
     width: 100%;
@@ -215,15 +262,6 @@
     color: var(--barony-ink);
     font-family: 'IM Fell English', 'Times New Roman', serif;
     font-size: .82rem;
-    transition: transform .18s ease, color .15s ease;
-}
-
-.audience-hall__tile:hover:not(:disabled) {
-    transform: translateY(-3px) scale(1.05);
-}
-
-.audience-hall__tile:active:not(:disabled) {
-    transform: scale(.96);
 }
 
 .audience-hall__tile img {
@@ -241,37 +279,26 @@
     cursor: default;
 }
 
-/* Petition/parchment: fills the remaining fixed height. AudiencePanel (.audience-scroll)
-   owns its own internal scroll region, so this wrapper must not scroll too. Relative so the
-   pager can dock to its top-right corner, over the audience text area. No bottom padding —
-   the reply composer (.audience-scroll__dock) should sit flush against the screen's bottom. */
 .audience-hall__petition {
-    position: relative;
-    width: 100%;
-    flex: 1 1 0;
+    flex: 1 1 auto;
     min-height: 0;
+    width: 100%;
     display: flex;
     flex-direction: column;
-    align-items: center;
     overflow: hidden;
-    padding: 0;
+    padding: 0 .75rem .75rem;
 }
 
-/* Prev/next audience picker — pinned to the top-right corner of the parchment. */
 .audience-hall__pager {
-    position: absolute;
-    top: .55rem;
-    right: .7rem;
-    z-index: 5;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
-    gap: .5rem;
+    justify-content: center;
+    gap: .85rem;
+    padding: .4rem 0;
     color: var(--barony-muted);
     font-family: 'IM Fell English', 'Times New Roman', serif;
-    font-size: .85rem;
-    background: transparent;
-    padding: .15rem .55rem;
-    animation: audience-hall-fade-up .55s ease both;
+    font-size: .92rem;
 }
 
 .audience-hall__badge {
@@ -289,78 +316,88 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: audience-hall-pop-in .5s cubic-bezier(.34, 1.56, .64, 1) both;
 }
 
-/* "Needs the baron's attention" flag on a petitioner icon — amber, distinct from the red
-   count badges (tile/seat totals), so the two meanings don't look identical. */
 .audience-hall__badge--flag {
-    background: var(--barony-accent);
-}
-
-/* Overflow list: "More" activator matches the other satellites; menu rows show a small
-   icon + name + (optional) attention flag, laid out inline instead of absolute-positioned. */
-.audience-hall__more-item {
-    display: flex;
-    align-items: center;
-    gap: .5rem;
-}
-
-.audience-hall__more-item img {
-    width: 1.6rem;
-    height: 1.6rem;
-    object-fit: contain;
-    flex-shrink: 0;
+    min-width: 1.1rem;
+    width: 1.1rem;
+    height: 1.1rem;
+    padding: 0;
+    font-size: .82rem;
+    line-height: 1;
 }
 
 .audience-hall__badge--inline {
     position: static;
-    margin-left: auto;
-    animation: none;
-}
-
-/* Shared entrance animations — reused by the throne, the ring and badges. */
-@keyframes audience-hall-pop-in {
-    from {
-        opacity: 0;
-        transform: scale(.85);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
+    display: inline-flex;
+    vertical-align: middle;
+    margin-left: .25rem;
 }
 
 @keyframes audience-hall-fade-up {
     from {
         opacity: 0;
-        transform: translateY(8px);
+        transform: translateY(10px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
     }
 }
 
-@media (min-width: 1280px) {
-    /* Desktop: bottom Barony tab bar is visible — reserve its 42px band. */
-    .audience-hall {
-        height: calc(100dvh - 64px - 42px);
-    }
-}
-
 @media (max-width: 640px) {
     .audience-hall {
-        --throne: clamp(6rem, 24dvh, 11rem);
+        --throne: clamp(6rem, 24dvh, 14rem);
         max-width: none;
     }
 
     .audience-hall__advisor {
-        --advisor-card-width: 110px;
-        --advisor-card-height: 80px;
-        --advisor-icon-size: 2.35rem;
-        font-size: .78rem;
+        --advisor-card-width: 90px;
+        --advisor-card-height: 72px;
+        --advisor-icon-size: 2.4rem;
+        font-size: .82rem;
     }
+}
+
+/* ---- Hall events overlay ---- */
+.hall-event-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.hall-event-overlay__backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(20, 16, 12, .58);
+}
+
+.hall-event-overlay__sheet {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 44rem);
+    animation: hall-event-overlay-in .35s cubic-bezier(.22, 1, .36, 1) both;
+}
+
+.hall-event-overlay__pager {
+    margin-top: .5rem;
+}
+
+@keyframes hall-event-overlay-in {
+    from {
+        opacity: 0;
+        transform: translateY(12px) scale(.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.audience-hall__ink-btn:disabled {
+    opacity: .35;
 }

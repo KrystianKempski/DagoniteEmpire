@@ -160,7 +160,7 @@ namespace DagoniteEmpire.Pages.Barony.Components
                         }),
                         new BaronyHelpSection("Working with the Game Master", new[]
                         {
-                            "Editing Unrest and Conjuncture, switching which barony is shown, and resolving the turn are Game Master actions.",
+                            "Editing Year, Unrest and Conjuncture, switching which barony is shown, and resolving the turn are Game Master actions.",
                             "Mark Ready when you are done; the Game Master reviews and resolves the turn to apply all changes.",
                         }),
                     },
@@ -168,7 +168,7 @@ namespace DagoniteEmpire.Pages.Barony.Components
                     {
                         new BaronyHelpSection("Game Master controls", new[]
                         {
-                            "Edit Unrest and Conjuncture, switch the active barony, and Resolve Turn / clear the ready state.",
+                            "Edit Year, Unrest and Conjuncture, switch the active barony, and Resolve Turn / clear the ready state.",
                         }),
                     }),
 
