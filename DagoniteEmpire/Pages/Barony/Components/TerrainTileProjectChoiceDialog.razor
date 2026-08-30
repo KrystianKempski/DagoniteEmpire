@@ -1,0 +1,58 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog">
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                @L["Tile ({0}, {1}) — choose a map project.", Tile.X, Tile.Y]
+            </MudText>
+            <MudText Typo="Typo.body2" Class="mb-3">
+                @L["This tile supports more than one project type."]
+            </MudText>
+
+            @if (CanBuild)
+            {
+                <MudButton Variant="Variant.Outlined"
+                           Class="mb-2"
+                           FullWidth="true"
+                           OnClick="ChooseBuild">
+                    @L["Build improvement"]
+                </MudButton>
+            }
+
+            @if (CanClearForest)
+            {
+                <MudButton Variant="Variant.Outlined"
+                           FullWidth="true"
+                           OnClick="ChooseClearForest">
+                    @L["Forest clearing"]
+                </MudButton>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Close"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    public enum TerrainTileProjectChoice
+    {
+        BuildImprovement,
+        ForestClearing,
+    }
+
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public TerrainTileDTO Tile { get; set; } = new();
+    [Parameter] public bool CanBuild { get; set; }
+    [Parameter] public bool CanClearForest { get; set; }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void ChooseBuild() => MudDialog.Close(DialogResult.Ok(TerrainTileProjectChoice.BuildImprovement));
+
+    private void ChooseClearForest() => MudDialog.Close(DialogResult.Ok(TerrainTileProjectChoice.ForestClearing));
+}

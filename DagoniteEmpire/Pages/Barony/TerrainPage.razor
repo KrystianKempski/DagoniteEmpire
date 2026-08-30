@@ -120,7 +120,7 @@ else
                         HoverLines="@_hoverTileLines"
                         PaintEnabled="@(CanManageAsMg && PaintMode != TerrainPaintMode.None)"
                         ClickEnabled="@CanProposeConstruction"
-                        CanProposeBuildAt="CanProposeBuildAt"
+                        CanProposeBuildAt="CanProposeTerrainActionAt"
                         OnCellHover="HoverCellAsync"
                         OnCellPaint="PaintCellAsync"
                         OnCellClick="OnTileClickAsync"
@@ -278,6 +278,32 @@ else
         }
     }
 
+    private bool CanProposeTerrainActionAt(int x, int y) =>
+        CanProposeBuildAt(x, y) || CanProposeForestClearingAt(x, y);
+
+    private bool CanProposeForestClearingAt(int x, int y)
+    {
+        if (!CanProposeConstruction)
+            return false;
+
+        if (!_tileIndex.TryGetValue((x, y), out var tile) || tile.Id <= 0)
+            return false;
+
+        if (_playerPrimaryDomainId is not int primaryId || tile.MapDomainId != primaryId)
+            return false;
+
+        if (_improvementByTileId.ContainsKey(tile.Id))
+            return false;
+
+        if (_constructionByTileId.ContainsKey(tile.Id))
+            return false;
+
+        if (TerrainImprovementCatalogMap.IsWaterTile(tile.BaseType))
+            return false;
+
+        return ForestClearingFormulas.CanClearTile(tile.FeaturesMask);
+    }
+
     private bool CanProposeBuildAt(int x, int y)
     {
         if (!CanProposeConstruction)
@@ -346,6 +372,62 @@ else
             return;
         }
 
+        var (placeable, lockedHerd) = GetPlaceableImprovementTemplates(tile);
+        var canBuild = placeable.Count > 0;
+        var canClearForest = ForestClearingFormulas.CanClearTile(tile.FeaturesMask);
+
+        if (canBuild && canClearForest)
+        {
+            var choiceParams = new DialogParameters<TerrainTileProjectChoiceDialog>
+            {
+                { x => x.Tile, tile },
+                { x => x.CanBuild, true },
+                { x => x.CanClearForest, true },
+            };
+            var choiceDialog = await _dialogService.ShowAsync<TerrainTileProjectChoiceDialog>(
+                L["Map project"],
+                choiceParams,
+                new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
+            var choiceResult = await choiceDialog.Result;
+            if (choiceResult is null || choiceResult.Canceled)
+                return;
+
+            if (choiceResult.Data is TerrainTileProjectChoiceDialog.TerrainTileProjectChoice.BuildImprovement)
+                await OpenBuildProjectDialogAsync(tile, placeable, lockedHerd);
+            else if (choiceResult.Data is TerrainTileProjectChoiceDialog.TerrainTileProjectChoice.ForestClearing)
+                await OpenForestClearingProjectDialogAsync(tile);
+            return;
+        }
+
+        if (canClearForest)
+        {
+            await OpenForestClearingProjectDialogAsync(tile);
+            return;
+        }
+
+        if (canBuild)
+        {
+            await OpenBuildProjectDialogAsync(tile, placeable, lockedHerd);
+            return;
+        }
+
+        if (lockedHerd.Count > 0)
+        {
+            _snackBar.Add(
+                L["Herd improvements need breeding stock from trade first: "] + string.Join("; ", lockedHerd),
+                Severity.Info);
+        }
+        else
+        {
+            _snackBar.Add(
+                L["Nothing from the improvement catalog can be built on this tile (check terrain, features, and resources)."],
+                Severity.Info);
+        }
+    }
+
+    private (List<BuildingTemplateDTO> Placeable, List<string> LockedHerdNotes) GetPlaceableImprovementTemplates(
+        TerrainTileDTO tile)
+    {
         var allowedNames = TerrainImprovementCatalogMap.AllowedCatalogTemplateNames(
             tile.Fertility, tile.Resource, tile.FeaturesMask, tile.BaseType, CustomCatalogPins());
         var availability = _tradeGoodAvailability;
@@ -362,33 +444,24 @@ else
             }
         }
 
-        if (placeable.Count == 0)
-        {
-            if (lockedHerd.Count > 0)
-            {
-                _snackBar.Add(
-                    L["Herd improvements need breeding stock from trade first: "] + string.Join("; ", lockedHerd),
-                    Severity.Info);
-            }
-            else
-            {
-                _snackBar.Add(
-                    L["Nothing from the improvement catalog can be built on this tile (check terrain, features, and resources)."],
-                    Severity.Info);
-            }
-            return;
-        }
+        return (placeable, lockedHerd);
+    }
 
+    private async Task OpenBuildProjectDialogAsync(
+        TerrainTileDTO tile,
+        List<BuildingTemplateDTO> placeable,
+        List<string> lockedHerd)
+    {
         var parameters = new DialogParameters<CreateBuildingProjectDialog>
         {
-            { x => x.BaronyId, Barony.Id },
+            { x => x.BaronyId, Barony!.Id },
             { x => x.Tile, tile },
             { x => x.Templates, placeable },
             { x => x.LockedHerdNotes, lockedHerd },
         };
 
         var dialog = await _dialogService.ShowAsync<CreateBuildingProjectDialog>(
-            "New building project",
+            L["New building project"],
             parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
 
@@ -402,6 +475,45 @@ else
             if (saved.TileId is int tid)
                 _constructionByTileId[tid] = saved;
             _snackBar.Add(L["Building project added — see the Projects tab."], Severity.Success);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(L["Could not create project: "] + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task OpenForestClearingProjectDialogAsync(TerrainTileDTO tile)
+    {
+        var variant = ForestClearingFormulas.DetectVariant(tile.FeaturesMask);
+        if (variant is not ForestClearingVariant resolvedVariant)
+        {
+            _snackBar.Add(L["This tile has no forest to clear."], Severity.Info);
+            return;
+        }
+
+        var parameters = new DialogParameters<CreateForestClearingProjectDialog>
+        {
+            { x => x.BaronyId, Barony!.Id },
+            { x => x.Tile, tile },
+            { x => x.ClearingVariant, resolvedVariant },
+        };
+
+        var dialog = await _dialogService.ShowAsync<CreateForestClearingProjectDialog>(
+            L["Forest clearing"],
+            parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true, CloseOnEscapeKey = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronyProjectDTO project)
+            return;
+
+        try
+        {
+            var saved = await _baronyRepo.SaveProject(project);
+            if (saved.TileId is int tid)
+                _constructionByTileId[tid] = saved;
+            _snackBar.Add(L["Forest clearing project added — see the Projects tab."], Severity.Success);
             StateHasChanged();
         }
         catch (Exception ex)

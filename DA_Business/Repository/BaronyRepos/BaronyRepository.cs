@@ -906,7 +906,8 @@ namespace DA_Business.Repository.BaronyRepos
                         // Never repair-stack (or re-log) on later turns; just stamp the marker if missing.
                         if (IsOneTimeResourcesKind(dto.OutputKind ?? "")
                             || IsOtherKind(dto.OutputKind ?? "")
-                            || ProjectStandardFormulas.IsStandardKind(dto.OutputKind ?? ""))
+                            || ProjectStandardFormulas.IsStandardKind(dto.OutputKind ?? "")
+                            || ForestClearingFormulas.IsOutputKind(dto.OutputKind ?? ""))
                         {
                             dto.Notes = MarkProjectResultsApplied(dto.Notes);
                             ApplyProject(project, dto);
@@ -938,24 +939,36 @@ namespace DA_Business.Repository.BaronyRepos
                         continue;
 
                     // Resource allocation: wait until fully funded; then start (In progress) and tick.
+                    var justFunded = false;
                     if (ProjectStatus.IsResourceAllocation(dto.Status))
                     {
                         if (dto.HasRemainingCost)
                             continue;
                         dto.Status = ProjectStatus.InProgress;
+                        justFunded = true;
                     }
                     else if (dto.HasRemainingCost)
                     {
                         continue;
                     }
 
-                    dto.TurnsRemaining = Math.Max(0, dto.TurnsRemaining - 1);
-                    if (dto.TurnsRemaining > 0)
+                    // Turns start after full funding — do not consume a turn on the funding Resolve.
+                    var turnsRemaining = dto.TurnsRemaining;
+                    var tick = ProjectTurnTick.Advance(ref turnsRemaining, justFunded);
+                    dto.TurnsRemaining = turnsRemaining;
+                    if (tick == ProjectTurnTick.Step.WaitAfterFunding)
                     {
                         ApplyProject(project, dto);
                         continue;
                     }
 
+                    if (tick == ProjectTurnTick.Step.TickAndContinue)
+                    {
+                        ApplyProject(project, dto);
+                        continue;
+                    }
+
+                    // CompleteNow or TickAndComplete — zero-turn instant projects and expired timers.
                     dto.Status = ProjectStatus.Completed;
                     dto.TurnsRemaining = 0;
                     ApplyProject(project, dto);
@@ -1502,6 +1515,83 @@ namespace DA_Business.Repository.BaronyRepos
 
                 notes.Add($"{project.Name}: standard project subtype “{subtype ?? "?"}” is not handled.");
                 return new ProjectApplyResult(notes, Applied: false);
+            }
+
+            if (ForestClearingFormulas.IsOutputKind(kind))
+            {
+                if (project.TileId is not int clearTileId || clearTileId <= 0)
+                {
+                    notes.Add($"{project.Name}: forest clearing requires a map tile (TileId).");
+                    return new ProjectApplyResult(notes, Applied: false);
+                }
+
+                var tileEntity = await ctx.TerrainTiles
+                    .FirstOrDefaultAsync(t => t.Id == clearTileId && t.BaronyId == barony.Id);
+                if (tileEntity is null)
+                {
+                    notes.Add($"{project.Name}: forest clearing tile #{clearTileId} not found.");
+                    return new ProjectApplyResult(notes, Applied: false);
+                }
+
+                var hasImprovement = await ctx.TerrainImprovements
+                    .AnyAsync(i => i.BaronyId == barony.Id && i.TileId == clearTileId);
+                if (hasImprovement)
+                {
+                    notes.Add($"{project.Name}: tile #{clearTileId} has an improvement — forest cannot be cleared.");
+                    return new ProjectApplyResult(notes, Applied: false);
+                }
+
+                var variant = ForestClearingNotes.GetVariant(project.Notes)
+                    ?? ForestClearingFormulas.DetectVariant(tileEntity.FeaturesMask);
+                if (variant is not ForestClearingVariant resolvedVariant)
+                {
+                    notes.Add($"{project.Name}: tile #{clearTileId} no longer has forest to clear.");
+                    return new ProjectApplyResult(notes, Applied: false);
+                }
+
+                var featureFlag = ForestClearingFormulas.ClearedFeatureFlag(resolvedVariant);
+                if (!TerrainFeature.Has(tileEntity.FeaturesMask, featureFlag))
+                {
+                    notes.Add($"{project.Name}: expected {ForestClearingFormulas.VariantDisplayKey(resolvedVariant)} on tile #{clearTileId}.");
+                    return new ProjectApplyResult(notes, Applied: false);
+                }
+
+                var grant = ResourceCatalog.Slice(project.ResultAdditive);
+                if (grant.IsEmpty)
+                    grant = ResourceCatalog.Slice(ForestClearingFormulas.Reward(resolvedVariant));
+
+                if (grant.IsEmpty)
+                {
+                    notes.Add($"{project.Name}: forest clearing finished but Expected output has no cumulative resources.");
+                    return new ProjectApplyResult(notes, Applied: false);
+                }
+
+                foreach (var info in ResourceCatalog.All)
+                    stocks[info.Key] += grant[info.Key];
+
+                var grantName = string.IsNullOrWhiteSpace(project.Name) ? "Forest clearing" : project.Name.Trim();
+                ctx.BaronyResourceSources.Add(new BaronyResourceSource
+                {
+                    BaronyId = barony.Id,
+                    Name = grantName,
+                    Description = string.IsNullOrWhiteSpace(project.ResultDescription)
+                        ? $"Forest cleared on tile #{clearTileId} at Resolve Turn {effectStartTurn}."
+                        : project.ResultDescription.Trim(),
+                    AdditiveJson = Ser(grant),
+                    IsTurnEphemeral = false,
+                    VisibleOnTurn = null,
+                });
+
+                tileEntity.FeaturesMask = TerrainFeature.Set(tileEntity.FeaturesMask, featureFlag, false);
+
+                var grantParts = ResourceCatalog.All
+                    .Where(info => grant[info.Key] != 0m)
+                    .Select(info => $"{info.ShortEn} {PpbFormat.Additive(grant[info.Key])}");
+                notes.Add(
+                    $"Forest cleared ({ForestClearingFormulas.VariantDisplayKey(resolvedVariant)}, tile #{clearTileId}) "
+                    + "→ stocks & Resource Balance: "
+                    + string.Join(", ", grantParts) + ".");
+                return new ProjectApplyResult(notes, Applied: true);
             }
 
             if (string.Equals(kind, ProjectOutputKind.DecreeOrTechnology, StringComparison.OrdinalIgnoreCase)
@@ -6693,7 +6783,9 @@ namespace DA_Business.Repository.BaronyRepos
             e.ResultDescription = d.ResultDescription;
             e.HideResultFromBaron = d.HideResultFromBaron;
             e.Status = d.Status;
-            e.TurnsRemaining = d.TurnsRemaining;
+            e.TurnsRemaining = ForestClearingFormulas.IsOutputKind(d.OutputKind)
+                ? ForestClearingFormulas.ClampTurnsRemaining(d.TurnsRemaining)
+                : d.TurnsRemaining;
             e.Notes = d.Notes;
             // Never wipe map-construction links on partial updates that omit them.
             if (d.TileId is > 0)

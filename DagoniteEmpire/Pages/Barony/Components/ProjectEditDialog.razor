@@ -116,7 +116,7 @@
                                  Label="@(L["Turns remaining"])"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
-                                 Min="0"
+                                 Min="@MinTurnsRemaining"
                                  Class="baron-influence-field" />
                 @if (!IsStandardKind)
                 {
@@ -228,6 +228,12 @@
     private bool IsOtherKind =>
         string.Equals(_outputKind, ProjectOutputKind.Other, StringComparison.OrdinalIgnoreCase);
 
+    private bool IsForestClearingKind =>
+        ForestClearingFormulas.IsOutputKind(_outputKind);
+
+    private int MinTurnsRemaining =>
+        IsForestClearingKind ? ForestClearingFormulas.MinTurnsRemaining : 0;
+
     private int _maxProduction => ProjectStandardFormulas.MaxProductionFromLoyalty(LoyaltyTotal);
     private int _maxGoldSpend => ProjectStandardFormulas.GoldForProduction(_maxProduction);
     private int _buyProductionAmount => ProjectStandardFormulas.ProductionFromGold(_buyProductionGold);
@@ -253,6 +259,8 @@
             : Project.OutputKind;
         _status = Project.Status;
         _turnsRemaining = Project.TurnsRemaining;
+        if (IsForestClearingKind)
+            _turnsRemaining = ForestClearingFormulas.ClampTurnsRemaining(_turnsRemaining);
         _resultDescription = Project.ResultDescription;
         _hideResultFromBaron = Project.HideResultFromBaron;
         _notes = Project.Notes;
@@ -347,7 +355,9 @@
         {
             Project.HideResultFromBaron = _hideResultFromBaron;
             Project.Status = _status;
-            Project.TurnsRemaining = Math.Max(0, _turnsRemaining);
+            Project.TurnsRemaining = IsForestClearingKind
+                ? ForestClearingFormulas.ClampTurnsRemaining(_turnsRemaining)
+                : Math.Max(0, _turnsRemaining);
             Project.Notes = string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim();
             Project.AllowedCostModes = _allowedCostModes;
             Project.CostGoldProduction = ProjectCostCatalog.SliceGoldProduction(_costGoldProduction).Clone();

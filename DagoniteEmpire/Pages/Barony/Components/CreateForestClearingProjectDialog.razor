@@ -1,0 +1,138 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog project-edit-dialog">
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                @L["Tile ({0}, {1}) — forest clearing project, paid with Gold &amp; Production only.", Tile.X, Tile.Y]
+            </MudText>
+
+            <MudText Typo="Typo.subtitle2" Class="mb-1">@L["Forest clearing"]</MudText>
+            <MudText Typo="Typo.body2" Class="mb-2">
+                @L["Terrain: {0}", L[ForestClearingFormulas.VariantDisplayKey(_forestVariant)]]
+            </MudText>
+
+            <MudTextField @bind-Value="_name"
+                          Label="@(L["Project name"])"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Required="true"
+                          Class="baron-influence-field" />
+            <MudTextField @bind-Value="_description"
+                          Label="@(L["Description"])"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="2"
+                          Class="baron-influence-field" />
+
+            <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">@L["Cost (forced)"]</MudText>
+            <div class="terrain-build-project-cost">
+                <span>@L["Gold:"] <b>@Fmt(_goldCost)</b></span>
+                <span>@L["Production:"] <b>@Fmt(_productionCost)</b></span>
+            </div>
+
+            <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">@L["One-time reward"]</MudText>
+            <div class="terrain-build-project-cost">
+                <span>@L["Gold:"] <b>@Fmt(_goldReward)</b></span>
+                <span>@L["Production:"] <b>@Fmt(_productionReward)</b></span>
+            </div>
+
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-2">
+                @L["On completion the forest feature is removed from this tile. The reward is granted once."]
+            </MudText>
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-1">
+                @L["Output type: {0} · Payment: Gold &amp; Production only", L[ProjectOutputKind.ForestClearing]]
+            </MudText>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Close"]</MudButton>
+        <MudButton Class="baron-influence-save-btn"
+                   Variant="Variant.Filled"
+                   OnClick="MakeProject">
+            @L["Make project"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public int BaronyId { get; set; }
+    [Parameter] public TerrainTileDTO Tile { get; set; } = new();
+    [Parameter] public ForestClearingVariant ClearingVariant { get; set; }
+
+    private ForestClearingVariant _forestVariant;
+    private string _name = string.Empty;
+    private string? _description;
+    private decimal _goldCost;
+    private decimal _productionCost;
+    private decimal _goldReward;
+    private decimal _productionReward;
+
+    protected override void OnParametersSet()
+    {
+        _forestVariant = ClearingVariant;
+        var cost = ForestClearingFormulas.Cost(_forestVariant);
+        var reward = ForestClearingFormulas.Reward(_forestVariant);
+        _goldCost = cost[Ppb.Treasury];
+        _productionCost = cost[Ppb.Production];
+        _goldReward = reward[Ppb.Treasury];
+        _productionReward = reward[Ppb.Production];
+
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _name = L["Forest clearing at [{0},{1}]", Tile.X, Tile.Y].Value;
+            _description = L["Clear {0} and harvest timber and salvage.", L[ForestClearingFormulas.VariantDisplayKey(_forestVariant)]].Value;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void MakeProject()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _snackBar.Add(L["Project name is required."], Severity.Warning);
+            return;
+        }
+
+        if (Tile.Id <= 0)
+        {
+            _snackBar.Add(L["This tile is not ready yet."], Severity.Warning);
+            return;
+        }
+
+        var cost = ForestClearingFormulas.Cost(_forestVariant);
+        var reward = ForestClearingFormulas.Reward(_forestVariant);
+        var displayName = _name.Trim();
+        var terrainLabel = L[ForestClearingFormulas.VariantDisplayKey(_forestVariant)].Value;
+
+        var project = new BaronyProjectDTO
+        {
+            BaronyId = BaronyId,
+            Name = displayName,
+            Description = string.IsNullOrWhiteSpace(_description) ? string.Empty : _description.Trim(),
+            OutputKind = ProjectOutputKind.ForestClearing,
+            AllowedCostModes = ProjectAllowedCostModes.GoldProductionOnly,
+            SelectedCostMode = ProjectCostMode.GoldProduction,
+            CostGoldProduction = ProjectCostCatalog.SliceGoldProduction(cost),
+            CostMaterials = new(),
+            ResultAdditive = reward.Clone(),
+            ResultPercent = new(),
+            ResultDescription = L["Clear {0} at [{1},{2}]. One-time reward: {3} Production, {4} Gold.",
+                terrainLabel, Tile.X, Tile.Y, _productionReward, _goldReward].Value,
+            Status = ProjectStatus.ResourceAllocation,
+            TurnsRemaining = ForestClearingFormulas.MinTurnsRemaining,
+            TileId = Tile.Id,
+            Notes = ForestClearingNotes.SetVariant(null, _forestVariant),
+        };
+
+        MudDialog.Close(DialogResult.Ok(project));
+    }
+
+    private static string Fmt(decimal v) => PpbFormat.Number(v);
+}

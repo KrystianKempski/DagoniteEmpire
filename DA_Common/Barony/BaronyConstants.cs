@@ -829,11 +829,13 @@ namespace DA_Common.Barony
         public const string UnitTraining = "Unit Training";
         public const string UnitReinforce = "Unit Reinforce";
         public const string UnitChangeEquipment = "Unit Change Equipment";
+        /// <summary>Clear forest on a map tile for a one-time Production + Gold grant.</summary>
+        public const string ForestClearing = "Forest clearing";
 
         public static readonly string[] All =
         {
             DecreeOrTechnology, Event, OneTimeResources, Building, Improvement, Other, Standard,
-            UnitTraining, UnitReinforce, UnitChangeEquipment,
+            UnitTraining, UnitReinforce, UnitChangeEquipment, ForestClearing,
         };
     }
 
