@@ -21,10 +21,8 @@ namespace DA_Common.Barony
         public const int DenseForestProductionReward = 600;
         public const int DenseForestGoldReward = 200;
 
-        /// <summary>Forest clearing must run at least one turn after full funding.</summary>
-        public const int MinTurnsRemaining = 1;
-
-        public static int ClampTurnsRemaining(int turns) => Math.Max(MinTurnsRemaining, turns);
+        public static int ClampTurnsRemaining(int turns) =>
+            ProjectConstructionRules.ClampTurnsRemaining(turns);
 
         public static bool IsOutputKind(string? kind) =>
             string.Equals(kind, ProjectOutputKind.ForestClearing, StringComparison.OrdinalIgnoreCase);

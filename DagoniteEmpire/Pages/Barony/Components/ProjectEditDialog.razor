@@ -19,7 +19,9 @@
                           Margin="Margin.Dense"
                           Lines="3"
                           Class="baron-influence-field" />
-            <MudSelect @bind-Value="_outputKind"
+            <MudSelect T="string"
+                       Value="_outputKind"
+                       ValueChanged="OnOutputKindChanged"
                        Label="@(L["Output type"])"
                        HelperText="@OutputKindHelper"
                        Variant="Variant.Outlined"
@@ -231,8 +233,11 @@
     private bool IsForestClearingKind =>
         ForestClearingFormulas.IsOutputKind(_outputKind);
 
+    private bool RequiresMinConstructionTurns =>
+        ProjectConstructionRules.RequiresMinTurn(_outputKind);
+
     private int MinTurnsRemaining =>
-        IsForestClearingKind ? ForestClearingFormulas.MinTurnsRemaining : 0;
+        RequiresMinConstructionTurns ? ProjectConstructionRules.MinTurnsRemaining : 0;
 
     private int _maxProduction => ProjectStandardFormulas.MaxProductionFromLoyalty(LoyaltyTotal);
     private int _maxGoldSpend => ProjectStandardFormulas.GoldForProduction(_maxProduction);
@@ -259,8 +264,8 @@
             : Project.OutputKind;
         _status = Project.Status;
         _turnsRemaining = Project.TurnsRemaining;
-        if (IsForestClearingKind)
-            _turnsRemaining = ForestClearingFormulas.ClampTurnsRemaining(_turnsRemaining);
+        if (RequiresMinConstructionTurns)
+            _turnsRemaining = ProjectConstructionRules.ClampTurnsRemaining(_turnsRemaining);
         _resultDescription = Project.ResultDescription;
         _hideResultFromBaron = Project.HideResultFromBaron;
         _notes = Project.Notes;
@@ -280,6 +285,14 @@
             var gold = (int)_costGoldProduction[Ppb.Treasury];
             _buyProductionGold = ProjectStandardFormulas.ClampGoldSpend(gold, LoyaltyTotal);
         }
+    }
+
+    private void OnOutputKindChanged(string kind)
+    {
+        _outputKind = kind;
+        if (ProjectConstructionRules.RequiresMinTurn(kind)
+            && _turnsRemaining < ProjectConstructionRules.MinTurnsRemaining)
+            _turnsRemaining = ProjectConstructionRules.DefaultTurnsRemaining;
     }
 
     private void OnBuyProductionGoldChanged(int value)
@@ -355,8 +368,8 @@
         {
             Project.HideResultFromBaron = _hideResultFromBaron;
             Project.Status = _status;
-            Project.TurnsRemaining = IsForestClearingKind
-                ? ForestClearingFormulas.ClampTurnsRemaining(_turnsRemaining)
+            Project.TurnsRemaining = RequiresMinConstructionTurns
+                ? ProjectConstructionRules.ClampTurnsRemaining(_turnsRemaining)
                 : Math.Max(0, _turnsRemaining);
             Project.Notes = string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim();
             Project.AllowedCostModes = _allowedCostModes;

@@ -6783,8 +6783,8 @@ namespace DA_Business.Repository.BaronyRepos
             e.ResultDescription = d.ResultDescription;
             e.HideResultFromBaron = d.HideResultFromBaron;
             e.Status = d.Status;
-            e.TurnsRemaining = ForestClearingFormulas.IsOutputKind(d.OutputKind)
-                ? ForestClearingFormulas.ClampTurnsRemaining(d.TurnsRemaining)
+            e.TurnsRemaining = ProjectConstructionRules.RequiresMinTurn(d.OutputKind)
+                ? ProjectConstructionRules.ClampTurnsRemaining(d.TurnsRemaining)
                 : d.TurnsRemaining;
             e.Notes = d.Notes;
             // Never wipe map-construction links on partial updates that omit them.
