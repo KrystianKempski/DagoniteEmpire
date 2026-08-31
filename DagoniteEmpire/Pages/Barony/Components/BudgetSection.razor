@@ -35,7 +35,8 @@ else if (_overview is not null)
                         <span class="barony-stat__value" style="color:@(_turnBalance >= 0 ? "var(--barony-pos)" : "var(--barony-neg)")">@Num(_turnBalance)</span>
                     </div>
                     <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
-                        @L["Domain Panel Gold ({0}) − liege tribute ({1})", Num(_domainPanelGold), Num(_liegeTribute)]
+                        @L["Domain Panel Gold ({0}) − liege tribute ({1}) − debt payments ({2}) + loan receipts ({3})",
+                            Num(_domainPanelGold), Num(_liegeTribute), Num(_debtPaymentsOut), Num(_debtPaymentsIn)]
                     </MudText>
                 </MudItem>
             </MudGrid>
@@ -146,6 +147,114 @@ else if (_overview is not null)
         </ChildContent>
     </BaronySection>
 
+    <BaronySection Title="@(L["Debts"])">
+        <Summary>
+            <span class="budget-overview-chips">
+                <span>@L["Owed"] <b class="ppb-cell-neg">@Num(_debtOwedTotal)</b></span>
+                <span>@L["Receivable"] <b class="ppb-cell-pos">@Num(_debtReceivableTotal)</b></span>
+                <span>@L["Turn"] <b class="ppb-cell-neg">−@Num(_debtPaymentsOut)</b> / <b class="ppb-cell-pos">+@Num(_debtPaymentsIn)</b></span>
+            </span>
+        </Summary>
+        <ChildContent>
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                @L["Loans use barony treasury gold. Interest accrues each Resolve; scheduled payments run automatically. If treasury is empty, you pay only what you can (Taken)."]
+                @if (CanEdit && !CanManageAsMg)
+                {
+                    <text> @L["New loans are arranged by the Game Master (request in writing). You can change your payment per turn or pay off early."]</text>
+                }
+            </MudText>
+
+            @if (CanManageAsMg)
+            {
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <MudButton Variant="Variant.Outlined"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="AddDebtAsync">
+                        @L["Take or give a loan"]
+                    </MudButton>
+                </div>
+            }
+
+            <div class="barony-card">
+                <table class="ppb-table ppb-table--lined">
+                    <thead>
+                        <tr>
+                            <th class="ppb-row-label">@L["Direction"]</th>
+                            <th class="ppb-row-label">@L["Counterparty"]</th>
+                            <th>@L["Outstanding balance"]</th>
+                            <th>@L["Interest %/turn"]</th>
+                            <th>@L["Payment/turn"]</th>
+                            @if (CanEdit)
+                            {
+                                <th></th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var debt in _activeDebts)
+                        {
+                            <tr>
+                                <td class="ppb-row-label">
+                                    @(DebtDirection.IsTaken(debt.Direction) ? L["Taken"] : L["Given"])
+                                </td>
+                                <td class="ppb-row-label">
+                                    <div class="city-building-name-cell">
+                                        <BaronyTooltip Title="@debt.CounterpartyName" Text="@DebtTooltip(debt)">
+                                            <span class="city-building-name-text">@debt.CounterpartyName</span>
+                                        </BaronyTooltip>
+                                        @if (CanEdit)
+                                        {
+                                            <span class="city-building-name-actions">
+                                                @if (CanManageAsMg)
+                                                {
+                                                    <BaronyTooltip Text="@(L["Edit"])">
+                                                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => EditDebtAsync(debt))" />
+                                                    </BaronyTooltip>
+                                                }
+                                                else
+                                                {
+                                                    <BaronyTooltip Text="@(L["Adjust payment per turn"])">
+                                                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" OnClick="@(() => EditDebtPaymentAsync(debt))" />
+                                                    </BaronyTooltip>
+                                                }
+                                                <BaronyTooltip Text="@(L["Pay off early"])">
+                                                    <MudIconButton Icon="@Icons.Material.Filled.Payments" Size="Size.Small" OnClick="@(() => PayDebtEarlyAsync(debt))" />
+                                                </BaronyTooltip>
+                                                @if (CanManageAsMg)
+                                                {
+                                                    <BaronyTooltip Text="@(L["Remove"])">
+                                                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => DeleteDebtAsync(debt))" />
+                                                    </BaronyTooltip>
+                                                }
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="@ValueClass(DebtDirection.IsGiven(debt.Direction) ? debt.PrincipalRemaining : -debt.PrincipalRemaining)">
+                                    <b>@Num(debt.PrincipalRemaining)</b>
+                                </td>
+                                <td>@debt.InterestRatePercent.ToString("0.#")%</td>
+                                <td>@Num(debt.PaymentPerTurn)</td>
+                                @if (CanEdit)
+                                {
+                                    <td></td>
+                                }
+                            </tr>
+                        }
+                        @if (_activeDebts.Count == 0)
+                        {
+                            <tr>
+                                <td class="ppb-row-label" colspan="@(CanEdit ? 6 : 5)" style="color:var(--barony-muted);font-weight:400;">
+                                    @L["No active debts or loans."]
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </ChildContent>
+    </BaronySection>
+
     <BaronySection Title="@(L["Baron Purse"])">
         <Summary>
             <span class="budget-overview-chips">
@@ -239,6 +348,12 @@ else if (_overview is not null)
     private List<BudgetLine> _incomeLines = new();
     private List<BudgetLine> _expenseLines = new();
     private List<BaronPurseSourceDTO> _purseSources = new();
+    private List<BaronyDebtDTO> _debts = new();
+    private List<BaronyDebtDTO> _activeDebts = new();
+    private decimal _debtOwedTotal;
+    private decimal _debtReceivableTotal;
+    private decimal _debtPaymentsOut;
+    private decimal _debtPaymentsIn;
     private decimal _totalIncome;
     private decimal _totalExpense;
     private decimal _domainPanelGold;
@@ -345,6 +460,22 @@ else if (_overview is not null)
         _liegeTribute = FiefTributeFormulas.ComputeTribute(_grossGoldIncome, _liegeTributePercent);
         _domainPanelGold = goldFinal;
 
+        _debts = _overview.Debts
+            .OrderBy(d => d.IsActive ? 0 : 1)
+            .ThenBy(d => d.CounterpartyName, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(d => d.Id)
+            .ToList();
+        _activeDebts = _debts.Where(d => d.IsActive && d.PrincipalRemaining > 0m).ToList();
+        _debtOwedTotal = PpbFormat.Round(_activeDebts.Where(d => DebtDirection.IsTaken(d.Direction)).Sum(d => d.PrincipalRemaining));
+        _debtReceivableTotal = PpbFormat.Round(_activeDebts.Where(d => DebtDirection.IsGiven(d.Direction)).Sum(d => d.PrincipalRemaining));
+
+        var treasuryAfterIncome = PpbFormat.Round(_overview.Barony.TreasuryGold + goldFinal - _liegeTribute);
+        var debtFlow = DebtFormulas.ProjectTurnPayments(
+            _activeDebts.Select(d => (d.Direction, d.PrincipalRemaining, d.InterestRatePercent, d.PaymentPerTurn)),
+            treasuryAfterIncome);
+        _debtPaymentsOut = debtFlow.TakenPayments;
+        _debtPaymentsIn = debtFlow.GivenReceipts;
+
         _incomeLines = new List<BudgetLine>
         {
             Line(BudgetSource.Advisors, advIn,
@@ -370,6 +501,8 @@ else if (_overview is not null)
                 "Sum of positive Gold (+) from Domain Panel → Community (includes net Economy profit)."),
             Line(BudgetSource.PercentModifiers, scalingIncome,
                 "Remainder so Income − Expenses (before Fief tribute) equals Domain Panel Final Gold."),
+            Line(BudgetSource.LoanRepayments, _debtPaymentsIn,
+                "Scheduled repayments from debtors (Given loans) after interest accrual."),
             Line(BudgetSource.Other, 0,
                 "Miscellaneous treasury income. Placeholder for later custom sources."),
         };
@@ -397,14 +530,17 @@ else if (_overview is not null)
                 "Sum of negative Gold (−) from Domain Panel → Community."),
             Line(BudgetSource.PercentModifiers, scalingExpense,
                 "Remainder so Income − Expenses (before Fief tribute) equals Domain Panel Final Gold."),
+            Line(BudgetSource.Debts, _debtPaymentsOut,
+                "Scheduled debt payments (Taken loans) after interest accrual. "
+                + "Actual payment may be lower if treasury is insufficient after income."),
             Line(BudgetSource.Other, 0,
                 "Miscellaneous treasury expenses. Placeholder for later custom sources."),
         };
 
         _totalIncome = _incomeLines.Sum(l => l.Gold);
         _totalExpense = _expenseLines.Sum(l => l.Gold);
-        // Domain Panel Final Gold minus liege tribute (Budget Fief expense).
-        _turnBalance = PpbFormat.Round(goldFinal - _liegeTribute);
+        // Domain Panel Final Gold minus liege tribute and net debt cash flow.
+        _turnBalance = PpbFormat.Round(goldFinal - _liegeTribute - _debtPaymentsOut + _debtPaymentsIn);
 
         _purseSources = _overview!.PurseSources
             .OrderByDescending(s => s.Id)
@@ -631,6 +767,154 @@ else if (_overview is not null)
         Name = s.Name,
         Description = s.Description,
         Amount = s.Amount,
+    };
+
+    private static string? DebtTooltip(BaronyDebtDTO debt)
+    {
+        var parts = new List<string>
+        {
+            $"Principal: {PpbFormat.Number(debt.Principal)}",
+            $"Outstanding: {PpbFormat.Number(debt.PrincipalRemaining)}",
+            $"Interest: {debt.InterestRatePercent:0.#}% per turn",
+            $"Payment: {PpbFormat.Number(debt.PaymentPerTurn)} per turn",
+            $"Since turn {debt.StartTurn}",
+        };
+        if (!string.IsNullOrWhiteSpace(debt.Notes))
+            parts.Add(debt.Notes);
+        return string.Join("\n", parts);
+    }
+
+    private async Task AddDebtAsync()
+    {
+        if (_overview is null || !CanManageAsMg)
+            return;
+
+        await OpenDebtDialogAsync(new BaronyDebtDTO { BaronyId = _overview.Barony.Id }, isNew: true);
+    }
+
+    private async Task EditDebtAsync(BaronyDebtDTO debt)
+    {
+        if (_overview is null || !CanManageAsMg)
+            return;
+
+        await OpenDebtDialogAsync(CloneDebt(debt), isNew: false);
+    }
+
+    private async Task EditDebtPaymentAsync(BaronyDebtDTO debt)
+    {
+        if (_overview is null || !CanEdit || CanManageAsMg)
+            return;
+
+        var parameters = new DialogParameters<BaronyDebtBaronEditDialog> { { x => x.Debt, debt } };
+        var dialog = await _dialogService.ShowAsync<BaronyDebtBaronEditDialog>(
+            L["Adjust debt payment"],
+            parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not decimal paymentPerTurn)
+            return;
+
+        try
+        {
+            await _baronyRepo.UpdateDebtPaymentPerTurn(debt.Id, paymentPerTurn);
+            _snackBar.Add(L["Payment schedule updated."], Severity.Success);
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(L["Could not update payment: "] + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task OpenDebtDialogAsync(BaronyDebtDTO draft, bool isNew)
+    {
+        var parameters = new DialogParameters<BaronyDebtEditDialog>
+        {
+            { x => x.Debt, draft },
+            { x => x.IsNew, isNew },
+            { x => x.Relations, _overview!.Relations },
+        };
+        var dialog = await _dialogService.ShowAsync<BaronyDebtEditDialog>(
+            isNew ? L["Take or give a loan"] : L["Edit debt"],
+            parameters,
+            new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BaronyDebtDTO saved)
+            return;
+
+        try
+        {
+            saved.BaronyId = _overview!.Barony.Id;
+            await _baronyRepo.SaveDebt(saved);
+
+            _snackBar.Add(L["Debt saved."], Severity.Success);
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(L["Could not save debt: "] + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task PayDebtEarlyAsync(BaronyDebtDTO debt)
+    {
+        if (_overview is null || !CanEdit)
+            return;
+
+        var parameters = new DialogParameters<BaronyDebtPayEarlyDialog> { { x => x.Debt, debt } };
+        var dialog = await _dialogService.ShowAsync<BaronyDebtPayEarlyDialog>(
+            L["Pay off early"],
+            parameters,
+            new DialogOptions { MaxWidth = MaxWidth.ExtraSmall, FullWidth = true });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not decimal amount)
+            return;
+
+        try
+        {
+            await _baronyRepo.PayDebtEarly(debt.Id, amount);
+            _snackBar.Add(L["Payment applied."], Severity.Success);
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(L["Payment failed: "] + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task DeleteDebtAsync(BaronyDebtDTO debt)
+    {
+        if (!CanManageAsMg)
+            return;
+
+        try
+        {
+            await _baronyRepo.DeleteDebt(debt.Id);
+            _snackBar.Add(L["Debt removed."], Severity.Success);
+            await ReloadAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(L["Could not remove debt: "] + ex.Message, Severity.Error);
+        }
+    }
+
+    private static BaronyDebtDTO CloneDebt(BaronyDebtDTO d) => new()
+    {
+        Id = d.Id,
+        BaronyId = d.BaronyId,
+        Direction = d.Direction,
+        CounterpartyName = d.CounterpartyName,
+        Notes = d.Notes,
+        Principal = d.Principal,
+        PrincipalRemaining = d.PrincipalRemaining,
+        InterestRatePercent = d.InterestRatePercent,
+        PaymentPerTurn = d.PaymentPerTurn,
+        StartTurn = d.StartTurn,
+        IsActive = d.IsActive,
     };
 
     private static string Num(decimal v) => PpbFormat.Number(v);

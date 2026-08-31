@@ -105,6 +105,26 @@
                                         @if (ShowAbilitiesButton(token))
                                         {
                                             <div class="bbm-abilities-anchor" @onclick:stopPropagation="true">
+                                                @if (CanShowWeaponUndo(token))
+                                                {
+                                                    <button type="button"
+                                                            class="bbm-abilities-btn active"
+                                                            title="@WeaponUndoTooltip(token)"
+                                                            @onclick:stopPropagation="true"
+                                                            @onclick="@(() => OnActivateAbility.InvokeAsync((token.Id, "undo-weapon-swap")))">
+                                                        <img class="bbm-abilities-btn__icon" src="/icons/axe-sword.svg" alt="" aria-hidden="true" />
+                                                    </button>
+                                                }
+                                                else if (CanShowWeaponSwap(token))
+                                                {
+                                                    <button type="button"
+                                                            class="bbm-abilities-btn"
+                                                            title="@WeaponSwapTooltip(token)"
+                                                            @onclick:stopPropagation="true"
+                                                            @onclick="@(() => OnActivateAbility.InvokeAsync((token.Id, "swap-weapon")))">
+                                                        <img class="bbm-abilities-btn__icon" src="/icons/axe-sword.svg" alt="" aria-hidden="true" />
+                                                    </button>
+                                                }
                                                 @if (CanShowFullDefense(token) && !CanShowCommanderActive(token))
                                                 {
                                                     <button type="button"
@@ -543,6 +563,10 @@
     [Parameter] public EventCallback<string> OnChargeButton { get; set; }
     /// <summary>When true, the active unit may take the universal Full Defense stance (movement phase).</summary>
     [Parameter] public bool AllowFullDefense { get; set; }
+    /// <summary>When true, movement / attack-planning weapon swap may be offered.</summary>
+    [Parameter] public bool AllowWeaponSwap { get; set; }
+    [Parameter] public Func<BaronyBattleTokenDTO, bool>? CanOfferWeaponSwap { get; set; }
+    [Parameter] public Func<BaronyBattleTokenDTO, bool>? CanUndoWeaponSwap { get; set; }
     /// <summary>When true, the selected friendly unit may trigger captain active abilities (combat phases).</summary>
     [Parameter] public bool AllowCommanderActives { get; set; }
     [Parameter] public EventCallback<(string TokenId, string AbilityKey)> OnActivateAbility { get; set; }
@@ -769,6 +793,20 @@
     private bool CanShowFullDefense(BaronyBattleTokenDTO token) =>
         AllowFullDefense && ActiveTokenId == token.Id;
 
+    private bool CanShowWeaponSwap(BaronyBattleTokenDTO token) =>
+        AllowWeaponSwap && CanOfferWeaponSwap?.Invoke(token) == true;
+
+    private bool CanShowWeaponUndo(BaronyBattleTokenDTO token) =>
+        AllowWeaponSwap && CanUndoWeaponSwap?.Invoke(token) == true;
+
+    private static string WeaponSwapTooltip(BaronyBattleTokenDTO token) =>
+        "Swap weapon set (instead of move or instead of attack)";
+
+    private static string WeaponUndoTooltip(BaronyBattleTokenDTO token) =>
+        token.MovementForfeitedThisRound
+            ? "Undo weapon swap — movement budget restored"
+            : "Undo weapon swap — may assign an attack again";
+
     private bool CanShowCommanderActive(BaronyBattleTokenDTO token) =>
         AllowCommanderActives && SelectedTokenId == token.Id && token.CmdIronclad;
 
@@ -776,10 +814,12 @@
     {
         if (IsAnimating || IsFacingEdit || IsChargeEdit || !Interactive)
             return false;
+        if (CanShowWeaponUndo(token))
+            return true;
         // Enemies may take Full Defense on their order (MG); commander actives stay ally-only.
         if (token.IsEnemy)
-            return CanShowFullDefense(token);
-        return CanShowFullDefense(token) || CanShowCommanderActive(token);
+            return CanShowFullDefense(token) || CanShowWeaponSwap(token);
+        return CanShowFullDefense(token) || CanShowWeaponSwap(token) || CanShowCommanderActive(token);
     }
 
     private bool ShowOriginChargeButton(BaronyBattleTokenDTO token)
@@ -802,6 +842,8 @@
 
     private int OriginMoveBadge(BaronyBattleTokenDTO token)
     {
+        if (token.FullDefense || token.MovementForfeitedThisRound)
+            return 0;
         var tip = token.LastWaypoint;
         if (tip is not null && IsInPlaceTip(token, tip))
             return tip.RemainingMoveAfter;

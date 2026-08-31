@@ -1,4 +1,5 @@
 using DA_Common.Barony;
+using DA_Common.Barony.Battle;
 using DA_Models.BaronyModels;
 
 namespace DA_Business.Repository.BaronyRepos
@@ -63,17 +64,20 @@ namespace DA_Business.Repository.BaronyRepos
                 def.LinkedAttr);
         }
 
-        public static UnitCombatTotals Compute(BaronyUnitDTO dto)
+        public static UnitCombatTotals Compute(BaronyUnitDTO dto, int activeWeaponSlot = BattleWeaponSwap.MinSlot)
         {
             var skillTotals = BuildSkillTotals(dto);
+            var primaryKey = BattleWeaponSwap.ActiveWeaponKey(dto.Weapon1Key, dto.Weapon2Key, activeWeaponSlot);
+            var quality = BattleWeaponSwap.ActiveWeaponQuality(dto.Weapon1Quality, dto.Weapon2Quality, activeWeaponSlot);
+            var shieldKey = BattleWeaponSwap.ActiveShieldKey(dto.Weapon1Key, dto.Weapon2Key, dto.ShieldKey, activeWeaponSlot);
             var combat = UnitCombatFormulas.Compute(
                 dto.EffectiveBuild, dto.EffectiveAgility, dto.EffectiveWill, dto.EffectivePerception,
                 dto.Discipline,
                 skillTotals,
-                UnitWeaponCatalog.Find(dto.Weapon1Key),
+                UnitWeaponCatalog.Find(primaryKey),
                 UnitArmorCatalog.Find(dto.ArmorKey),
-                UnitArmorCatalog.Find(dto.ShieldKey),
-                dto.Weapon1Quality,
+                UnitArmorCatalog.Find(shieldKey),
+                quality,
                 dto.CommanderAttack, dto.CommanderDefense,
                 dto.OtherAttack, dto.OtherDefense, dto.OtherDamage, dto.OtherMove, dto.OtherArmor, dto.OtherHp,
                 UnitRaceCatalog.Find(dto.RaceKey).MoveBonus,

@@ -1248,6 +1248,19 @@ namespace DagoniteEmpire.Pages.Barony
             var gross = GrossGoldIncome(panel);
             var tribute = FiefTributeFormulas.ComputeTribute(gross, ov.Barony.LiegeTributePercent);
             expected[Ppb.Treasury] = PpbFormat.Round(expected[Ppb.Treasury] - tribute);
+
+            var activeDebts = ov.Debts
+                .Where(d => d.IsActive && d.PrincipalRemaining > 0m)
+                .Select(d => (d.Direction, d.PrincipalRemaining, d.InterestRatePercent, d.PaymentPerTurn))
+                .ToList();
+            if (activeDebts.Count > 0)
+            {
+                var treasuryAfterIncome = PpbFormat.Round(ov.Barony.TreasuryGold + expected[Ppb.Treasury]);
+                var debtFlow = DebtFormulas.ProjectTurnPayments(activeDebts, treasuryAfterIncome);
+                expected[Ppb.Treasury] = PpbFormat.Round(
+                    expected[Ppb.Treasury] - debtFlow.TakenPayments + debtFlow.GivenReceipts);
+            }
+
             return ResourceCatalog.Slice(expected);
         }
 

@@ -886,6 +886,53 @@ namespace DA_DataAccess.Migrations
                     b.ToTable("BaronPurseSources");
                 });
 
+            modelBuilder.Entity("DA_DataAccess.BaronyData.BaronyDebt", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BaronyId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("CounterpartyName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Direction")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("InterestRatePercent")
+                        .HasColumnType("numeric");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("PaymentPerTurn")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("Principal")
+                        .HasColumnType("numeric");
+
+                    b.Property<decimal>("PrincipalRemaining")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("StartTurn")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BaronyId");
+
+                    b.ToTable("BaronyDebts");
+                });
+
             modelBuilder.Entity("DA_DataAccess.BaronyData.BaronTimeAction", b =>
                 {
                     b.Property<int>("Id")

@@ -174,6 +174,9 @@ else
                                      OnFacingButton="StartFacingEdit"
                                      OnChargeButton="StartChargeEdit"
                                      AllowFullDefense="@(IsMovementPhase && !_isResolvingCombat && !_isResolvingMovement && (CanEdit || CanManageAsMg))"
+                                     AllowWeaponSwap="@((IsMovementPhase || IsAttackPlanningPhase) && !_isResolvingCombat && !_isResolvingMovement && (CanEdit || CanManageAsMg))"
+                                     CanOfferWeaponSwap="CanOfferWeaponSwap"
+                                     CanUndoWeaponSwap="CanUndoWeaponSwap"
                                      AllowCommanderActives="@((IsAttackPlanningPhase || IsCombatPhase) && !_isResolvingCombat && !_isResolvingMovement && (CanEdit || CanManageAsMg))"
                                      OnActivateAbility="ActivateCommanderAbility"
                                      OnFacingPreview="OnFacingPreview"
@@ -477,11 +480,15 @@ else
                                 </div>
                                 <div class="bbm-force-card__stats">
                                     @{
-                                        var unitPierce = UnitWeaponCatalog.Find(unit.Weapon1Key)?.Pierce ?? 0;
-                                        var allyAtk = onMap?.Attack ?? stats.Attack;
-                                        var allyDef = onMap?.Defense ?? stats.Defense;
-                                        var allyArm = onMap?.Armor ?? stats.Armor;
-                                        var allyMv = onMap?.Move ?? stats.Move;
+                                        var activeSlot = onMap?.ActiveWeaponSlot ?? BattleWeaponSwap.MinSlot;
+                                        var liveStats = onMap is not null
+                                            ? UnitStatHelper.Compute(unit, activeSlot)
+                                            : stats;
+                                        var unitPierce = UnitWeaponCatalog.Find(BattleWeaponSwap.ActiveWeaponKey(unit.Weapon1Key, unit.Weapon2Key, activeSlot))?.Pierce ?? 0;
+                                        var allyAtk = onMap?.Attack ?? liveStats.Attack;
+                                        var allyDef = onMap?.Defense ?? liveStats.Defense;
+                                        var allyArm = onMap?.Armor ?? liveStats.Armor;
+                                        var allyMv = onMap?.Move ?? liveStats.Move;
                                         var allyFullDef = onMap?.FullDefense == true;
                                         var allyIronclad = onMap?.IroncladActive == true;
                                         var allyAtkEff = allyAtk - (allyFullDef ? BattleMovementRules.FullDefenseAttackPenalty : 0);
@@ -491,7 +498,7 @@ else
                                     }
                                     <span class="@(allyFullDef ? "bbm-force-stat--down" : null)">Atk @(allyFullDef ? $"{allyAtkEff} (−{BattleMovementRules.FullDefenseAttackPenalty})" : allyAtk.ToString())</span> ·
                                     <span class="@(allyFullDef ? "bbm-force-stat--boost" : null)">Def @(allyFullDef ? $"{allyDefEff} (+{BattleMovementRules.FullDefenseDefenseBonus})" : allyDefEff.ToString())</span> ·
-                                    Dmg @(onMap?.Damage ?? stats.Damage) ·
+                                    Dmg @(onMap?.Damage ?? liveStats.Damage) ·
                                     <span class="@(allyIronclad ? "bbm-force-stat--boost" : null)">Arm @(allyIronclad ? $"{allyArmEff} (+2)" : allyArmEff.ToString())</span>@(unitPierce > 0 ? $" · Prc {unitPierce}" : "") ·
                                     Disc @(onMap?.Discipline ?? unit.Discipline) ·
                                     <span class="@(allyFullDef ? "bbm-force-stat--down" : null)">Mv @allyMvEff</span> ·
@@ -1305,6 +1312,13 @@ else
                 var attacker = Map.Tokens.FirstOrDefault(t => t.Id == _selectedTokenId);
                 if (attacker is not null && attacker.IsEnemy != planClicked.IsEnemy && CanControlToken(attacker))
                 {
+                    if (attacker.NoAttackThisRound)
+                    {
+                        _snackBar.Add(L["{0} swapped weapons this round and cannot attack.", attacker.Label], Severity.Warning);
+                        RefreshRange();
+                        return;
+                    }
+
                     if (!CanTarget(attacker, planClicked))
                     {
                         if (attacker.Range > 0 && IsPinned(attacker) && !AreAdjacent(attacker, planClicked))
@@ -1417,7 +1431,7 @@ else
             return;
         }
 
-        var stats = UnitStatHelper.Compute(unit);
+        var stats = UnitStatHelper.Compute(unit, BattleWeaponSwap.MinSlot);
         var token = new BaronyBattleTokenDTO
         {
             Id = Guid.NewGuid().ToString("N"),
@@ -1428,6 +1442,7 @@ else
             IsEnemy = false,
             UnitId = unitId,
             Size = 1,
+            ActiveWeaponSlot = BattleWeaponSwap.MinSlot,
             Attack = stats.Attack,
             Defense = stats.Defense,
             Damage = stats.Damage,
@@ -1438,10 +1453,9 @@ else
             Armor = stats.Armor,
             Move = Math.Max(0, stats.Move),
             RemainingMove = Math.Max(0, stats.Move),
-            Range = Math.Max(0, UnitWeaponCatalog.Find(unit.Weapon1Key)?.Range ?? 0),
-            Pierce = Math.Max(0, UnitWeaponCatalog.Find(unit.Weapon1Key)?.Pierce ?? 0),
+            Pierce = Math.Max(0, UnitWeaponCatalog.Find(BattleWeaponSwap.ActiveWeaponKey(unit.Weapon1Key, unit.Weapon2Key, BattleWeaponSwap.MinSlot))?.Pierce ?? 0),
         };
-        ApplyCommanderBattleFlags(token, unit);
+        ApplyCommanderBattleFlags(token, unit, token.ActiveWeaponSlot);
         ApplyGeneralAura(token, BattleGeneralAura);
         Map.Tokens.Add(token);
         _deployUnitId = null;
@@ -1771,7 +1785,7 @@ else
             CancelFacingEdit();
             CancelChargeEdit();
             token.ClearPath();
-            token.RemainingMove = token.Move;
+            token.RemainingMove = token.MovementForfeitedThisRound ? 0 : token.Move;
             ClearCharge(token);
             _selectedTokenId = token.Id;
             await SaveAsync(systemMessage: $"{token.Label} cleared movement path.");
@@ -2675,6 +2689,7 @@ else
                     token.ClearPath();
                     ClearCharge(token);
                     token.RemainingMove = 0;
+                    token.MovementForfeitedThisRound = true;
                     AppendLocalLog(string.Empty, "phase",
                         $"{token.Label} uses Full Defense: +{BattleMovementRules.FullDefenseDefenseBonus} Defence, −{BattleMovementRules.FullDefenseAttackPenalty} Attack, movement set to 0.");
                     await SaveAsync(systemMessage:
@@ -2683,10 +2698,19 @@ else
                 else
                 {
                     AppendLocalLog(string.Empty, "phase", $"{token.Label} drops Full Defense.");
+                    token.MovementForfeitedThisRound = false;
                     token.RemainingMove = token.Move;
                     await SaveAsync(systemMessage: $"{token.Label} drops Full Defense.");
                 }
                 RefreshRange();
+                break;
+
+            case "swap-weapon":
+                await TrySwapWeaponAsync(token);
+                break;
+
+            case "undo-weapon-swap":
+                await TryUndoWeaponSwapAsync(token);
                 break;
 
             case "ironclad":
@@ -2709,6 +2733,140 @@ else
 
         StateHasChanged();
     }
+
+    private bool CanOfferWeaponSwap(BaronyBattleTokenDTO token)
+    {
+        if (token.WeaponSwapUsedThisRound || token.ChargeBonus || token.FullDefense || !CanControlToken(token))
+            return false;
+        if (token.UnitId is not int uid)
+            return false;
+        var unit = _activeUnits.FirstOrDefault(u => u.Id == uid);
+        if (unit is null || !BattleWeaponSwap.CanSwap(unit.Weapon2Key))
+            return false;
+        if (IsMovementPhase && !_isResolvingMovement && ActiveTokenId == token.Id)
+            return true;
+        if (IsAttackPlanningPhase && !_isResolvingCombat && _selectedTokenId == token.Id)
+            return true;
+        return false;
+    }
+
+    private bool CanUndoWeaponSwap(BaronyBattleTokenDTO token)
+    {
+        if (!token.WeaponSwapUsedThisRound || !CanControlToken(token))
+            return false;
+        if (token.UnitId is not int uid)
+            return false;
+        var unit = _activeUnits.FirstOrDefault(u => u.Id == uid);
+        if (unit is null || !BattleWeaponSwap.CanSwap(unit.Weapon2Key))
+            return false;
+
+        // Movement-phase swap: undo until MG resolves all movement.
+        if (token.MovementForfeitedThisRound)
+            return IsMovementPhase && !_isResolvingMovement;
+
+        // Attack-planning swap: undo until combat begins (selected unit).
+        if (token.NoAttackThisRound)
+            return IsAttackPlanningPhase && !_isResolvingCombat && _selectedTokenId == token.Id;
+
+        return false;
+    }
+
+    private async Task TrySwapWeaponAsync(BaronyBattleTokenDTO token)
+    {
+        if (!CanOfferWeaponSwap(token) || token.UnitId is not int uid)
+            return;
+        var unit = _activeUnits.FirstOrDefault(u => u.Id == uid);
+        if (unit is null)
+            return;
+
+        var inMovement = IsMovementPhase && !_isResolvingMovement && ActiveTokenId == token.Id;
+        var inAttackPlanning = IsAttackPlanningPhase && !_isResolvingCombat && _selectedTokenId == token.Id;
+        if (!inMovement && !inAttackPlanning)
+            return;
+
+        var fromSlot = Math.Clamp(token.ActiveWeaponSlot, BattleWeaponSwap.MinSlot, BattleWeaponSwap.MaxSlot);
+        var toSlot = BattleWeaponSwap.OtherSlot(fromSlot);
+        var swapDesc = BattleWeaponSwap.DescribeSwap(unit.Weapon1Key, unit.Weapon2Key, unit.ShieldKey, fromSlot, toSlot);
+
+        token.ActiveWeaponSlot = toSlot;
+        token.WeaponSwapUsedThisRound = true;
+        token.AttackTargetId = null;
+        ClearCharge(token);
+
+        if (inMovement)
+        {
+            CancelFacingEdit();
+            CancelChargeEdit();
+            token.ClearPath();
+            ClearCharge(token);
+            token.RemainingMove = 0;
+            token.MovementForfeitedThisRound = true;
+            token.NoAttackThisRound = false;
+        }
+        else
+        {
+            token.NoAttackThisRound = true;
+        }
+
+        RefreshTokenLoadoutFromUnit(token, unit);
+        ClearBaronPhaseReadyIfPlayer();
+
+        var phaseNote = inMovement
+            ? "instead of movement — may attack with the new weapon this round"
+            : "instead of attack — no attack this round; defense uses the new weapon";
+        AppendLocalLog(string.Empty, "phase", $"{token.Label} swaps weapons ({swapDesc}), {phaseNote}.");
+        await SaveAsync(systemMessage: $"{token.Label} swaps weapons: {swapDesc} ({phaseNote}).");
+        RefreshRange();
+    }
+
+    private async Task TryUndoWeaponSwapAsync(BaronyBattleTokenDTO token)
+    {
+        if (!CanUndoWeaponSwap(token) || token.UnitId is not int uid)
+            return;
+        var unit = _activeUnits.FirstOrDefault(u => u.Id == uid);
+        if (unit is null)
+            return;
+
+        var wasMovementSwap = token.MovementForfeitedThisRound;
+        var fromSlot = Math.Clamp(token.ActiveWeaponSlot, BattleWeaponSwap.MinSlot, BattleWeaponSwap.MaxSlot);
+        var toSlot = BattleWeaponSwap.OtherSlot(fromSlot);
+        var revertDesc = BattleWeaponSwap.DescribeSwap(unit.Weapon1Key, unit.Weapon2Key, unit.ShieldKey, fromSlot, toSlot);
+
+        token.ActiveWeaponSlot = toSlot;
+        token.WeaponSwapUsedThisRound = false;
+        token.NoAttackThisRound = false;
+        token.MovementForfeitedThisRound = false;
+
+        RefreshTokenLoadoutFromUnit(token, unit);
+        if (wasMovementSwap)
+            token.RemainingMove = token.Move;
+        ClearBaronPhaseReadyIfPlayer();
+
+        AppendLocalLog(string.Empty, "phase", $"{token.Label} undoes weapon swap ({revertDesc}).");
+        await SaveAsync(systemMessage: $"{token.Label} undoes weapon swap ({revertDesc}).");
+        RefreshRange();
+    }
+
+    private void RefreshTokenLoadoutFromUnit(BaronyBattleTokenDTO token, BaronyUnitDTO unit)
+    {
+        var slot = Math.Clamp(token.ActiveWeaponSlot, BattleWeaponSwap.MinSlot, BattleWeaponSwap.MaxSlot);
+        token.ActiveWeaponSlot = slot;
+        var stats = UnitStatHelper.Compute(unit, slot);
+
+        token.AllyCombatBaseCaptured = false;
+        token.Attack = stats.Attack;
+        token.Defense = stats.Defense;
+        token.Damage = stats.Damage;
+        token.Armor = stats.Armor;
+        token.Move = Math.Max(0, stats.Move);
+
+        var activeWeapon = UnitWeaponCatalog.Find(BattleWeaponSwap.ActiveWeaponKey(unit.Weapon1Key, unit.Weapon2Key, slot));
+        token.Pierce = Math.Max(0, activeWeapon?.Pierce ?? 0);
+
+        ApplyCommanderBattleFlags(token, unit, slot);
+        ApplyGeneralAura(token, BattleGeneralAura);
+    }
+
     private bool CanSelectToken(BaronyBattleTokenDTO token)
     {
         if (CanManageAsMg)
@@ -2725,8 +2883,8 @@ else
     /// </summary>
     private static (int X, int Y, int Budget) GetPlanOrigin(BaronyBattleTokenDTO token)
     {
-        // Full Defense forfeits movement — no budget to plan any step.
-        if (token.FullDefense)
+        // Full Defense / movement-phase weapon swap forfeit movement — no budget to plan any step.
+        if (token.FullDefense || token.MovementForfeitedThisRound)
             return (token.X, token.Y, 0);
         var locked = token.Path.LastOrDefault(w => w.Locked);
         if (locked is not null)
@@ -2870,6 +3028,9 @@ else
     private bool CanIssueAttackOrder(BaronyBattleTokenDTO token) =>
         CanManageAsMg || (CanEdit && !token.IsEnemy);
 
+    private bool CanAssignAttackTarget(BaronyBattleTokenDTO token) =>
+        CanIssueAttackOrder(token) && !token.NoAttackThisRound;
+
 
     /// <summary>
     /// After movement resolve, a successful charge attack cannot be cleared or retargeted.
@@ -2881,7 +3042,7 @@ else
 
     private bool HasAttackTargetOpportunity(BaronyBattleTokenDTO token)
     {
-        if (Map is null)
+        if (Map is null || token.NoAttackThisRound)
             return false;
         foreach (var other in Map.Tokens)
         {
@@ -2929,6 +3090,16 @@ else
             // Successful charge attacks stay locked through attack planning.
             if (IsLockedChargeAttack(attacker))
                 continue;
+
+            if (attacker.NoAttackThisRound)
+            {
+                if (attacker.AttackTargetId is not null)
+                {
+                    attacker.AttackTargetId = null;
+                    cleared++;
+                }
+                continue;
+            }
 
             var currentTarget = attacker.AttackTargetId is null
                 ? null
@@ -3139,6 +3310,8 @@ else
             if (!hp.TryGetValue(attacker.Id, out var atkHp) || atkHp <= 0)
                 continue;
             if (string.IsNullOrWhiteSpace(attacker.AttackTargetId))
+                continue;
+            if (attacker.NoAttackThisRound)
                 continue;
 
             var defender = Map.Tokens.FirstOrDefault(t => t.Id == attacker.AttackTargetId);
@@ -3482,7 +3655,7 @@ else
                 var unit = _activeUnits.FirstOrDefault(u => u.Id == uid);
                 if (unit is not null)
                 {
-                    ApplyCommanderBattleFlags(token, unit);
+                    ApplyCommanderBattleFlags(token, unit, token.ActiveWeaponSlot);
                     ApplyGeneralAura(token, generalAura);
                 }
             }
@@ -3496,6 +3669,9 @@ else
             token.IroncladUsed = false;
             token.IroncladActive = false;
             token.FullDefense = false;
+            token.WeaponSwapUsedThisRound = false;
+            token.NoAttackThisRound = false;
+            token.MovementForfeitedThisRound = false;
             token.ClearPath();
         }
 
@@ -3903,13 +4079,14 @@ else
         }
     }
 
-    private void ApplyCommanderBattleFlags(BaronyBattleTokenDTO token, BaronyUnitDTO unit)
+    private void ApplyCommanderBattleFlags(BaronyBattleTokenDTO token, BaronyUnitDTO unit, int activeWeaponSlot)
     {
         ResetCommanderFlags(token);
         token.Discipline = Math.Max(0, unit.Discipline);
         token.Mounted = !string.IsNullOrWhiteSpace(unit.MountKey);
         token.HasCaptain = unit.CaptainIsBaron || unit.CaptainAvailableAdvisorId is not null;
-        var baseRange = Math.Max(0, UnitWeaponCatalog.Find(unit.Weapon1Key)?.Range ?? 0);
+        var activeWeaponKey = BattleWeaponSwap.ActiveWeaponKey(unit.Weapon1Key, unit.Weapon2Key, activeWeaponSlot);
+        var baseRange = Math.Max(0, UnitWeaponCatalog.Find(activeWeaponKey)?.Range ?? 0);
         token.Range = baseRange;
 
         CourtCharacterSheet? commanderSheet = null;
@@ -3920,10 +4097,11 @@ else
         if (commanderSheet is null)
             return;
 
+        var hasShield = BattleWeaponSwap.HasActiveShield(unit.Weapon1Key, unit.Weapon2Key, unit.ShieldKey, activeWeaponSlot);
         var bonuses = CourtCommanderFormulas.ComputeBonuses(
             commanderSheet,
             unitHasMount: !string.IsNullOrWhiteSpace(unit.MountKey),
-            unitHasShield: !string.IsNullOrWhiteSpace(unit.ShieldKey));
+            unitHasShield: hasShield);
         token.ThunderCharge = bonuses.ThunderCharge;
         token.FlyingStart = bonuses.FlyingStart;
         token.ChargeDamageExtra = bonuses.ShockLance ? 1 : 0;
@@ -3956,7 +4134,6 @@ else
 
         // Passive abilities have no per-token flag (they bake into stats), so capture the
         // active ones here for badge display. Shield Wall Basics only applies with a shield.
-        var hasShield = !string.IsNullOrWhiteSpace(unit.ShieldKey);
         var unlocked = commanderSheet.UnlockedCommanderAbilities ?? new List<string>();
         token.AllyCommanderAbilities = unlocked
             .Where(k => AllyPassiveBadgeKeys.Contains(k)
@@ -4075,7 +4252,7 @@ else
                 continue;
             var unit = _activeUnits.FirstOrDefault(u => u.Id == uid);
             if (unit is not null)
-                ApplyCommanderBattleFlags(token, unit);
+                ApplyCommanderBattleFlags(token, unit, token.ActiveWeaponSlot);
             ApplyGeneralAura(token, aura);
         }
     }
@@ -4293,6 +4470,17 @@ else
                     ? outcome
                     : 0; // started battle but gone from map without a record → treated as fled
                 endHp = Math.Max(0, endHp);
+
+                var token = Map?.Tokens.FirstOrDefault(t => t.UnitId == uid);
+                if (token is not null && token.ActiveWeaponSlot == BattleWeaponSwap.MaxSlot)
+                {
+                    var normalized = BattleWeaponSwap.NormalizeToActiveSlot(
+                        unit.Weapon1Key, unit.Weapon2Key, unit.Weapon1Quality, unit.Weapon2Quality, token.ActiveWeaponSlot);
+                    unit.Weapon1Key = normalized.Weapon1Key;
+                    unit.Weapon2Key = normalized.Weapon2Key;
+                    unit.Weapon1Quality = normalized.Weapon1Quality ?? unit.Weapon1Quality;
+                    unit.Weapon2Quality = normalized.Weapon2Quality ?? unit.Weapon2Quality;
+                }
 
                 var combat = UnitStatHelper.Compute(unit);
                 if (combat.MaxHp > 0)
@@ -5318,6 +5506,9 @@ else
             token.FreeFacingUsed = false;
             token.IroncladActive = false;
             token.FullDefense = false;
+            token.WeaponSwapUsedThisRound = false;
+            token.NoAttackThisRound = false;
+            token.MovementForfeitedThisRound = false;
             if (token.HarassedNextTurn)
             {
                 AppendLocalLog(string.Empty, "phase",

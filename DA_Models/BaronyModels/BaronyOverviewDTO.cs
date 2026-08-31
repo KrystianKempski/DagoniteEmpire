@@ -24,6 +24,7 @@ namespace DA_Models.BaronyModels
         public List<BaronArtifactDTO> Artifacts { get; set; } = new();
         public List<BaronyResourceSourceDTO> ResourceSources { get; set; } = new();
         public List<BaronPurseSourceDTO> PurseSources { get; set; } = new();
+        public List<BaronyDebtDTO> Debts { get; set; } = new();
         public List<BaronyUnitDTO> Units { get; set; } = new();
 
         /// <summary>Suma wpływów addytywnych z dostarczonych modyfikatorów.</summary>

@@ -216,6 +216,13 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<BaronPurseSourceDTO> SavePurseSource(BaronPurseSourceDTO dto);
         Task<int> DeletePurseSource(int id);
 
+        // --- Debts and loans (Budget) ---
+        Task<List<BaronyDebtDTO>> GetDebts(int baronyId);
+        Task<BaronyDebtDTO> SaveDebt(BaronyDebtDTO dto);
+        Task<BaronyDebtDTO> UpdateDebtPaymentPerTurn(int debtId, decimal paymentPerTurn);
+        Task<BaronyDebtDTO> PayDebtEarly(int debtId, decimal amount);
+        Task<int> DeleteDebt(int id);
+
         // --- Towary strategiczne (dostępność w baronii) ---
         /// <summary>MG override keys stored on the barony (not derived production/treaty).</summary>
         Task<HashSet<string>> GetTradeGoodMgOverrideKeys(int baronyId);

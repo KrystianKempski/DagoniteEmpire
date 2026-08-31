@@ -1,0 +1,58 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <TitleContent>@L["Pay off early"]</TitleContent>
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog">
+            <MudText Typo="Typo.body2" Class="mb-2">
+                @(DebtDirection.IsTaken(Debt.Direction)
+                    ? L["Pay down debt to {0}. Outstanding: {1} gold.", Debt.CounterpartyName, PpbFormat.Number(Debt.PrincipalRemaining)]
+                    : L["Receive early repayment from {0}. Outstanding: {1} gold.", Debt.CounterpartyName, PpbFormat.Number(Debt.PrincipalRemaining)])
+            </MudText>
+            <MudNumericField T="decimal"
+                             @bind-Value="_amount"
+                             Label="@(L["Amount"])"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0"
+                             Max="@Debt.PrincipalRemaining"
+                             HideSpinButtons="true"
+                             Format="0.#"
+                             Class="baron-influence-field" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@L["Pay"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public BaronyDebtDTO Debt { get; set; } = new();
+
+    private decimal _amount;
+
+    protected override void OnInitialized()
+    {
+        _amount = Debt.PrincipalRemaining;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        var payment = PpbFormat.Round(_amount);
+        if (payment <= 0m)
+        {
+            _snackBar.Add(L["Amount must be positive."], Severity.Warning);
+            return;
+        }
+
+        MudDialog.Close(DialogResult.Ok(payment));
+    }
+}

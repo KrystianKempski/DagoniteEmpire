@@ -994,6 +994,17 @@ namespace DA_Business.Repository.BaronyRepos
                 barony.FoodInGranaries = stocks[Ppb.Food];
                 barony.TreasuryGold = stocks[Ppb.Treasury];
 
+                // 2b) Debt interest accrual and scheduled payments (strict: pay what treasury allows)
+                var activeDebts = await ctx.BaronyDebts
+                    .Where(d => d.BaronyId == baronyId && d.IsActive && d.PrincipalRemaining > 0m)
+                    .OrderBy(d => d.Id)
+                    .ToListAsync();
+                if (activeDebts.Count > 0)
+                    report.DebtPaymentResults = ApplyDebtPaymentsOnResolve(barony, activeDebts, ref stocks);
+
+                barony.ResourceStocksJson = Ser(stocks);
+                barony.TreasuryGold = stocks[Ppb.Treasury];
+
                 // 3) Size from primary-domain tiles
                 var primaryDomainId = await ctx.TerrainMapDomains.AsNoTracking()
                     .Where(d => d.BaronyId == baronyId && d.IsPrimary)
@@ -1910,6 +1921,13 @@ namespace DA_Business.Repository.BaronyRepos
             if (r.ScheduledHallEventsPublished > 0)
                 lines.Add($"Hall events published: {r.ScheduledHallEventsPublished}.");
 
+            if (r.DebtPaymentResults.Count > 0)
+            {
+                lines.Add("Debts:");
+                foreach (var note in r.DebtPaymentResults)
+                    lines.Add("  • " + note);
+            }
+
             if (r.LoyaltyTestRan)
             {
                 lines.Add(
@@ -2020,6 +2038,7 @@ namespace DA_Business.Repository.BaronyRepos
                     Projects = (await ctx.BaronyProjects.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     ResourceSources = (await ctx.BaronyResourceSources.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     PurseSources = (await ctx.BaronPurseSources.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
+                    Debts = (await ctx.BaronyDebts.AsNoTracking().Where(x => x.BaronyId == baronyId).ToListAsync()).Select(ToDTO).ToList(),
                     Units = (await ctx.BaronyUnits.AsNoTracking()
                             .Where(x => x.BaronyId == baronyId)
                             .OrderBy(x => x.Name)
@@ -5528,6 +5547,259 @@ namespace DA_Business.Repository.BaronyRepos
         public Task<int> DeletePurseSource(int id) =>
             Delete(ctx => ctx.BaronPurseSources, id, nameof(DeletePurseSource));
 
+        // ---------------- Debts and loans ----------------
+        public async Task<List<BaronyDebtDTO>> GetDebts(int baronyId) =>
+            await GetList(ctx => ctx.BaronyDebts, baronyId, ToDTO, nameof(GetDebts));
+
+        public async Task<BaronyDebtDTO> SaveDebt(BaronyDebtDTO dto)
+        {
+            try
+            {
+                ValidateDebt(dto);
+
+                using var ctx = await _db.CreateDbContextAsync();
+                var barony = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == dto.BaronyId)
+                    ?? throw new InvalidOperationException("Barony not found.");
+
+                var isNew = dto.Id <= 0;
+                var e = isNew
+                    ? null
+                    : await ctx.BaronyDebts.FirstOrDefaultAsync(x => x.Id == dto.Id && x.BaronyId == dto.BaronyId);
+
+                if (!isNew && e is null)
+                    throw new InvalidOperationException("Debt not found.");
+
+                if (isNew)
+                {
+                    e = ToEntity(dto);
+                    e.StartTurn = barony.TurnNumber;
+                    e.PrincipalRemaining = PpbFormat.Round(dto.Principal);
+                    e.IsActive = true;
+                    ctx.BaronyDebts.Add(e);
+
+                    var principal = PpbFormat.Round(dto.Principal);
+                    if (DebtDirection.IsTaken(dto.Direction))
+                    {
+                        barony.TreasuryGold = PpbFormat.Round(barony.TreasuryGold + principal);
+                        await AddDebtResourceSourceAsync(ctx, dto.BaronyId,
+                            $"Loan from {dto.CounterpartyName.Trim()}",
+                            principal,
+                            $"Borrowed {PpbFormat.Number(principal)} gold from {dto.CounterpartyName.Trim()}.");
+                    }
+                    else
+                    {
+                        if (barony.TreasuryGold < principal)
+                            throw new InvalidOperationException("Not enough gold in treasury to lend.");
+
+                        barony.TreasuryGold = PpbFormat.Round(barony.TreasuryGold - principal);
+                        await AddDebtResourceSourceAsync(ctx, dto.BaronyId,
+                            $"Loan to {dto.CounterpartyName.Trim()}",
+                            -principal,
+                            $"Lent {PpbFormat.Number(principal)} gold to {dto.CounterpartyName.Trim()}.");
+                    }
+
+                    SyncBaronyTreasuryStock(barony);
+                }
+                else
+                {
+                    ApplyDebt(e!, dto);
+                }
+
+                await ctx.SaveChangesAsync();
+                return ToDTO(e!);
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(SaveDebt));
+            }
+        }
+
+        public async Task<BaronyDebtDTO> UpdateDebtPaymentPerTurn(int debtId, decimal paymentPerTurn)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.BaronyDebts.FirstOrDefaultAsync(x => x.Id == debtId)
+                    ?? throw new InvalidOperationException("Debt not found.");
+                if (!e.IsActive || e.PrincipalRemaining <= 0m)
+                    throw new InvalidOperationException("Debt is already settled.");
+
+                e.PaymentPerTurn = PpbFormat.Round(Math.Max(0m, paymentPerTurn));
+                await ctx.SaveChangesAsync();
+                return ToDTO(e);
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(UpdateDebtPaymentPerTurn));
+            }
+        }
+
+        public async Task<BaronyDebtDTO> PayDebtEarly(int debtId, decimal amount)
+        {
+            try
+            {
+                var payment = PpbFormat.Round(amount);
+                if (payment <= 0m)
+                    throw new InvalidOperationException("Payment must be positive.");
+
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.BaronyDebts.FirstOrDefaultAsync(x => x.Id == debtId)
+                    ?? throw new InvalidOperationException("Debt not found.");
+                if (!e.IsActive || e.PrincipalRemaining <= 0m)
+                    throw new InvalidOperationException("Debt is already settled.");
+
+                var barony = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == e.BaronyId)
+                    ?? throw new InvalidOperationException("Barony not found.");
+
+                payment = Math.Min(payment, e.PrincipalRemaining);
+                if (DebtDirection.IsTaken(e.Direction))
+                {
+                    if (barony.TreasuryGold < payment)
+                        throw new InvalidOperationException("Not enough gold in treasury.");
+
+                    barony.TreasuryGold = PpbFormat.Round(barony.TreasuryGold - payment);
+                    await AddDebtResourceSourceAsync(ctx, e.BaronyId,
+                        $"Early debt payment to {e.CounterpartyName}",
+                        -payment,
+                        $"Early repayment of {PpbFormat.Number(payment)} gold to {e.CounterpartyName}.");
+                }
+                else
+                {
+                    barony.TreasuryGold = PpbFormat.Round(barony.TreasuryGold + payment);
+                    await AddDebtResourceSourceAsync(ctx, e.BaronyId,
+                        $"Early loan repayment from {e.CounterpartyName}",
+                        payment,
+                        $"Early repayment of {PpbFormat.Number(payment)} gold from {e.CounterpartyName}.");
+                }
+
+                e.PrincipalRemaining = PpbFormat.Round(e.PrincipalRemaining - payment);
+                if (e.PrincipalRemaining <= 0m)
+                {
+                    e.PrincipalRemaining = 0m;
+                    e.IsActive = false;
+                }
+
+                SyncBaronyTreasuryStock(barony);
+                await ctx.SaveChangesAsync();
+                return ToDTO(e);
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(PayDebtEarly));
+            }
+        }
+
+        public Task<int> DeleteDebt(int id) =>
+            Delete(ctx => ctx.BaronyDebts, id, nameof(DeleteDebt));
+
+        private static void ValidateDebt(BaronyDebtDTO dto)
+        {
+            if (dto.BaronyId <= 0)
+                throw new InvalidOperationException("Barony is required.");
+            if (string.IsNullOrWhiteSpace(dto.CounterpartyName))
+                throw new InvalidOperationException("Counterparty is required.");
+            if (dto.Id <= 0 && dto.Principal < DebtFormulas.MinPrincipal)
+                throw new InvalidOperationException($"Minimum loan amount is {DebtFormulas.MinPrincipal} gold.");
+            dto.Direction = DebtDirection.Normalize(dto.Direction);
+            dto.InterestRatePercent = DebtFormulas.ClampInterestPercent(dto.InterestRatePercent);
+            dto.PaymentPerTurn = PpbFormat.Round(Math.Max(0m, dto.PaymentPerTurn));
+            dto.CounterpartyName = dto.CounterpartyName.Trim();
+            dto.Notes = string.IsNullOrWhiteSpace(dto.Notes) ? null : dto.Notes.Trim();
+        }
+
+        private static async Task AddDebtResourceSourceAsync(
+            ApplicationDbContext ctx,
+            int baronyId,
+            string name,
+            decimal goldDelta,
+            string description)
+        {
+            var vec = new PpbVector();
+            vec[Ppb.Treasury] = goldDelta;
+            ctx.BaronyResourceSources.Add(new BaronyResourceSource
+            {
+                BaronyId = baronyId,
+                Name = name,
+                Description = description,
+                AdditiveJson = Ser(vec),
+            });
+            await Task.CompletedTask;
+        }
+
+        private static void SyncBaronyTreasuryStock(Barony barony)
+        {
+            var stocks = ResourceCatalog.Slice(De(barony.ResourceStocksJson));
+            stocks[Ppb.Treasury] = barony.TreasuryGold;
+            barony.ResourceStocksJson = Ser(stocks);
+        }
+
+        private static List<string> ApplyDebtPaymentsOnResolve(
+            Barony barony,
+            List<BaronyDebt> debts,
+            ref PpbVector stocks)
+        {
+            var notes = new List<string>();
+            var treasury = barony.TreasuryGold;
+
+            foreach (var debt in debts)
+            {
+                var beforeInterest = debt.PrincipalRemaining;
+                debt.PrincipalRemaining = DebtFormulas.AccrueInterest(
+                    debt.PrincipalRemaining, debt.InterestRatePercent);
+
+                if (debt.PrincipalRemaining > beforeInterest)
+                {
+                    notes.Add(
+                        $"{debt.CounterpartyName}: interest +{PpbFormat.Number(debt.PrincipalRemaining - beforeInterest)} "
+                        + $"(balance {PpbFormat.Number(debt.PrincipalRemaining)}).");
+                }
+
+                decimal payment;
+                if (DebtDirection.IsTaken(debt.Direction))
+                {
+                    payment = DebtFormulas.ComputeTakenPayment(
+                        debt.PaymentPerTurn, debt.PrincipalRemaining, treasury);
+                    if (payment > 0m)
+                    {
+                        treasury = PpbFormat.Round(treasury - payment);
+                        debt.PrincipalRemaining = PpbFormat.Round(debt.PrincipalRemaining - payment);
+                        notes.Add(
+                            $"Paid {PpbFormat.Number(payment)} gold to {debt.CounterpartyName} "
+                            + $"({PpbFormat.Number(debt.PrincipalRemaining)} remaining).");
+                    }
+                    else if (debt.PaymentPerTurn > 0m && debt.PrincipalRemaining > 0m)
+                    {
+                        notes.Add(
+                            $"Could not pay {debt.CounterpartyName} "
+                            + $"(treasury empty; {PpbFormat.Number(debt.PrincipalRemaining)} remaining).");
+                    }
+                }
+                else
+                {
+                    payment = DebtFormulas.ComputeGivenPayment(debt.PaymentPerTurn, debt.PrincipalRemaining);
+                    if (payment > 0m)
+                    {
+                        treasury = PpbFormat.Round(treasury + payment);
+                        debt.PrincipalRemaining = PpbFormat.Round(debt.PrincipalRemaining - payment);
+                        notes.Add(
+                            $"Received {PpbFormat.Number(payment)} gold from {debt.CounterpartyName} "
+                            + $"({PpbFormat.Number(debt.PrincipalRemaining)} remaining).");
+                    }
+                }
+
+                if (debt.PrincipalRemaining <= 0m)
+                {
+                    debt.PrincipalRemaining = 0m;
+                    debt.IsActive = false;
+                    notes.Add($"{debt.CounterpartyName}: settled.");
+                }
+            }
+
+            barony.TreasuryGold = treasury;
+            stocks[Ppb.Treasury] = treasury;
+            return notes;
+        }
+
         // ---------------- Building templates (global) ----------------
         public async Task<List<BuildingTemplateDTO>> GetBuildingTemplates()
         {
@@ -7690,6 +7962,49 @@ namespace DA_Business.Repository.BaronyRepos
             e.Name = d.Name;
             e.Description = d.Description;
             e.Amount = d.Amount;
+        }
+
+        // ---------------- Mapping: Barony debt ----------------
+        private static BaronyDebtDTO ToDTO(BaronyDebt e) => new()
+        {
+            Id = e.Id,
+            BaronyId = e.BaronyId,
+            Direction = e.Direction,
+            CounterpartyName = e.CounterpartyName,
+            Notes = e.Notes,
+            Principal = e.Principal,
+            PrincipalRemaining = e.PrincipalRemaining,
+            InterestRatePercent = e.InterestRatePercent,
+            PaymentPerTurn = e.PaymentPerTurn,
+            StartTurn = e.StartTurn,
+            IsActive = e.IsActive,
+        };
+
+        private static BaronyDebt ToEntity(BaronyDebtDTO d)
+        {
+            var e = new BaronyDebt();
+            ApplyDebt(e, d);
+            e.Id = d.Id;
+            return e;
+        }
+
+        private static void ApplyDebt(BaronyDebt e, BaronyDebtDTO d)
+        {
+            e.BaronyId = d.BaronyId;
+            e.Direction = DebtDirection.Normalize(d.Direction);
+            e.CounterpartyName = d.CounterpartyName.Trim();
+            e.Notes = string.IsNullOrWhiteSpace(d.Notes) ? null : d.Notes.Trim();
+            e.Principal = PpbFormat.Round(Math.Max(0m, d.Principal));
+            e.PrincipalRemaining = PpbFormat.Round(Math.Max(0m, d.PrincipalRemaining));
+            e.InterestRatePercent = DebtFormulas.ClampInterestPercent(d.InterestRatePercent);
+            e.PaymentPerTurn = PpbFormat.Round(Math.Max(0m, d.PaymentPerTurn));
+            e.StartTurn = d.StartTurn;
+            e.IsActive = d.IsActive;
+            if (e.PrincipalRemaining <= 0m)
+            {
+                e.PrincipalRemaining = 0m;
+                e.IsActive = false;
+            }
         }
 
         // ---------------- Mapping: Template ----------------

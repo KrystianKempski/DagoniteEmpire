@@ -906,15 +906,17 @@ namespace DA_Common.Barony
         public const string Community = "Community";
         public const string PercentModifiers = "% modifiers";
         public const string Other = "Other";
+        public const string Debts = "Debts and Loans";
+        public const string LoanRepayments = "Loan repayments";
 
         public static readonly string[] Income =
         {
-            Advisors, Fief, Buildings, SocialGroups, Improvements, Decrees, Events, Army, Community, PercentModifiers, Other,
+            Advisors, Fief, Buildings, SocialGroups, Improvements, Decrees, Events, Army, Community, PercentModifiers, LoanRepayments, Other,
         };
 
         public static readonly string[] Expense =
         {
-            Advisors, Fief, Buildings, SocialGroups, Improvements, Decrees, Events, Army, Community, PercentModifiers, Other,
+            Advisors, Fief, Buildings, SocialGroups, Improvements, Decrees, Events, Army, Community, PercentModifiers, Debts, Other,
         };
     }
 

@@ -84,6 +84,7 @@ namespace DA_DataAccess.Data
         public DbSet<SeatPurposeTemplate> SeatPurposeTemplates { get; set; }
         public DbSet<BaronyResourceSource> BaronyResourceSources { get; set; }
         public DbSet<BaronPurseSource> BaronPurseSources { get; set; }
+        public DbSet<BaronyDebt> BaronyDebts { get; set; }
         public DbSet<BaronPhpSource> BaronPhpSources { get; set; }
         public DbSet<BaronArtifact> BaronArtifacts { get; set; }
         public DbSet<BaronTimeModifier> BaronTimeModifiers { get; set; }

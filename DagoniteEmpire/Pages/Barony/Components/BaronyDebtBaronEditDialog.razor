@@ -1,0 +1,59 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <TitleContent>@L["Adjust debt payment"]</TitleContent>
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog">
+            <MudText Typo="Typo.body2" Class="mb-2">
+                @Debt.CounterpartyName · @(DebtDirection.IsTaken(Debt.Direction) ? L["Taken"] : L["Given"])
+            </MudText>
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
+                @L["Outstanding: {0} gold · Interest {1}%/turn", PpbFormat.Number(Debt.PrincipalRemaining), Debt.InterestRatePercent.ToString("0.#")]
+            </MudText>
+            <MudNumericField T="decimal"
+                             @bind-Value="_paymentPerTurn"
+                             Label="@(L["Payment per turn"])"
+                             HelperText="@(L["Gold moved on each Resolve. May be 0 (interest only). Insufficient treasury pays less."])"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0"
+                             HideSpinButtons="true"
+                             Format="0.#"
+                             Class="baron-influence-field" />
+            @if (_paymentPerTurn <= 0m && Debt.InterestRatePercent > 0m)
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-2">
+                    @L["No scheduled payment — balance will grow from interest each turn."]
+                </MudAlert>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@L["Save"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public BaronyDebtDTO Debt { get; set; } = new();
+
+    private decimal _paymentPerTurn;
+
+    protected override void OnInitialized()
+    {
+        _paymentPerTurn = Debt.PaymentPerTurn;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        Debt.PaymentPerTurn = PpbFormat.Round(Math.Max(0m, _paymentPerTurn));
+        MudDialog.Close(DialogResult.Ok(Debt.PaymentPerTurn));
+    }
+}

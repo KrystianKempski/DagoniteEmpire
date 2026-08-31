@@ -266,6 +266,24 @@ namespace DA_Models.BaronyModels
         public decimal Amount { get; set; }
     }
 
+    public class BaronyDebtDTO
+    {
+        public int Id { get; set; }
+        public int BaronyId { get; set; }
+
+        /// <summary><see cref="DA_Common.Barony.DebtDirection"/>.</summary>
+        public string Direction { get; set; } = DA_Common.Barony.DebtDirection.Taken;
+
+        public string CounterpartyName { get; set; } = string.Empty;
+        public string? Notes { get; set; }
+        public decimal Principal { get; set; }
+        public decimal PrincipalRemaining { get; set; }
+        public decimal InterestRatePercent { get; set; }
+        public decimal PaymentPerTurn { get; set; }
+        public int StartTurn { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+
     public class FiefDTO
     {
         public int Id { get; set; }
@@ -715,6 +733,8 @@ namespace DA_Models.BaronyModels
         public List<string> UnitActionResults { get; set; } = new();
         /// <summary>Hall events moved from Scheduled to Pending for the new turn.</summary>
         public int ScheduledHallEventsPublished { get; set; }
+        /// <summary>Debt interest accrual and scheduled payments applied during Resolve.</summary>
+        public List<string> DebtPaymentResults { get; set; } = new();
         public string SummaryText { get; set; } = string.Empty;
     }
 }

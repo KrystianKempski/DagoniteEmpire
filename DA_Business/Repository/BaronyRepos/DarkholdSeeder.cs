@@ -377,7 +377,26 @@ namespace DA_Business.Repository.BaronyRepos
             // --- First Council session: urgent advisor agenda ---
             SeedOpeningCouncil(ctx, barony);
 
+            SeedOpeningDebt(ctx, barony);
+
             await ctx.SaveChangesAsync();
+        }
+
+        private static void SeedOpeningDebt(ApplicationDbContext ctx, Barony barony)
+        {
+            ctx.BaronyDebts.Add(new BaronyDebt
+            {
+                BaronyId = barony.Id,
+                Direction = DebtDirection.Taken,
+                CounterpartyName = "Marquis Canterill",
+                Notes = "Legacy debt from Baron Mirren Credd — Totham treats unpaid balances harshly.",
+                Principal = 200m,
+                PrincipalRemaining = 200m,
+                InterestRatePercent = 3m,
+                PaymentPerTurn = 25m,
+                StartTurn = barony.TurnNumber,
+                IsActive = true,
+            });
         }
 
         private static void SeedOpeningCouncil(ApplicationDbContext ctx, Barony barony)

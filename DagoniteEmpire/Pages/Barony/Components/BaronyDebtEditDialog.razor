@@ -1,0 +1,188 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <TitleContent>
+        @(IsNew ? L["Take or give a loan"] : L["Edit debt"])
+    </TitleContent>
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog">
+            <MudToggleGroup T="string" @bind-Value="_direction" Color="Color.Primary" Class="mb-3" CheckMark="true">
+                <MudToggleItem Value="@DebtDirection.Taken">@L["I borrow (Taken)"]</MudToggleItem>
+                <MudToggleItem Value="@DebtDirection.Given">@L["I lend (Given)"]</MudToggleItem>
+            </MudToggleGroup>
+
+            @if (IsNew)
+            {
+                <MudAutocomplete T="DebtCounterpartyOptions.Option"
+                                 @bind-Value="_selectedCounterparty"
+                                 Label="@(L["Counterparty"])"
+                                 HelperText="@(L["Search lords and relations"])"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Dense="true"
+                                 Clearable="true"
+                                 ResetValueOnEmptyText="true"
+                                 CoerceText="false"
+                                 CoerceValue="true"
+                                 SearchFunc="SearchCounterpartiesAsync"
+                                 ToStringFunc="@(o => o?.Label ?? string.Empty)"
+                                 Class="baron-influence-field" />
+            }
+            else
+            {
+                <MudTextField Value="_debt.CounterpartyName"
+                              Label="@(L["Counterparty"])"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              ReadOnly="true"
+                              Class="baron-influence-field" />
+            }
+
+            @if (IsNew)
+            {
+                <MudNumericField T="decimal"
+                                 @bind-Value="_principal"
+                                 Label="@(L["Principal (gold)"])"
+                                 HelperText="@(L["Minimum {0} gold. Transfers immediately from/to treasury.", DebtFormulas.MinPrincipal])"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Min="@DebtFormulas.MinPrincipal"
+                                 HideSpinButtons="true"
+                                 Format="0.#"
+                                 Class="baron-influence-field" />
+            }
+            else
+            {
+                <MudNumericField T="decimal"
+                                 Value="_debt.PrincipalRemaining"
+                                 Label="@(L["Outstanding balance"])"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 ReadOnly="true"
+                                 HideSpinButtons="true"
+                                 Format="0.#"
+                                 Class="baron-influence-field" />
+            }
+
+            <MudNumericField T="decimal"
+                             @bind-Value="_interestRate"
+                             Label="@(L["Interest % per turn"])"
+                             HelperText="@(L["Charged on the remaining balance each Resolve. Max {0}%.", DebtFormulas.MaxInterestPercentPerTurn])"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0"
+                             Max="@DebtFormulas.MaxInterestPercentPerTurn"
+                             HideSpinButtons="true"
+                             Format="0.#"
+                             Class="baron-influence-field" />
+
+            <MudNumericField T="decimal"
+                             @bind-Value="_paymentPerTurn"
+                             Label="@(L["Payment per turn"])"
+                             HelperText="@(L["Gold moved on each Resolve. May be 0 (interest only). Insufficient treasury pays less."])"
+                             Variant="Variant.Outlined"
+                             Margin="Margin.Dense"
+                             Min="0"
+                             HideSpinButtons="true"
+                             Format="0.#"
+                             Class="baron-influence-field" />
+
+            @if (_paymentPerTurn <= 0m && _interestRate > 0m)
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-2">
+                    @L["No scheduled payment — balance will grow from interest each turn."]
+                </MudAlert>
+            }
+
+            @if (IsNew && _paymentPerTurn > 0m)
+            {
+                var estimate = DebtFormulas.EstimateTurnsToPayOff(_principal, _paymentPerTurn, _interestRate);
+                if (estimate is int turns)
+                {
+                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
+                        @L["Rough payoff at this rate: about {0} turns (ignores treasury shortfalls).", turns]
+                    </MudText>
+                }
+            }
+
+            <MudTextField @bind-Value="_notes"
+                          Label="@(L["Notes"])"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Lines="2"
+                          Class="baron-influence-field" />
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn" Variant="Variant.Filled" OnClick="Save">@L["Save"]</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public BaronyDebtDTO Debt { get; set; } = new();
+    [Parameter] public bool IsNew { get; set; }
+    [Parameter] public List<BaronyRelationDTO> Relations { get; set; } = new();
+
+    private BaronyDebtDTO _debt = new();
+    private string _direction = DebtDirection.Taken;
+    private DebtCounterpartyOptions.Option? _selectedCounterparty;
+    private List<DebtCounterpartyOptions.Option> _counterpartyOptions = new();
+    private decimal _principal = DebtFormulas.MinPrincipal;
+    private decimal _interestRate;
+    private decimal _paymentPerTurn;
+    private string? _notes;
+
+    protected override void OnParametersSet()
+    {
+        _debt = Debt;
+        _direction = DebtDirection.Normalize(Debt.Direction);
+        _counterpartyOptions = DebtCounterpartyOptions.Build(Relations, L);
+        _selectedCounterparty = DebtCounterpartyOptions.MatchByCounterpartyName(_counterpartyOptions, Debt.CounterpartyName);
+        _principal = Debt.Principal > 0m ? Debt.Principal : DebtFormulas.MinPrincipal;
+        _interestRate = Debt.InterestRatePercent;
+        _paymentPerTurn = Debt.PaymentPerTurn;
+        _notes = Debt.Notes;
+    }
+
+    private Task<IEnumerable<DebtCounterpartyOptions.Option>> SearchCounterpartiesAsync(string value, CancellationToken _)
+        => Task.FromResult(DebtCounterpartyOptions.Search(_counterpartyOptions, value));
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Save()
+    {
+        if (IsNew && _selectedCounterparty is null)
+        {
+            _snackBar.Add(L["Pick a counterparty from lords or relations."], Severity.Warning);
+            return;
+        }
+
+        if (IsNew && _principal < DebtFormulas.MinPrincipal)
+        {
+            _snackBar.Add(L["Minimum loan amount is {0} gold.", DebtFormulas.MinPrincipal], Severity.Warning);
+            return;
+        }
+
+        _debt.Direction = DebtDirection.Normalize(_direction);
+        if (IsNew)
+            _debt.CounterpartyName = _selectedCounterparty!.CounterpartyName;
+        _debt.InterestRatePercent = DebtFormulas.ClampInterestPercent(_interestRate);
+        _debt.PaymentPerTurn = PpbFormat.Round(Math.Max(0m, _paymentPerTurn));
+        _debt.Notes = string.IsNullOrWhiteSpace(_notes) ? null : _notes.Trim();
+
+        if (IsNew)
+        {
+            _debt.Principal = PpbFormat.Round(_principal);
+            _debt.PrincipalRemaining = _debt.Principal;
+            _debt.IsActive = true;
+        }
+
+        MudDialog.Close(DialogResult.Ok(_debt));
+    }
+}

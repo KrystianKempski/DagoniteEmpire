@@ -252,6 +252,35 @@ namespace DA_DataAccess.BaronyData
         public int? VisibleOnTurn { get; set; }
     }
 
+    /// <summary>Active loan or debt tracked in Budget → Debts.</summary>
+    public class BaronyDebt
+    {
+        [Key]
+        public int Id { get; set; }
+        public int BaronyId { get; set; }
+
+        /// <summary><see cref="DA_Common.Barony.DebtDirection"/> — Taken (borrowed) or Given (lent).</summary>
+        public string Direction { get; set; } = DA_Common.Barony.DebtDirection.Taken;
+
+        public string CounterpartyName { get; set; } = string.Empty;
+        public string? Notes { get; set; }
+
+        /// <summary>Original principal when the loan was created.</summary>
+        public decimal Principal { get; set; }
+
+        /// <summary>Outstanding balance including accrued interest not yet paid off.</summary>
+        public decimal PrincipalRemaining { get; set; }
+
+        /// <summary>Interest rate (% of remaining balance) charged each turn on Resolve.</summary>
+        public decimal InterestRatePercent { get; set; }
+
+        /// <summary>Gold moved each Resolve (may be less if treasury is insufficient — Taken only).</summary>
+        public decimal PaymentPerTurn { get; set; }
+
+        public int StartTurn { get; set; }
+        public bool IsActive { get; set; } = true;
+    }
+
     /// <summary>Custom gold income/expense line for the baron’s personal purse.</summary>
     public class BaronPurseSource
     {

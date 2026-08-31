@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
+using DA_Common.Barony.Battle;
 
 namespace DA_Models.BaronyModels
 {
@@ -253,6 +254,18 @@ namespace DA_Models.BaronyModels
 
         /// <summary>Full Defense stance: +4 Defence, −5 Attack; the unit forfeits all movement this round.</summary>
         public bool FullDefense { get; set; }
+
+        /// <summary>1 = Weapon1 active, 2 = Weapon2 active (requires Weapon2 on the linked unit).</summary>
+        public int ActiveWeaponSlot { get; set; } = BattleWeaponSwap.MinSlot;
+
+        /// <summary>Weapon swap already declared this round (once per round).</summary>
+        public bool WeaponSwapUsedThisRound { get; set; }
+
+        /// <summary>After an attack-planning swap: no offensive action this combat round (defense uses new stats).</summary>
+        public bool NoAttackThisRound { get; set; }
+
+        /// <summary>Movement-phase weapon swap (or Full Defense) spent this round's move budget.</summary>
+        public bool MovementForfeitedThisRound { get; set; }
 
         /// <summary>Set once the free commander facing change was used this Movement phase.</summary>
         public bool FreeFacingUsed { get; set; }
