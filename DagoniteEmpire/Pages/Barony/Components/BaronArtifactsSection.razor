@@ -101,15 +101,15 @@
                                         <button type="button"
                                                 class="lords-seat-occupant-item-name artifact-location-btn"
                                                 @onclick="@(() => AssignLocationAsync(item))">
-                                            <BaronyTooltip Title="@(L["Location"])" Text="@BaronyCalc.ArtifactLocationTooltip(item, Seat)">
-                                                <span>@BaronyCalc.ArtifactLocationLabel(item, Seat)</span>
+                                            <BaronyTooltip Title="@(L["Location"])" Text="@BaronyCalc.ArtifactLocationTooltip(item, Seat, PurposeTemplates, L, Advisors)">
+                                                <span>@BaronyCalc.ArtifactLocationLabel(item, Seat, PurposeTemplates, L, Advisors)</span>
                                             </BaronyTooltip>
                                         </button>
                                     }
                                     else
                                     {
-                                        <BaronyTooltip Title="@(L["Location"])" Text="@BaronyCalc.ArtifactLocationTooltip(item, Seat)">
-                                            <span>@BaronyCalc.ArtifactLocationLabel(item, Seat)</span>
+                                        <BaronyTooltip Title="@(L["Location"])" Text="@BaronyCalc.ArtifactLocationTooltip(item, Seat, PurposeTemplates, L, Advisors)">
+                                            <span>@BaronyCalc.ArtifactLocationLabel(item, Seat, PurposeTemplates, L, Advisors)</span>
                                         </BaronyTooltip>
                                     }
                                 </td>
@@ -133,6 +133,8 @@
 @code {
     [Parameter] public BaronyDTO Barony { get; set; } = new();
     [Parameter] public BaronySeatDTO? Seat { get; set; }
+    [Parameter] public List<SeatPurposeTemplateDTO> PurposeTemplates { get; set; } = new();
+    [Parameter] public List<AdvisorDTO> Advisors { get; set; } = new();
     [Parameter] public List<BaronArtifactDTO> Artifacts { get; set; } = new();
     /// <summary>Game Master: create / edit / delete items.</summary>
     [Parameter] public bool CanManage { get; set; }
@@ -195,6 +197,8 @@
         {
             { x => x.Artifact, draft },
             { x => x.Seat, Seat },
+            { x => x.PurposeTemplates, PurposeTemplates },
+            { x => x.Advisors, Advisors },
             { x => x.ExistingArtifacts, Artifacts },
             { x => x.LocationOnly, locationOnly },
         };

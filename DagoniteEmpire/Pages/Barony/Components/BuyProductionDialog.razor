@@ -1,0 +1,165 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@inject ISnackbar _snackBar
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog city-building-edit-dialog project-edit-dialog">
+            <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                @L["Spend gold from Treasury to gain Production immediately. 1 Production costs {0} imperials. Maximum: floor(Loyalty ÷ 2) = {1} Production (Loyalty: {2}). You can change or reverse this purchase later.",
+                    ProjectStandardFormulas.BuyProductionGoldPerUnit,
+                    _maxProduction,
+                    PpbFormat.Additive(LoyaltyTotal)]
+            </MudText>
+
+            <MudTextField @bind-Value="_name"
+                          Label="@(L["Name"])"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Required="true"
+                          Class="baron-influence-field" />
+
+            @if (_maxProduction <= 0)
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-2">
+                    @L["Loyalty is too low to buy Production (need at least 2 Loyalty)."]
+                </MudAlert>
+            }
+            else
+            {
+                <MudSlider T="int"
+                           Value="_buyProductionGold"
+                           ValueChanged="OnBuyProductionGoldChanged"
+                           Min="0"
+                           Max="@_sliderMax"
+                           Step="@ProjectStandardFormulas.BuyProductionGoldPerUnit"
+                           Color="Color.Primary"
+                           Class="mb-2" />
+                <div class="d-flex flex-wrap gap-3 mb-2">
+                    <MudText Typo="Typo.body2">
+                        @L["Gold spent"]: <strong>@_buyProductionGold</strong>
+                    </MudText>
+                    <MudText Typo="Typo.body2">
+                        @L["Production gained"]: <strong>@_buyProductionAmount</strong>
+                    </MudText>
+                </div>
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">
+                    @L["Treasury available: {0} (including {1} already spent on this purchase).",
+                        PpbFormat.Number(_effectiveTreasury),
+                        PpbFormat.Number(_previousGold)]
+                </MudText>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn"
+                   Variant="Variant.Filled"
+                   Disabled="@(_maxProduction <= 0 || _buyProductionGold <= 0)"
+                   OnClick="Confirm">
+            @(IsEdit ? L["Update purchase"] : L["Buy Production"])
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter] public decimal LoyaltyTotal { get; set; }
+    [Parameter] public decimal TreasuryAvailable { get; set; }
+    [Parameter] public BaronyProjectDTO? Existing { get; set; }
+
+    private string _name = string.Empty;
+    private int _buyProductionGold;
+    private int _previousGold;
+
+    private bool IsEdit => Existing is { Id: > 0 };
+
+    private int _maxProduction => ProjectStandardFormulas.MaxProductionFromLoyalty(LoyaltyTotal);
+    private int _maxGoldByLoyalty => ProjectStandardFormulas.GoldForProduction(_maxProduction);
+    private int _buyProductionAmount => ProjectStandardFormulas.ProductionFromGold(_buyProductionGold);
+
+    private decimal _effectiveTreasury => TreasuryAvailable + _previousGold;
+
+    private int _sliderMax
+    {
+        get
+        {
+            var byTreasury = Math.Max(0, (int)Math.Floor(_effectiveTreasury));
+            byTreasury = byTreasury / ProjectStandardFormulas.BuyProductionGoldPerUnit
+                * ProjectStandardFormulas.BuyProductionGoldPerUnit;
+            return Math.Min(_maxGoldByLoyalty, byTreasury);
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        if (Existing is not null
+            && ProjectStandardFormulas.IsBuyProduction(Existing.OutputKind, Existing.Notes))
+        {
+            _name = string.IsNullOrWhiteSpace(Existing.Name) ? L["Buy Production"] : Existing.Name;
+            _previousGold = (int)Math.Max(0m, Existing.CostGoldProduction[Ppb.Treasury]);
+            _buyProductionGold = ProjectStandardFormulas.ClampGoldSpend(_previousGold, LoyaltyTotal);
+        }
+        else
+        {
+            _name = L["Buy Production"];
+            _previousGold = 0;
+            _buyProductionGold = 0;
+        }
+
+        if (_buyProductionGold > _sliderMax)
+            _buyProductionGold = _sliderMax;
+    }
+
+    private void OnBuyProductionGoldChanged(int value)
+    {
+        _buyProductionGold = ProjectStandardFormulas.ClampGoldSpend(value, LoyaltyTotal);
+        if (_buyProductionGold > _sliderMax)
+            _buyProductionGold = _sliderMax;
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void Confirm()
+    {
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _snackBar.Add(L["Name is required."], Severity.Warning);
+            return;
+        }
+
+        if (_maxProduction <= 0)
+        {
+            _snackBar.Add(L["Loyalty is too low to buy Production (need at least 2 Loyalty)."], Severity.Warning);
+            return;
+        }
+
+        if (_buyProductionGold <= 0)
+        {
+            _snackBar.Add(L["Select how much gold to spend on Production."], Severity.Warning);
+            return;
+        }
+
+        if (_buyProductionGold > _sliderMax)
+        {
+            _snackBar.Add(L["Not enough Gold in treasury for this purchase."], Severity.Warning);
+            return;
+        }
+
+        MudDialog.Close(DialogResult.Ok(new BuyProductionDialogResult
+        {
+            Name = _name.Trim(),
+            GoldSpend = _buyProductionGold,
+            ProjectId = Existing?.Id > 0 ? Existing.Id : null,
+        }));
+    }
+
+    public sealed class BuyProductionDialogResult
+    {
+        public string Name { get; set; } = string.Empty;
+        public int GoldSpend { get; set; }
+        public int? ProjectId { get; set; }
+    }
+}

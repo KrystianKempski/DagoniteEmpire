@@ -27,14 +27,22 @@
                     class="unit-captain-pick__option @(_mode == PickMode.None ? "unit-captain-pick__option--picked" : null)"
                     @onclick="() => _mode = PickMode.None">
                 <span class="unit-captain-pick__name">@L["No captain"]</span>
-                <span class="unit-captain-pick__hint">@L["Clear assignment"]</span>
+                <span class="unit-captain-pick__meta">
+                    <span class="unit-captain-option__badge unit-captain-option__badge--xp">@L["{0} XP / turn", 0]</span>
+                    <span class="unit-captain-pick__hint">@L["Clear assignment"]</span>
+                </span>
             </button>
 
             <button type="button"
                     class="unit-captain-pick__option @(_mode == PickMode.Baron ? "unit-captain-pick__option--picked" : null)"
                     @onclick="() => _mode = PickMode.Baron">
                 <span class="unit-captain-pick__name">@L["Baron"]</span>
-                <span class="unit-captain-pick__hint">@L["The baron leads this unit (Training uses character skills × BT)."]</span>
+                <span class="unit-captain-pick__meta">
+                    <span class="unit-captain-option__badge unit-captain-option__badge--xp">
+                        @L["{0} XP / turn at 100 BT", BaronXpAtFullBt]
+                    </span>
+                    <span class="unit-captain-pick__hint">@L["The baron leads this unit (Training uses character skills × BT)."]</span>
+                </span>
             </button>
 
             @if (!Selectable.Any())
@@ -50,11 +58,15 @@
                     {
                         var unlocked = person.Sheet?.UnlockedCommanderAbilities.Count ?? 0;
                         var picked = _mode == PickMode.Courtier && _selectedId == person.Id;
+                        var xp = CourtierTrainingXp(person);
                         <button type="button"
                                 class="unit-captain-pick__option @(picked ? "unit-captain-pick__option--picked" : null)"
                                 @onclick="() => PickCourtier(person.Id)">
                             <span class="unit-captain-pick__name">@person.Name</span>
                             <span class="unit-captain-pick__meta">
+                                <span class="unit-captain-option__badge unit-captain-option__badge--xp">
+                                    @L["{0} XP / turn", xp]
+                                </span>
                                 @if (person.IsLinkedCharacter)
                                 {
                                     <span class="unit-captain-option__badge">@L["Character"]</span>
@@ -93,6 +105,8 @@
     [Parameter] public string? UnitName { get; set; }
     [Parameter] public int? CurrentCaptainId { get; set; }
     [Parameter] public bool CurrentCaptainIsBaron { get; set; }
+    [Parameter] public int BaronCommand { get; set; }
+    [Parameter] public int BaronStrategy { get; set; }
     [Parameter] public List<AvailableAdvisorDTO> AvailableCaptains { get; set; } = new();
     [Parameter] public HashSet<int> OccupiedCaptainIds { get; set; } = new();
 
@@ -100,6 +114,9 @@
 
     private PickMode _mode = PickMode.None;
     private int? _selectedId;
+
+    private int BaronXpAtFullBt =>
+        UnitActionFormulas.TrainingXp(UnitCaptainKind.Baron, BaronCommand, BaronStrategy, trainingJc: 100, battleSuppresses: false);
 
     private IEnumerable<AvailableAdvisorDTO> Selectable =>
         AvailableCaptains
@@ -116,6 +133,11 @@
             _selectedId = CurrentCaptainId;
         }
     }
+
+    private static int CourtierTrainingXp(AvailableAdvisorDTO person) =>
+        UnitActionFormulas.TrainingXpFromSheet(
+            UnitActionFormulas.KindForCourtier(person.IsLinkedCharacter),
+            person.Sheet);
 
     private void PickCourtier(int id)
     {

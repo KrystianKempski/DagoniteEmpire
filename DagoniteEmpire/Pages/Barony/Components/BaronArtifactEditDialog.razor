@@ -122,6 +122,8 @@
 
     [Parameter] public BaronArtifactDTO Artifact { get; set; } = new();
     [Parameter] public BaronySeatDTO? Seat { get; set; }
+    [Parameter] public List<SeatPurposeTemplateDTO> PurposeTemplates { get; set; } = new();
+    [Parameter] public List<AdvisorDTO> Advisors { get; set; } = new();
     [Parameter] public List<BaronArtifactDTO> ExistingArtifacts { get; set; } = new();
     /// <summary>When true, only chamber location can be changed (baron placement).</summary>
     [Parameter] public bool LocationOnly { get; set; }
@@ -137,6 +139,10 @@
     private int? _seatRoomId;
     private string? _description;
     private List<SeatRoomDTO> _rooms = new();
+    private IReadOnlyDictionary<int, SeatPurposeTemplateDTO> _purposeLookup =
+        new Dictionary<int, SeatPurposeTemplateDTO>();
+    private IReadOnlyDictionary<int, AdvisorDTO> _advisorLookup =
+        new Dictionary<int, AdvisorDTO>();
     private string _roomHelper =>
         L["Chamber where the item is displayed (applies prestige multiplier and activates domain PPB)."].Value;
 
@@ -164,9 +170,12 @@
         _percent = Artifact.Percent?.Clone() ?? new PpbVector();
         _seatRoomId = Artifact.SeatRoomId;
         _description = Artifact.Description;
+        _purposeLookup = BaronyCalc.PurposeLookup(PurposeTemplates);
+        _advisorLookup = BaronyCalc.AdvisorLookup(Advisors);
         _rooms = (Seat?.Rooms ?? new())
             .Where(r => !r.IsRuin)
-            .OrderBy(r => r.SortOrder)
+            .OrderBy(r => ChamberLabel(r))
+            .ThenBy(r => r.SortOrder)
             .ThenBy(r => r.Name)
             .ToList();
     }
@@ -177,6 +186,9 @@
         return Task.CompletedTask;
     }
 
+    private string ChamberLabel(SeatRoomDTO room) =>
+        BaronyCalc.SeatChamberDisplayName(room, _purposeLookup, L, _advisorLookup);
+
     private string RoomOptionLabel(SeatRoomDTO room)
     {
         var used = BaronyCalc.ArtifactCountInRoom(
@@ -184,8 +196,7 @@
             room.Id,
             Artifact.Id > 0 ? Artifact.Id : null);
         var limit = BaronArtifactCapacity.LimitLabel(room.SizeCategory);
-        var name = string.IsNullOrWhiteSpace(room.Name) ? $"Room #{room.Id}" : room.Name;
-        return $"{name} (×{room.PrestigeMultiplier:0.##}, {used}/{limit})";
+        return $"{ChamberLabel(room)} (×{room.PrestigeMultiplier:0.##}, {used}/{limit})";
     }
 
     private void Cancel() => MudDialog.Cancel();

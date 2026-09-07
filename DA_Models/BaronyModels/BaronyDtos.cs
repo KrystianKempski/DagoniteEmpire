@@ -505,6 +505,7 @@ namespace DA_Models.BaronyModels
         /// <summary>
         /// Negative Resources balance row: resources already allocated this turn (left stocks).
         /// Remaining unfunded cost is not shown. Completed / cancelled projects are excluded.
+        /// Instant Buy Production is excluded — gold/production are on the Resource Balance ledger.
         /// </summary>
         public PpbVector ResourcesBalanceImpact()
         {
@@ -512,6 +513,9 @@ namespace DA_Models.BaronyModels
             if (!HasAnyAllocation)
                 return v;
             if (Status is ProjectStatus.Completed or ProjectStatus.Cancelled)
+                return v;
+            if (ProjectStandardFormulas.IsBuyProduction(OutputKind, Notes)
+                && ProjectStandardNotes.HasResultsApplied(Notes))
                 return v;
 
             foreach (var info in ResourceCatalog.All)

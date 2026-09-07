@@ -938,6 +938,19 @@ namespace DA_Business.Repository.BaronyRepos
                     if (dto.Status == ProjectStatus.Draft)
                         continue;
 
+                    // Instant Buy Production stays In progress (singleton slot); already settled.
+                    if (ProjectStandardFormulas.IsBuyProduction(dto.OutputKind, dto.Notes)
+                        && HasProjectResultsApplied(dto.Notes))
+                    {
+                        if (!string.Equals(dto.Status, ProjectStatus.InProgress, StringComparison.OrdinalIgnoreCase))
+                        {
+                            dto.Status = ProjectStatus.InProgress;
+                            dto.TurnsRemaining = 0;
+                            ApplyProject(project, dto);
+                        }
+                        continue;
+                    }
+
                     // Resource allocation: wait until fully funded; then start (In progress) and tick.
                     var justFunded = false;
                     if (ProjectStatus.IsResourceAllocation(dto.Status))
@@ -1841,19 +1854,16 @@ namespace DA_Business.Repository.BaronyRepos
             return null;
         }
 
-        private const string ProjectResultsAppliedMarker = "ResultsApplied=1";
-
         private static bool HasProjectResultsApplied(string? notes) =>
-            !string.IsNullOrEmpty(notes)
-            && notes.Contains(ProjectResultsAppliedMarker, StringComparison.OrdinalIgnoreCase);
+            ProjectStandardNotes.HasResultsApplied(notes);
 
         private static string MarkProjectResultsApplied(string? notes)
         {
             if (HasProjectResultsApplied(notes))
                 return notes!;
             return string.IsNullOrWhiteSpace(notes)
-                ? ProjectResultsAppliedMarker
-                : notes.TrimEnd() + "; " + ProjectResultsAppliedMarker;
+                ? ProjectStandardNotes.ResultsAppliedMarker
+                : notes.TrimEnd() + "\n" + ProjectStandardNotes.ResultsAppliedMarker;
         }
 
         /// <summary>
@@ -4735,6 +4745,341 @@ namespace DA_Business.Repository.BaronyRepos
 
         public Task<int> DeleteProject(int id) => Delete(ctx => ctx.BaronyProjects, id, nameof(DeleteProject));
 
+        public async Task<BaronyProjectDTO> SettleBuyProduction(
+            int baronyId,
+            int goldSpend,
+            decimal loyaltyTotal,
+            int? projectId = null,
+            string? name = null)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var barony = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == baronyId)
+                    ?? throw new InvalidOperationException("Barony not found.");
+
+                var gold = ProjectStandardFormulas.ClampGoldSpend(goldSpend, loyaltyTotal);
+                if (gold <= 0)
+                    throw new InvalidOperationException(
+                        "Loyalty is too low to buy Production, or gold spend is zero.");
+
+                var production = ProjectStandardFormulas.ProductionFromGold(gold);
+                if (production <= 0)
+                    throw new InvalidOperationException("Select how much gold to spend on Production.");
+
+                var stocks = ResourceCatalog.Slice(De(barony.ResourceStocksJson));
+                stocks[Ppb.Food] = barony.FoodInGranaries;
+                stocks[Ppb.Treasury] = barony.TreasuryGold;
+
+                var standardProjects = await ctx.BaronyProjects
+                    .Where(p => p.BaronyId == baronyId
+                        && p.OutputKind == ProjectOutputKind.Standard
+                        && p.Status != ProjectStatus.Cancelled
+                        && p.Status != "Cancelled")
+                    .ToListAsync();
+                var buyProjects = standardProjects
+                    .Where(p => ProjectStandardFormulas.IsBuyProduction(p.OutputKind, p.Notes))
+                    .ToList();
+
+                BaronyProject? existing = null;
+                if (projectId is int pid && pid > 0)
+                {
+                    existing = buyProjects.FirstOrDefault(p => p.Id == pid)
+                        ?? throw new InvalidOperationException("Project not found.");
+                }
+                else
+                {
+                    existing = buyProjects
+                        .OrderBy(p => ProjectStatus.IsCompleted(p.Status) ? 1 : 0)
+                        .ThenByDescending(p => p.Id)
+                        .FirstOrDefault();
+                }
+
+                // One Buy Production slot only — fold extras back into stocks and remove them.
+                foreach (var extra in buyProjects.Where(p => existing is null || p.Id != existing.Id).ToList())
+                {
+                    await UndoBuyProductionEffectsInContextAsync(ctx, baronyId, extra, stocks);
+                    ctx.BaronyProjects.Remove(extra);
+                    buyProjects.Remove(extra);
+                }
+
+                var previousGold = 0;
+                var previousProd = 0;
+                var wasSettled = existing is not null && HasProjectResultsApplied(existing.Notes);
+
+                if (wasSettled && existing is not null)
+                {
+                    var prior = ToDTO(existing);
+                    previousGold = (int)Math.Max(0m, prior.CostGoldProduction[Ppb.Treasury]);
+                    previousProd = (int)Math.Max(0m, prior.ResultAdditive[Ppb.Production]);
+                }
+                else if (existing is not null)
+                {
+                    var open = ToDTO(existing);
+                    foreach (var info in ResourceCatalog.All)
+                    {
+                        var refund = open.Allocated[info.Key];
+                        if (refund <= 0m)
+                            continue;
+                        stocks[info.Key] += refund;
+                    }
+                }
+
+                var deltaGold = gold - previousGold;
+                var deltaProd = production - previousProd;
+                if (deltaGold > 0m && stocks[Ppb.Treasury] < deltaGold)
+                    throw new InvalidOperationException(
+                        $"Not enough Gold in stock ({PpbFormat.Number(stocks[Ppb.Treasury])} available).");
+                if (deltaProd < 0m && stocks[Ppb.Production] < -deltaProd)
+                    throw new InvalidOperationException(
+                        $"Not enough Production in stock to reduce this purchase ({PpbFormat.Number(stocks[Ppb.Production])} available).");
+
+                stocks[Ppb.Treasury] -= deltaGold;
+                stocks[Ppb.Production] += deltaProd;
+
+                var cost = new PpbVector();
+                cost[Ppb.Treasury] = gold;
+                var result = new PpbVector();
+                result[Ppb.Production] = production;
+                var allocatedDisplay = ResourceCatalog.Slice(cost);
+
+                var displayName = !string.IsNullOrWhiteSpace(name)
+                    ? name.Trim()
+                    : (existing is not null && !string.IsNullOrWhiteSpace(existing.Name)
+                        ? existing.Name.Trim()
+                        : "Buy Production");
+                var summary = $"Buy {production} Production for {gold} imperials.";
+                var notes = ProjectStandardNotes.SetSubtype(existing?.Notes, ProjectStandardSubtype.BuyProduction);
+                notes = MarkProjectResultsApplied(notes);
+
+                BaronyResourceSource? source = null;
+                var sourceId = ProjectStandardNotes.GetBuyProductionSourceId(existing?.Notes);
+                if (sourceId is int sid)
+                    source = await ctx.BaronyResourceSources.FirstOrDefaultAsync(s => s.Id == sid && s.BaronyId == baronyId);
+
+                // Same-turn ledger shows the full purchase; after Resolve wipe, only this turn's delta.
+                var ledger = new PpbVector();
+                if (source is null && wasSettled)
+                {
+                    ledger[Ppb.Treasury] = -deltaGold;
+                    ledger[Ppb.Production] = deltaProd;
+                }
+                else
+                {
+                    ledger[Ppb.Treasury] = -gold;
+                    ledger[Ppb.Production] = production;
+                }
+
+                if (source is null)
+                {
+                    if (ledger[Ppb.Treasury] != 0m || ledger[Ppb.Production] != 0m)
+                    {
+                        source = new BaronyResourceSource
+                        {
+                            BaronyId = baronyId,
+                            Name = displayName,
+                            Description = summary,
+                            AdditiveJson = Ser(ledger),
+                            IsTurnEphemeral = false,
+                            VisibleOnTurn = null,
+                        };
+                        ctx.BaronyResourceSources.Add(source);
+                        await ctx.SaveChangesAsync();
+                    }
+                }
+                else
+                {
+                    source.Name = displayName;
+                    source.Description = summary;
+                    source.AdditiveJson = Ser(ledger);
+                }
+
+                notes = ProjectStandardNotes.SetBuyProductionSourceId(notes, source?.Id);
+
+                var dto = new BaronyProjectDTO
+                {
+                    Id = existing?.Id ?? 0,
+                    BaronyId = baronyId,
+                    Name = displayName,
+                    Description = existing?.Description ?? string.Empty,
+                    OutputKind = ProjectOutputKind.Standard,
+                    AllowedCostModes = ProjectAllowedCostModes.GoldProductionOnly,
+                    SelectedCostMode = ProjectCostMode.GoldProduction,
+                    CostGoldProduction = ProjectCostCatalog.SliceGoldProduction(cost),
+                    CostMaterials = new(),
+                    ResultAdditive = ResourceCatalog.Slice(result),
+                    ResultPercent = new(),
+                    Allocated = allocatedDisplay,
+                    ResultDescription = summary,
+                    HideResultFromBaron = false,
+                    Status = ProjectStatus.InProgress,
+                    TurnsRemaining = 0,
+                    Notes = notes,
+                };
+
+                if (existing is null)
+                {
+                    existing = ToEntity(dto);
+                    ctx.BaronyProjects.Add(existing);
+                }
+                else
+                {
+                    ApplyProject(existing, dto);
+                }
+
+                stocks = ResourceCatalog.Slice(stocks);
+                barony.ResourceStocksJson = Ser(stocks);
+                barony.FoodInGranaries = stocks[Ppb.Food];
+                barony.TreasuryGold = stocks[Ppb.Treasury];
+
+                await ctx.SaveChangesAsync();
+                return ToDTO(existing);
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(SettleBuyProduction));
+            }
+        }
+
+        /// <summary>
+        /// Folds a duplicate Buy Production purchase back into <paramref name="stocks"/> and removes its
+        /// ledger row. Refunds gold only for the Production that can still be taken back.
+        /// Does not delete the project entity.
+        /// </summary>
+        private static async Task UndoBuyProductionEffectsInContextAsync(
+            ApplicationDbContext ctx,
+            int baronyId,
+            BaronyProject project,
+            PpbVector stocks)
+        {
+            var dto = ToDTO(project);
+            if (HasProjectResultsApplied(dto.Notes))
+            {
+                var gold = dto.CostGoldProduction[Ppb.Treasury];
+                var production = dto.ResultAdditive[Ppb.Production];
+                var removable = production > 0m
+                    ? Math.Min(production, Math.Max(0m, stocks[Ppb.Production]))
+                    : 0m;
+                var refund = production > 0m
+                    ? PpbFormat.Round(gold * (removable / production))
+                    : gold;
+
+                stocks[Ppb.Treasury] += refund;
+                stocks[Ppb.Production] -= removable;
+            }
+            else
+            {
+                foreach (var info in ResourceCatalog.All)
+                {
+                    var refund = dto.Allocated[info.Key];
+                    if (refund > 0m)
+                        stocks[info.Key] += refund;
+                }
+            }
+
+            var sourceId = ProjectStandardNotes.GetBuyProductionSourceId(dto.Notes);
+            if (sourceId is int sid)
+            {
+                var source = await ctx.BaronyResourceSources.FirstOrDefaultAsync(s => s.Id == sid && s.BaronyId == baronyId);
+                if (source is not null)
+                    ctx.BaronyResourceSources.Remove(source);
+            }
+        }
+
+        public async Task ReverseBuyProduction(int projectId)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var project = await ctx.BaronyProjects.FirstOrDefaultAsync(p => p.Id == projectId)
+                    ?? throw new InvalidOperationException("Project not found.");
+                if (!ProjectStandardFormulas.IsBuyProduction(project.OutputKind, project.Notes))
+                    throw new InvalidOperationException("Only Buy Production purchases can be reversed this way.");
+                if (string.Equals(project.Status, ProjectStatus.Cancelled, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(project.Status, "Cancelled", StringComparison.OrdinalIgnoreCase))
+                    return;
+
+                var barony = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == project.BaronyId)
+                    ?? throw new InvalidOperationException("Barony not found.");
+
+                var dto = ToDTO(project);
+                var stocks = ResourceCatalog.Slice(De(barony.ResourceStocksJson));
+                stocks[Ppb.Food] = barony.FoodInGranaries;
+                stocks[Ppb.Treasury] = barony.TreasuryGold;
+
+                if (HasProjectResultsApplied(dto.Notes))
+                {
+                    var gold = dto.CostGoldProduction[Ppb.Treasury];
+                    var production = dto.ResultAdditive[Ppb.Production];
+                    if (production > 0m && stocks[Ppb.Production] < production)
+                        throw new InvalidOperationException(
+                            $"Not enough Production in stock to reverse this purchase ({PpbFormat.Number(stocks[Ppb.Production])} available).");
+
+                    stocks[Ppb.Treasury] += gold;
+                    stocks[Ppb.Production] -= production;
+
+                    var sourceIdSettled = ProjectStandardNotes.GetBuyProductionSourceId(dto.Notes);
+                    BaronyResourceSource? existingSource = null;
+                    if (sourceIdSettled is int sidSettled)
+                    {
+                        existingSource = await ctx.BaronyResourceSources
+                            .FirstOrDefaultAsync(s => s.Id == sidSettled && s.BaronyId == project.BaronyId);
+                    }
+
+                    if (existingSource is not null)
+                    {
+                        ctx.BaronyResourceSources.Remove(existingSource);
+                    }
+                    else if (gold != 0m || production != 0m)
+                    {
+                        var undo = new PpbVector();
+                        undo[Ppb.Treasury] = gold;
+                        undo[Ppb.Production] = -production;
+                        var undoName = string.IsNullOrWhiteSpace(dto.Name) ? "Buy Production" : dto.Name.Trim();
+                        ctx.BaronyResourceSources.Add(new BaronyResourceSource
+                        {
+                            BaronyId = project.BaronyId,
+                            Name = undoName + " (reversed)",
+                            Description = $"Reversed purchase: refund {PpbFormat.Number(gold)} gold, remove {PpbFormat.Number(production)} Production.",
+                            AdditiveJson = Ser(undo),
+                            IsTurnEphemeral = false,
+                            VisibleOnTurn = null,
+                        });
+                    }
+                }
+                else
+                {
+                    foreach (var info in ResourceCatalog.All)
+                    {
+                        var refund = dto.Allocated[info.Key];
+                        if (refund > 0m)
+                            stocks[info.Key] += refund;
+                    }
+
+                    var sourceIdOpen = ProjectStandardNotes.GetBuyProductionSourceId(dto.Notes);
+                    if (sourceIdOpen is int sidOpen)
+                    {
+                        var source = await ctx.BaronyResourceSources.FirstOrDefaultAsync(s => s.Id == sidOpen && s.BaronyId == project.BaronyId);
+                        if (source is not null)
+                            ctx.BaronyResourceSources.Remove(source);
+                    }
+                }
+
+                ctx.BaronyProjects.Remove(project);
+
+                stocks = ResourceCatalog.Slice(stocks);
+                barony.ResourceStocksJson = Ser(stocks);
+                barony.FoodInGranaries = stocks[Ppb.Food];
+                barony.TreasuryGold = stocks[Ppb.Treasury];
+
+                await ctx.SaveChangesAsync();
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(ReverseBuyProduction));
+            }
+        }
+
         // ---------------- Army units ----------------
         public async Task<List<BaronyUnitDTO>> GetUnits(int baronyId)
         {
@@ -5399,6 +5744,10 @@ namespace DA_Business.Repository.BaronyRepos
                     || string.Equals(project.Status, "Completed", StringComparison.OrdinalIgnoreCase)
                     || string.Equals(project.Status, "Cancelled", StringComparison.OrdinalIgnoreCase))
                     throw new InvalidOperationException("This project cannot accept resources.");
+                if (ProjectStandardFormulas.IsBuyProduction(project.OutputKind, project.Notes)
+                    && HasProjectResultsApplied(project.Notes))
+                    throw new InvalidOperationException(
+                        "Buy Production allocates gold automatically. Edit the purchase instead.");
 
                 var barony = await ctx.Baronies.FirstOrDefaultAsync(x => x.Id == project.BaronyId)
                     ?? throw new InvalidOperationException("Barony not found.");
@@ -5467,6 +5816,10 @@ namespace DA_Business.Repository.BaronyRepos
                 using var ctx = await _db.CreateDbContextAsync();
                 var project = await ctx.BaronyProjects.FirstOrDefaultAsync(x => x.Id == projectId)
                     ?? throw new InvalidOperationException("Project not found.");
+                if (ProjectStandardFormulas.IsBuyProduction(project.OutputKind, project.Notes)
+                    && HasProjectResultsApplied(project.Notes))
+                    throw new InvalidOperationException(
+                        "Buy Production allocates gold automatically. Edit or reverse the purchase instead.");
 
                 var barony = await ctx.Baronies.FirstOrDefaultAsync(x => x.Id == project.BaronyId)
                     ?? throw new InvalidOperationException("Barony not found.");

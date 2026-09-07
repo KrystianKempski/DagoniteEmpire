@@ -174,6 +174,8 @@
     [Parameter] public bool CanManageAsMg { get; set; }
     [Parameter] public List<AvailableAdvisorDTO> AvailableCaptains { get; set; } = new();
     [Parameter] public HashSet<int> OccupiedCaptainIds { get; set; } = new();
+    [Parameter] public int BaronCommand { get; set; }
+    [Parameter] public int BaronStrategy { get; set; }
     [Parameter] public bool BattleInProgress { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
 
@@ -227,6 +229,20 @@
         }
     }
 
+    private (UnitCaptainKind Kind, int Command, int Strategy) ResolveTrainingPreviewSkills()
+    {
+        if (Unit.CaptainIsBaron)
+            return (UnitCaptainKind.Baron, BaronCommand, BaronStrategy);
+
+        var captain = CurrentCaptain;
+        if (captain is null)
+            return (UnitCaptainKind.None, 0, 0);
+
+        var kind = UnitActionFormulas.KindForCourtier(captain.IsLinkedCharacter);
+        var (command, strategy) = UnitActionFormulas.CommandStrategyFromSheet(captain.Sheet);
+        return (kind, command, strategy);
+    }
+
     private async Task OpenCaptainPickerAsync()
     {
         if (!CanEdit || _busy)
@@ -237,6 +253,8 @@
             [nameof(UnitCaptainPickDialog.UnitName)] = Unit.Name,
             [nameof(UnitCaptainPickDialog.CurrentCaptainId)] = Unit.CaptainAvailableAdvisorId,
             [nameof(UnitCaptainPickDialog.CurrentCaptainIsBaron)] = Unit.CaptainIsBaron,
+            [nameof(UnitCaptainPickDialog.BaronCommand)] = BaronCommand,
+            [nameof(UnitCaptainPickDialog.BaronStrategy)] = BaronStrategy,
             [nameof(UnitCaptainPickDialog.AvailableCaptains)] = AvailableCaptains,
             [nameof(UnitCaptainPickDialog.OccupiedCaptainIds)] = OccupiedCaptainIds,
         };
@@ -260,12 +278,16 @@
             return;
 
         var skills = UnitStatHelper.BuildSkillTotals(Unit);
+        var (captainKind, command, strategy) = ResolveTrainingPreviewSkills();
         var parameters = new DialogParameters
         {
             [nameof(UnitActionPickDialog.UnitName)] = Unit.Name,
             [nameof(UnitActionPickDialog.CurrentAction)] = Unit.CurrentAction,
             [nameof(UnitActionPickDialog.ActionTrainingJc)] = Unit.ActionTrainingJc,
             [nameof(UnitActionPickDialog.CaptainIsBaron)] = Unit.CaptainIsBaron,
+            [nameof(UnitActionPickDialog.PreviewCaptainKind)] = captainKind,
+            [nameof(UnitActionPickDialog.PreviewCommand)] = command,
+            [nameof(UnitActionPickDialog.PreviewStrategy)] = strategy,
             [nameof(UnitActionPickDialog.BattleInProgress)] = BattleInProgress,
             [nameof(UnitActionPickDialog.SkillTotals)] = skills,
         };

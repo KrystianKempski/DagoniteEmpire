@@ -22,6 +22,7 @@
             @L["Fund projects by allocating Gold, Production, and other cumulative stocks from your barony."]
             @((MarkupString)L["Auto-created projects start in <strong>{0}</strong> — turns do not tick until they are fully funded.", L["Resource allocation"]].Value)
             @L["Spent allocations appear on the Resources balance."]
+            @L["Buy Production is a single in-progress project: gold is allocated automatically, Production is granted immediately, and the loyalty limit applies to that one purchase — edit it to change the amount."]
             @L["Click a project title row to expand or collapse details."]
         </MudText>
 
@@ -32,6 +33,12 @@
                            StartIcon="@Icons.Material.Filled.Add"
                            OnClick="AddAsync">
                     @L["Add Project"]
+                </MudButton>
+                <MudButton Variant="Variant.Filled"
+                           Class="baron-influence-save-btn"
+                           StartIcon="@Icons.Material.Filled.Paid"
+                           OnClick="BuyProductionAsync">
+                    @L["Buy Production"]
                 </MudButton>
             </div>
         }
@@ -58,6 +65,8 @@
                                  OnClearAllocation="@(() => ClearAllocationAsync(item))"
                                  OnCostModeChanged="@(mode => SwitchCostModeAsync(item, mode))"
                                  OnEdit="@(() => EditAsync(item))"
+                                 OnBuyProductionEdit="@(() => EditBuyProductionAsync(item))"
+                                 OnBuyProductionReverse="@(() => ReverseBuyProductionAsync(item))"
                                  OnDelete="@(() => DeleteAsync(item))" />
                 }
             </div>
@@ -90,6 +99,8 @@
                                  OnClearAllocation="@(() => ClearAllocationAsync(item))"
                                  OnCostModeChanged="@(mode => SwitchCostModeAsync(item, mode))"
                                  OnEdit="@(() => EditAsync(item))"
+                                 OnBuyProductionEdit="@(() => EditBuyProductionAsync(item))"
+                                 OnBuyProductionReverse="@(() => ReverseBuyProductionAsync(item))"
                                  OnDelete="@(() => DeleteAsync(item))" />
                 }
             </div>
@@ -107,7 +118,7 @@
     [Parameter] public EventCallback OnChanged { get; set; }
 
     private List<BaronyProjectDTO> ActiveProjects =>
-        Projects.Where(p => !ProjectStatus.IsCompleted(p.Status)).ToList();
+        Projects.Where(p => !ProjectStatus.IsCompleted(p.Status) && !ProjectStatus.IsCancelled(p.Status)).ToList();
 
     private List<BaronyProjectDTO> CompletedProjects =>
         Projects.Where(p => ProjectStatus.IsCompleted(p.Status)).ToList();
@@ -124,6 +135,98 @@
 
     private IEnumerable<BaronyProjectDTO> OrderedCompletedProjects =>
         CompletedProjects.OrderBy(p => p.Name, StringComparer.OrdinalIgnoreCase);
+
+    private async Task BuyProductionAsync()
+    {
+        var existing = Projects
+            .Where(p => ProjectStandardFormulas.IsBuyProduction(p.OutputKind, p.Notes)
+                && !ProjectStatus.IsCancelled(p.Status))
+            .OrderBy(p => ProjectStatus.IsCompleted(p.Status) ? 1 : 0)
+            .ThenByDescending(p => p.Id)
+            .FirstOrDefault();
+        await OpenBuyProductionDialogAsync(existing);
+    }
+
+    private async Task EditBuyProductionAsync(BaronyProjectDTO item)
+    {
+        if (!CanEdit || !IsEditableBuyProduction(item))
+            return;
+        await OpenBuyProductionDialogAsync(item);
+    }
+
+    private async Task OpenBuyProductionDialogAsync(BaronyProjectDTO? existing)
+    {
+        if (!CanEdit)
+            return;
+
+        var parameters = new DialogParameters<BuyProductionDialog>
+        {
+            { x => x.LoyaltyTotal, LoyaltyTotal },
+            { x => x.TreasuryAvailable, ResourceStocks[Ppb.Treasury] },
+            { x => x.Existing, existing },
+        };
+
+        var dialog = await _dialogService.ShowAsync<BuyProductionDialog>(
+            existing is null ? L["Buy Production"] : L["Change Buy Production"],
+            parameters,
+            new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+            });
+
+        var result = await dialog.Result;
+        if (result is null || result.Canceled || result.Data is not BuyProductionDialog.BuyProductionDialogResult choice)
+            return;
+
+        try
+        {
+            await _baronyRepo.SettleBuyProduction(
+                BaronyId,
+                choice.GoldSpend,
+                LoyaltyTotal,
+                choice.ProjectId ?? existing?.Id,
+                choice.Name);
+            _snackBar.Add(
+                existing is null ? L["Production purchased."] : L["Purchase updated."],
+                Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task ReverseBuyProductionAsync(BaronyProjectDTO item)
+    {
+        if (!CanEdit || !IsEditableBuyProduction(item))
+            return;
+
+        var confirm = await _dialogService.ShowMessageBoxAsync(
+            L["Reverse purchase"],
+            L["Refund gold and remove Production from “{0}”? This removes the purchase.", item.Name],
+            yesText: L["Reverse"],
+            cancelText: L["Cancel"]);
+        if (confirm != true)
+            return;
+
+        try
+        {
+            await _baronyRepo.ReverseBuyProduction(item.Id);
+            _snackBar.Add(L["Purchase reversed."], Severity.Success);
+            await OnChanged.InvokeAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+    }
+
+    private static bool IsEditableBuyProduction(BaronyProjectDTO item) =>
+        ProjectStandardFormulas.IsBuyProduction(item.OutputKind, item.Notes)
+        && !ProjectStatus.IsCancelled(item.Status);
 
     private async Task AllocateAsync(BaronyProjectDTO item)
     {
@@ -300,7 +403,10 @@
 
         try
         {
-            await _baronyRepo.DeleteProject(item.Id);
+            if (IsEditableBuyProduction(item))
+                await _baronyRepo.ReverseBuyProduction(item.Id);
+            else
+                await _baronyRepo.DeleteProject(item.Id);
             _snackBar.Add(L["Project removed."], Severity.Success);
             await OnChanged.InvokeAsync();
         }

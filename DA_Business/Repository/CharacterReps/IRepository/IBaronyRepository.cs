@@ -195,6 +195,18 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<BaronyProjectDTO> ClearProjectAllocations(int projectId);
         Task<BaronyProjectDTO> SetProjectCostMode(int projectId, string mode);
         Task<int> DeleteProject(int id);
+        /// <summary>
+        /// Instant Buy Production: deduct gold, grant production, upsert a Completed standard project
+        /// and a Resource Balance ledger row. Pass <paramref name="projectId"/> to change an existing purchase.
+        /// </summary>
+        Task<BaronyProjectDTO> SettleBuyProduction(
+            int baronyId,
+            int goldSpend,
+            decimal loyaltyTotal,
+            int? projectId = null,
+            string? name = null);
+        /// <summary>Undo an instant Buy Production purchase (refund gold, remove production, cancel project).</summary>
+        Task ReverseBuyProduction(int projectId);
 
         // --- Army units ---
         Task<List<BaronyUnitDTO>> GetUnits(int baronyId);

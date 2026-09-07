@@ -4,6 +4,7 @@ using DA_Common.Barony;
 using DA_Common.Localization;
 using DA_Models.BaronyModels;
 using DA_Models.CharacterModels;
+using Microsoft.Extensions.Localization;
 
 namespace DagoniteEmpire.Pages.Barony
 {
@@ -1569,19 +1570,93 @@ namespace DagoniteEmpire.Pages.Barony
             return room.PrestigeMultiplier <= 0 ? 1m : room.PrestigeMultiplier;
         }
 
-        public static string ArtifactRoomLabel(BaronArtifactDTO item, BaronySeatDTO? seat)
+        public static IReadOnlyDictionary<int, AdvisorDTO> AdvisorLookup(
+            IEnumerable<AdvisorDTO>? advisors) =>
+            (advisors ?? Enumerable.Empty<AdvisorDTO>())
+                .ToDictionary(a => a.Id);
+
+        /// <summary>
+        /// Prefer room purpose (e.g. Throne Room) over chamber name when assigning artifacts.
+        /// Appends occupant name when set: <c>Advisor Chamber - Name</c>.
+        /// </summary>
+        public static string SeatChamberDisplayName(
+            SeatRoomDTO? room,
+            IReadOnlyDictionary<int, SeatPurposeTemplateDTO>? purposes = null,
+            IStringLocalizer? localizer = null,
+            IReadOnlyDictionary<int, AdvisorDTO>? advisors = null)
+        {
+            if (room is null)
+                return "—";
+
+            string label;
+            if (room.PurposeTemplateId is int pid
+                && purposes is not null
+                && purposes.TryGetValue(pid, out var purpose))
+            {
+                var purposeName = purpose.DisplayName(localizer);
+                label = !string.IsNullOrWhiteSpace(purposeName)
+                    ? purposeName
+                    : (string.IsNullOrWhiteSpace(room.Name) ? $"Room #{room.Id}" : room.Name);
+            }
+            else
+            {
+                label = string.IsNullOrWhiteSpace(room.Name) ? $"Room #{room.Id}" : room.Name;
+            }
+
+            var occupant = SeatRoomOccupantName(room, advisors);
+            return occupant is null ? label : $"{label} - {occupant}";
+        }
+
+        public static string? SeatRoomOccupantName(
+            SeatRoomDTO? room,
+            IReadOnlyDictionary<int, AdvisorDTO>? advisors = null)
+        {
+            if (room is null)
+                return null;
+
+            if (!string.IsNullOrWhiteSpace(room.OccupantCustom))
+                return room.OccupantCustom.Trim();
+
+            if (room.OccupantAdvisorId is int aid
+                && advisors is not null
+                && advisors.TryGetValue(aid, out var advisor))
+            {
+                var name = advisor.PersonName?.Trim();
+                return string.IsNullOrWhiteSpace(name) ? null : name;
+            }
+
+            return null;
+        }
+
+        public static string ArtifactRoomLabel(
+            BaronArtifactDTO item,
+            BaronySeatDTO? seat,
+            IEnumerable<SeatPurposeTemplateDTO>? purposeTemplates = null,
+            IStringLocalizer? localizer = null,
+            IEnumerable<AdvisorDTO>? advisors = null)
         {
             if (item.SeatRoomId is not int roomId || seat?.Rooms is null)
                 return "—";
 
             var room = seat.Rooms.FirstOrDefault(r => r.Id == roomId);
-            return room is null ? "—" : (string.IsNullOrWhiteSpace(room.Name) ? $"Room #{room.Id}" : room.Name);
+            return room is null
+                ? "—"
+                : SeatChamberDisplayName(
+                    room,
+                    PurposeLookup(purposeTemplates),
+                    localizer,
+                    AdvisorLookup(advisors));
         }
 
-        /// <summary>Chamber name with prestige multiplier, e.g. <c>Great Hall ×1.5</c>.</summary>
-        public static string ArtifactLocationLabel(BaronArtifactDTO item, BaronySeatDTO? seat)
+        /// <summary>Chamber label with prestige multiplier, e.g. <c>Throne Room ×1.5</c>.</summary>
+        public static string ArtifactLocationLabel(
+            BaronArtifactDTO item,
+            BaronySeatDTO? seat,
+            IEnumerable<SeatPurposeTemplateDTO>? purposeTemplates = null,
+            IStringLocalizer? localizer = null,
+            IEnumerable<AdvisorDTO>? advisors = null)
         {
-            var roomName = ArtifactRoomLabel(item, seat);
+            var roomName = ArtifactRoomLabel(item, seat, purposeTemplates, localizer, advisors);
             if (roomName == "—")
                 return "—";
 
@@ -1589,7 +1664,12 @@ namespace DagoniteEmpire.Pages.Barony
             return $"{roomName} ×{mult:0.##}";
         }
 
-        public static string ArtifactLocationTooltip(BaronArtifactDTO item, BaronySeatDTO? seat)
+        public static string ArtifactLocationTooltip(
+            BaronArtifactDTO item,
+            BaronySeatDTO? seat,
+            IEnumerable<SeatPurposeTemplateDTO>? purposeTemplates = null,
+            IStringLocalizer? localizer = null,
+            IEnumerable<AdvisorDTO>? advisors = null)
         {
             if (item.SeatRoomId is not int roomId || seat?.Rooms is null)
             {
@@ -1603,7 +1683,10 @@ namespace DagoniteEmpire.Pages.Barony
                 return "Chamber not found. Prestige, Honor and Fear use ×1. Domain PPB is inactive.";
             }
 
-            var name = string.IsNullOrWhiteSpace(room.Name) ? $"Room #{room.Id}" : room.Name;
+            var purposes = PurposeLookup(purposeTemplates);
+            var advisorLookup = AdvisorLookup(advisors);
+            var name = SeatChamberDisplayName(room, purposes, localizer, advisorLookup);
+            var chamberName = string.IsNullOrWhiteSpace(room.Name) ? $"Room #{room.Id}" : room.Name;
             var mult = room.IsRuin
                 ? 1m
                 : (room.PrestigeMultiplier <= 0 ? 1m : room.PrestigeMultiplier);
@@ -1612,10 +1695,18 @@ namespace DagoniteEmpire.Pages.Barony
             var lines = new List<string>
             {
                 $"Location: {name}",
-                $"Size: {size} (artifact capacity {capacity})",
-                $"Chamber prestige multiplier: ×{mult:0.##}",
-                "This multiplier is applied to the item's Prestige, Honor and Fear.",
             };
+            if (!string.Equals(name, chamberName, StringComparison.Ordinal)
+                && !name.StartsWith(chamberName + " - ", StringComparison.Ordinal))
+            {
+                lines.Add($"Chamber: {chamberName}");
+            }
+            var occupant = SeatRoomOccupantName(room, advisorLookup);
+            if (occupant is not null && !name.Contains(occupant, StringComparison.Ordinal))
+                lines.Add($"Occupant: {occupant}");
+            lines.Add($"Size: {size} (artifact capacity {capacity})");
+            lines.Add($"Chamber prestige multiplier: ×{mult:0.##}");
+            lines.Add("This multiplier is applied to the item's Prestige, Honor and Fear.");
             if (room.IsRuin)
             {
                 lines.Add("This chamber is a ruin — multiplier treated as ×1; domain PPB is inactive.");

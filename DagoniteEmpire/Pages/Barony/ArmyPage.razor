@@ -4,6 +4,10 @@
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 @inject ISnackbar _snackBar
 @inject IBaronyBattleMapRepository _battleMapRepo
+@inject ICharacterRepository _characterRepo
+@using DA_Business.Repository.BaronyRepos
+@using DA_Business.Repository.CharacterReps.IRepository
+@using DA_Common.Barony
 
 <PageTitle>Dagonite Empire | @L["Army"]</PageTitle>
 
@@ -111,6 +115,8 @@ else if (Barony is not null)
                                          CanManageAsMg="@RosterCanManage"
                                          AvailableCaptains="@_courtiers"
                                          OccupiedCaptainIds="@_occupiedCaptainIds"
+                                         BaronCommand="@_baronCommand"
+                                         BaronStrategy="@_baronStrategy"
                                          BattleInProgress="@_battleInProgress"
                                          OnChanged="ReloadAsync" />
                     }
@@ -130,6 +136,8 @@ else if (Barony is not null)
     private List<AvailableAdvisorDTO> _courtiers = new();
     private HashSet<int> _occupiedCaptainIds = new();
     private bool _battleInProgress;
+    private int _baronCommand;
+    private int _baronStrategy;
 
     private bool RosterCanEdit => CanEdit && !_battleInProgress;
     private bool RosterCanManage => CanManageAsMg && !_battleInProgress;
@@ -158,6 +166,22 @@ else if (Barony is not null)
             .Where(u => u.CaptainAvailableAdvisorId is int)
             .Select(u => u.CaptainAvailableAdvisorId!.Value)
             .ToHashSet();
+
+        // Match Resolve Turn: Training XP uses permanent Inspire / Strategy (not clamped court mains).
+        try
+        {
+            var character = await _characterRepo.GetById(Barony.CharacterId, fullIncludes: true);
+            _baronCommand = CommanderCxFormulas.AbsoluteSpecialSkill(
+                character, UnitActionFormulas.CharacterCommandSkill);
+            _baronStrategy = CommanderCxFormulas.AbsoluteSpecialSkill(
+                character, UnitActionFormulas.CharacterStrategySkill);
+        }
+        catch
+        {
+            _baronCommand = 0;
+            _baronStrategy = 0;
+        }
+
         try
         {
             var map = await _battleMapRepo.GetOrCreate(Barony.Id);

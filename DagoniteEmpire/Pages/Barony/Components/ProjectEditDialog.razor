@@ -27,7 +27,7 @@
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Class="baron-influence-field">
-                @foreach (var kind in ProjectOutputKind.All)
+                @foreach (var kind in VisibleOutputKinds)
                 {
                     <MudSelectItem Value="@kind">@L[kind]</MudSelectItem>
                 }
@@ -243,11 +243,18 @@
     private int _maxGoldSpend => ProjectStandardFormulas.GoldForProduction(_maxProduction);
     private int _buyProductionAmount => ProjectStandardFormulas.ProductionFromGold(_buyProductionGold);
 
+    private IEnumerable<string> VisibleOutputKinds =>
+        CanManage
+            ? ProjectOutputKind.All
+            : ProjectOutputKind.All.Where(k => !ProjectStandardFormulas.IsStandardKind(k));
+
     private string OutputKindHelper => IsStandardKind
         ? L["Exchange one resource for another when the project is funded and completed."]
         : IsOtherKind
             ? L["Like one-time resources, but no stock grant is required — only the description / output summary."]
-            : L["What this project becomes when completed."];
+            : CanManage
+                ? L["What this project becomes when completed."]
+                : L["What this project becomes when completed. Use Buy Production on the Projects page for an instant gold → Production purchase."];
 
     private string ResultSummaryHelper => IsStandardKind
         ? L["Short summary of the exchange (auto-filled for Buy Production)."]

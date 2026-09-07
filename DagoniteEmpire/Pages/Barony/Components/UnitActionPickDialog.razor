@@ -44,21 +44,36 @@
                 }
             </div>
 
-            @if (_selected == UnitActionKind.Training && CaptainIsBaron)
+            @if (_selected == UnitActionKind.Training)
             {
-                <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">@L["Baron Time (BT) for training"]</MudText>
-                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
-                    @L["XP = ⌊(Command + Strategy) / 2⌋ × BT/100. Expected XP: {0}.", PreviewTrainingXp]
-                </MudText>
-                <MudSlider T="int"
-                           Value="_trainingJc"
-                           ValueChanged="OnTrainingJcChanged"
-                           Min="0"
-                           Max="100"
-                           Step="5"
-                           ValueLabel="true"
-                           Class="mb-1" />
-                <MudText Typo="Typo.caption">@_trainingJc BT</MudText>
+                @if (PreviewCaptainKind == UnitCaptainKind.Baron)
+                {
+                    <MudText Typo="Typo.subtitle2" Class="mt-3 mb-1">@L["Baron Time (BT) for training"]</MudText>
+                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
+                        @L["XP = ⌊(Command + Strategy) / 2⌋ × BT/100. Expected XP: {0}.", PreviewTrainingXp]
+                    </MudText>
+                    <MudSlider T="int"
+                               Value="_trainingJc"
+                               ValueChanged="OnTrainingJcChanged"
+                               Min="0"
+                               Max="100"
+                               Step="5"
+                               ValueLabel="true"
+                               Class="mb-1" />
+                    <MudText Typo="Typo.caption">@_trainingJc BT</MudText>
+                }
+                else if (PreviewCaptainKind != UnitCaptainKind.None)
+                {
+                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-3">
+                        @L["Expected XP: {0}.", PreviewTrainingXp]
+                    </MudText>
+                }
+                else
+                {
+                    <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mt-3">
+                        @L["Assign a captain to gain Training XP."]
+                    </MudText>
+                }
             }
 
             @if (!string.IsNullOrWhiteSpace(_previewBonus))
@@ -82,6 +97,7 @@
     [Parameter] public string CurrentAction { get; set; } = string.Empty;
     [Parameter] public int ActionTrainingJc { get; set; }
     [Parameter] public bool CaptainIsBaron { get; set; }
+    [Parameter] public UnitCaptainKind PreviewCaptainKind { get; set; }
     [Parameter] public bool BattleInProgress { get; set; }
     [Parameter] public int PreviewCommand { get; set; }
     [Parameter] public int PreviewStrategy { get; set; }
@@ -92,7 +108,7 @@
 
     private int PreviewTrainingXp =>
         UnitActionFormulas.TrainingXp(
-            UnitCaptainKind.Baron, PreviewCommand, PreviewStrategy, _trainingJc, BattleInProgress);
+            PreviewCaptainKind, PreviewCommand, PreviewStrategy, _trainingJc, BattleInProgress);
 
     private string? _previewBonus;
 
@@ -100,6 +116,8 @@
     {
         _selected = UnitActionKind.Normalize(CurrentAction);
         _trainingJc = UnitActionFormulas.ClampJc(ActionTrainingJc > 0 ? ActionTrainingJc : 100);
+        if (PreviewCaptainKind == UnitCaptainKind.None && CaptainIsBaron)
+            PreviewCaptainKind = UnitCaptainKind.Baron;
         RefreshPreview();
     }
 

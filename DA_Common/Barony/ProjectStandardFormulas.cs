@@ -10,6 +10,13 @@ namespace DA_Common.Barony
         public static bool IsStandardKind(string? kind) =>
             string.Equals(kind, ProjectOutputKind.Standard, StringComparison.OrdinalIgnoreCase);
 
+        public static bool IsBuyProduction(string? outputKind, string? notes) =>
+            IsStandardKind(outputKind)
+            && string.Equals(
+                ProjectStandardNotes.GetSubtype(notes),
+                ProjectStandardSubtype.BuyProduction,
+                StringComparison.OrdinalIgnoreCase);
+
         /// <summary>Max Production purchasable: floor(Loyalty / 2).</summary>
         public static int MaxProductionFromLoyalty(decimal loyalty) =>
             Math.Max(0, (int)Math.Floor(loyalty / 2m));

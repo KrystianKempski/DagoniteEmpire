@@ -49,6 +49,8 @@ else if (Barony is not null)
 
     <BaronArtifactsSection Barony="@Barony"
                            Seat="@_seat"
+                           PurposeTemplates="@_purposeTemplates"
+                           Advisors="@_advisors"
                            Artifacts="@_artifacts"
                            CanManage="@CanManageAsMg"
                            CanAssignLocation="@CanEdit"
@@ -69,6 +71,7 @@ else if (Barony is not null)
     private List<BaronTimeModifierDTO> _timeModifiers = new();
     private BaronySeatDTO? _seat;
     private List<SeatPurposeTemplateDTO> _purposeTemplates = new();
+    private List<AdvisorDTO> _advisors = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -95,6 +98,7 @@ else if (Barony is not null)
         _timeModifiers = await _baronyRepo.GetBaronTimeModifiers(Barony.Id);
         _seat = await _baronyRepo.EnsureSeat(Barony.Id);
         _purposeTemplates = await _baronyRepo.GetSeatPurposeTemplates(Barony.Id);
+        _advisors = await _baronyRepo.GetAdvisors(Barony.Id);
 
         await PersistPhpTotalsAsync();
         StateHasChanged();

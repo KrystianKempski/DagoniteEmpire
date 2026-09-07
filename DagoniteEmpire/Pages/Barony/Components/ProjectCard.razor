@@ -48,7 +48,7 @@
             </div>
 
             <div class="project-card__actions" @onclick:stopPropagation="true">
-                @if (CanEdit && Project.CanAcceptAllocation)
+                @if (CanEdit && Project.CanAcceptAllocation && !IsBuyProductionPurchase)
                 {
                     <MudButton Variant="Variant.Filled"
                                Size="Size.Small"
@@ -58,7 +58,7 @@
                         @L["Allocate resources"]
                     </MudButton>
                 }
-                @if (CanEdit && Project.CanClearAllocation)
+                @if (CanEdit && Project.CanClearAllocation && !IsBuyProductionPurchase)
                 {
                     <MudButton Variant="Variant.Outlined"
                                Size="Size.Small"
@@ -67,13 +67,30 @@
                         @L["Clear allocation"]
                     </MudButton>
                 }
-                @if (CanManage)
+                @if (CanEdit && IsBuyProductionPurchase)
                 {
-                    <BaronyTooltip Text="@(L["Edit Project"])">
+                    <BaronyTooltip Text="@(L["Change Buy Production"])">
                         <MudIconButton Icon="@Icons.Material.Filled.Edit"
                                        Size="Size.Small"
-                                       OnClick="OnEdit" />
+                                       OnClick="OnBuyProductionEdit" />
                     </BaronyTooltip>
+                    <BaronyTooltip Text="@(L["Reverse purchase"])">
+                        <MudIconButton Icon="@Icons.Material.Filled.Undo"
+                                       Size="Size.Small"
+                                       Color="Color.Warning"
+                                       OnClick="OnBuyProductionReverse" />
+                    </BaronyTooltip>
+                }
+                @if (CanManage)
+                {
+                    @if (!IsBuyProductionPurchase)
+                    {
+                        <BaronyTooltip Text="@(L["Edit Project"])">
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                           Size="Size.Small"
+                                           OnClick="OnEdit" />
+                        </BaronyTooltip>
+                    }
                     <BaronyTooltip Text="@(L["Remove project"])">
                         <MudIconButton Icon="@Icons.Material.Filled.Delete"
                                        Size="Size.Small"
@@ -236,6 +253,8 @@
     [Parameter] public EventCallback OnClearAllocation { get; set; }
     [Parameter] public EventCallback<string> OnCostModeChanged { get; set; }
     [Parameter] public EventCallback OnEdit { get; set; }
+    [Parameter] public EventCallback OnBuyProductionEdit { get; set; }
+    [Parameter] public EventCallback OnBuyProductionReverse { get; set; }
     [Parameter] public EventCallback OnDelete { get; set; }
 
     private bool _isOpen;
@@ -245,6 +264,10 @@
     private string ProjectAnchorId => $"project-{Project.Id}";
 
     private bool HideResult => Project.IsResultHiddenFromViewer(CanManage);
+
+    private bool IsBuyProductionPurchase =>
+        ProjectStandardFormulas.IsBuyProduction(Project.OutputKind, Project.Notes)
+        && !ProjectStatus.IsCancelled(Project.Status);
 
     private bool HasOutput =>
         PpbCatalog.All.Any(info =>

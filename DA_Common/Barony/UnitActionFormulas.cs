@@ -175,6 +175,35 @@ namespace DA_Common.Barony
             };
         }
 
+        /// <summary>
+        /// Command / Strategy totals used by Training XP (and UI previews) from a court commander sheet.
+        /// Linked characters and the baron store projected Inspire / Strategy and tactics here.
+        /// </summary>
+        public static (int Command, int Strategy) CommandStrategyFromSheet(CourtCharacterSheet? sheet)
+        {
+            if (sheet is null)
+                return (0, 0);
+
+            var command = sheet.GetMain(CourtMainSkill.Command) + sheet.GetMainOtherSum(CourtMainSkill.Command);
+            var strategy = sheet.GetSecondary(CourtSecondarySkill.StrategyTactics);
+            return (Math.Max(0, command), Math.Max(0, strategy));
+        }
+
+        /// <summary>Preview Training XP from a court sheet (courtier / projected baron skills).</summary>
+        public static int TrainingXpFromSheet(
+            UnitCaptainKind captainKind,
+            CourtCharacterSheet? sheet,
+            int trainingJc = 100,
+            bool battleSuppresses = false)
+        {
+            var (command, strategy) = CommandStrategyFromSheet(sheet);
+            return TrainingXp(captainKind, command, strategy, trainingJc, battleSuppresses);
+        }
+
+        /// <summary>Captain kind for a courtier row (linked character vs simplified sheet).</summary>
+        public static UnitCaptainKind KindForCourtier(bool isLinkedCharacter) =>
+            isLinkedCharacter ? UnitCaptainKind.LinkedCharacter : UnitCaptainKind.CourtSheet;
+
         public static int ClampJc(int jc) => Math.Clamp(jc, 0, 100);
 
         /// <summary>
