@@ -22,6 +22,7 @@ using DA_Business.Repository.BaronyRepos;
 using DA_Business.Repository.MarchMapRepos;
 using DA_Business.Services.Interfaces;
 using DA_Business.Services;
+using DA_Common.Notifications;
 using Cropper.Blazor.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 using DagoniteEmpire;
@@ -194,6 +195,10 @@ public class Program
         builder.Services.AddScoped<IWikiAccessService, WikiAccessService>();
         builder.Services.AddSingleton<IWikiLinkService, WikiLinkService>();
         builder.Services.AddScoped<WikiStaticFileMiddleware>();
+        builder.Services.Configure<WebPushOptions>(
+            builder.Configuration.GetSection(WebPushOptions.SectionName));
+        // Singleton so the underlying WebPushClient (HttpClient) is reused across circuits.
+        builder.Services.AddSingleton<IPushNotificationService, PushNotificationService>();
         builder.Services.AddScoped<ITokenService,TokenService>();
         builder.Services.AddTransient<IChatManager, ChatManager>();
         builder.Services.AddTransient<IEmailSender, EmailSender>();

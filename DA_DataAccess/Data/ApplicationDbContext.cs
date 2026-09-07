@@ -2,6 +2,7 @@ using Abp.Domain.Entities;
 using DA_DataAccess.BaronyData;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Chat;
+using DA_DataAccess.Notifications;
 using DA_DataAccess.Scribe;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -104,6 +105,9 @@ namespace DA_DataAccess.Data
         public DbSet<BuildingTemplate> BuildingTemplates { get; set; }
         public DbSet<DemoSession> DemoSessions { get; set; }
 
+        // PWA push notifications
+        public DbSet<WebPushSubscription> WebPushSubscriptions { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -115,6 +119,13 @@ namespace DA_DataAccess.Data
                 // Enable pgvector extension for SCRIBE (PostgreSQL only)
                 modelBuilder.HasPostgresExtension("vector");
             }
+
+            modelBuilder.Entity<WebPushSubscription>(entity =>
+            {
+                // One row per device: re-subscribing the same browser must update, not duplicate.
+                entity.HasIndex(e => e.Endpoint).IsUnique();
+                entity.HasIndex(e => e.UserId);
+            });
 
             modelBuilder.Entity<BaronyRelationModifier>(entity =>
             {

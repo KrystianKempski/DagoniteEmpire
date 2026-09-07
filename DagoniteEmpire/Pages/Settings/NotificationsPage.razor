@@ -1,0 +1,181 @@
+@page "/settings/notifications"
+@attribute [Authorize]
+@inject IJSRuntime _js
+@inject ISnackbar _snackBar
+
+<PageTitle>Dagonite Empire | @L["Notifications"]</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="my-4">
+    <MudPaper Class="pa-4">
+        <MudText Typo="Typo.h6" Class="mb-1">@L["Push notifications"]</MudText>
+        <MudText Typo="Typo.body2" Class="mb-4" Style="color:var(--mud-palette-text-secondary);">
+            @L["Get notified about new posts, resolved turns and answers from the Game Master — even when the app is closed."]
+        </MudText>
+
+        @if (_status is null)
+        {
+            <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+        }
+        else if (!_status.Configured)
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true">
+                @L["Notifications are not configured on the server yet. Ask the administrator to set the VAPID keys."]
+            </MudAlert>
+        }
+        else if (_status.NeedsInstall)
+        {
+            <MudAlert Severity="Severity.Info" Dense="true">
+                @L["On iPhone and iPad you must first add this page to the home screen (Share → Add to Home Screen), then open it from the icon."]
+            </MudAlert>
+        }
+        else if (!_status.Supported)
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true">
+                @L["This browser does not support push notifications."]
+            </MudAlert>
+        }
+        else if (_status.Permission == "denied")
+        {
+            <MudAlert Severity="Severity.Warning" Dense="true">
+                @L["Notifications are blocked in the browser settings. Allow them for this site and reload the page."]
+            </MudAlert>
+        }
+        else
+        {
+            <div class="d-flex flex-column gap-3">
+                <MudSwitch T="bool"
+                           Value="_status.Subscribed"
+                           ValueChanged="OnToggleAsync"
+                           Disabled="@_busy"
+                           Color="Color.Primary"
+                           Label="@(_status.Subscribed ? L["Notifications on for this device"].Value : L["Notifications off"].Value)" />
+
+                @if (_status.Subscribed)
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
+                               Disabled="@_busy"
+                               StartIcon="@Icons.Material.Filled.NotificationsActive"
+                               OnClick="SendTestAsync">
+                        @L["Send test notification"]
+                    </MudButton>
+                }
+            </div>
+
+            <MudText Typo="Typo.caption" Class="mt-4" Style="color:var(--mud-palette-text-secondary);">
+                @L["The switch applies to this device only — enable it separately on each phone or computer."]
+            </MudText>
+        }
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private PushStatus? _status;
+    private bool _busy;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        await RefreshStatusAsync();
+    }
+
+    private async Task RefreshStatusAsync()
+    {
+        try
+        {
+            _status = await _js.InvokeAsync<PushStatus>("dagonitePush.status");
+        }
+        catch (Exception ex)
+        {
+            _status = new PushStatus();
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+
+        StateHasChanged();
+    }
+
+    private async Task OnToggleAsync(bool enable)
+    {
+        if (_busy)
+            return;
+        _busy = true;
+        try
+        {
+            var result = enable
+                ? await _js.InvokeAsync<PushResult>("dagonitePush.enable")
+                : await _js.InvokeAsync<PushResult>("dagonitePush.disable");
+
+            _snackBar.Add(DescribeResult(result, enable), result.Ok ? Severity.Success : Severity.Warning);
+            await RefreshStatusAsync();
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task SendTestAsync()
+    {
+        if (_busy)
+            return;
+        _busy = true;
+        try
+        {
+            var result = await _js.InvokeAsync<PushTestResult>("dagonitePush.sendTest");
+            _snackBar.Add(
+                result.Sent > 0
+                    ? L["Test notification sent to {0} device(s).", result.Sent]
+                    : L["No device received the notification. Turn notifications on again."],
+                result.Sent > 0 ? Severity.Success : Severity.Warning);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private string DescribeResult(PushResult result, bool enabling) => result.Reason switch
+    {
+        "subscribed" => L["Notifications enabled on this device."].Value,
+        "unsubscribed" or "not-subscribed" => L["Notifications disabled on this device."].Value,
+        "denied" => L["Notifications are blocked in the browser settings. Allow them for this site and reload the page."].Value,
+        "dismissed" => L["Permission request was dismissed."].Value,
+        "needs-install" => L["On iPhone and iPad you must first add this page to the home screen (Share → Add to Home Screen), then open it from the icon."].Value,
+        "not-configured" => L["Notifications are not configured on the server yet. Ask the administrator to set the VAPID keys."].Value,
+        "unsupported" => L["This browser does not support push notifications."].Value,
+        _ => enabling ? L["Could not enable notifications."].Value : L["Could not disable notifications."].Value,
+    };
+
+    private sealed class PushStatus
+    {
+        public bool Supported { get; set; }
+        public bool Standalone { get; set; }
+        public bool NeedsInstall { get; set; }
+        public bool Subscribed { get; set; }
+        public bool Configured { get; set; }
+        public string Permission { get; set; } = "default";
+    }
+
+    private sealed class PushResult
+    {
+        public bool Ok { get; set; }
+        public string? Reason { get; set; }
+        public int Devices { get; set; }
+    }
+
+    private sealed class PushTestResult
+    {
+        public bool Ok { get; set; }
+        public int Sent { get; set; }
+    }
+}
