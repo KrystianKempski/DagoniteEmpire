@@ -1,4 +1,6 @@
 using DA_Business.Repository.CharacterReps.IRepository;
+using DA_Business.Services.Interfaces;
+using DA_Common.Notifications;
 using DA_DataAccess.BaronyData;
 using DA_DataAccess.Data;
 using DA_Models.BaronyModels;
@@ -16,11 +18,15 @@ namespace DA_Business.Repository.BaronyRepos
         public const int FixedHeight = 16;
 
         private readonly IDbContextFactory<ApplicationDbContext> _db;
+        private readonly IGameNotificationQueue _notifications;
         private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-        public BaronyBattleMapRepository(IDbContextFactory<ApplicationDbContext> db)
+        public BaronyBattleMapRepository(
+            IDbContextFactory<ApplicationDbContext> db,
+            IGameNotificationQueue notifications)
         {
             _db = db;
+            _notifications = notifications;
         }
 
         public async Task<BaronyBattleMapDTO> GetOrCreate(int baronyId)
@@ -69,6 +75,11 @@ namespace DA_Business.Repository.BaronyRepos
                     return ToDTO(added.Entity);
                 }
 
+                // Captured before the overwrite so we can tell a real turn change from the many
+                // saves that only move tokens around.
+                var previousPhase = obj.Phase;
+                var previousTurnState = DeserializeTurnState(obj.TurnStateJson);
+
                 obj.IsActive = dto.IsActive;
                 obj.Phase = string.IsNullOrWhiteSpace(dto.Phase) ? BaronyBattlePhases.Setup : dto.Phase;
                 obj.Width = FixedWidth;
@@ -81,12 +92,77 @@ namespace DA_Business.Repository.BaronyRepos
                 obj.TalliesJson = JsonSerializer.Serialize(dto.Tallies ?? new(), JsonOptions);
                 obj.XpSummaryJson = JsonSerializer.Serialize(dto.XpSummary, JsonOptions);
                 await ctx.SaveChangesAsync();
+
+                NotifyIfTurnAdvanced(dto, previousPhase, previousTurnState);
+
                 return ToDTO(obj);
             }
             catch (System.Exception ex)
             {
                 throw new RepositoryErrorException("Error in " + nameof(Update) + ": " + ex.Message, ex);
             }
+        }
+
+        private static BaronyBattleTurnStateDTO? DeserializeTurnState(string? json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+                return null;
+
+            try
+            {
+                return JsonSerializer.Deserialize<BaronyBattleTurnStateDTO>(json, JsonOptions);
+            }
+            catch (JsonException)
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Raises a "your move" notification only when the acting side really changed. Dragging a
+        /// token saves the whole map, so without comparing the turn pointer every drag would ping
+        /// somebody's phone.
+        /// </summary>
+        private void NotifyIfTurnAdvanced(
+            BaronyBattleMapDTO dto,
+            string? previousPhase,
+            BaronyBattleTurnStateDTO? previous)
+        {
+            var state = dto.TurnState;
+            if (state is null || dto.Phase != BaronyBattlePhases.Battle)
+                return;
+
+            // Combat damage is resolved by the Game Master in one step; nobody is prompted for input.
+            if (state.SubPhase == BaronyBattleSubPhases.Combat)
+                return;
+
+            var pointerUnchanged = previous is not null
+                && previousPhase == dto.Phase
+                && previous.SubPhase == state.SubPhase
+                && previous.Round == state.Round
+                && previous.CurrentIndex == state.CurrentIndex;
+            if (pointerUnchanged)
+                return;
+
+            // Movement goes unit by unit; attack planning opens for all of the baron's units at once.
+            BaronyBattleTokenDTO? active = null;
+            if (state.SubPhase == BaronyBattleSubPhases.Movement)
+            {
+                if (state.CurrentIndex < 0 || state.CurrentIndex >= state.InitiativeOrder.Count)
+                    return;
+
+                var activeId = state.InitiativeOrder[state.CurrentIndex];
+                active = dto.Tokens?.FirstOrDefault(t => t.Id == activeId);
+                if (active is null)
+                    return;
+            }
+
+            _notifications.Enqueue(new BattleTurnAdvanced(
+                dto.BaronyId,
+                state.Round,
+                state.SubPhase,
+                active?.Label,
+                active?.IsEnemy ?? false));
         }
 
         public async Task<bool> IsActive(int baronyId)

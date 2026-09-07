@@ -18,6 +18,7 @@ using DA_Models.CharacterModels;
 using DA_Models.ChatModels;
 using MudBlazor;
 using DA_Business.Repository.ChatRepos;
+using DA_Business.Repository.ChatRepos.IRepository;
 using DA_Business.Repository.BaronyRepos;
 using DA_Business.Repository.MarchMapRepos;
 using DA_Business.Services.Interfaces;
@@ -175,6 +176,9 @@ public class Program
         builder.Services.AddScoped<IPostRepository, PostRepository>();
         builder.Services.AddScoped<IChapterRepository, ChapterRepository>();
         builder.Services.AddScoped<ICampaignRepository, CampaignRepository>();
+        builder.Services.AddScoped<ICampaignChatRepository, CampaignChatRepository>();
+        builder.Services.AddSingleton<ICampaignChatBroadcaster, CampaignChatBroadcaster>();
+        builder.Services.AddScoped<CampaignChatState>();
         builder.Services.AddScoped<IBattlePhaseRepository, BattlePhaseRepository>();
         builder.Services.AddScoped<IBattleMapRepository, BattleMapRepository>();
         builder.Services.AddScoped<IBattleEventRepository, BattleEventRepository>();
@@ -199,8 +203,13 @@ public class Program
             builder.Configuration.GetSection(WebPushOptions.SectionName));
         // Singleton so the underlying WebPushClient (HttpClient) is reused across circuits.
         builder.Services.AddSingleton<IPushNotificationService, PushNotificationService>();
+        // Gameplay raises events into the queue (singleton, shared by every circuit); the worker
+        // drains it and dispatches, so saves never wait on a push service.
+        builder.Services.AddSingleton<IGameNotificationQueue, GameNotificationQueue>();
+        builder.Services.AddScoped<NotificationRecipientLookup>();
+        builder.Services.AddScoped<IGameNotificationDispatcher, GameNotificationDispatcher>();
+        builder.Services.AddHostedService<GameNotificationWorker>();
         builder.Services.AddScoped<ITokenService,TokenService>();
-        builder.Services.AddTransient<IChatManager, ChatManager>();
         builder.Services.AddTransient<IEmailSender, EmailSender>();
         builder.Services.AddHttpClient();
         builder.Services.AddHttpContextAccessor();

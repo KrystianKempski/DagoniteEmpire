@@ -1,0 +1,36 @@
+@using DA_Business.Services
+@inject CampaignChatState ChatState
+@implements IDisposable
+
+@if (ChatState.IsVisible)
+{
+    <MudBadge Content="@(ChatState.UnreadTotal > 0 ? ChatState.UnreadTotal.ToString() : null)"
+              Overlap="true"
+              Visible="@(ChatState.UnreadTotal > 0)"
+              Class="mr-1 campaign-chat-launcher">
+        <MudIconButton Icon="@Icons.Material.Outlined.Forum"
+                       Color="Color.Inherit"
+                       Title="@L["Chat"]"
+                       OnClick="Toggle" />
+    </MudBadge>
+}
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        ChatState.OnChange += OnStateChanged;
+        await ChatState.EnsureInitializedAsync();
+    }
+
+    private void Toggle() => ChatState.Toggle();
+
+    private void OnStateChanged()
+    {
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ChatState.OnChange -= OnStateChanged;
+    }
+}

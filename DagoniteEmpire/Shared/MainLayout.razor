@@ -4,7 +4,10 @@
 @inject IJSRuntime _jsRuntime
 @inject IUserService _userService
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+@inject CampaignChatState ChatState
 @inherits LayoutComponentBase
+@implements IDisposable
 
 <PageTitle>@L["DagoniteEmpire"]</PageTitle>
 <link rel="icon" type="image/svg+xml" href="/icons/Dragon.svg">
@@ -38,6 +41,12 @@ MaxWidth="MaxWidth.Large" />
         </MudHidden>
 
         <MudSpacer />
+        <AuthorizeView>
+            <Authorized>
+                <CampaignChatLauncher />
+                <CampaignChatDrawer />
+            </Authorized>
+        </AuthorizeView>
         <LanguageSwitcher />
         <LoginDisplay />
     </MudAppBar>
@@ -74,6 +83,12 @@ MaxWidth="MaxWidth.Large" />
         DrawerStartToggle();
         StateHasChanged();
     }
+
+    protected override void OnInitialized()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
@@ -88,6 +103,10 @@ MaxWidth="MaxWidth.Large" />
             {
                 await _userService.LogOut();
             }
+            else
+            {
+                await TryApplyChatDeepLinkAsync();
+            }
         }
         catch
         {
@@ -95,4 +114,48 @@ MaxWidth="MaxWidth.Large" />
         }
     }
 
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        _ = InvokeAsync(TryApplyChatDeepLinkAsync);
+    }
+
+    private async Task TryApplyChatDeepLinkAsync()
+    {
+        try
+        {
+            var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+            var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+            if (!query.TryGetValue("chat", out var chatValue))
+                return;
+
+            var raw = chatValue.ToString();
+            if (string.IsNullOrWhiteSpace(raw))
+                return;
+
+            var parts = raw.Split(':', 2);
+            if (!int.TryParse(parts[0], out var campaignId) || campaignId <= 0)
+                return;
+
+            int? peerId = null;
+            if (parts.Length > 1 && int.TryParse(parts[1], out var parsedPeer) && parsedPeer > 0)
+                peerId = parsedPeer;
+
+            await ChatState.ApplyDeepLinkAsync(campaignId, peerId);
+
+            // Strip the query so refreshing does not reopen forever.
+            var path = uri.AbsolutePath;
+            if (string.IsNullOrEmpty(path) || path == "/")
+                path = "/";
+            Navigation.NavigateTo(path, replace: true);
+        }
+        catch
+        {
+            // Deep link is best-effort.
+        }
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
 }

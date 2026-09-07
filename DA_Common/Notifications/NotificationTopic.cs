@@ -20,6 +20,9 @@ namespace DA_Common.Notifications
         /// <summary>Private chat message.</summary>
         public const string Chat = "chat";
 
+        /// <summary>A letter was delivered in a baron correspondence thread.</summary>
+        public const string BaronLetter = "baron-letter";
+
         public static readonly string[] All =
         {
             Posts,
@@ -27,6 +30,7 @@ namespace DA_Common.Notifications
             GmQuestion,
             BattleTurn,
             Chat,
+            BaronLetter,
         };
 
         public static string? Normalize(string? key)
@@ -50,6 +54,7 @@ namespace DA_Common.Notifications
             GmQuestion => Loc.T("Answers to Questions for GM"),
             BattleTurn => Loc.T("My turn in a battle"),
             Chat => Loc.T("Private messages"),
+            BaronLetter => Loc.T("Baron letters"),
             _ => Loc.T("Notifications"),
         };
     }

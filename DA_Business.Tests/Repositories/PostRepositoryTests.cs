@@ -1,5 +1,6 @@
 using DA_Business.Repository.ChatRepos;
 using DA_Business.Tests.Fixtures;
+using DA_Business.Tests.Helpers;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Chat;
 using DA_Models.ChatModels;
@@ -18,7 +19,7 @@ public class PostRepositoryTests : IClassFixture<DatabaseFixture>
     public PostRepositoryTests(DatabaseFixture fixture)
     {
         _fixture = fixture;
-        _repository = new PostRepository(_fixture.DbContextFactory, _fixture.Mapper);
+        _repository = new PostRepository(_fixture.DbContextFactory, _fixture.Mapper, new RecordingNotificationQueue());
 
         lock (_lock)
         {

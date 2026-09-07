@@ -1,8 +1,10 @@
 using System.Text.Json;
 using DA_Business.Repository.CharacterReps.IRepository;
+using DA_Business.Services.Interfaces;
 using DA_Common;
 using DA_Common.Barony;
 using DA_Common.Localization;
+using DA_Common.Notifications;
 using DA_DataAccess.BaronyData;
 using DA_DataAccess.CharacterClasses;
 using DA_DataAccess.Chat;
@@ -22,12 +24,17 @@ namespace DA_Business.Repository.BaronyRepos
     {
         private readonly IDbContextFactory<ApplicationDbContext> _db;
         private readonly ICharacterRepository _characters;
+        private readonly IGameNotificationQueue _notifications;
         private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-        public BaronyRepository(IDbContextFactory<ApplicationDbContext> db, ICharacterRepository characters)
+        public BaronyRepository(
+            IDbContextFactory<ApplicationDbContext> db,
+            ICharacterRepository characters,
+            IGameNotificationQueue notifications)
         {
             _db = db;
             _characters = characters;
+            _notifications = notifications;
         }
 
         // ---------------- JSON helpers ----------------
@@ -1100,6 +1107,10 @@ namespace DA_Business.Repository.BaronyRepos
 
                 await ctx.SaveChangesAsync();
                 report.SummaryText = BuildTurnSummary(report);
+
+                // The Game Master resolves the turn, so it is the baron who needs to be told.
+                _notifications.Enqueue(new BaronyTurnResolved(baronyId, report.NewTurnNumber));
+
                 return report;
             }
             catch (System.Exception ex) when (ex is not InvalidOperationException)
@@ -3334,6 +3345,8 @@ namespace DA_Business.Repository.BaronyRepos
                     ? await ctx.BaronLetterMessages.FirstOrDefaultAsync(x => x.Id == dto.Id)
                     : null;
 
+                var wasDelivered = false;
+
                 if (e is null)
                 {
                     e = ToEntity(dto);
@@ -3359,6 +3372,7 @@ namespace DA_Business.Repository.BaronyRepos
                     if (incomingDraft && existingSent)
                         return ToDTO(e);
 
+                    wasDelivered = existingSent;
                     ApplyLetterMessage(e, dto);
                     e.UpdatedAtUtc = now;
                 }
@@ -3372,6 +3386,14 @@ namespace DA_Business.Repository.BaronyRepos
                     thread.UpdatedAtUtc = now;
 
                 await ctx.SaveChangesAsync();
+
+                // Only the draft → delivered transition is news; autosaves and edits of an already
+                // delivered letter must not notify again.
+                if (bumpThreadActivity && !wasDelivered)
+                {
+                    _notifications.Enqueue(new BaronLetterDelivered(e.ThreadId, e.IsInbound));
+                }
+
                 return ToDTO(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SaveLetterMessage)); }

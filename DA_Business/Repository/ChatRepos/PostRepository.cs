@@ -1,5 +1,7 @@
 ﻿using AutoMapper;
 using DA_Business.Repository.CharacterReps.IRepository;
+using DA_Business.Services.Interfaces;
+using DA_Common.Notifications;
 using DA_DataAccess.Chat;
 using DA_DataAccess.Data;
 using DA_Models.CharacterModels;
@@ -12,11 +14,16 @@ namespace DA_Business.Repository.ChatRepos
     {
         private readonly IDbContextFactory<ApplicationDbContext> _db;
         private readonly IMapper _mapper;
+        private readonly IGameNotificationQueue _notifications;
 
-        public PostRepository(IDbContextFactory<ApplicationDbContext> db, IMapper mapper)
+        public PostRepository(
+            IDbContextFactory<ApplicationDbContext> db,
+            IMapper mapper,
+            IGameNotificationQueue notifications)
         {
             _db = db;
             _mapper = mapper;
+            _notifications = notifications;
         }
 
         private IQueryable<Post> ReadPostsWithCharacter(IQueryable<Post> query) =>
@@ -31,6 +38,13 @@ namespace DA_Business.Repository.ChatRepos
                 var addedObj = contex.Posts.Add(obj);
 
                 await contex.SaveChangesAsync();
+
+                // Covers manual posts as well as the automated battle/turn summaries — they all
+                // create posts through here.
+                _notifications.Enqueue(new ChapterPostAdded(
+                    addedObj.Entity.ChapterId,
+                    addedObj.Entity.CharacterId));
+
                 return _mapper.Map<Post, PostDTO>(addedObj.Entity);
             }
             catch (Exception ex)

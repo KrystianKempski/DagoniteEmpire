@@ -1,5 +1,6 @@
 using DA_Business.Repository.BaronyRepos;
 using DA_Business.Tests.Fixtures;
+using DA_Business.Tests.Helpers;
 using DA_Common;
 using DA_Common.Barony;
 using DA_DataAccess.CharacterClasses;
@@ -44,7 +45,7 @@ public class DemoBaronyResourceStartTests : IClassFixture<DatabaseFixture>
         ctx.Characters.Add(character);
         await ctx.SaveChangesAsync();
 
-        var repo = new BaronyRepository(_fixture.DbContextFactory, characters: null!);
+        var repo = new BaronyRepository(_fixture.DbContextFactory, characters: null!, new RecordingNotificationQueue());
         var barony = await repo.CreateForCharacter(character.Id, DarkholdSeeder.BaronyName, "Demo barony", "darkhold");
 
         Assert.Equal(5m, barony.FoodInGranaries);
@@ -79,7 +80,7 @@ public class DemoBaronyResourceStartTests : IClassFixture<DatabaseFixture>
         ctx.Characters.Add(character);
         await ctx.SaveChangesAsync();
 
-        var repo = new BaronyRepository(_fixture.DbContextFactory, characters: null!);
+        var repo = new BaronyRepository(_fixture.DbContextFactory, characters: null!, new RecordingNotificationQueue());
         var barony = await repo.CreateForCharacter(character.Id, DarkholdSeeder.BaronyName, "Demo barony", "darkhold");
 
         await using var verify = _fixture.CreateContext();
@@ -151,7 +152,7 @@ public class DemoBaronyResourceStartTests : IClassFixture<DatabaseFixture>
             ctx.Characters.Add(character);
             await ctx.SaveChangesAsync();
 
-            var repo = new BaronyRepository(_fixture.DbContextFactory, characters: null!);
+            var repo = new BaronyRepository(_fixture.DbContextFactory, characters: null!, new RecordingNotificationQueue());
             var barony = await repo.CreateForCharacter(character.Id, DarkholdSeeder.BaronyName, "Demo barony", "darkhold");
 
             await using var verify = _fixture.CreateContext();

@@ -43,7 +43,8 @@ namespace DA_DataAccess.Data
         public DbSet<SpellSlot> SpellSlots { get; set; }
         public DbSet<Spell> Spells { get; set; }
 
-        public DbSet<ChatMessage> ChatMessages { get; set; }
+        public DbSet<CampaignChatMessage> CampaignChatMessages { get; set; }
+        public DbSet<CampaignChatRead> CampaignChatReads { get; set; }
         public DbSet<Post> Posts { get; set; }
         public DbSet<Chapter> Chapters { get; set; }
         public DbSet<Campaign> Campaigns { get; set; }
@@ -325,16 +326,36 @@ namespace DA_DataAccess.Data
             //    .WithMany(y => y.PassiveSkills)
             //    .HasForeignKey(a => a.PassiveProfessionId).OnDelete(DeleteBehavior.NoAction);
 
-            modelBuilder.Entity<ChatMessage>()
-                .HasOne(d => d.FromUser)
-                .WithMany(p => p.ChatMessagesFromUsers)
-                .HasForeignKey(d => d.FromUserId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
-            modelBuilder.Entity<ChatMessage>()
-                .HasOne(d => d.ToUser)
-                .WithMany(p => p.ChatMessagesToUsers)
-                .HasForeignKey(d => d.ToUserId)
-                .OnDelete(DeleteBehavior.ClientSetNull);
+            modelBuilder.Entity<CampaignChatMessage>(entity =>
+            {
+                entity.HasOne(d => d.Campaign)
+                    .WithMany()
+                    .HasForeignKey(d => d.CampaignId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(d => d.SenderCharacter)
+                    .WithMany()
+                    .HasForeignKey(d => d.SenderCharacterId)
+                    .OnDelete(DeleteBehavior.ClientSetNull);
+                entity.HasOne(d => d.RecipientCharacter)
+                    .WithMany()
+                    .HasForeignKey(d => d.RecipientCharacterId)
+                    .OnDelete(DeleteBehavior.ClientSetNull);
+                entity.HasIndex(e => new { e.CampaignId, e.RecipientCharacterId, e.CreatedDate });
+                entity.HasIndex(e => new { e.CampaignId, e.SenderCharacterId, e.CreatedDate });
+            });
+
+            modelBuilder.Entity<CampaignChatRead>(entity =>
+            {
+                entity.HasOne(d => d.Campaign)
+                    .WithMany()
+                    .HasForeignKey(d => d.CampaignId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(d => d.Character)
+                    .WithMany()
+                    .HasForeignKey(d => d.CharacterId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(e => new { e.CampaignId, e.CharacterId, e.PeerCharacterId });
+            });
 
             //modelBuilder.Entity<Character>()
             //    .HasOne(d => d.Head)

@@ -1,3 +1,5 @@
+using DA_Business.Services.Interfaces;
+using DA_Common.Notifications;
 using DA_DataAccess.BaronyData;
 using DA_DataAccess.Data;
 using DA_Models.BaronyModels;
@@ -9,10 +11,14 @@ namespace DA_Business.Repository.BaronyRepos
     public sealed class BaronQaRepository : IBaronQaRepository
     {
         private readonly IDbContextFactory<ApplicationDbContext> _db;
+        private readonly IGameNotificationQueue _notifications;
 
-        public BaronQaRepository(IDbContextFactory<ApplicationDbContext> db)
+        public BaronQaRepository(
+            IDbContextFactory<ApplicationDbContext> db,
+            IGameNotificationQueue notifications)
         {
             _db = db;
+            _notifications = notifications;
         }
 
         public async Task<List<BaronQaThreadDTO>> GetThreads(int baronyId)
@@ -85,6 +91,7 @@ namespace DA_Business.Repository.BaronyRepos
                     ?? throw new InvalidOperationException("QA thread not found.");
 
                 var now = DateTime.UtcNow;
+                var isNewMessage = dto.Id <= 0;
                 BaronQaMessage e;
                 if (dto.Id > 0)
                 {
@@ -116,6 +123,11 @@ namespace DA_Business.Repository.BaronyRepos
 
                 thread.UpdatedAtUtc = now;
                 await ctx.SaveChangesAsync();
+
+                // Editing an existing message is not news for the other side.
+                if (isNewMessage)
+                    _notifications.Enqueue(new GmQuestionPosted(thread.Id, e.IsFromGm));
+
                 return ToMessageDto(e);
             }
             catch (Exception ex) when (ex is not InvalidOperationException)

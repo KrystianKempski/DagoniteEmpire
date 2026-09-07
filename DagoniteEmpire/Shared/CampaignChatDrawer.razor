@@ -1,0 +1,303 @@
+@using DA_Business.Services
+@using DA_Models.ChatModels
+@using DagoniteEmpire.Helper
+@inject CampaignChatState ChatState
+@inject IJSRuntime JsRuntime
+@implements IDisposable
+
+<MudDrawer Open="@ChatState.IsOpen"
+           OpenChanged="OnOpenChanged"
+           Anchor="Anchor.End"
+           Elevation="4"
+           Variant="DrawerVariant.Temporary"
+           Width="420px"
+           Class="campaign-chat-drawer">
+    <MudDrawerHeader Class="campaign-chat-header">
+        @if (ChatState.IsInThread)
+        {
+            <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
+                           Size="Size.Small"
+                           Color="Color.Inherit"
+                           OnClick="Back" />
+            <span class="campaign-chat-title">@ThreadTitle</span>
+        }
+        else
+        {
+            <MudIcon Icon="@Icons.Material.Outlined.Forum" Class="mr-2" Style="color:#f5f5f5;opacity:0.9" />
+            <span class="campaign-chat-title">@L["Chat"]</span>
+        }
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Material.Filled.Close"
+                       Size="Size.Small"
+                       Color="Color.Inherit"
+                       OnClick="Close" />
+    </MudDrawerHeader>
+
+    <div class="campaign-chat-body">
+        @if (!ChatState.IsInThread)
+        {
+            @if (ChatState.Campaigns.Count > 1)
+            {
+                <div class="campaign-chat-campaign-select">
+                    <MudSelect T="int"
+                               Label="@L["Campaign"]"
+                               Value="@(ChatState.SelectedCampaignId ?? 0)"
+                               ValueChanged="OnCampaignChanged"
+                               Dense="true"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense">
+                        @foreach (var c in ChatState.Campaigns)
+                        {
+                            <MudSelectItem T="int" Value="@c.Id">@c.Name</MudSelectItem>
+                        }
+                    </MudSelect>
+                </div>
+            }
+            else if (ChatState.Campaigns.Count == 1)
+            {
+                <div class="campaign-chat-campaign-label">@ChatState.Campaigns[0].Name</div>
+            }
+
+            <div class="campaign-chat-contacts">
+                @if (ChatState.IsLoading)
+                {
+                    <div class="campaign-chat-empty">
+                        <MudProgressCircular Indeterminate="true" Size="Size.Small" Style="color:#9c7a33" />
+                    </div>
+                }
+                else if (!string.IsNullOrEmpty(ChatState.Error))
+                {
+                    <MudAlert Severity="Severity.Error" Dense="true" Variant="Variant.Outlined" Class="ma-2">@ChatState.Error</MudAlert>
+                }
+                else if (ChatState.Contacts.Count == 0)
+                {
+                    <div class="campaign-chat-empty">
+                        <MudIcon Icon="@Icons.Material.Outlined.ChatBubbleOutline" Style="font-size:2rem;opacity:0.4" />
+                        <span>@L["No conversations yet"]</span>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var contact in ChatState.Contacts)
+                    {
+                        <button type="button"
+                                class="campaign-chat-contact @(contact.IsPartyChannel ? "campaign-chat-contact--party" : null)"
+                                @onclick="@(() => OpenThread(contact.PeerCharacterId))">
+                            <span class="campaign-chat-avatar @(contact.IsPartyChannel ? "campaign-chat-avatar--party" : null) @(contact.IsGameMaster ? "campaign-chat-avatar--gm" : null)">
+                                @if (!string.IsNullOrWhiteSpace(contact.ImageUrl))
+                                {
+                                    <img src="@contact.ImageUrl" alt="" />
+                                }
+                                else if (contact.IsPartyChannel)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.Groups" Size="Size.Small" />
+                                }
+                                else
+                                {
+                                    @Initials(contact.DisplayName)
+                                }
+                            </span>
+                            <span class="campaign-chat-contact-meta">
+                                <span class="campaign-chat-contact-top">
+                                    <span class="campaign-chat-contact-name">@contact.DisplayName</span>
+                                    @if (contact.UnreadCount > 0)
+                                    {
+                                        <span class="campaign-chat-unread">@contact.UnreadCount</span>
+                                    }
+                                </span>
+                                <span class="campaign-chat-preview">@(contact.LastMessagePreview ?? "\u00A0")</span>
+                            </span>
+                        </button>
+                    }
+                }
+            </div>
+        }
+        else
+        {
+            <div class="campaign-chat-messages" id="campaign-chat-messages" @onscroll="OnMessagesScroll">
+                @if (ChatState.HasMoreMessages)
+                {
+                    <div class="campaign-chat-load-older">
+                        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="LoadOlder">@L["Load older"]</MudButton>
+                    </div>
+                }
+                @if (ChatState.IsLoading && ChatState.Messages.Count == 0)
+                {
+                    <div class="campaign-chat-empty">
+                        <MudProgressCircular Indeterminate="true" Size="Size.Small" Style="color:#9c7a33" />
+                    </div>
+                }
+                else if (ChatState.Messages.Count == 0)
+                {
+                    <div class="campaign-chat-empty">
+                        <MudIcon Icon="@Icons.Material.Outlined.ChatBubbleOutline" Style="font-size:2rem;opacity:0.4" />
+                        <span>@L["No conversations yet"]</span>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var msg in ChatState.Messages)
+                    {
+                        <div class="campaign-chat-bubble-row @(msg.IsMine ? "mine" : "theirs")">
+                            @if (!msg.IsMine)
+                            {
+                                <span class="campaign-chat-avatar campaign-chat-avatar--sm">
+                                    @if (!string.IsNullOrWhiteSpace(msg.SenderImageUrl))
+                                    {
+                                        <img src="@msg.SenderImageUrl" alt="" />
+                                    }
+                                    else
+                                    {
+                                        @Initials(msg.SenderName)
+                                    }
+                                </span>
+                            }
+                            <div class="campaign-chat-bubble @(msg.IsMine ? "mine" : "theirs")">
+                                @if (!msg.IsMine)
+                                {
+                                    <span class="campaign-chat-sender">@msg.SenderName</span>
+                                }
+                                <div class="campaign-chat-text">@msg.Content</div>
+                                <span class="campaign-chat-time">@msg.CreatedDate.ToLocalTime().ToString("g")</span>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+
+            <div class="campaign-chat-composer">
+                <MudTextField @bind-Value="_draft"
+                              Placeholder="@L["Type a message..."]"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Lines="2"
+                              Immediate="true"
+                              OnKeyDown="HandleKeyDown"
+                              Disabled="_sending" />
+                <button type="button"
+                        class="campaign-chat-send"
+                        disabled="@(_sending || string.IsNullOrWhiteSpace(_draft))"
+                        title="@L["Send"]"
+                        @onclick="Send">
+                    <MudIcon Icon="@Icons.Material.Filled.Send" Size="Size.Small" Style="color:#f5f5f5" />
+                </button>
+            </div>
+        }
+    </div>
+</MudDrawer>
+
+@code {
+    private string _draft = string.Empty;
+    private bool _sending;
+    private int _lastMessageCount;
+
+    private string ThreadTitle
+    {
+        get
+        {
+            if (ChatState.SelectedPeerCharacterId is null)
+                return L["Whole party"];
+            var contact = ChatState.Contacts.FirstOrDefault(c => c.PeerCharacterId == ChatState.SelectedPeerCharacterId);
+            return contact?.DisplayName ?? L["Chat"];
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        ChatState.OnChange += OnStateChanged;
+        await ChatState.EnsureInitializedAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (ChatState.IsInThread && ChatState.Messages.Count > _lastMessageCount)
+        {
+            _lastMessageCount = ChatState.Messages.Count;
+            try
+            {
+                await JsRuntime.ScrollToBottom("campaign-chat-messages");
+            }
+            catch
+            {
+                // Element may not be in DOM yet.
+            }
+        }
+        else
+        {
+            _lastMessageCount = ChatState.Messages.Count;
+        }
+    }
+
+    private void OnOpenChanged(bool open)
+    {
+        if (open)
+            _ = ChatState.OpenAsync();
+        else
+            ChatState.Close();
+    }
+
+    private void Close() => ChatState.Close();
+    private void Back() => ChatState.BackToContacts();
+
+    private async Task OnCampaignChanged(int campaignId)
+    {
+        await ChatState.SelectCampaignAsync(campaignId);
+    }
+
+    private async Task OpenThread(int? peerId)
+    {
+        await ChatState.OpenThreadAsync(peerId);
+        _lastMessageCount = 0;
+    }
+
+    private async Task LoadOlder() => await ChatState.LoadOlderAsync();
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            await Send();
+        }
+    }
+
+    private async Task Send()
+    {
+        if (_sending || string.IsNullOrWhiteSpace(_draft))
+            return;
+
+        _sending = true;
+        var text = _draft;
+        _draft = string.Empty;
+        try
+        {
+            await ChatState.SendAsync(text);
+        }
+        finally
+        {
+            _sending = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnMessagesScroll(EventArgs _)
+    {
+        await Task.CompletedTask;
+    }
+
+    private static string Initials(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            return "?";
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 1)
+            return parts[0][..Math.Min(2, parts[0].Length)].ToUpperInvariant();
+        return $"{parts[0][0]}{parts[^1][0]}".ToUpperInvariant();
+    }
+
+    private void OnStateChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        ChatState.OnChange -= OnStateChanged;
+    }
+}
