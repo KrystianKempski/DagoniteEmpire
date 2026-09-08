@@ -3,6 +3,7 @@
 @using DA_Common.Notifications
 @inject IJSRuntime _js
 @inject ISnackbar _snackBar
+@inject IUserService _userService
 
 <PageTitle>Dagonite Empire | @L["Notifications"]</PageTitle>
 
@@ -60,7 +61,7 @@
                         </MudText>
 
                         <div class="d-flex flex-column gap-1">
-                            @foreach (var topic in NotificationTopic.All)
+                            @foreach (var topic in _availableTopics)
                             {
                                 <MudCheckBox T="bool"
                                              Dense="true"
@@ -72,20 +73,8 @@
                             }
                         </div>
                     </div>
-
-                    <MudButton Variant="Variant.Outlined"
-                               Size="Size.Small"
-                               Disabled="@_busy"
-                               StartIcon="@Icons.Material.Filled.NotificationsActive"
-                               OnClick="SendTestAsync">
-                        @L["Send test notification"]
-                    </MudButton>
                 }
             </div>
-
-            <MudText Typo="Typo.caption" Class="mt-4" Style="color:var(--mud-palette-text-secondary);">
-                @L["The switch applies to this device only — enable it separately on each phone or computer."]
-            </MudText>
         }
     </MudPaper>
 </MudContainer>
@@ -93,14 +82,34 @@
 @code {
     private PushStatus? _status;
     private readonly HashSet<string> _selected = new(StringComparer.Ordinal);
+    private IReadOnlyList<string> _availableTopics = NotificationTopic.All;
     private bool _busy;
+    private bool _includeBaronyTopics;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
             return;
 
+        await LoadAccountAsync();
         await RefreshStatusAsync();
+    }
+
+    private async Task LoadAccountAsync()
+    {
+        try
+        {
+            var user = await _userService.GetUserInfo();
+            // Barony pushes go to dukes/barons and to GMs who run those threads/battles.
+            _includeBaronyTopics = user?.Role == SD.Role_DukePlayer
+                || user?.IsAdminOrMG == true;
+        }
+        catch
+        {
+            _includeBaronyTopics = false;
+        }
+
+        _availableTopics = NotificationTopic.ForAccount(_includeBaronyTopics);
     }
 
     private async Task RefreshStatusAsync()
@@ -109,11 +118,23 @@
         {
             _status = await _js.InvokeAsync<PushStatus>("dagonitePush.status");
             ApplyTopics(_status?.Topics);
+
+            // Older hero subscriptions opted into every topic; drop barony ones so they
+            // cannot linger on the device after we hide those checkboxes.
+            if (_status.Subscribed
+                && !_includeBaronyTopics
+                && _status.Topics is not null
+                && _status.Topics.Any(NotificationTopic.IsBarony))
+            {
+                await _js.InvokeAsync<PushTopicsResult>(
+                    "dagonitePush.saveTopics",
+                    _selected.ToArray());
+            }
         }
         catch (Exception ex)
         {
             _status = new PushStatus();
-            ApplyTopics(NotificationTopic.All);
+            ApplyTopics(_availableTopics);
             _snackBar.Add(ex.Message, Severity.Error);
         }
 
@@ -123,10 +144,11 @@
     private void ApplyTopics(IEnumerable<string>? topics)
     {
         _selected.Clear();
-        foreach (var topic in topics ?? NotificationTopic.All)
+        var source = topics ?? _availableTopics;
+        foreach (var topic in source)
         {
             var key = NotificationTopic.Normalize(topic);
-            if (key is not null)
+            if (key is not null && _availableTopics.Contains(key))
                 _selected.Add(key);
         }
     }
@@ -139,7 +161,7 @@
         try
         {
             var result = enable
-                ? await _js.InvokeAsync<PushResult>("dagonitePush.enable", NotificationTopic.All)
+                ? await _js.InvokeAsync<PushResult>("dagonitePush.enable", _availableTopics.ToArray())
                 : await _js.InvokeAsync<PushResult>("dagonitePush.disable");
 
             _snackBar.Add(DescribeResult(result, enable), result.Ok ? Severity.Success : Severity.Warning);
@@ -165,12 +187,15 @@
         else
             _selected.Remove(topic);
 
+        // Never persist barony categories for hero accounts — even if an old subscription still has them.
+        var toSave = _selected.Where(t => _availableTopics.Contains(t)).ToArray();
+
         _busy = true;
         try
         {
             var result = await _js.InvokeAsync<PushTopicsResult>(
                 "dagonitePush.saveTopics",
-                _selected.ToArray());
+                toSave);
 
             if (!result.Ok)
             {
@@ -185,30 +210,6 @@
         {
             _snackBar.Add(ex.Message, Severity.Error);
             await RefreshStatusAsync();
-        }
-        finally
-        {
-            _busy = false;
-        }
-    }
-
-    private async Task SendTestAsync()
-    {
-        if (_busy)
-            return;
-        _busy = true;
-        try
-        {
-            var result = await _js.InvokeAsync<PushTestResult>("dagonitePush.sendTest");
-            _snackBar.Add(
-                result.Sent > 0
-                    ? L["Test notification sent to {0} device(s).", result.Sent]
-                    : L["No device received the notification. Turn notifications on again."],
-                result.Sent > 0 ? Severity.Success : Severity.Warning);
-        }
-        catch (Exception ex)
-        {
-            _snackBar.Add(ex.Message, Severity.Error);
         }
         finally
         {
@@ -250,11 +251,5 @@
     {
         public bool Ok { get; set; }
         public List<string> Topics { get; set; } = new();
-    }
-
-    private sealed class PushTestResult
-    {
-        public bool Ok { get; set; }
-        public int Sent { get; set; }
     }
 }

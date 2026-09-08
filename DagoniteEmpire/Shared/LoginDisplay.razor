@@ -1,10 +1,9 @@
-﻿
- @inject NavigationManager _navigationManager;
- @inject IUserService _userService
- @inject ICharacterRepository _characterRepository
- @inject ISnackbar _snackbar
- @inject CallbackService callbackService
- @inject Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage _sessionStorage
+﻿@inject NavigationManager _navigationManager;
+@inject IUserService _userService
+@inject ICharacterRepository _characterRepository
+@inject ISnackbar _snackbar
+@inject CallbackService callbackService
+@inject Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedSessionStorage _sessionStorage
 
 <AuthorizeView>
     <Authorized>
@@ -12,7 +11,7 @@
             <div class="big-screen pa-4 justify-center my-4 mud-text-align-center">
                 <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Primary">Hi, @context.User.Identity.Name!</MudButton>
             </div>
-            <MudMenu Dense="true" Color="Color.Dark">
+            <MudMenu Dense="true" Color="Color.Dark" Class="character-switcher" ListClass="character-switcher-list">
                 <ActivatorContent Context="menuContext">
                     <div tabindex="0" style="cursor: pointer;" @onclick="async () => { await RefreshCharacters(); await menuContext.ToggleAsync(); }">
                         <MudAvatar Size="Size.Small">
@@ -20,46 +19,48 @@
                         </MudAvatar>
                     </div>
                 </ActivatorContent>
-                <ChildContent >
-                    <MudMenuItem  Disabled>@L["Select character"]</MudMenuItem>
+                <ChildContent>
+                    <MudMenuItem Disabled="true" Class="character-switcher__header">
+                        @L["Select character"]
+                    </MudMenuItem>
                     @if (UserInfo?.HasGlobalCharacterAccess == true)
                     {
-                        <MudMenuItem OnClick="@(e => SelectCharacter())">
-                            <div class="d-flex flex-row">
-                                <MudAvatar>
-                                    <MudImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@SD.GameMaster_Portrait"></MudImage>
+                        <MudMenuItem OnClick="@(e => SelectCharacter())" Class="character-switcher__item">
+                            <div class="character-switcher__row">
+                                <MudAvatar Size="Size.Medium" Class="character-switcher__avatar">
+                                    <MudImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@SD.GameMaster_Portrait" />
                                 </MudAvatar>
-                                <MudText Class="align-content-center ps-1">
-                                    @SD.GameMaster_NPCName
-                                </MudText>
+                                <span class="character-switcher__name">@SD.GameMaster_NPCName</span>
                             </div>
                         </MudMenuItem>
                     }
                     @foreach (CharacterDTO character in Characters)
                     {
-                        <MudMenuItem OnClick="@(e => SelectCharacter(character))">
-                            <div class="d-flex flex-row">
-                                <MudAvatar>
-                                    <MudImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@GetCharacterIconUrl(character)"></MudImage>
+                        <MudMenuItem OnClick="@(e => SelectCharacter(character))" Class="character-switcher__item">
+                            <div class="character-switcher__row">
+                                <MudAvatar Size="Size.Medium" Class="character-switcher__avatar">
+                                    <MudImage ObjectPosition="ObjectPosition.Top" ObjectFit="ObjectFit.Cover" Src="@GetCharacterIconUrl(character)" />
                                 </MudAvatar>
-                                <MudText Class="align-content-center ps-1">
-                                    @character.NPCName
-                                </MudText>
+                                <span class="character-switcher__name">@character.NPCName</span>
                             </div>
                         </MudMenuItem>
                     }
-                    <MudMenuItem Class="py-3" Icon="@Icons.Material.Filled.Notifications" Href="/settings/notifications">
-                        @L["Notifications"]
+                    <MudDivider Class="my-1" />
+                    <MudMenuItem Href="/settings/notifications" Class="character-switcher__item">
+                        <div class="character-switcher__row">
+                            <MudIcon Icon="@Icons.Material.Filled.Notifications" Class="character-switcher__action-icon" />
+                            <span class="character-switcher__name">@L["Notifications"]</span>
+                        </div>
                     </MudMenuItem>
-                    <MudMenuItem Class="py-3" OnClick="@LogoutAsync">
-                        @L["Log Out"]                        
+                    <MudMenuItem OnClick="@LogoutAsync" Class="character-switcher__item">
+                        <div class="character-switcher__row">
+                            <MudIcon Icon="@Icons.Material.Filled.Logout" Class="character-switcher__action-icon" />
+                            <span class="character-switcher__name">@L["Log Out"]</span>
+                        </div>
                     </MudMenuItem>
                 </ChildContent>
             </MudMenu>
         </div>
-
-        
-
     </Authorized>
     <NotAuthorized>
         <div class="big-screen pa-4 justify-center my-4 mud-text-align-center">

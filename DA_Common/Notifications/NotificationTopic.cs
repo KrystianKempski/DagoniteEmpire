@@ -33,6 +33,27 @@ namespace DA_Common.Notifications
             BaronLetter,
         };
 
+        /// <summary>Topics that only make sense for barons (and Game Masters who run baronies).</summary>
+        public static readonly string[] Barony =
+        {
+            TurnResolved,
+            GmQuestion,
+            BattleTurn,
+            BaronLetter,
+        };
+
+        public static bool IsBarony(string? key)
+        {
+            var n = Normalize(key);
+            return n is not null && Barony.Contains(n, StringComparer.Ordinal);
+        }
+
+        /// <summary>
+        /// Topics shown in settings / stored on subscribe. Hero players never see barony categories.
+        /// </summary>
+        public static IReadOnlyList<string> ForAccount(bool includeBarony) =>
+            includeBarony ? All : All.Where(t => !IsBarony(t)).ToArray();
+
         public static string? Normalize(string? key)
         {
             if (string.IsNullOrWhiteSpace(key))

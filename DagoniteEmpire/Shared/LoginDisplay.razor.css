@@ -57,3 +57,70 @@ a{
     width:100%;
     height: 100%;
 }
+
+/* Character switcher: keep avatar + name flush left.
+   MudBlazor adds a 36px text gutter when ANY item uses Icon=, so we render
+   action icons inline instead and tighten the row ourselves. */
+.character-switcher-list {
+    min-width: 12.5rem;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+}
+
+.character-switcher-list .character-switcher__header {
+    opacity: 0.7;
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    pointer-events: none;
+}
+
+.character-switcher-list .character-switcher__header .mud-menu-item-text {
+    margin: 0;
+    padding: 0.15rem 0;
+}
+
+.character-switcher-list .character-switcher__item {
+    padding-inline: 0.55rem;
+}
+
+.character-switcher-list .character-switcher__item .mud-menu-item-text {
+    margin: 0;
+    margin-inline-start: 0 !important;
+}
+
+.character-switcher__row {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    min-width: 0;
+    width: 100%;
+}
+
+.character-switcher__avatar {
+    flex-shrink: 0;
+    width: 2.35rem !important;
+    height: 2.35rem !important;
+    font-size: 1rem;
+}
+
+.character-switcher__action-icon {
+    flex-shrink: 0;
+    /* Same slot width as avatars so names stay aligned; glyph itself is smaller. */
+    width: 2.35rem;
+    height: 2.35rem;
+    font-size: 1rem !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--mud-palette-action-default);
+    opacity: 0.85;
+}
+
+.character-switcher__name {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.25;
+}

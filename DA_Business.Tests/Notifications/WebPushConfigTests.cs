@@ -56,4 +56,19 @@ public class WebPushConfigTests
     {
         Assert.Equal(expected, NotificationTopic.Normalize(input));
     }
+
+    [Fact]
+    public void ForAccount_HidesBaronyTopicsForHeroes()
+    {
+        var hero = NotificationTopic.ForAccount(includeBarony: false);
+        Assert.Equal(new[] { NotificationTopic.Posts, NotificationTopic.Chat }, hero);
+        Assert.DoesNotContain(NotificationTopic.BaronLetter, hero);
+        Assert.DoesNotContain(NotificationTopic.BattleTurn, hero);
+    }
+
+    [Fact]
+    public void ForAccount_KeepsBaronyTopicsForDukesAndGm()
+    {
+        Assert.Equal(NotificationTopic.All, NotificationTopic.ForAccount(includeBarony: true));
+    }
 }
