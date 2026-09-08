@@ -5,6 +5,28 @@
 
 ---
 
+## 2026-09-08 — Okno rozstrzygania tury
+
+### D-TR1. Osobna flaga `Barony.TurnResolving`
+Rozstrzygnięcie tury nie kończy pracy MG — po nim MG dopisuje audiencje, wydarzenia
+i listy. `Resolve Turn` ustawia `TurnResolving`, `Zakończ rozstrzyganie` je zdejmuje.
+Flaga jest niezależna od `PlayerTurnReady` (tamta mówi „gracz skończył turę”, ta
+„MG jeszcze pisze”).
+
+### D-TR2. Blokada po stronie zakładek, nie repozytorium
+Baron nie wchodzi na Salę audiencji, Audiencje, Projekty, Zasoby (i Budżet) oraz Listy —
+zakładki są wyszarzone z kłódką, a strony renderują `BaronyTurnResolveLock` zamiast treści
+(lista bram: `BaronyTurnGate`). MG zachowuje pełny dostęp. Mutacje w repozytorium nie są
+blokowane: warstwa Blazor Server i tak renderuje się serwerowo, więc bramka w UI wystarcza.
+
+### D-TR3. Natychmiastowa blokada przez SignalR
+`ChatHub.NotifyBaronyTurnResolvingChanged` (nadaje Panel Domeny, odbiera `BaronyCardTabs`)
+przełącza stan u barona bez czekania na przeładowanie strony; gdy baron stoi na bramkowanej
+zakładce, strona jest przeładowywana. Gdy hub zawiedzie, blokada i tak zadziała przy
+następnym wejściu na stronę.
+
+---
+
 ## 2026-08-09 — Kampania przy tworzeniu baronii
 
 ### D-CAMP1. Seed kampanii w `CreateForCharacter`

@@ -15,6 +15,10 @@ else if (LoadError is not null)
 {
     <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
 }
+else if (TurnResolveLocked)
+{
+    <BaronyTurnResolveLock TabName="Letters" />
+}
 else if (Barony is not null)
 {
     <BaronyPageHeader Title="@(L["Letters"])" HelpKey="letters">
@@ -397,7 +401,7 @@ else if (Barony is not null)
     protected override async Task OnInitializedAsync()
     {
         await LoadBaronyAsync();
-        if (Barony is null)
+        if (Barony is null || TurnResolveLocked)
             return;
 
         await ReloadAsync(selectThreadId: ThreadQuery);
@@ -405,7 +409,7 @@ else if (Barony is not null)
 
     protected override async Task OnParametersSetAsync()
     {
-        if (Barony is null || ThreadQuery is not int tid)
+        if (Barony is null || TurnResolveLocked || ThreadQuery is not int tid)
             return;
         if (_selected?.Id == tid)
             return;

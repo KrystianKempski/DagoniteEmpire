@@ -18,6 +18,10 @@ else if (LoadError is not null)
 {
     <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
 }
+else if (TurnResolveLocked)
+{
+    <BaronyTurnResolveLock TabName="Audiences" />
+}
 else if (Barony is not null)
 {
     <BaronyPageHeader Title="@(L["Audiences"])" HelpKey="audiences">
@@ -612,7 +616,7 @@ else if (Barony is not null)
     protected override async Task OnInitializedAsync()
     {
         await LoadBaronyAsync();
-        if (Barony is not null)
+        if (Barony is not null && !TurnResolveLocked)
             await ReloadAsync();
     }
 

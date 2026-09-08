@@ -259,6 +259,23 @@ namespace DA_Business.Repository.BaronyRepos
             }
         }
 
+        public async Task<BaronyDTO> SetTurnResolving(int baronyId, bool resolving)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == baronyId)
+                    ?? throw new InvalidOperationException("Barony not found.");
+                e.TurnResolving = resolving;
+                await ctx.SaveChangesAsync();
+                return ToDTO(e);
+            }
+            catch (System.Exception ex) when (ex is not InvalidOperationException)
+            {
+                throw Err(ex, nameof(SetTurnResolving));
+            }
+        }
+
         public async Task<HashSet<string>> GetTradeGoodMgOverrideKeys(int baronyId)
         {
             try
@@ -1102,8 +1119,10 @@ namespace DA_Business.Repository.BaronyRepos
                 var battleActive = await IsBaronyBattleInProgressAsync(ctx, baronyId);
                 report.UnitActionResults = await ApplyUnitActionsOnResolveAsync(ctx, baronyId, battleActive);
 
-                // 10) Clear ready flag
+                // 10) Clear ready flag and open the MG write-up window (baron tabs stay locked
+                //     until the MG clicks Finish Resolving).
                 barony.PlayerTurnReady = false;
+                barony.TurnResolving = true;
 
                 await ctx.SaveChangesAsync();
                 report.SummaryText = BuildTurnSummary(report);
@@ -6420,6 +6439,7 @@ namespace DA_Business.Repository.BaronyRepos
                 LuxuryGoodsAccessKey = LuxuryGoodsAccessCatalog.Find(e.LuxuryGoodsAccessKey).Key,
                 TradeTreaties = ParseTradeTreaties(e.TradeTreatiesJson),
                 PlayerTurnReady = e.PlayerTurnReady,
+                TurnResolving = e.TurnResolving,
                 CommanderSheet = DeserializeCourtSheet(e.CommanderSheetJson),
             };
         }
@@ -6459,6 +6479,8 @@ namespace DA_Business.Repository.BaronyRepos
             e.BaseParametersJson = Ser(d.BaseParameters);
             e.Notes = d.Notes;
             e.PlayerTurnReady = d.PlayerTurnReady;
+            // TurnResolving is deliberately not mapped: only ResolveTurn / SetTurnResolving own it,
+            // so an ordinary barony save cannot unlock the baron's tabs with a stale DTO.
 
             var stocks = ResourceCatalog.Slice(d.ResourceStocks);
             // Keep Food/Gold scalars and vector in sync (Budget may update scalars only).

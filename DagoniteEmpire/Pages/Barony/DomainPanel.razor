@@ -1,7 +1,9 @@
 @page "/barony"
 @layout BaronyLayout
 @inherits BaronyPageBase
+@implements IAsyncDisposable
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
+@using Microsoft.AspNetCore.SignalR.Client
 @inject ICharacterRepository _characterRepo
 @inject IDialogService _dialogService
 @inject IBaronyBattleMapRepository _battleMapRepo
@@ -145,7 +147,16 @@ else if (_overview is not null)
                     <span class="barony-turn-ready-chip">@L["Ready for MG"]</span>
                 </BaronyTooltip>
             }
-            @if (CanEdit && !CanManageAsMg)
+            @if (_overview is not null && _overview.Barony.TurnResolving)
+            {
+                <BaronyTooltip Text="@(L["The Game Master is writing this turn — audiences, the Audience Hall, projects, resources and letters are closed for the baron."])">
+                    <span class="barony-turn-resolving-chip">
+                        <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" />
+                        @L["Resolving in progress"]
+                    </span>
+                </BaronyTooltip>
+            }
+            @if (CanEdit && !CanManageAsMg && _overview?.Barony.TurnResolving != true)
             {
                 @if (_overview?.Barony.PlayerTurnReady == true)
                 {
@@ -168,31 +179,44 @@ else if (_overview is not null)
             }
             @if (CanManageAsMg)
             {
-                @if (_overview?.Barony.PlayerTurnReady == true)
+                @if (_overview?.Barony.TurnResolving == true)
                 {
-                    <MudButton Variant="Variant.Outlined"
+                    <MudButton Variant="Variant.Filled"
                                Size="Size.Small"
-                               Class="barony-turn-btn barony-turn-btn--ghost"
-                               OnClick="UndoEndTurnAsync">
-                        @L["Clear ready"]
+                               Class="barony-turn-btn barony-turn-btn--solid"
+                               Disabled="@(_resolvingTurn)"
+                               OnClick="FinishResolvingAsync">
+                        @L["Finish Resolving"]
                     </MudButton>
                 }
-                else if (CanEdit)
+                else
                 {
-                    <MudButton Variant="Variant.Outlined"
+                    @if (_overview?.Barony.PlayerTurnReady == true)
+                    {
+                        <MudButton Variant="Variant.Outlined"
+                                   Size="Size.Small"
+                                   Class="barony-turn-btn barony-turn-btn--ghost"
+                                   OnClick="UndoEndTurnAsync">
+                            @L["Clear ready"]
+                        </MudButton>
+                    }
+                    else if (CanEdit)
+                    {
+                        <MudButton Variant="Variant.Outlined"
+                                   Size="Size.Small"
+                                   Class="barony-turn-btn barony-turn-btn--ghost"
+                                   OnClick="EndTurnAsync">
+                            @L["End Turn"]
+                        </MudButton>
+                    }
+                    <MudButton Variant="Variant.Filled"
                                Size="Size.Small"
-                               Class="barony-turn-btn barony-turn-btn--ghost"
-                               OnClick="EndTurnAsync">
-                        @L["End Turn"]
+                               Class="barony-turn-btn barony-turn-btn--solid"
+                               Disabled="@(_resolvingTurn)"
+                               OnClick="ResolveTurnAsync">
+                        @L["Resolve Turn"]
                     </MudButton>
                 }
-                <MudButton Variant="Variant.Filled"
-                           Size="Size.Small"
-                           Class="barony-turn-btn barony-turn-btn--solid"
-                           Disabled="@(_resolvingTurn)"
-                           OnClick="ResolveTurnAsync">
-                    @L["Resolve Turn"]
-                </MudButton>
             }
         </Actions>
     </BaronyPageHeader>
@@ -318,6 +342,7 @@ else if (_overview is not null)
     private List<PpbModifierRow> _totalBreakdown = new();
     private PpbVector _grandTotal = new();
     private bool _resolvingTurn;
+    private HubConnection? _hubConnection;
 
     protected override async Task OnInitializedAsync()
     {
@@ -676,6 +701,7 @@ else if (_overview is not null)
                 population);
 
             Barony.PlayerTurnReady = false;
+            Barony.TurnResolving = true;
             Barony.TurnNumber = report.NewTurnNumber;
             Barony.Season = report.NewSeason;
             Barony.Year = report.NewYear;
@@ -685,6 +711,7 @@ else if (_overview is not null)
             Barony.Size = report.Size;
 
             await ReloadOverviewAsync();
+            await NotifyTurnResolvingChangedAsync(true);
 
             var parameters = new DialogParameters<TurnResolveReportDialog>
             {
@@ -699,6 +726,73 @@ else if (_overview is not null)
         finally
         {
             _resolvingTurn = false;
+        }
+    }
+
+    /// <summary>
+    /// Closes the write-up window: the baron regains Audience Hall, Audiences,
+    /// Projects, Resources and Letters.
+    /// </summary>
+    private async Task FinishResolvingAsync()
+    {
+        if (Barony is null || _overview is null || !CanManageAsMg || _resolvingTurn)
+            return;
+
+        var confirm = await _dialogService.ShowMessageBoxAsync(
+            L["Finish resolving?"],
+            L["Audiences, the Audience Hall, projects, resources and letters open again for the baron."],
+            yesText: L["Finish Resolving"],
+            cancelText: L["Cancel"]);
+        if (confirm != true)
+            return;
+
+        _resolvingTurn = true;
+        try
+        {
+            await _baronyRepo.SetTurnResolving(Barony.Id, false);
+            Barony.TurnResolving = false;
+            _overview.Barony.TurnResolving = false;
+            await NotifyTurnResolvingChangedAsync(false);
+            _snackBar.Add(L["Resolving finished — the baron may act again."], Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(L["Could not finish resolving: "] + ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _resolvingTurn = false;
+        }
+    }
+
+    /// <summary>Pushes the lock state to the baron's open tabs without waiting for a page load.</summary>
+    private async Task NotifyTurnResolvingChangedAsync(bool resolving)
+    {
+        if (Barony is null)
+            return;
+
+        try
+        {
+            _hubConnection ??= new HubConnectionBuilder()
+                .WithUrl(_navigationManager.ToAbsoluteUri(ChatHub.HubUrl))
+                .WithAutomaticReconnect()
+                .Build();
+            if (_hubConnection.State == HubConnectionState.Disconnected)
+                await _hubConnection.StartAsync();
+            await _hubConnection.SendAsync("NotifyBaronyTurnResolvingChanged", Barony.Id, resolving);
+        }
+        catch
+        {
+            // Best-effort: the lock still applies on the baron's next page load.
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_hubConnection is not null)
+        {
+            try { await _hubConnection.DisposeAsync(); }
+            catch { /* ignore */ }
         }
     }
 

@@ -1,0 +1,19 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+@* Shown to the baron on gated tabs while the MG writes the turn (Resolve Turn → Finish Resolving). *@
+<div class="barony-turn-lock" role="status">
+    <img src="@($"/{MyIcon.QuillInk}")" alt="" class="barony-turn-lock__icon" />
+    <div class="barony-turn-lock__title">@L["The Game Master is resolving the turn"]</div>
+    <div class="barony-turn-lock__text">
+        @L["Audiences, the Audience Hall, projects, resources and letters are being written right now. They open again the moment the Game Master finishes resolving."]
+    </div>
+    @if (!string.IsNullOrWhiteSpace(TabName))
+    {
+        <div class="barony-turn-lock__tab">@L["Locked tab: {0}", L[TabName!]]</div>
+    }
+</div>
+
+@code {
+    /// <summary>Optional tab label, so the baron sees which page he landed on.</summary>
+    [Parameter] public string? TabName { get; set; }
+}

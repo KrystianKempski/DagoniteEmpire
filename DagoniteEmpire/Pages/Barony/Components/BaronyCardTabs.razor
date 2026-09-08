@@ -18,11 +18,12 @@
     @foreach (var tab in _orderedTabs)
     {
         var key = tab.Key;
-        <BaronyTooltip Text="@(L["Hold and drag to reorder"])">
+        var locked = IsTabLocked(key);
+        <BaronyTooltip Text="@(locked ? L["Closed while the Game Master resolves the turn"] : L["Hold and drag to reorder"])">
         <div role="link"
              tabindex="0"
              draggable="true"
-             class="barony-tabbar__tab @(IsActive(tab.Href) ? "barony-tabbar__tab--active" : "") @(_dragKey == key ? "barony-tabbar__tab--dragging" : "") @(_dropTargetKey == key ? "barony-tabbar__tab--drop-target" : "")"
+             class="barony-tabbar__tab @(IsActive(tab.Href) ? "barony-tabbar__tab--active" : "") @(locked ? "barony-tabbar__tab--locked" : "") @(_dragKey == key ? "barony-tabbar__tab--dragging" : "") @(_dropTargetKey == key ? "barony-tabbar__tab--drop-target" : "")"
              @ondragstart="e => OnDragStart(e, key)"
              @ondragenter="e => OnDragEnter(e, key)"
              @ondragleave="() => OnDragLeave(key)"
@@ -31,8 +32,8 @@
              @ondrop="e => OnDrop(e, key)"
              @ondrop:preventDefault
              @ondragend="OnDragEndAsync"
-             @onclick="() => OnTabActivate(tab.Href)"
-             @onkeydown="e => OnTabKeyDown(e, tab.Href)">
+             @onclick="() => OnTabActivate(tab.Href, key)"
+             @onkeydown="e => OnTabKeyDown(e, tab.Href, key)">
             @if (!string.IsNullOrEmpty(tab.SvgIcon))
             {
                 <img src="@tab.SvgIcon"
@@ -45,7 +46,11 @@
                 <MudIcon Icon="@mudIcon" Size="Size.Small" />
             }
             @L[tab.Label]
-            @if (key == "audience-hall" && _hallEventPendingCount > 0)
+            @if (locked)
+            {
+                <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Class="barony-tabbar__lock" />
+            }
+            else if (key == "audience-hall" && _hallEventPendingCount > 0)
             {
                 <span class="barony-tabbar__badge">@_hallEventPendingCount</span>
             }
@@ -88,6 +93,8 @@
     private bool _showBattleMapTab = true;
     private bool _showNotesTab;
     private bool _showAudienceHallTab;
+    private bool _isMg;
+    private bool _turnResolving;
     private int _hallEventPendingCount;
     private HubConnection? _hubConnection;
     private int _baronyId;
@@ -121,6 +128,7 @@
                 .WithAutomaticReconnect()
                 .Build();
             _hubConnection.On<int>("BaronyBattleMapUpdated", OnBattleMapUpdated);
+            _hubConnection.On<int, bool>("BaronyTurnResolvingChanged", OnTurnResolvingChanged);
             if (_hubConnection.State == HubConnectionState.Disconnected)
                 await _hubConnection.StartAsync();
         }
@@ -142,17 +150,53 @@
         });
     }
 
+    /// <summary>
+    /// The MG writes the turn between Resolve Turn and Finish Resolving — the baron is kept
+    /// out of the tabs being written, the MG keeps them.
+    /// </summary>
+    private async Task OnTurnResolvingChanged(int baronyId, bool resolving)
+    {
+        if (baronyId != _baronyId || _isMg)
+            return;
+
+        await InvokeAsync(() =>
+        {
+            _turnResolving = resolving;
+
+            // A baron sitting on a gated tab has to be moved onto the lock screen (or back in).
+            if (BaronyTurnGate.IsLockedPath(CurrentPath))
+                _navigationManager.NavigateTo(_navigationManager.Uri, forceLoad: true);
+            else
+                StateHasChanged();
+        });
+    }
+
+    private string CurrentPath
+    {
+        get
+        {
+            var relative = _navigationManager.ToBaseRelativePath(_navigationManager.Uri);
+            var pathOnly = relative.Split('?', '#')[0].TrimEnd('/');
+            return pathOnly.Length == 0 ? "/" : "/" + pathOnly;
+        }
+    }
+
+    private bool IsTabLocked(string tabKey) =>
+        _turnResolving && !_isMg && BaronyTurnGate.IsLockedTab(tabKey);
+
     private async Task LoadBattleMapVisibilityAsync()
     {
         try
         {
             var user = await _userService.GetUserInfo();
+            _isMg = user?.IsAdminOrMG == true;
             if (user?.IsAdminOrMG == true)
             {
                 // MG gets its own private Notes scope (separate from the baron's).
                 _showBattleMapTab = true;
                 _showNotesTab = true;
                 _showAudienceHallTab = true;
+                _turnResolving = false;
                 var mgCharacterId = user?.SelectedCharacter?.Id ?? 0;
                 if (mgCharacterId > 0 && mgCharacterId != -1)
                 {
@@ -177,6 +221,7 @@
                 _showBattleMapTab = false;
                 _showNotesTab = false;
                 _showAudienceHallTab = false;
+                _turnResolving = false;
                 return;
             }
 
@@ -186,11 +231,13 @@
                 _showBattleMapTab = false;
                 _showNotesTab = false;
                 _showAudienceHallTab = false;
+                _turnResolving = false;
                 _baronyId = 0;
                 return;
             }
 
             _baronyId = barony.Id;
+            _turnResolving = barony.TurnResolving;
             _showNotesTab = true;
             _showAudienceHallTab = true;
             _showBattleMapTab = await _battleMapRepo.IsActive(barony.Id);
@@ -384,7 +431,7 @@
         await InvokeAsync(StateHasChanged);
     }
 
-    private void OnTabActivate(string href)
+    private void OnTabActivate(string href, string key)
     {
         if (_suppressNextClick)
         {
@@ -392,14 +439,17 @@
             return;
         }
 
+        if (IsTabLocked(key))
+            return;
+
         if (!IsActive(href))
             _navigationManager.NavigateTo(href);
     }
 
-    private void OnTabKeyDown(KeyboardEventArgs e, string href)
+    private void OnTabKeyDown(KeyboardEventArgs e, string href, string key)
     {
         if (e.Key is "Enter" or " ")
-            OnTabActivate(href);
+            OnTabActivate(href, key);
     }
 
     private bool IsActive(string href)

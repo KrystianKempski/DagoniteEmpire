@@ -4,7 +4,8 @@
 @inject IBaronyRepository _baronyRepo
 @inject NavigationManager _nav
 
-@if (_visible && _unreadCount > 0)
+@* Hidden for the baron while the MG writes the turn — the Letters tab is closed then. *@
+@if (_visible && !_turnResolving && _unreadCount > 0)
 {
     <div class="baron-letter-inbox-fab">
         <MudBadge Content="@_unreadCount" Color="Color.Error" Overlap="true" Bordered="true">
@@ -22,6 +23,7 @@
 @code {
     private bool _visible;
     private bool _asGm;
+    private bool _turnResolving;
     private int _baronyId;
     private int _unreadCount;
     private int? _latestThreadId;
@@ -80,7 +82,12 @@
             }
             else
             {
-                if (_baronyId <= 0)
+                BaronyDTO? barony;
+                if (_baronyId > 0)
+                {
+                    barony = await _baronyRepo.GetById(_baronyId);
+                }
+                else
                 {
                     var user = await _userService.GetUserInfo();
                     var characterId = user?.SelectedCharacter?.Id ?? 0;
@@ -91,16 +98,18 @@
                         return;
                     }
 
-                    var barony = await _baronyRepo.GetByCharacterId(characterId);
-                    if (barony is null)
-                    {
-                        _unreadCount = 0;
-                        StateHasChanged();
-                        return;
-                    }
-
-                    _baronyId = barony.Id;
+                    barony = await _baronyRepo.GetByCharacterId(characterId);
                 }
+
+                if (barony is null)
+                {
+                    _unreadCount = 0;
+                    StateHasChanged();
+                    return;
+                }
+
+                _baronyId = barony.Id;
+                _turnResolving = barony.TurnResolving;
 
                 var badge = await _baronyRepo.GetLetterInboxBadgeForBaron(_baronyId);
                 _unreadCount = badge.UnreadCount;

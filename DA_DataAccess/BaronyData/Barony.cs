@@ -120,6 +120,13 @@ namespace DA_DataAccess.BaronyData
         public bool PlayerTurnReady { get; set; }
 
         /// <summary>
+        /// MG resolved the turn and is still writing its outcome (audiences, events, letters).
+        /// While set, the baron cannot use the tabs that the MG is preparing.
+        /// Cleared by the MG with Finish Resolving.
+        /// </summary>
+        public bool TurnResolving { get; set; }
+
+        /// <summary>
         /// Baron commander skill-tree progress (<see cref="DA_Common.Barony.CourtCharacterSheet"/> JSON:
         /// CommanderXp + UnlockedCommanderAbilities; skill values projected from the character).
         /// </summary>

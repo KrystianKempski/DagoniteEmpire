@@ -904,6 +904,9 @@ namespace DA_DataAccess.Migrations
                     b.Property<int>("TurnNumber")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("TurnResolving")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("Unrest")
                         .HasColumnType("integer");
 

@@ -20,6 +20,10 @@
     {
         <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
     }
+    else if (TurnResolveLocked)
+    {
+        <BaronyTurnResolveLock TabName="Audience Hall" />
+    }
     else if (Barony is not null)
     {
         @if (CanManageAsMg)
@@ -670,7 +674,7 @@
     {
         _callbackService.OnChange += OnSelectedCharacterChanged;
         await LoadBaronyAsync();
-        if (Barony is not null)
+        if (Barony is not null && !TurnResolveLocked)
             await ReloadAsync();
     }
 
@@ -680,7 +684,7 @@
         {
             _overlayAutoOpened = false;
             await LoadBaronyAsync();
-            if (Barony is not null)
+            if (Barony is not null && !TurnResolveLocked)
                 await ReloadAsync();
             else
                 StateHasChanged();

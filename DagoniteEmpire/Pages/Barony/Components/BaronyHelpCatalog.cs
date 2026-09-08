@@ -162,6 +162,7 @@ namespace DagoniteEmpire.Pages.Barony.Components
                         {
                             "Editing Year, Unrest and Conjuncture, switching which barony is shown, and resolving the turn are Game Master actions.",
                             "Mark Ready when you are done; the Game Master reviews and resolves the turn to apply all changes.",
+                            "While the Game Master resolves the turn, the Audience Hall, Audiences, Projects, Resources and Letters stay closed — they reopen on Finish Resolving.",
                         }),
                     },
                     GmSections: new[]
@@ -169,6 +170,7 @@ namespace DagoniteEmpire.Pages.Barony.Components
                         new BaronyHelpSection("Game Master controls", new[]
                         {
                             "Edit Year, Unrest and Conjuncture, switch the active barony, and Resolve Turn / clear the ready state.",
+                            "Resolve Turn closes the tabs you are writing (Audience Hall, Audiences, Projects, Resources, Letters) for the baron; Finish Resolving hands them back.",
                         }),
                     }),
 

@@ -32,6 +32,13 @@ namespace DagoniteEmpire.Pages.Barony
         /// <summary>Game Master / Admin — barony structure edits (buildings, etc.).</summary>
         protected bool CanManageAsMg { get; set; }
 
+        /// <summary>
+        /// The MG resolved the turn and is still writing its outcome, so the baron waits.
+        /// Gated pages render <c>BaronyTurnResolveLock</c> instead of their content;
+        /// the MG keeps full access.
+        /// </summary>
+        protected bool TurnResolveLocked => Barony?.TurnResolving == true && !CanManageAsMg;
+
         /// <summary>Loads barony for the currently selected baron character. Baronies are created by MG only.</summary>
         protected async Task LoadBaronyAsync()
         {

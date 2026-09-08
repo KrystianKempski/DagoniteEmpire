@@ -46,6 +46,15 @@ namespace DA_Models.ChatModels
             await Clients.Others.SendAsync("BaronyBattleMapUpdated", baronyId);
         }
 
+        /// <summary>
+        /// Notify all clients that the MG opened (Resolve Turn) or closed (Finish Resolving)
+        /// the turn write-up window for a barony.
+        /// </summary>
+        public async Task NotifyBaronyTurnResolvingChanged(int baronyId, bool resolving)
+        {
+            await Clients.Others.SendAsync("BaronyTurnResolvingChanged", baronyId, resolving);
+        }
+
         public override Task OnConnectedAsync()
         {
             Console.WriteLine($"{Context.ConnectionId} hub connected");

@@ -84,6 +84,9 @@ namespace DA_Models.BaronyModels
         /// <summary>Player marked the current turn as finished; MG may resolve.</summary>
         public bool PlayerTurnReady { get; set; }
 
+        /// <summary>MG is still writing the turn outcome; baron tabs are locked until Finish Resolving.</summary>
+        public bool TurnResolving { get; set; }
+
         /// <summary>
         /// Baron commander skill tree (CX pool + unlocked abilities). Skill values for gates
         /// are projected from the baron's character (Inspire / Strategy and tactics).

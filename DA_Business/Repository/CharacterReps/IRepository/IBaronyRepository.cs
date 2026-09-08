@@ -17,6 +17,12 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<BaronyDTO> SetPlayerTurnReady(int baronyId, bool ready);
 
         /// <summary>
+        /// MG opens (Resolve Turn) or closes (Finish Resolving) the write-up window.
+        /// While open, the baron cannot use Audience Hall, Audiences, Projects, Resources and Letters.
+        /// </summary>
+        Task<BaronyDTO> SetTurnResolving(int baronyId, bool resolving);
+
+        /// <summary>
         /// Apply end-of-turn: income, project ticks/completions, unrest check, calendar, conjuncture.
         /// <paramref name="expectedIncome"/> / loyalty / stability / population come from Domain Panel calc.
         /// </summary>

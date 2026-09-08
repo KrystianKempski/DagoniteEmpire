@@ -177,7 +177,9 @@ Pipeline (player End Turn flag → MG Resolve Turn):
 6. Reset Baron's Time: remove non-system actions; restore management to `RequiredManagementJc` (100 BT). Percent time modifiers are kept.
 7. Letter communication quotas refresh with the new turn number (inbound caps per correspondent/region; awaiting-reply lock is only for the current turn).
 8. Depleted units regenerate troops (`UnitRules.TroopRegenPerTurn`)
-9. Clear `PlayerTurnReady`
+9. Clear `PlayerTurnReady` and set `TurnResolving` — the MG write-up window opens
+
+While `TurnResolving` is set, the baron cannot open Audience Hall, Audiences, Projects, Resources (and Budget) or Letters; those tabs show a lock screen so he cannot act on a half-written turn. The MG keeps full access and clears the flag with **Finish Resolving** on the Domain Panel (`IBaronyRepository.SetTurnResolving`).
 
 Resources tab → Resource Balance: **Σ of all rows = current stocks = HUD**.
 Rows = Stock from previous turn (`PreviousTurnStock`) + Income from previous turn (`PreviousTurnIncome`) + current ledger sources (project grants, Budget transfers, MG Add Source) + **Audiences** (cumulative grants this turn, already in stocks) + Project costs (if any). Everything except Domain Panel income from the prior turn is folded into the next opening stock on Resolve.
