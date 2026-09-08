@@ -68,18 +68,12 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body),
         });
-        if (!response.ok) {
-            throw new Error(`${url} responded ${response.status}`);
-        }
-        return response.json();
+        return { ok: response.ok, status: response.status, body: response.ok ? await response.json() : null };
     }
 
     async function getJson(url) {
         const response = await fetch(url, { credentials: 'same-origin' });
-        if (!response.ok) {
-            throw new Error(`${url} responded ${response.status}`);
-        }
-        return response.json();
+        return { ok: response.ok, status: response.status, body: response.ok ? await response.json() : null };
     }
 
     function normalizeTopics(topics) {
@@ -90,17 +84,40 @@
         return ALL_TOPICS.filter((t) => wanted.has(t));
     }
 
-    async function loadTopicsFor(subscription) {
-        if (!subscription) {
-            return ALL_TOPICS.slice();
+    async function uploadSubscription(subscription, topics) {
+        const json = subscription.toJSON();
+        const payload = {
+            endpoint: json.endpoint,
+            p256dh: json.keys.p256dh,
+            auth: json.keys.auth,
+        };
+        if (Array.isArray(topics)) {
+            payload.topics = normalizeTopics(topics);
         }
-        try {
-            const payload = await getJson(
-                `/api/push/topics?endpoint=${encodeURIComponent(subscription.endpoint)}`);
-            return normalizeTopics(payload.topics);
-        } catch {
-            return ALL_TOPICS.slice();
+        return postJson('/api/push/subscribe', payload);
+    }
+
+    /// <summary>
+    /// Browser may still hold a PushSubscription after the server row was wiped (DB reset,
+    /// different account, etc.). Re-upload quietly so topic GETs stop 404-ing.
+    /// </summary>
+    async function ensureServerKnows(subscription) {
+        const topicsUrl = `/api/push/topics?endpoint=${encodeURIComponent(subscription.endpoint)}`;
+        const existing = await getJson(topicsUrl);
+        if (existing.ok) {
+            return { known: true, topics: normalizeTopics(existing.body.topics) };
         }
+
+        const uploaded = await uploadSubscription(subscription, null);
+        if (!uploaded.ok) {
+            return { known: false, topics: ALL_TOPICS.slice() };
+        }
+
+        const again = await getJson(topicsUrl);
+        return {
+            known: again.ok,
+            topics: again.ok ? normalizeTopics(again.body.topics) : ALL_TOPICS.slice(),
+        };
     }
 
     window.dagonitePush = {
@@ -120,6 +137,7 @@
                 subscribed: false,
                 configured: false,
                 topics: ALL_TOPICS.slice(),
+                serverKnown: false,
             };
 
             try {
@@ -135,7 +153,9 @@
                     const subscription = await currentSubscription();
                     result.subscribed = !!subscription;
                     if (subscription) {
-                        result.topics = await loadTopicsFor(subscription);
+                        const synced = await ensureServerKnows(subscription);
+                        result.serverKnown = synced.known;
+                        result.topics = synced.topics;
                     }
                 } catch {
                     result.subscribed = false;
@@ -177,15 +197,12 @@
             }
 
             const chosen = normalizeTopics(topics);
-            const json = subscription.toJSON();
-            const saved = await postJson('/api/push/subscribe', {
-                endpoint: json.endpoint,
-                p256dh: json.keys.p256dh,
-                auth: json.keys.auth,
-                topics: chosen,
-            });
+            const saved = await uploadSubscription(subscription, chosen);
+            if (!saved.ok) {
+                return { ok: false, reason: 'subscribe-failed' };
+            }
 
-            return { ok: true, reason: 'subscribed', devices: saved.devices, topics: chosen };
+            return { ok: true, reason: 'subscribed', devices: saved.body.devices, topics: chosen };
         },
 
         disable: async function () {
@@ -207,16 +224,29 @@
             }
 
             const chosen = normalizeTopics(topics);
-            const payload = await postJson('/api/push/topics', {
+            // Re-upload first when the server forgot this endpoint, then set preferences.
+            const synced = await ensureServerKnows(subscription);
+            if (!synced.known) {
+                return { ok: false, reason: 'not-found' };
+            }
+
+            const saved = await postJson('/api/push/topics', {
                 endpoint: subscription.endpoint,
                 topics: chosen,
             });
-            return { ok: true, topics: normalizeTopics(payload.topics) };
+            if (!saved.ok) {
+                return { ok: false, reason: 'not-found' };
+            }
+
+            return { ok: true, topics: normalizeTopics(saved.body.topics) };
         },
 
         sendTest: async function () {
             const result = await postJson('/api/push/test', {});
-            return { ok: result.sent > 0, sent: result.sent };
+            if (!result.ok) {
+                return { ok: false, sent: 0 };
+            }
+            return { ok: result.body.sent > 0, sent: result.body.sent };
         },
     };
 })();

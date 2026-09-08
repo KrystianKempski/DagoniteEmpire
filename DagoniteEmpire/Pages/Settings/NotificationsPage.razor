@@ -119,16 +119,20 @@
             _status = await _js.InvokeAsync<PushStatus>("dagonitePush.status");
             ApplyTopics(_status?.Topics);
 
-            // Older hero subscriptions opted into every topic; drop barony ones so they
-            // cannot linger on the device after we hide those checkboxes.
+            // Older hero subscriptions opted into every topic. Prefer rewriting only when
+            // the server already knows this device — otherwise ensureServerKnows in JS
+            // already re-uploaded the row and a blind saveTopics used to 404 the page.
             if (_status.Subscribed
+                && _status.ServerKnown
                 && !_includeBaronyTopics
                 && _status.Topics is not null
                 && _status.Topics.Any(NotificationTopic.IsBarony))
             {
-                await _js.InvokeAsync<PushTopicsResult>(
+                var scrub = await _js.InvokeAsync<PushTopicsResult>(
                     "dagonitePush.saveTopics",
                     _selected.ToArray());
+                if (scrub.Ok)
+                    ApplyTopics(scrub.Topics);
             }
         }
         catch (Exception ex)
@@ -236,6 +240,7 @@
         public bool NeedsInstall { get; set; }
         public bool Subscribed { get; set; }
         public bool Configured { get; set; }
+        public bool ServerKnown { get; set; }
         public string Permission { get; set; } = "default";
         public List<string> Topics { get; set; } = new();
     }
