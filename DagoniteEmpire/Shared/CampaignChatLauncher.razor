@@ -4,40 +4,36 @@
 
 @if (!AsFab)
 {
-    @* Desktop / wide tablet: compact icon in the top bar. *@
+    @* Always in the AppBar — MudHidden + iOS Safari never reports the breakpoint, so a
+       phone-only FAB used to be the only launcher and then sat under the browser chrome. *@
     @if (ChatState.IsVisible)
     {
-        <MudHidden Breakpoint="Breakpoint.MdAndDown">
-            <MudBadge Content="@(ChatState.UnreadTotal > 0 ? ChatState.UnreadTotal.ToString() : null)"
-                      Overlap="true"
-                      Visible="@(ChatState.UnreadTotal > 0)"
-                      Class="mr-1 campaign-chat-launcher">
-                <MudIconButton Icon="@Icons.Material.Outlined.Forum"
-                               Color="Color.Inherit"
-                               Title="@L["Chat"]"
-                               OnClick="Toggle" />
-            </MudBadge>
-        </MudHidden>
+        <MudBadge Content="@(ChatState.UnreadTotal > 0 ? ChatState.UnreadTotal.ToString() : null)"
+                  Overlap="true"
+                  Visible="@(ChatState.UnreadTotal > 0)"
+                  Class="mr-1 campaign-chat-launcher">
+            <MudIconButton Icon="@Icons.Material.Outlined.Forum"
+                           Color="Color.Inherit"
+                           Title="@L["Chat"]"
+                           OnClick="Toggle" />
+        </MudBadge>
     }
 }
 else if (ChatState.IsVisible && !ChatState.IsOpen)
 {
-    @* Phone: fixed FAB outside the AppBar so crowding / overflow cannot hide it. *@
-    <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
-        <div class="campaign-chat-fab">
-            <MudBadge Content="@(ChatState.UnreadTotal > 0 ? ChatState.UnreadTotal.ToString() : null)"
-                      Overlap="true"
-                      Visible="@(ChatState.UnreadTotal > 0)"
-                      Class="campaign-chat-launcher">
-                <button type="button"
-                        class="campaign-chat-fab__btn"
-                        title="@L["Chat"]"
-                        @onclick="Toggle">
-                    <MudIcon Icon="@Icons.Material.Outlined.Forum" Class="campaign-chat-fab__icon" />
-                </button>
-            </MudBadge>
-        </div>
-    </MudHidden>
+    <div class="campaign-chat-fab">
+        <MudBadge Content="@(ChatState.UnreadTotal > 0 ? ChatState.UnreadTotal.ToString() : null)"
+                  Overlap="true"
+                  Visible="@(ChatState.UnreadTotal > 0)"
+                  Class="campaign-chat-launcher">
+            <button type="button"
+                    class="campaign-chat-fab__btn"
+                    title="@L["Chat"]"
+                    @onclick="Toggle">
+                <MudIcon Icon="@Icons.Material.Outlined.Forum" Class="campaign-chat-fab__icon" />
+            </button>
+        </MudBadge>
+    </div>
 }
 
 @code {
@@ -55,6 +51,23 @@ else if (ChatState.IsVisible && !ChatState.IsOpen)
         }
 
         await ChatState.EnsureInitializedAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+
+        // ProtectedSessionStorage is unreliable in OnInitialized on iOS WebKit.
+        // Reload once JS is ready so a cold phone session still finds the selected character.
+        try
+        {
+            await ChatState.RefreshIdentityAsync();
+        }
+        catch
+        {
+            // Visibility stays as-is; character-change callbacks still retry.
+        }
     }
 
     private void Toggle() => ChatState.Toggle();

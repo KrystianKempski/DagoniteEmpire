@@ -71,6 +71,12 @@ namespace DA_Business.Services
             await ReloadIdentityAsync();
         }
 
+        /// <summary>
+        /// Call after first render. iOS WebKit often cannot read ProtectedSessionStorage during
+        /// <c>OnInitialized</c>, so the first pass hides the launcher; this second pass finds the character.
+        /// </summary>
+        public Task RefreshIdentityAsync() => ReloadIdentityAsync();
+
         public async Task OpenAsync()
         {
             await EnsureInitializedAsync();
@@ -241,7 +247,16 @@ namespace DA_Business.Services
         {
             var generation = Interlocked.Increment(ref _reloadGeneration);
 
-            var user = await _userService.GetUserInfo();
+            UserInfo? user;
+            try
+            {
+                user = await _userService.GetUserInfo();
+            }
+            catch
+            {
+                return;
+            }
+
             if (generation != _reloadGeneration)
                 return;
 
