@@ -377,46 +377,6 @@
     box-shadow: none;
 }
 
-/* Hidden on desktop (AppBar icon is enough). Shown on phones via CSS, not MudHidden —
-   iOS Safari often never delivers the breakpoint event MudHidden waits for. */
-.campaign-chat-fab {
-    display: none;
-}
-
-@media (max-width: 960px) {
-    .campaign-chat-fab {
-        display: block;
-        position: fixed;
-        right: max(1rem, env(safe-area-inset-right, 0px));
-        /* Sit above the iOS home indicator AND Safari's bottom toolbar. */
-        bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
-        z-index: 1200;
-    }
-}
-
-.campaign-chat-fab__btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 3.4rem;
-    height: 3.4rem;
-    padding: 0;
-    border: 1px solid rgba(255, 248, 232, 0.28);
-    border-radius: 50%;
-    background: linear-gradient(180deg, #3a3a3a, #212121);
-    color: #fff8e8;
-    cursor: pointer;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-}
-
-.campaign-chat-fab__btn:active {
-    transform: scale(0.96);
-}
-
-.campaign-chat-fab__icon {
-    font-size: 1.55rem !important;
-}
-
 @media (max-width: 600px) {
     .campaign-chat-drawer.mud-drawer {
         width: 100vw !important;
