@@ -55,6 +55,39 @@ namespace DagoniteEmpire.Service
             return Ok(new { devices = await _push.CountSubscriptions(userId) });
         }
 
+        /// <summary>Topic checklist for the caller's current browser subscription.</summary>
+        [HttpGet("topics")]
+        public async Task<IActionResult> GetTopics([FromQuery] string endpoint)
+        {
+            var userId = CurrentUserId();
+            if (userId is null)
+                return Unauthorized();
+            if (string.IsNullOrWhiteSpace(endpoint))
+                return BadRequest("Missing endpoint.");
+
+            var topics = await _push.GetTopics(userId, endpoint);
+            if (topics is null)
+                return NotFound();
+
+            return Ok(new { topics });
+        }
+
+        [HttpPost("topics")]
+        public async Task<IActionResult> SaveTopics([FromBody] PushTopicsDTO request)
+        {
+            var userId = CurrentUserId();
+            if (userId is null)
+                return Unauthorized();
+            if (request is null || string.IsNullOrWhiteSpace(request.Endpoint))
+                return BadRequest("Missing endpoint.");
+
+            var saved = await _push.SaveTopics(userId, request.Endpoint, request.Topics);
+            if (!saved)
+                return NotFound();
+
+            return Ok(new { topics = await _push.GetTopics(userId, request.Endpoint) });
+        }
+
         [HttpPost("unsubscribe")]
         public async Task<IActionResult> Unsubscribe([FromBody] UnsubscribeRequest request)
         {

@@ -20,6 +20,15 @@ namespace DA_Business.Services.Interfaces
         /// <summary>Forgets a single device by its push endpoint.</summary>
         Task RemoveSubscription(string endpoint);
 
+        /// <summary>
+        /// Topics the given device wants. Missing or empty storage means every known topic.
+        /// Returns null when the endpoint is unknown or belongs to somebody else.
+        /// </summary>
+        Task<IReadOnlyList<string>?> GetTopics(string userId, string endpoint);
+
+        /// <summary>Replaces the topic list for one of the caller's devices.</summary>
+        Task<bool> SaveTopics(string userId, string endpoint, IEnumerable<string>? topics);
+
         /// <summary>Number of devices currently subscribed for this user.</summary>
         Task<int> CountSubscriptions(string userId);
 

@@ -20,6 +20,11 @@ namespace DA_Business.Services
         private readonly CallbackService _callback;
         private IDisposable? _broadcastSub;
         private bool _initialized;
+        /// <summary>
+        /// Bumps on every identity reload so a slow "no character yet" call cannot overwrite a
+        /// newer successful one — common on cold PWA starts where LoginDisplay selects later.
+        /// </summary>
+        private int _reloadGeneration;
 
         public CampaignChatState(
             ICampaignChatRepository chat,
@@ -234,9 +239,16 @@ namespace DA_Business.Services
 
         private async Task ReloadIdentityAsync()
         {
+            var generation = Interlocked.Increment(ref _reloadGeneration);
+
             var user = await _userService.GetUserInfo();
+            if (generation != _reloadGeneration)
+                return;
+
             if (user?.IsAuthenticated != true || user.SelectedCharacter is null)
             {
+                // Character may still be loading on a cold PWA session — stay hidden without
+                // clearing a newer reload that already won the race.
                 IsVisible = false;
                 UnreadTotal = 0;
                 Campaigns = Array.Empty<CampaignDTO>();
@@ -266,6 +278,9 @@ namespace DA_Business.Services
                 campaigns = await _campaigns.GetAll(_myCharacterId);
             }
 
+            if (generation != _reloadGeneration)
+                return;
+
             Campaigns = campaigns
                 .Where(c => !c.IsFinished)
                 .OrderBy(c => c.Name)
@@ -286,6 +301,8 @@ namespace DA_Business.Services
 
             Resubscribe();
             await RefreshUnreadAsync();
+            if (generation != _reloadGeneration)
+                return;
 
             if (_pendingDeepLinkCampaignId is int pendingCampaign)
             {
@@ -294,7 +311,11 @@ namespace DA_Business.Services
                 _pendingDeepLinkPeerId = null;
                 IsOpen = true;
                 await SelectCampaignAsync(pendingCampaign);
+                if (generation != _reloadGeneration)
+                    return;
                 await OpenThreadAsync(peer);
+                if (generation != _reloadGeneration)
+                    return;
             }
 
             Notify();

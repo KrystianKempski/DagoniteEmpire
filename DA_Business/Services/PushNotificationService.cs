@@ -56,6 +56,7 @@ namespace DA_Business.Services
                     Endpoint = subscription.Endpoint,
                     P256dh = subscription.P256dh,
                     Auth = subscription.Auth,
+                    TopicsJson = SerializeTopics(subscription.Topics),
                     UserAgent = Truncate(userAgent, 400),
                     CreatedUtc = DateTime.UtcNow,
                 });
@@ -67,6 +68,9 @@ namespace DA_Business.Services
                 existing.P256dh = subscription.P256dh;
                 existing.Auth = subscription.Auth;
                 existing.UserAgent = Truncate(userAgent, 400);
+                // Only overwrite preferences when the client explicitly sent a list.
+                if (subscription.Topics is not null)
+                    existing.TopicsJson = SerializeTopics(subscription.Topics);
             }
 
             await ctx.SaveChangesAsync();
@@ -86,6 +90,40 @@ namespace DA_Business.Services
 
             ctx.WebPushSubscriptions.RemoveRange(rows);
             await ctx.SaveChangesAsync();
+        }
+
+        public async Task<IReadOnlyList<string>?> GetTopics(string userId, string endpoint)
+        {
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(endpoint))
+                return null;
+
+            using var ctx = await _db.CreateDbContextAsync();
+            var row = await ctx.WebPushSubscriptions
+                .AsNoTracking()
+                .Where(s => s.UserId == userId && s.Endpoint == endpoint)
+                .Select(s => new { s.Id, s.TopicsJson })
+                .FirstOrDefaultAsync();
+
+            if (row is null)
+                return null;
+
+            return ParseTopicsOrAll(row.TopicsJson);
+        }
+
+        public async Task<bool> SaveTopics(string userId, string endpoint, IEnumerable<string>? topics)
+        {
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(endpoint))
+                return false;
+
+            using var ctx = await _db.CreateDbContextAsync();
+            var row = await ctx.WebPushSubscriptions
+                .FirstOrDefaultAsync(s => s.UserId == userId && s.Endpoint == endpoint);
+            if (row is null)
+                return false;
+
+            row.TopicsJson = SerializeTopics(topics);
+            await ctx.SaveChangesAsync();
+            return true;
         }
 
         public async Task<int> CountSubscriptions(string userId)
@@ -193,13 +231,15 @@ namespace DA_Business.Services
 
         private static bool WantsTopic(string? topicsJson, string topic)
         {
+            // Legacy rows with no preference stored still receive everything.
             if (string.IsNullOrWhiteSpace(topicsJson))
                 return true;
 
             try
             {
                 var topics = JsonSerializer.Deserialize<List<string>>(topicsJson);
-                if (topics is null || topics.Count == 0)
+                // Explicit empty list = mute every category on this device.
+                if (topics is null)
                     return true;
 
                 return topics.Any(t => string.Equals(t, topic, StringComparison.OrdinalIgnoreCase));
@@ -207,6 +247,49 @@ namespace DA_Business.Services
             catch (JsonException)
             {
                 return true;
+            }
+        }
+
+        /// <summary>
+        /// Normalizes and stores the opted-in list. Null input leaves the column null
+        /// ("every topic"); an empty input stores <c>[]</c> so the device stays silent.
+        /// </summary>
+        internal static string? SerializeTopics(IEnumerable<string>? topics)
+        {
+            if (topics is null)
+                return null;
+
+            var normalized = topics
+                .Select(NotificationTopic.Normalize)
+                .Where(t => t is not null)
+                .Cast<string>()
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+
+            return JsonSerializer.Serialize(normalized);
+        }
+
+        internal static IReadOnlyList<string> ParseTopicsOrAll(string? topicsJson)
+        {
+            if (string.IsNullOrWhiteSpace(topicsJson))
+                return NotificationTopic.All;
+
+            try
+            {
+                var topics = JsonSerializer.Deserialize<List<string>>(topicsJson);
+                if (topics is null)
+                    return NotificationTopic.All;
+
+                return topics
+                    .Select(NotificationTopic.Normalize)
+                    .Where(t => t is not null)
+                    .Cast<string>()
+                    .Distinct(StringComparer.Ordinal)
+                    .ToList();
+            }
+            catch (JsonException)
+            {
+                return NotificationTopic.All;
             }
         }
 

@@ -5,6 +5,16 @@
 (function () {
     const SW_URL = '/service-worker.js';
 
+    // Mirrors DA_Common.Notifications.NotificationTopic.All — keep in sync when adding topics.
+    const ALL_TOPICS = [
+        'posts',
+        'turn-resolved',
+        'gm-question',
+        'battle-turn',
+        'chat',
+        'baron-letter',
+    ];
+
     function isStandalone() {
         return window.matchMedia('(display-mode: standalone)').matches
             || window.navigator.standalone === true;
@@ -64,7 +74,40 @@
         return response.json();
     }
 
+    async function getJson(url) {
+        const response = await fetch(url, { credentials: 'same-origin' });
+        if (!response.ok) {
+            throw new Error(`${url} responded ${response.status}`);
+        }
+        return response.json();
+    }
+
+    function normalizeTopics(topics) {
+        if (!Array.isArray(topics)) {
+            return ALL_TOPICS.slice();
+        }
+        const wanted = new Set(topics.map((t) => String(t).toLowerCase()));
+        return ALL_TOPICS.filter((t) => wanted.has(t));
+    }
+
+    async function loadTopicsFor(subscription) {
+        if (!subscription) {
+            return ALL_TOPICS.slice();
+        }
+        try {
+            const payload = await getJson(
+                `/api/push/topics?endpoint=${encodeURIComponent(subscription.endpoint)}`);
+            return normalizeTopics(payload.topics);
+        } catch {
+            return ALL_TOPICS.slice();
+        }
+    }
+
     window.dagonitePush = {
+        allTopics: function () {
+            return ALL_TOPICS.slice();
+        },
+
         status: async function () {
             const supported = isSupported();
             const standalone = isStandalone();
@@ -76,6 +119,7 @@
                 permission: supported ? Notification.permission : 'unsupported',
                 subscribed: false,
                 configured: false,
+                topics: ALL_TOPICS.slice(),
             };
 
             try {
@@ -88,7 +132,11 @@
 
             if (supported) {
                 try {
-                    result.subscribed = !!(await currentSubscription());
+                    const subscription = await currentSubscription();
+                    result.subscribed = !!subscription;
+                    if (subscription) {
+                        result.topics = await loadTopicsFor(subscription);
+                    }
                 } catch {
                     result.subscribed = false;
                 }
@@ -97,7 +145,7 @@
             return result;
         },
 
-        enable: async function () {
+        enable: async function (topics) {
             if (!isSupported()) {
                 return {
                     ok: false,
@@ -128,14 +176,16 @@
                 });
             }
 
+            const chosen = normalizeTopics(topics);
             const json = subscription.toJSON();
             const saved = await postJson('/api/push/subscribe', {
                 endpoint: json.endpoint,
                 p256dh: json.keys.p256dh,
                 auth: json.keys.auth,
+                topics: chosen,
             });
 
-            return { ok: true, reason: 'subscribed', devices: saved.devices };
+            return { ok: true, reason: 'subscribed', devices: saved.devices, topics: chosen };
         },
 
         disable: async function () {
@@ -148,6 +198,20 @@
             await subscription.unsubscribe();
             await postJson('/api/push/unsubscribe', { endpoint: endpoint });
             return { ok: true, reason: 'unsubscribed' };
+        },
+
+        saveTopics: async function (topics) {
+            const subscription = await currentSubscription();
+            if (!subscription) {
+                return { ok: false, reason: 'not-subscribed' };
+            }
+
+            const chosen = normalizeTopics(topics);
+            const payload = await postJson('/api/push/topics', {
+                endpoint: subscription.endpoint,
+                topics: chosen,
+            });
+            return { ok: true, topics: normalizeTopics(payload.topics) };
         },
 
         sendTest: async function () {

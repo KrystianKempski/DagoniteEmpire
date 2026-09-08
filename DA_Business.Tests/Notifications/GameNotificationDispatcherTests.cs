@@ -320,6 +320,12 @@ public class GameNotificationDispatcherTests : IClassFixture<DatabaseFixture>
 
         public Task RemoveSubscription(string endpoint) => Task.CompletedTask;
 
+        public Task<IReadOnlyList<string>?> GetTopics(string userId, string endpoint) =>
+            Task.FromResult<IReadOnlyList<string>?>(NotificationTopic.All);
+
+        public Task<bool> SaveTopics(string userId, string endpoint, IEnumerable<string>? topics) =>
+            Task.FromResult(true);
+
         public Task<int> CountSubscriptions(string userId) => Task.FromResult(0);
 
         public Task<int> SendToUser(string userId, PushNotificationDTO payload, string? topic = null) =>

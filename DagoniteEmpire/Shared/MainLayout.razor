@@ -27,7 +27,7 @@ MaxWidth="MaxWidth.Large" />
         </MudHidden>
         <MudButton Class="app-bar-title p-0 m-0" Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Text" DropShadow="true" Color="Color.Primary" Href="#">
             <img src="/icons/Dragon_white.svg" alt="" class="app-bar-dragon-icon" />
-            @L["Dagonite Empire"]
+            <span class="app-bar-title__text">@L["Dagonite Empire"]</span>
         </MudButton>
         @* Horizontal nav only above drawer breakpoint; on mobile/tablet use MudDrawer instead. *@
         <MudHidden Breakpoint="Breakpoint.MdAndDown">
@@ -44,12 +44,17 @@ MaxWidth="MaxWidth.Large" />
         <AuthorizeView>
             <Authorized>
                 <CampaignChatLauncher />
-                <CampaignChatDrawer />
             </Authorized>
         </AuthorizeView>
         <LanguageSwitcher />
         <LoginDisplay />
     </MudAppBar>
+    <AuthorizeView>
+        <Authorized>
+            <CampaignChatLauncher AsFab="true" />
+            <CampaignChatDrawer />
+        </Authorized>
+    </AuthorizeView>
     <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
         <CascadingValue Value="@_drawerOpen">
             <MudDrawer Style="@($"color:{Colors.Gray.Lighten5}; z-index:2000; background:{Colors.Gray.Darken4};")" @bind-Open="_drawerOpen" Elevation="1">

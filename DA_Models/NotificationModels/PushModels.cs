@@ -11,10 +11,24 @@ namespace DA_Models.NotificationModels
         /// <summary>Client auth secret (base64url), from <c>subscription.keys.auth</c>.</summary>
         public string Auth { get; set; } = string.Empty;
 
+        /// <summary>
+        /// Categories this device wants. Null means "keep whatever is already stored"
+        /// (or every topic on first subscribe); an empty list means mute everything.
+        /// </summary>
+        public List<string>? Topics { get; set; }
+
         public bool IsValid =>
             !string.IsNullOrWhiteSpace(Endpoint)
             && !string.IsNullOrWhiteSpace(P256dh)
             && !string.IsNullOrWhiteSpace(Auth);
+    }
+
+    /// <summary>Per-device topic preferences posted from the notifications settings page.</summary>
+    public class PushTopicsDTO
+    {
+        public string Endpoint { get; set; } = string.Empty;
+
+        public List<string> Topics { get; set; } = new();
     }
 
     /// <summary>Payload delivered to the service worker's <c>push</c> handler.</summary>

@@ -373,6 +373,37 @@
     box-shadow: none;
 }
 
+/* Always-visible chat entry on phones — AppBar crowding must not hide it. */
+.campaign-chat-fab {
+    position: fixed;
+    right: 1.1rem;
+    bottom: 1.1rem;
+    z-index: 1040; /* below barony inbox FABs (1050+) and Mud menus */
+}
+
+.campaign-chat-fab__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.4rem;
+    height: 3.4rem;
+    padding: 0;
+    border: 1px solid rgba(255, 248, 232, 0.28);
+    border-radius: 50%;
+    background: linear-gradient(180deg, #3a3a3a, #212121);
+    color: #fff8e8;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.campaign-chat-fab__btn:active {
+    transform: scale(0.96);
+}
+
+.campaign-chat-fab__icon {
+    font-size: 1.55rem !important;
+}
+
 @media (max-width: 600px) {
     .campaign-chat-drawer.mud-drawer {
         width: 100vw !important;

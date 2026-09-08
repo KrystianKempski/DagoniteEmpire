@@ -1,5 +1,6 @@
 @page "/settings/notifications"
 @attribute [Authorize]
+@using DA_Common.Notifications
 @inject IJSRuntime _js
 @inject ISnackbar _snackBar
 
@@ -52,6 +53,26 @@
 
                 @if (_status.Subscribed)
                 {
+                    <div>
+                        <MudText Typo="Typo.subtitle2" Class="mb-1">@L["Notify me about"]</MudText>
+                        <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--mud-palette-text-secondary);">
+                            @L["Applies only to this device. Other phones keep their own selection."]
+                        </MudText>
+
+                        <div class="d-flex flex-column gap-1">
+                            @foreach (var topic in NotificationTopic.All)
+                            {
+                                <MudCheckBox T="bool"
+                                             Dense="true"
+                                             Color="Color.Primary"
+                                             Disabled="@_busy"
+                                             Value="@_selected.Contains(topic)"
+                                             ValueChanged="@(v => OnTopicChangedAsync(topic, v))"
+                                             Label="@NotificationTopic.DisplayName(topic)" />
+                            }
+                        </div>
+                    </div>
+
                     <MudButton Variant="Variant.Outlined"
                                Size="Size.Small"
                                Disabled="@_busy"
@@ -71,6 +92,7 @@
 
 @code {
     private PushStatus? _status;
+    private readonly HashSet<string> _selected = new(StringComparer.Ordinal);
     private bool _busy;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -86,14 +108,27 @@
         try
         {
             _status = await _js.InvokeAsync<PushStatus>("dagonitePush.status");
+            ApplyTopics(_status?.Topics);
         }
         catch (Exception ex)
         {
             _status = new PushStatus();
+            ApplyTopics(NotificationTopic.All);
             _snackBar.Add(ex.Message, Severity.Error);
         }
 
         StateHasChanged();
+    }
+
+    private void ApplyTopics(IEnumerable<string>? topics)
+    {
+        _selected.Clear();
+        foreach (var topic in topics ?? NotificationTopic.All)
+        {
+            var key = NotificationTopic.Normalize(topic);
+            if (key is not null)
+                _selected.Add(key);
+        }
     }
 
     private async Task OnToggleAsync(bool enable)
@@ -104,7 +139,7 @@
         try
         {
             var result = enable
-                ? await _js.InvokeAsync<PushResult>("dagonitePush.enable")
+                ? await _js.InvokeAsync<PushResult>("dagonitePush.enable", NotificationTopic.All)
                 : await _js.InvokeAsync<PushResult>("dagonitePush.disable");
 
             _snackBar.Add(DescribeResult(result, enable), result.Ok ? Severity.Success : Severity.Warning);
@@ -113,6 +148,43 @@
         catch (Exception ex)
         {
             _snackBar.Add(ex.Message, Severity.Error);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task OnTopicChangedAsync(string topic, bool enabled)
+    {
+        if (_busy || _status is null || !_status.Subscribed)
+            return;
+
+        if (enabled)
+            _selected.Add(topic);
+        else
+            _selected.Remove(topic);
+
+        _busy = true;
+        try
+        {
+            var result = await _js.InvokeAsync<PushTopicsResult>(
+                "dagonitePush.saveTopics",
+                _selected.ToArray());
+
+            if (!result.Ok)
+            {
+                _snackBar.Add(L["Could not save notification preferences."], Severity.Warning);
+                await RefreshStatusAsync();
+                return;
+            }
+
+            ApplyTopics(result.Topics);
+        }
+        catch (Exception ex)
+        {
+            _snackBar.Add(ex.Message, Severity.Error);
+            await RefreshStatusAsync();
         }
         finally
         {
@@ -164,6 +236,7 @@
         public bool Subscribed { get; set; }
         public bool Configured { get; set; }
         public string Permission { get; set; } = "default";
+        public List<string> Topics { get; set; } = new();
     }
 
     private sealed class PushResult
@@ -171,6 +244,12 @@
         public bool Ok { get; set; }
         public string? Reason { get; set; }
         public int Devices { get; set; }
+    }
+
+    private sealed class PushTopicsResult
+    {
+        public bool Ok { get; set; }
+        public List<string> Topics { get; set; } = new();
     }
 
     private sealed class PushTestResult

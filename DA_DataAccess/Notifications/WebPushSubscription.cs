@@ -30,7 +30,8 @@ namespace DA_DataAccess.Notifications
 
         /// <summary>
         /// JSON array of opted-in <see cref="DA_Common.Notifications.NotificationTopic"/> keys.
-        /// Null or empty means every topic.
+        /// Null or empty-looking storage historically meant every topic.
+        /// An explicit JSON empty array means mute everything on this device.
         /// </summary>
         public string? TopicsJson { get; set; }
 

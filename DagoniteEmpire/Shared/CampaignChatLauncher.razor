@@ -2,23 +2,58 @@
 @inject CampaignChatState ChatState
 @implements IDisposable
 
-@if (ChatState.IsVisible)
+@if (!AsFab)
 {
-    <MudBadge Content="@(ChatState.UnreadTotal > 0 ? ChatState.UnreadTotal.ToString() : null)"
-              Overlap="true"
-              Visible="@(ChatState.UnreadTotal > 0)"
-              Class="mr-1 campaign-chat-launcher">
-        <MudIconButton Icon="@Icons.Material.Outlined.Forum"
-                       Color="Color.Inherit"
-                       Title="@L["Chat"]"
-                       OnClick="Toggle" />
-    </MudBadge>
+    @* Desktop / wide tablet: compact icon in the top bar. *@
+    @if (ChatState.IsVisible)
+    {
+        <MudHidden Breakpoint="Breakpoint.MdAndDown">
+            <MudBadge Content="@(ChatState.UnreadTotal > 0 ? ChatState.UnreadTotal.ToString() : null)"
+                      Overlap="true"
+                      Visible="@(ChatState.UnreadTotal > 0)"
+                      Class="mr-1 campaign-chat-launcher">
+                <MudIconButton Icon="@Icons.Material.Outlined.Forum"
+                               Color="Color.Inherit"
+                               Title="@L["Chat"]"
+                               OnClick="Toggle" />
+            </MudBadge>
+        </MudHidden>
+    }
+}
+else if (ChatState.IsVisible && !ChatState.IsOpen)
+{
+    @* Phone: fixed FAB outside the AppBar so crowding / overflow cannot hide it. *@
+    <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
+        <div class="campaign-chat-fab">
+            <MudBadge Content="@(ChatState.UnreadTotal > 0 ? ChatState.UnreadTotal.ToString() : null)"
+                      Overlap="true"
+                      Visible="@(ChatState.UnreadTotal > 0)"
+                      Class="campaign-chat-launcher">
+                <button type="button"
+                        class="campaign-chat-fab__btn"
+                        title="@L["Chat"]"
+                        @onclick="Toggle">
+                    <MudIcon Icon="@Icons.Material.Outlined.Forum" Class="campaign-chat-fab__icon" />
+                </button>
+            </MudBadge>
+        </div>
+    </MudHidden>
 }
 
 @code {
+    /// <summary>When true, render the mobile floating button instead of the AppBar icon.</summary>
+    [Parameter] public bool AsFab { get; set; }
+
+    private bool _subscribed;
+
     protected override async Task OnInitializedAsync()
     {
-        ChatState.OnChange += OnStateChanged;
+        if (!_subscribed)
+        {
+            ChatState.OnChange += OnStateChanged;
+            _subscribed = true;
+        }
+
         await ChatState.EnsureInitializedAsync();
     }
 
@@ -31,6 +66,10 @@
 
     public void Dispose()
     {
-        ChatState.OnChange -= OnStateChanged;
+        if (_subscribed)
+        {
+            ChatState.OnChange -= OnStateChanged;
+            _subscribed = false;
+        }
     }
 }
