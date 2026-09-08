@@ -2,6 +2,8 @@
 @inherits LayoutComponentBase
 @layout DagoniteEmpire.Shared.MainLayout
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@implements IDisposable
 
 <div class="barony-mobile-block @(IsAudienceHall ? "barony-mobile-block--hidden" : "")">
     <div class="barony-mobile-block__card">
@@ -82,4 +84,51 @@
 
     /// <summary>Only page allowed on mobile — hub is a single-column visual view, works on any screen size.</summary>
     private bool IsAudienceHall => CurrentPath == "/barony/audience-hall";
+
+    /// <summary>Matches <c>.barony-mobile-block</c> in barony.css (<c>max-width: 1279.98px</c>).</summary>
+    private const double MobileBaronyMaxWidth = 1280;
+    private bool _narrowRedirectSettled;
+
+    protected override void OnInitialized()
+    {
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        await TrySendMobileToAudienceHallAsync();
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        _narrowRedirectSettled = false;
+        _ = InvokeAsync(TrySendMobileToAudienceHallAsync);
+    }
+
+    /// <summary>
+    /// Phone/tablet entry usually hits <c>/barony</c> (Domain Panel). That page is CSS-hidden
+    /// on narrow screens, so send the user to Audience Hall instead of the "not available" card.
+    /// </summary>
+    private async Task TrySendMobileToAudienceHallAsync()
+    {
+        if (IsAudienceHall || _narrowRedirectSettled)
+            return;
+
+        try
+        {
+            var width = await JS.InvokeAsync<double>("GetWindowWidth");
+            _narrowRedirectSettled = true;
+            if (width < MobileBaronyMaxWidth)
+                NavigationManager.NavigateTo("/barony/audience-hall", replace: true);
+        }
+        catch
+        {
+            // JS not ready yet — retry on the next render.
+        }
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
 }

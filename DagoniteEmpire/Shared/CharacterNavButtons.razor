@@ -84,9 +84,21 @@
         try
         {
             await OnDrawerChanged.InvokeAsync();
-            // Mobile/tablet: every other Barony page is blocked, so go straight to the one that works.
-            var bp = await _viewportService.GetCurrentBreakpointAsync();
-            var target = bp <= Breakpoint.Md ? "/barony/audience-hall" : "/barony";
+            // Every Barony page except Audience Hall is CSS-blocked below 1280px.
+            var target = "/barony";
+            try
+            {
+                var width = await _jsRuntime.InvokeAsync<double>("GetWindowWidth");
+                if (width < 1280)
+                    target = "/barony/audience-hall";
+            }
+            catch
+            {
+                var bp = await _viewportService.GetCurrentBreakpointAsync();
+                if (bp < Breakpoint.Lg)
+                    target = "/barony/audience-hall";
+            }
+
             _navigationManager.NavigateTo(target);
         }
         catch (Exception e)
