@@ -235,14 +235,18 @@ else if (_overview is not null)
 
         foreach (var src in _overview.ResourceSources.OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase))
         {
+            var debtLinked = ResourceBalanceLedger.IsDebtLinked(src.Name);
+            var purseTransfer = ResourceBalanceLedger.IsPurseTransfer(src.Name);
             _balanceRows.Add(new ResourceTableRow
             {
                 Label = src.Name,
                 Description = src.Description,
                 Values = ResourceCatalog.Slice(src.Additive),
                 SourceId = src.Id,
-                CanEdit = CanManageAsMg,
-                CanDelete = CanManageAsMg,
+                // Purse transfers: delete reverses stocks + purse; edit would desync purse.
+                // Debt lines: manage via Budget → Debts.
+                CanEdit = CanManageAsMg && !debtLinked && !purseTransfer,
+                CanDelete = CanManageAsMg && !debtLinked,
             });
         }
 
@@ -415,21 +419,57 @@ else if (_overview is not null)
 
     private async Task DeleteBalanceRowAsync(ResourceTableRow row)
     {
-        if (row.SourceId is not int id || !CanManageAsMg)
+        if (row.SourceId is not int id || !CanManageAsMg || _overview is null)
             return;
 
+        var src = _overview.ResourceSources.FirstOrDefault(s => s.Id == id);
+        if (src is null)
+            return;
+
+        if (ResourceBalanceLedger.IsDebtLinked(src.Name))
+        {
+            _snackBar.Add(L["Debt ledger rows are managed from Budget → Debts."], Severity.Warning);
+            return;
+        }
+
         var confirm = await _dialogService.ShowMessageBoxAsync(
-            "Remove source",
-            $"Remove ledger line “{row.Label}”? Current stocks are not changed — edit the source to zero first if you want to reverse a grant.",
-            yesText: "Remove",
-            cancelText: "Cancel");
+            L["Remove source"],
+            L["Remove ledger line “{0}”? Matching amounts will be removed from current stocks.", row.Label],
+            yesText: L["Remove"],
+            cancelText: L["Cancel"]);
         if (confirm != true)
             return;
 
         try
         {
+            var additive = ResourceCatalog.Slice(src.Additive);
+            // Mirror Add/Edit: ledger row + stock change stay in sync (Σ = stocks).
+            await ApplyStockDeltaAsync(ResourceCatalog.Subtract(new PpbVector(), additive));
+
+            if (ResourceBalanceLedger.IsTransferToPurse(src.Name))
+            {
+                // Transfer logged −gold in stocks and +gold in purse; undo purse too.
+                var amount = PpbFormat.Round(-additive[Ppb.Treasury]);
+                if (amount > 0m)
+                {
+                    _overview.Barony.BaronPurseGold = PpbFormat.Round(
+                        Math.Max(0m, _overview.Barony.BaronPurseGold - amount));
+                    await _baronyRepo.UpdateBarony(_overview.Barony);
+                }
+            }
+            else if (ResourceBalanceLedger.IsTransferFromPurse(src.Name))
+            {
+                var amount = PpbFormat.Round(additive[Ppb.Treasury]);
+                if (amount > 0m)
+                {
+                    _overview.Barony.BaronPurseGold = PpbFormat.Round(
+                        _overview.Barony.BaronPurseGold + amount);
+                    await _baronyRepo.UpdateBarony(_overview.Barony);
+                }
+            }
+
             await _baronyRepo.DeleteResourceSource(id);
-            _snackBar.Add(L["Source removed."], Severity.Success);
+            _snackBar.Add(L["Source removed and stocks adjusted."], Severity.Success);
             await ReloadAsync();
         }
         catch (Exception ex)

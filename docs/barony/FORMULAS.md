@@ -161,7 +161,7 @@ PPB balances **before** Community rows use Domain **Final** Food / Law / Corrupt
 
 ### End of turn — `BaronyRepository.ResolveTurn`
 Pipeline (player End Turn flag → MG Resolve Turn):
-1. Snapshot stocks as `PreviousTurnStock` (opening stock before income/grants). Delete **all** `BaronyResourceSources` (no multi-turn ledger history). Apply `ExpectedResourceIncome` to stocks; store as `PreviousTurnIncome`.
+1. Snapshot stocks as `PreviousTurnStock` (opening stock before income/grants). Delete **all** `BaronyResourceSources` (no multi-turn ledger history). Apply `ExpectedResourceIncome` (Domain Panel Final − liege tribute; **without** debt payments) to stocks; store as `PreviousTurnIncome`.
 2. Funded projects (`HasRemainingCost` false): `TurnsRemaining = max(0, TurnsRemaining − 1)`; if `TurnsRemaining == 0` → Complete and apply `OutputKind` results into the turn log:
    - **Unit Training** → linked unit `Training` → `Active`
    - **Unit Reinforce** → add `ReinforceTroops` (from Notes / description; else fill toward 50)
@@ -171,6 +171,7 @@ Pipeline (player End Turn flag → MG Resolve Turn):
    - **Event** → Domain Panel event from `ResultAdditive`/`ResultPercent`, active from the **new** turn (ongoing until MG sets an end)
    - **Building / Improvement** (incl. map tile) as before
    - Auto-generated unit/map projects start as **Resource allocation** (turns do not tick until fully funded); then → **In progress**
+2b. Active debts: accrue interest, then apply scheduled Taken/Given payments from treasury (`DebtFormulas` / `ApplyDebtPaymentsOnResolve`). Do **not** fold these into `ExpectedResourceIncome` — that double-counts gold.
 3. Sync `Size` = primary-domain tile count
 4. If Final Stability ≤ 0 → loyalty test (below)
 5. Advance calendar one season (`BaronyCalendarFormulas`: Spring → Summer → Fall → Winter; year++ on Winter→Spring). On new year: baron `Character.Age` +1 and each `BaronyRelation` with a set Age +1; re-roll Conjuncture 2d6

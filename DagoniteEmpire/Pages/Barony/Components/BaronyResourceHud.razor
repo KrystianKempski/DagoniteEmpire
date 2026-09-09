@@ -108,8 +108,11 @@
             var managementJc = BaronyCalc.ManagementJcSpent(await _baronyRepo.GetBaronTimeActions(barony.Id));
 
             _stocks = ResourceCatalog.Slice(overview.Barony.ResourceStocks);
+            // HUD gold delta includes projected debt payments; ResolveTurn must use the
+            // default (no debt) vector so payments are not applied twice.
             _expected = BaronyCalc.ExpectedResourceIncome(
-                overview, character, baronModifiers, advisorModifiers, managementJc);
+                overview, character, baronModifiers, advisorModifiers, managementJc,
+                includeDebtProjection: true);
             _ready = true;
         }
         catch

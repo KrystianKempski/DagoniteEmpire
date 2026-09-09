@@ -346,16 +346,64 @@
 }
 
 @media (max-width: 640px) {
+    /* Throne was too wide vs. two fixed orbit cards, so satellites overflowed the
+       flex columns and got clipped by stage/hub overflow:hidden — left cards on the
+       left edge, right cards (and their badges) on the right edge. */
     .audience-hall {
-        --throne: clamp(6rem, 24dvh, 14rem);
+        --throne: clamp(4.25rem, 16dvh, 8rem);
         max-width: none;
     }
 
+    .audience-hall__hub {
+        padding-inline: .4rem;
+    }
+
+    .audience-hall__ring {
+        gap: .35rem;
+    }
+
+    .audience-hall__throne {
+        flex-shrink: 1;
+        min-width: 3.25rem;
+        width: min(var(--throne), 34vw);
+        height: min(var(--throne), 34vw);
+    }
+
+    .audience-hall__satellites {
+        gap: .4rem;
+    }
+
     .audience-hall__advisor {
-        --advisor-card-width: 90px;
-        --advisor-card-height: 72px;
-        --advisor-icon-size: 2.4rem;
-        font-size: .82rem;
+        --advisor-card-width: 4.5rem;
+        --advisor-card-height: 4.1rem;
+        --advisor-icon-size: 2rem;
+        font-size: .7rem;
+        padding: .15rem .2rem;
+        /* Badges sit at the card corner; keep them visible when the card hugs the edge. */
+        overflow: visible;
+    }
+
+    .audience-hall__advisor:hover {
+        /* Avoid horizontal overflow from the desktop hover lift/scale. */
+        transform: translateY(-2px) scale(1.03);
+    }
+
+    .audience-hall__advisor-label {
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        text-overflow: ellipsis;
+        overflow: hidden;
+        line-height: 1.1;
+        padding: 0;
+    }
+
+    .audience-hall__badge {
+        top: 0;
+        right: 0;
+        z-index: 1;
     }
 }
 

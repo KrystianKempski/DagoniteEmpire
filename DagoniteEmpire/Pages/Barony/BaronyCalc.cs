@@ -1234,15 +1234,22 @@ namespace DagoniteEmpire.Pages.Barony
         }
 
         /// <summary>
-        /// Expected resource delta for HUD / Resources: Domain Panel Final minus liege tribute on Gold.
+        /// Expected resource delta applied on Resolve Turn: Domain Panel Final minus liege tribute on Gold.
         /// Audience cumulative grants are applied to stocks immediately (Resource Balance), not here.
+        /// Debt payments are NOT included — ResolveTurn applies them separately after income;
+        /// folding them in here double-counted gold on production baronies with active loans.
         /// </summary>
+        /// <param name="includeDebtProjection">
+        /// When true (HUD only), nets scheduled debt payments into Gold so the delta matches
+        /// end-of-turn treasury. Must stay false for the vector passed to ResolveTurn.
+        /// </param>
         public static PpbVector ExpectedResourceIncome(
             BaronyOverviewDTO ov,
             CharacterDTO? character = null,
             IEnumerable<BaronInfluenceModifierDTO>? baronModifiers = null,
             IEnumerable<AdvisorInfluenceModifierDTO>? advisorModifiers = null,
-            int managementJc = BaronTimeRules.RequiredManagementJc)
+            int managementJc = BaronTimeRules.RequiredManagementJc,
+            bool includeDebtProjection = false)
         {
             var panel = BuildDomainPanelRows(ov, character, baronModifiers, advisorModifiers, managementJc);
             var expected = ResourceCatalog.Slice(panel.GrandTotal);
@@ -1250,19 +1257,28 @@ namespace DagoniteEmpire.Pages.Barony
             var tribute = FiefTributeFormulas.ComputeTribute(gross, ov.Barony.LiegeTributePercent);
             expected[Ppb.Treasury] = PpbFormat.Round(expected[Ppb.Treasury] - tribute);
 
+            if (includeDebtProjection)
+                ApplyDebtProjection(expected, ov);
+
+            return ResourceCatalog.Slice(expected);
+        }
+
+        /// <summary>
+        /// Nets projected debt payments into the Gold line of an expected-income vector (display only).
+        /// </summary>
+        public static void ApplyDebtProjection(PpbVector expected, BaronyOverviewDTO ov)
+        {
             var activeDebts = ov.Debts
                 .Where(d => d.IsActive && d.PrincipalRemaining > 0m)
                 .Select(d => (d.Direction, d.PrincipalRemaining, d.InterestRatePercent, d.PaymentPerTurn))
                 .ToList();
-            if (activeDebts.Count > 0)
-            {
-                var treasuryAfterIncome = PpbFormat.Round(ov.Barony.TreasuryGold + expected[Ppb.Treasury]);
-                var debtFlow = DebtFormulas.ProjectTurnPayments(activeDebts, treasuryAfterIncome);
-                expected[Ppb.Treasury] = PpbFormat.Round(
-                    expected[Ppb.Treasury] - debtFlow.TakenPayments + debtFlow.GivenReceipts);
-            }
+            if (activeDebts.Count == 0)
+                return;
 
-            return ResourceCatalog.Slice(expected);
+            var treasuryAfterIncome = PpbFormat.Round(ov.Barony.TreasuryGold + expected[Ppb.Treasury]);
+            var debtFlow = DebtFormulas.ProjectTurnPayments(activeDebts, treasuryAfterIncome);
+            expected[Ppb.Treasury] = PpbFormat.Round(
+                expected[Ppb.Treasury] - debtFlow.TakenPayments + debtFlow.GivenReceipts);
         }
 
         public sealed class DomainPanelRowSet

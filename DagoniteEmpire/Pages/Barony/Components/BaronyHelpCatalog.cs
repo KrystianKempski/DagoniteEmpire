@@ -65,7 +65,7 @@ namespace DagoniteEmpire.Pages.Barony.Components
                     {
                         new BaronyHelpSection("Game Master controls", new[]
                         {
-                            "Use Add Source / edit / delete on the Resource Balance to grant or remove resources mid-turn.",
+                            "Use Add Source / edit / delete on the Resource Balance to grant or remove resources mid-turn (delete reverses the stock amounts).",
                             "Resolve Turn clears the ledger to opening stock + Domain Panel income + completed project grants.",
                         }),
                     }),

@@ -11,7 +11,12 @@
             <div class="big-screen pa-4 justify-center my-4 mud-text-align-center">
                 <MudButton Style="@($"color:{Colors.Gray.Lighten5}; background:{Colors.Gray.Darken4};")" Variant="Variant.Filled" Color="Color.Primary">Hi, @context.User.Identity.Name!</MudButton>
             </div>
-            <MudMenu Dense="true" Color="Color.Dark" Class="character-switcher" ListClass="character-switcher-list">
+            <MudMenu Dense="true"
+                     Color="Color.Dark"
+                     Class="character-switcher"
+                     ListClass="character-switcher-list"
+                     AnchorOrigin="Origin.BottomRight"
+                     TransformOrigin="Origin.TopRight">
                 <ActivatorContent Context="menuContext">
                     <div tabindex="0" style="cursor: pointer;" @onclick="async () => { await RefreshCharacters(); await menuContext.ToggleAsync(); }">
                         <MudAvatar Size="Size.Small">

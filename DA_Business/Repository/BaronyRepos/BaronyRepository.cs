@@ -1031,7 +1031,9 @@ namespace DA_Business.Repository.BaronyRepos
                 barony.FoodInGranaries = stocks[Ppb.Food];
                 barony.TreasuryGold = stocks[Ppb.Treasury];
 
-                // 2b) Debt interest accrual and scheduled payments (strict: pay what treasury allows)
+                // 2b) Debt interest accrual and scheduled payments (strict: pay what treasury allows).
+                // Payments must NOT already be folded into expectedIncome — that vector is Domain
+                // Panel − tribute only; double-counting wiped gold income on baronies with loans.
                 var activeDebts = await ctx.BaronyDebts
                     .Where(d => d.BaronyId == baronyId && d.IsActive && d.PrincipalRemaining > 0m)
                     .OrderBy(d => d.Id)

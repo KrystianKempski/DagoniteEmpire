@@ -60,11 +60,31 @@ a{
 
 /* Character switcher: keep avatar + name flush left.
    MudBlazor adds a 36px text gutter when ANY item uses Icon=, so we render
-   action icons inline instead and tighten the row ourselves. */
-.character-switcher-list {
+   action icons inline instead and tighten the row ourselves.
+
+   ::deep: MudMenu content is portaled; scoped attribute selectors would miss
+   the list. MudBlazor 9.4 also wraps the list in [data-testid=menu-wrapper],
+   which breaks automatic viewport clamping — long character lists then extend
+   past the screen with no scrollbar (Notifications / Log out unreachable). */
+::deep .mud-popover:has(.character-switcher-list) {
+    max-height: min(70dvh, calc(100dvh - 4.5rem - env(safe-area-inset-bottom, 0px))) !important;
+    overflow: hidden !important;
+}
+
+::deep .mud-popover:has(.character-switcher-list) [data-testid="menu-wrapper"] {
+    max-height: inherit;
+    min-height: 0;
+    overflow: hidden;
+}
+
+::deep .character-switcher-list {
     min-width: 12.5rem;
+    max-height: inherit;
     padding-top: 0.25rem;
     padding-bottom: 0.25rem;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
 }
 
 .character-switcher-list .character-switcher__header {
