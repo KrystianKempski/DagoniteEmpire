@@ -171,6 +171,7 @@ Pipeline (player End Turn flag → MG Resolve Turn):
    - **Event** → Domain Panel event from `ResultAdditive`/`ResultPercent`, active from the **new** turn (ongoing until MG sets an end)
    - **Building / Improvement** (incl. map tile) as before
    - Auto-generated unit/map projects start as **Resource allocation** (turns do not tick until fully funded); then → **In progress**
+2a. For every still-open project: set `AllocatedAtTurnStart = Allocated` so the next turn’s Resource Balance Project costs row starts at zero relative to prior funding.
 2b. Active debts: accrue interest, then apply scheduled Taken/Given payments from treasury (`DebtFormulas` / `ApplyDebtPaymentsOnResolve`). Do **not** fold these into `ExpectedResourceIncome` — that double-counts gold.
 3. Sync `Size` = primary-domain tile count
 4. If Final Stability ≤ 0 → loyalty test (below)
@@ -183,7 +184,7 @@ Pipeline (player End Turn flag → MG Resolve Turn):
 While `TurnResolving` is set, the baron cannot open Audience Hall, Audiences, Projects, Resources (and Budget) or Letters; those tabs show a lock screen so he cannot act on a half-written turn. The MG keeps full access and clears the flag with **Finish Resolving** on the Domain Panel (`IBaronyRepository.SetTurnResolving`).
 
 Resources tab → Resource Balance: **Σ of all rows = current stocks = HUD**.
-Rows = Stock from previous turn (`PreviousTurnStock`) + Income from previous turn (`PreviousTurnIncome`) + current ledger sources (project grants, Budget transfers, MG Add Source) + **Audiences** (cumulative grants this turn, already in stocks) + Project costs (if any). Everything except Domain Panel income from the prior turn is folded into the next opening stock on Resolve.
+Rows = Stock from previous turn (`PreviousTurnStock`) + Income from previous turn (`PreviousTurnIncome`) + current ledger sources (project grants, Budget transfers, MG Add Source) + **Audiences** (cumulative grants this turn, already in stocks) + **Project costs** = `−(Allocated − AllocatedAtTurnStart)` for open projects (only funding paid **this** turn; prior-turn allocations already sit inside `PreviousTurnStock` and are snapshotted on Resolve). Everything except Domain Panel income from the prior turn is folded into the next opening stock on Resolve.
 
 ### Letters — inbound caps / turn — `BaronLetterRules`
 - Eastern March: max **3** inbound letters from the same correspondent per turn

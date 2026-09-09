@@ -85,6 +85,11 @@
     /// <summary>Only page allowed on mobile — hub is a single-column visual view, works on any screen size.</summary>
     private bool IsAudienceHall => CurrentPath == "/barony/audience-hall";
 
+    /// <summary>Any Barony route (Domain Panel or a tab). Non-barony app pages must never be intercepted.</summary>
+    private bool IsBaronyPath =>
+        CurrentPath == "/barony"
+        || CurrentPath.StartsWith("/barony/", StringComparison.OrdinalIgnoreCase);
+
     /// <summary>Matches <c>.barony-mobile-block</c> in barony.css (<c>max-width: 1279.98px</c>).</summary>
     private const double MobileBaronyMaxWidth = 1280;
     private bool _narrowRedirectSettled;
@@ -106,12 +111,13 @@
     }
 
     /// <summary>
-    /// Phone/tablet entry usually hits <c>/barony</c> (Domain Panel). That page is CSS-hidden
-    /// on narrow screens, so send the user to Audience Hall instead of the "not available" card.
+    /// On phone/tablet, other Barony tabs are CSS-hidden. If the user opens one (or lands on
+    /// <c>/barony</c>), send them to Audience Hall. Do not touch Character / Campaign / Wiki / etc.
+    /// — <see cref="LocationChanged"/> also fires while leaving Barony, and must not yank them back.
     /// </summary>
     private async Task TrySendMobileToAudienceHallAsync()
     {
-        if (IsAudienceHall || _narrowRedirectSettled)
+        if (!IsBaronyPath || IsAudienceHall || _narrowRedirectSettled)
             return;
 
         try

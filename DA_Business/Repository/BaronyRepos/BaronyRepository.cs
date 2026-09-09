@@ -1025,6 +1025,24 @@ namespace DA_Business.Repository.BaronyRepos
                         report.ProjectResults.Add($"{dto.Name}: completed (no further effect).");
                 }
 
+                // Snapshot Allocated → AllocatedAtTurnStart for the NEW turn so Resource Balance
+                // “Project costs” only shows funding allocated after this Resolve (prior funding
+                // already sits inside PreviousTurnStock).
+                foreach (var project in projects)
+                {
+                    if (ProjectStatus.IsTerminal(project.Status)
+                        || string.Equals(project.Status, "Completed", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(project.Status, "Cancelled", StringComparison.OrdinalIgnoreCase))
+                    {
+                        project.AllocatedAtTurnStartJson = "{}";
+                        continue;
+                    }
+
+                    project.AllocatedAtTurnStartJson = string.IsNullOrWhiteSpace(project.AllocatedJson)
+                        ? "{}"
+                        : project.AllocatedJson;
+                }
+
                 // Re-sync stocks after one-time resource grants from projects
                 stocks = ResourceCatalog.Slice(stocks);
                 barony.ResourceStocksJson = Ser(stocks);
@@ -7420,6 +7438,7 @@ namespace DA_Business.Repository.BaronyRepos
                 ResultAdditive = De(e.ResultJson),
                 ResultPercent = De(e.ResultPercentJson),
                 Allocated = De(e.AllocatedJson),
+                AllocatedAtTurnStart = De(e.AllocatedAtTurnStartJson),
                 ResultDescription = e.ResultDescription,
                 HideResultFromBaron = e.HideResultFromBaron,
                 Status = e.Status,
@@ -7451,6 +7470,8 @@ namespace DA_Business.Repository.BaronyRepos
             e.ResultJson = Ser(d.ResultAdditive);
             e.ResultPercentJson = Ser(d.ResultPercent);
             e.AllocatedJson = Ser(ResourceCatalog.Slice(d.Allocated));
+            // AllocatedAtTurnStartJson is owned by ResolveTurn (and migrations) — do not
+            // overwrite from client DTOs that may omit or zero the snapshot.
             e.ResultDescription = d.ResultDescription;
             e.HideResultFromBaron = d.HideResultFromBaron;
             e.Status = d.Status;

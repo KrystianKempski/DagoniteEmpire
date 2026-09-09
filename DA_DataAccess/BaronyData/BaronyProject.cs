@@ -40,6 +40,13 @@ namespace DA_DataAccess.BaronyData
         /// <summary>Ile już zaalokowano — JSON PpbVector.</summary>
         public string AllocatedJson { get; set; } = "{}";
 
+        /// <summary>
+        /// Snapshot of <see cref="AllocatedJson"/> at the start of the current turn (set on Resolve).
+        /// Resource Balance “Project costs” uses only Allocated − AllocatedAtTurnStart so prior-turn
+        /// funding (already folded into PreviousTurnStock) is not subtracted again.
+        /// </summary>
+        public string AllocatedAtTurnStartJson { get; set; } = "{}";
+
         public string ResultDescription { get; set; } = string.Empty;
 
         /// <summary>

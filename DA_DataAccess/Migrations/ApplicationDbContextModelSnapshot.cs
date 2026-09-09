@@ -1340,6 +1340,10 @@ namespace DA_DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("AllocatedAtTurnStartJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("AllowedCostModes")
                         .IsRequired()
                         .HasColumnType("text");

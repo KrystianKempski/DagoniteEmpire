@@ -372,6 +372,13 @@ namespace DA_Models.BaronyModels
         public PpbVector ResultAdditive { get; set; } = new();
         public PpbVector ResultPercent { get; set; } = new();
         public PpbVector Allocated { get; set; } = new();
+
+        /// <summary>
+        /// Allocated resources already counted in PreviousTurnStock (snapshotted on Resolve).
+        /// Balance “Project costs” = −(Allocated − AllocatedAtTurnStart).
+        /// </summary>
+        public PpbVector AllocatedAtTurnStart { get; set; } = new();
+
         public string ResultDescription { get; set; } = string.Empty;
 
         /// <summary>
@@ -506,15 +513,15 @@ namespace DA_Models.BaronyModels
             && HasAnyAllocation;
 
         /// <summary>
-        /// Negative Resources balance row: resources already allocated this turn (left stocks).
+        /// Negative Resources balance row: resources allocated <em>this turn</em> (left stocks).
+        /// Prior-turn funding stays in Allocated for RemainingCost but is excluded here via
+        /// <see cref="AllocatedAtTurnStart"/> (snapshotted on Resolve into PreviousTurnStock).
         /// Remaining unfunded cost is not shown. Completed / cancelled projects are excluded.
         /// Instant Buy Production is excluded — gold/production are on the Resource Balance ledger.
         /// </summary>
         public PpbVector ResourcesBalanceImpact()
         {
             var v = new PpbVector();
-            if (!HasAnyAllocation)
-                return v;
             if (Status is ProjectStatus.Completed or ProjectStatus.Cancelled)
                 return v;
             if (ProjectStandardFormulas.IsBuyProduction(OutputKind, Notes)
@@ -522,7 +529,12 @@ namespace DA_Models.BaronyModels
                 return v;
 
             foreach (var info in ResourceCatalog.All)
-                v[info.Key] -= Allocated[info.Key];
+            {
+                var delta = Allocated[info.Key] - AllocatedAtTurnStart[info.Key];
+                if (delta != 0m)
+                    v[info.Key] -= delta;
+            }
+
             return v;
         }
 
