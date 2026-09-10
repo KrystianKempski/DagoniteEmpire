@@ -731,6 +731,10 @@ namespace DA_Models.BaronyModels
         public bool BaronAgeIncremented { get; set; }
         public int RelationsAged { get; set; }
         public PpbVector AppliedIncome { get; set; } = new();
+        /// <summary>Resource stocks at the start of Resolve (before income / projects / debts).</summary>
+        public PpbVector OpeningStocks { get; set; } = new();
+        /// <summary>Resource stocks after income, project grants, and debt payments.</summary>
+        public PpbVector ClosingStocks { get; set; } = new();
         public List<string> CompletedProjects { get; set; } = new();
         /// <summary>Detailed outcomes applied when projects finished this resolve (training, reinforce, events, etc.).</summary>
         public List<string> ProjectResults { get; set; } = new();

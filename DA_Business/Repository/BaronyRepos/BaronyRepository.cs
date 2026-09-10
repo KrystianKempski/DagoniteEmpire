@@ -73,10 +73,21 @@ namespace DA_Business.Repository.BaronyRepos
             string summary,
             string? entityType = null,
             int? entityId = null,
-            bool important = false) =>
+            bool important = false,
+            string? details = null) =>
             baronyId > 0
-                ? _log.Log(baronyId, category, summary, entityType: entityType, entityId: entityId, important: important)
+                ? _log.Log(
+                    baronyId, category, summary,
+                    details: details, entityType: entityType, entityId: entityId, important: important)
                 : Task.CompletedTask;
+
+        private static PpbVector ReadResourceStocks(Barony barony)
+        {
+            var stocks = ResourceCatalog.Slice(De(barony.ResourceStocksJson));
+            stocks[Ppb.Food] = barony.FoodInGranaries;
+            stocks[Ppb.Treasury] = barony.TreasuryGold;
+            return stocks;
+        }
 
         private static int BaronyIdOf(object entity) =>
             entity.GetType().GetProperty("BaronyId")?.GetValue(entity) as int? ?? 0;
@@ -264,8 +275,20 @@ namespace DA_Business.Repository.BaronyRepos
                     await ctx.SaveChangesAsync();
                     return ToDTO(added.Entity);
                 }
+
+                var stocksBefore = ReadResourceStocks(e);
                 ApplyBarony(e, dto);
+                var stocksAfter = ReadResourceStocks(e);
                 await ctx.SaveChangesAsync();
+
+                var (stockSummary, stockDetails) = ResourceStockChangeLog.Summarize(stocksBefore, stocksAfter);
+                if (stockSummary is not null)
+                {
+                    await Chronicle(
+                        e.Id, BaronyLogCategory.Resources, stockSummary,
+                        details: stockDetails);
+                }
+
                 return ToDTO(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(UpdateBarony)); }
@@ -1112,6 +1135,8 @@ namespace DA_Business.Repository.BaronyRepos
 
                 barony.ResourceStocksJson = Ser(stocks);
                 barony.TreasuryGold = stocks[Ppb.Treasury];
+                report.OpeningStocks = openingStock.Clone();
+                report.ClosingStocks = ResourceCatalog.Slice(stocks).Clone();
 
                 // 3) Size from primary-domain tiles
                 var primaryDomainId = await ctx.TerrainMapDomains.AsNoTracking()
@@ -2008,8 +2033,27 @@ namespace DA_Business.Repository.BaronyRepos
             var lines = new List<string>
             {
                 $"Turn {r.PreviousTurnNumber} resolved → Turn {r.NewTurnNumber} ({r.NewSeason} {r.NewYear}).",
-                $"Resource income applied. Size {r.Size}. Control DC {r.ControlDc} (population {r.SettlementPopulation}).",
+                $"Size {r.Size}. Control DC {r.ControlDc} (population {r.SettlementPopulation}).",
             };
+
+            var stockChanges = ResourceStockChangeLog.DescribeCompact(r.OpeningStocks, r.ClosingStocks);
+            if (stockChanges.Count > 0)
+            {
+                lines.Add("Resource stocks (before → after):");
+                foreach (var change in stockChanges)
+                    lines.Add("  • " + change + ".");
+            }
+            else
+            {
+                lines.Add("Resource stocks unchanged.");
+            }
+
+            var incomeParts = ResourceCatalog.All
+                .Where(info => PpbFormat.Round(r.AppliedIncome[info.Key]) != 0m)
+                .Select(info => $"{info.ShortEn} {PpbFormat.Additive(r.AppliedIncome[info.Key])}")
+                .ToList();
+            if (incomeParts.Count > 0)
+                lines.Add("Income applied: " + string.Join(", ", incomeParts) + ".");
             if (r.YearAdvanced)
             {
                 var ageBits = new List<string>();
@@ -6134,21 +6178,47 @@ namespace DA_Business.Repository.BaronyRepos
                 using var ctx = await _db.CreateDbContextAsync();
                 var e = dto.Id > 0 ? await ctx.BaronyResourceSources.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
                 var isNew = e is null;
+                var previousAdditive = isNew
+                    ? new PpbVector()
+                    : ResourceCatalog.Slice(De(e!.AdditiveJson));
                 if (e is null) { e = ToEntity(dto); ctx.BaronyResourceSources.Add(e); }
                 else { ApplyResourceSource(e, dto); }
                 await ctx.SaveChangesAsync();
+
+                var newAdditive = ResourceCatalog.Slice(De(e.AdditiveJson));
+                var delta = ResourceCatalog.Subtract(newAdditive, previousAdditive);
+                var amounts = ResourceStockChangeLog.DescribeAdditive(isNew ? newAdditive : delta);
+                var summary = $"Resource entry {(isNew ? "added" : "updated")}: {e.Name}"
+                    + (amounts is null ? "." : $" ({amounts}).");
                 await Chronicle(
-                    e.BaronyId, BaronyLogCategory.Resources,
-                    $"Resource entry {(isNew ? "added" : "updated")}: {e.Name}.",
+                    e.BaronyId, BaronyLogCategory.Resources, summary,
                     nameof(BaronyResourceSource), e.Id);
                 return ToDTO(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SaveResourceSource)); }
         }
 
-        public Task<int> DeleteResourceSource(int id) =>
-            Delete(ctx => ctx.BaronyResourceSources, id, nameof(DeleteResourceSource),
-                BaronyLogCategory.Resources, "Resource entry");
+        public async Task<int> DeleteResourceSource(int id)
+        {
+            try
+            {
+                using var ctx = await _db.CreateDbContextAsync();
+                var e = await ctx.BaronyResourceSources.FindAsync(id);
+                if (e is null)
+                    return 0;
+                var amounts = ResourceStockChangeLog.DescribeAdditive(De(e.AdditiveJson));
+                var name = e.Name;
+                var baronyId = e.BaronyId;
+                ctx.BaronyResourceSources.Remove(e);
+                var affected = await ctx.SaveChangesAsync();
+                await Chronicle(
+                    baronyId, BaronyLogCategory.Resources,
+                    $"Resource entry removed: {name}" + (amounts is null ? "." : $" ({amounts})."),
+                    nameof(BaronyResourceSource), id);
+                return affected;
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(DeleteResourceSource)); }
+        }
 
         // ---------------- Baron purse sources ----------------
         public async Task<List<BaronPurseSourceDTO>> GetPurseSources(int baronyId) =>
