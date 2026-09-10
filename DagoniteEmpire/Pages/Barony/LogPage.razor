@@ -1,0 +1,252 @@
+@page "/barony/log"
+@layout BaronyLayout
+@inherits BaronyPageBase
+@attribute [Authorize(Roles = SD.Role_GameMaster + "," + SD.Role_Admin)]
+@inject IBaronyLogService _logService
+@inject IDialogService _dialogService
+
+<PageTitle>Dagonite Empire | @L["Barony Chronicle"]</PageTitle>
+
+@if (IsLoading)
+{
+    <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>@L["Loading..."]</span>
+}
+else if (LoadError is not null)
+{
+    <MudAlert Severity="Severity.Info" Class="my-2">@LoadError</MudAlert>
+}
+else if (!CanManageAsMg)
+{
+    <MudAlert Severity="Severity.Warning" Class="my-2">@L["The chronicle is available to the Game Master only."]</MudAlert>
+}
+else if (Barony is not null)
+{
+    <div class="barony-log__page">
+        <BaronyPageHeader Title="@(L["Chronicle"])" ShowSectionToggle="false" />
+
+        <MudText Typo="Typo.caption" Class="mb-2" Style="color:var(--barony-muted);">
+            @L["Everything the baron and the Game Master did, grouped by turn. Visible to the Game Master only."]
+        </MudText>
+
+        <div class="barony-log__filters">
+            <MudSelect T="string"
+                       MultiSelection="true"
+                       Dense="true"
+                       Margin="Margin.Dense"
+                       Variant="Variant.Outlined"
+                       Label="@(L["Categories"])"
+                       SelectedValues="_categories"
+                       SelectedValuesChanged="OnCategoriesChanged"
+                       Class="barony-log__filter">
+                @foreach (var category in BaronyLogCategory.All)
+                {
+                    <MudSelectItem T="string" Value="@category">@L[BaronyLogCategory.Label(category)]</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudSelect T="string"
+                       Dense="true"
+                       Clearable="true"
+                       Margin="Margin.Dense"
+                       Variant="Variant.Outlined"
+                       Label="@(L["Actor"])"
+                       Value="_actor"
+                       ValueChanged="OnActorChanged"
+                       Class="barony-log__filter">
+                @foreach (var actor in _actors)
+                {
+                    <MudSelectItem T="string" Value="@actor">@actor</MudSelectItem>
+                }
+            </MudSelect>
+
+            <MudTextField T="string"
+                          Margin="Margin.Dense"
+                          Variant="Variant.Outlined"
+                          Label="@(L["Search"])"
+                          Immediate="false"
+                          DebounceInterval="400"
+                          Value="_search"
+                          ValueChanged="OnSearchChanged"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Class="barony-log__filter" />
+
+            <MudSwitch T="bool"
+                       Color="Color.Warning"
+                       Label="@(L["Important only"])"
+                       Value="_importantOnly"
+                       ValueChanged="OnImportantOnlyChanged" />
+        </div>
+
+        @if (_turns.Count == 0)
+        {
+            <MudAlert Severity="Severity.Info" Class="my-2">@L["The chronicle is still empty."]</MudAlert>
+        }
+        else
+        {
+            <MudExpansionPanels MultiExpansion="true" Elevation="0" Class="barony-log__turns">
+                @foreach (var turn in _turns)
+                {
+                    <MudExpansionPanel Expanded="@(turn.TurnNumber == _turns[0].TurnNumber)"
+                                       ExpandedChanged="@(expanded => OnTurnExpanded(turn.TurnNumber, expanded))">
+                        <TitleContent>
+                            <div class="barony-log__turn-title">
+                                <b>@L["Turn"] @turn.TurnNumber</b>
+                                <span class="barony-log__turn-meta">
+                                    @L[SeasonLabel(turn.Season)] @turn.Year · @turn.EntryCount @L["entries"]
+                                </span>
+                            </div>
+                        </TitleContent>
+                        <ChildContent>
+                            @if (!_entriesByTurn.TryGetValue(turn.TurnNumber, out var entries))
+                            {
+                                <MudProgressCircular Indeterminate="true" Size="Size.Small" />
+                            }
+                            else if (entries.Count == 0)
+                            {
+                                <MudText Typo="Typo.body2" Style="color:var(--barony-muted);">
+                                    @L["No entries match the filters."]
+                                </MudText>
+                            }
+                            else
+                            {
+                                <ul class="barony-log__entries">
+                                    @foreach (var entry in entries)
+                                    {
+                                        <li class="barony-log__entry @(entry.IsImportant ? "barony-log__entry--important" : "")">
+                                            <span class="barony-log__time">@entry.CreatedAtUtc.ToLocalTime().ToString("dd.MM HH:mm")</span>
+                                            <MudChip T="string" Size="Size.Small" Color="@CategoryColor(entry.Category)" Variant="Variant.Outlined">
+                                                @L[BaronyLogCategory.Label(entry.Category)]
+                                            </MudChip>
+                                            <span class="barony-log__actor">@entry.Actor</span>
+                                            <span class="barony-log__summary">@entry.Summary</span>
+                                            <MudIconButton Icon="@Icons.Material.Filled.DeleteOutline"
+                                                           Size="Size.Small"
+                                                           aria-label="@(L["Delete entry"])"
+                                                           OnClick="@(() => DeleteEntryAsync(entry))" />
+                                            @if (entry.HasDetails)
+                                            {
+                                                <pre class="barony-log__details">@entry.Details</pre>
+                                            }
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        </ChildContent>
+                    </MudExpansionPanel>
+                }
+            </MudExpansionPanels>
+        }
+    </div>
+}
+
+@code {
+    private List<BaronyLogTurnDTO> _turns = new();
+    private readonly Dictionary<int, List<BaronyLogEntryDTO>> _entriesByTurn = new();
+    private List<string> _actors = new();
+
+    private HashSet<string> _categories = new();
+    private string? _actor;
+    private string? _search;
+    private bool _importantOnly;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadBaronyAsync();
+        if (Barony is not null && CanManageAsMg)
+            await LoadTurnsAsync();
+    }
+
+    private async Task LoadTurnsAsync()
+    {
+        _turns = (await _logService.GetTurns(BaronyId)).ToList();
+        _actors = (await _logService.GetActors(BaronyId)).ToList();
+        _entriesByTurn.Clear();
+        if (_turns.Count > 0)
+            await LoadEntriesAsync(_turns[0].TurnNumber);
+    }
+
+    private async Task LoadEntriesAsync(int turnNumber)
+    {
+        var filter = new BaronyLogFilterDTO
+        {
+            Categories = _categories.ToHashSet(),
+            Actor = _actor,
+            Search = _search,
+            ImportantOnly = _importantOnly,
+        };
+        _entriesByTurn[turnNumber] = (await _logService.GetEntries(BaronyId, turnNumber, filter)).ToList();
+    }
+
+    private async Task OnTurnExpanded(int turnNumber, bool expanded)
+    {
+        if (!expanded || _entriesByTurn.ContainsKey(turnNumber))
+            return;
+        await LoadEntriesAsync(turnNumber);
+        StateHasChanged();
+    }
+
+    private async Task ReloadLoadedTurnsAsync()
+    {
+        foreach (var turnNumber in _entriesByTurn.Keys.ToList())
+            await LoadEntriesAsync(turnNumber);
+        StateHasChanged();
+    }
+
+    private async Task OnCategoriesChanged(IEnumerable<string> values)
+    {
+        _categories = values?.ToHashSet() ?? new HashSet<string>();
+        await ReloadLoadedTurnsAsync();
+    }
+
+    private async Task OnActorChanged(string? value)
+    {
+        _actor = value;
+        await ReloadLoadedTurnsAsync();
+    }
+
+    private async Task OnSearchChanged(string? value)
+    {
+        _search = value;
+        await ReloadLoadedTurnsAsync();
+    }
+
+    private async Task OnImportantOnlyChanged(bool value)
+    {
+        _importantOnly = value;
+        await ReloadLoadedTurnsAsync();
+    }
+
+    private async Task DeleteEntryAsync(BaronyLogEntryDTO entry)
+    {
+        var confirmed = await _dialogService.ShowMessageBoxAsync(
+            L["Delete entry?"],
+            L["This chronicle entry will be removed permanently."],
+            yesText: L["Delete"],
+            cancelText: L["Cancel"]);
+        if (confirmed != true)
+            return;
+
+        await _logService.Delete(entry.Id);
+        _turns = (await _logService.GetTurns(BaronyId)).ToList();
+        await ReloadLoadedTurnsAsync();
+    }
+
+    private static string SeasonLabel(string? season) =>
+        string.IsNullOrWhiteSpace(season) ? "Spring" : season;
+
+    private static Color CategoryColor(string category) => category switch
+    {
+        BaronyLogCategory.TurnResolve => Color.Warning,
+        BaronyLogCategory.Battle => Color.Error,
+        BaronyLogCategory.Army => Color.Error,
+        BaronyLogCategory.Resources => Color.Success,
+        BaronyLogCategory.Projects => Color.Info,
+        BaronyLogCategory.Events => Color.Secondary,
+        BaronyLogCategory.Relations => Color.Tertiary,
+        BaronyLogCategory.Trade => Color.Success,
+        BaronyLogCategory.Court => Color.Primary,
+        BaronyLogCategory.BaronTime => Color.Primary,
+        _ => Color.Default,
+    };
+}

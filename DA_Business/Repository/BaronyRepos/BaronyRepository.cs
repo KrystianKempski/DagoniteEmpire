@@ -25,16 +25,19 @@ namespace DA_Business.Repository.BaronyRepos
         private readonly IDbContextFactory<ApplicationDbContext> _db;
         private readonly ICharacterRepository _characters;
         private readonly IGameNotificationQueue _notifications;
+        private readonly IBaronyLogService _log;
         private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
         public BaronyRepository(
             IDbContextFactory<ApplicationDbContext> db,
             ICharacterRepository characters,
-            IGameNotificationQueue notifications)
+            IGameNotificationQueue notifications,
+            IBaronyLogService log)
         {
             _db = db;
             _characters = characters;
             _notifications = notifications;
+            _log = log;
         }
 
         // ---------------- JSON helpers ----------------
@@ -62,6 +65,32 @@ namespace DA_Business.Repository.BaronyRepos
 
         private static RepositoryErrorException Err(System.Exception ex, string method) =>
             new RepositoryErrorException("Error in " + method + ": " + ex.Message, ex);
+
+        // ---------------- Chronicle helpers ----------------
+        private Task Chronicle(
+            int baronyId,
+            string category,
+            string summary,
+            string? entityType = null,
+            int? entityId = null,
+            bool important = false) =>
+            baronyId > 0
+                ? _log.Log(baronyId, category, summary, entityType: entityType, entityId: entityId, important: important)
+                : Task.CompletedTask;
+
+        private static int BaronyIdOf(object entity) =>
+            entity.GetType().GetProperty("BaronyId")?.GetValue(entity) as int? ?? 0;
+
+        private static string NameOf(object entity)
+        {
+            var type = entity.GetType();
+            foreach (var candidate in new[] { "Name", "Title", "Source", "Group", "PersonName" })
+            {
+                if (type.GetProperty(candidate)?.GetValue(entity) is string { Length: > 0 } value)
+                    return value;
+            }
+            return "#" + (type.GetProperty("Id")?.GetValue(entity) as int? ?? 0);
+        }
 
         // ---------------- Barony ----------------
         public async Task<BaronyDTO?> GetByCharacterId(int characterId)
@@ -250,6 +279,9 @@ namespace DA_Business.Repository.BaronyRepos
                 var e = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == baronyId)
                     ?? throw new InvalidOperationException("Barony not found.");
                 e.PlayerTurnReady = ready;
+                await _log.Attach(
+                    ctx, e, BaronyLogCategory.TurnResolve,
+                    ready ? "Baron ended the turn and awaits the resolve." : "Baron withdrew the end-of-turn declaration.");
                 await ctx.SaveChangesAsync();
                 return ToDTO(e);
             }
@@ -267,6 +299,9 @@ namespace DA_Business.Repository.BaronyRepos
                 var e = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == baronyId)
                     ?? throw new InvalidOperationException("Barony not found.");
                 e.TurnResolving = resolving;
+                await _log.Attach(
+                    ctx, e, BaronyLogCategory.TurnResolve,
+                    resolving ? "Game Master opened the turn write-up window." : "Game Master finished resolving the turn.");
                 await ctx.SaveChangesAsync();
                 return ToDTO(e);
             }
@@ -302,6 +337,9 @@ namespace DA_Business.Repository.BaronyRepos
                 var e = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == baronyId)
                     ?? throw new InvalidOperationException("Barony not found.");
                 e.AvailableTradeGoodsJson = JsonSerializer.Serialize(normalized, JsonOptions);
+                await _log.Attach(
+                    ctx, e, BaronyLogCategory.Trade,
+                    $"Trade goods override set ({normalized.Count} good(s)).");
                 await ctx.SaveChangesAsync();
             }
             catch (System.Exception ex) when (ex is not InvalidOperationException)
@@ -451,7 +489,11 @@ namespace DA_Business.Repository.BaronyRepos
                 using var ctx = await _db.CreateDbContextAsync();
                 var e = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == baronyId)
                     ?? throw new InvalidOperationException("Barony not found.");
+                var previous = ParseTradeTreaties(e.TradeTreatiesJson).Count;
                 e.TradeTreatiesJson = JsonSerializer.Serialize(normalized, JsonOptions);
+                await _log.Attach(
+                    ctx, e, BaronyLogCategory.Trade,
+                    $"Trade treaties updated: {previous} → {normalized.Count}.");
                 await ctx.SaveChangesAsync();
             }
             catch (System.Exception ex) when (ex is not InvalidOperationException)
@@ -490,6 +532,11 @@ namespace DA_Business.Repository.BaronyRepos
                 var e = await ctx.Baronies.FirstOrDefaultAsync(b => b.Id == baronyId)
                     ?? throw new InvalidOperationException("Barony not found.");
                 e.BlockedTradeLordKeysJson = JsonSerializer.Serialize(normalized, JsonOptions);
+                await _log.Attach(
+                    ctx, e, BaronyLogCategory.Trade,
+                    normalized.Count > 0
+                        ? $"Trade blockades set against {normalized.Count} lord(s)."
+                        : "All trade blockades lifted.");
                 await ctx.SaveChangesAsync();
             }
             catch (System.Exception ex) when (ex is not InvalidOperationException)
@@ -879,6 +926,10 @@ namespace DA_Business.Repository.BaronyRepos
                     UnrestBefore = barony.Unrest,
                 };
 
+                var endingYear = barony.Year;
+                var endingMonth = barony.Month;
+                var endingSeason = barony.Season ?? string.Empty;
+
                 // 1) Rebuild Resource Balance for the new turn:
                 //    snapshot opening stock → wipe all ledger sources → apply income → (projects add grants).
                 var income = ResourceCatalog.Slice(expectedIncome);
@@ -1144,8 +1195,18 @@ namespace DA_Business.Repository.BaronyRepos
                 barony.PlayerTurnReady = false;
                 barony.TurnResolving = true;
 
-                await ctx.SaveChangesAsync();
                 report.SummaryText = BuildTurnSummary(report);
+
+                // The chronicle entry closes the ending turn, so it keeps that turn's stamp.
+                await _log.Attach(
+                    ctx, barony, BaronyLogCategory.TurnResolve,
+                    $"Turn {report.PreviousTurnNumber} resolved → turn {report.NewTurnNumber} ({report.NewSeason} {report.NewYear}).",
+                    details: report.SummaryText,
+                    important: true,
+                    stamp: new BaronyLogStamp(
+                        report.PreviousTurnNumber, endingYear, endingMonth, endingSeason));
+
+                await ctx.SaveChangesAsync();
 
                 // The Game Master resolves the turn, so it is the baron who needs to be told.
                 _notifications.Enqueue(new BaronyTurnResolved(baronyId, report.NewTurnNumber));
@@ -2187,6 +2248,9 @@ namespace DA_Business.Repository.BaronyRepos
                 };
                 ctx.AvailableAdvisors.Add(e);
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    baronyId, BaronyLogCategory.Court,
+                    $"Courtier attached from character sheet: {e.Name}.", nameof(AvailableAdvisor), e.Id);
                 return ToDTO(e);
             }
             catch (InvalidOperationException) { throw; }
@@ -2307,6 +2371,8 @@ namespace DA_Business.Repository.BaronyRepos
             {
                 using var ctx = await _db.CreateDbContextAsync();
                 var e = dto.Id > 0 ? await ctx.Advisors.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
+                var isNew = e is null;
+                var previousPerson = e?.PersonName ?? "";
                 if (e is null)
                 {
                     e = ToEntity(dto);
@@ -2317,12 +2383,21 @@ namespace DA_Business.Repository.BaronyRepos
                     ApplyAdvisor(e, dto);
                 }
                 await ctx.SaveChangesAsync();
+
+                var office = string.IsNullOrWhiteSpace(dto.Title) ? dto.OfficeType : dto.Title;
+                var summary = isNew
+                    ? $"Office created: {office}."
+                    : !string.Equals(previousPerson, e.PersonName, StringComparison.Ordinal)
+                        ? $"Office {office}: {(string.IsNullOrWhiteSpace(e.PersonName) ? "vacated" : "assigned to " + e.PersonName)}."
+                        : $"Office updated: {office}.";
+                await Chronicle(e.BaronyId, BaronyLogCategory.Court, summary, nameof(Advisor), e.Id);
                 return ToDTO(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SaveAdvisor)); }
         }
 
-        public Task<int> DeleteAdvisor(int id) => Delete(ctx => ctx.Advisors, id, nameof(DeleteAdvisor));
+        public Task<int> DeleteAdvisor(int id) =>
+            Delete(ctx => ctx.Advisors, id, nameof(DeleteAdvisor), BaronyLogCategory.Court, "Office");
 
         public async Task<AvailableAdvisorDTO> SaveAvailableAdvisor(AvailableAdvisorDTO dto)
         {
@@ -2439,6 +2514,10 @@ namespace DA_Business.Repository.BaronyRepos
                 await ctx.SaveChangesAsync();
                 await SyncDutyCaptainAssignmentAsync(ctx, person);
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    person.BaronyId, BaronyLogCategory.Court,
+                    $"Court duty of {person.Name}: {CourtDutyKind.Normalize(e.DutyKind)}"
+                    + $" (salary {e.SalaryGold:0.##} gold).", nameof(AvailableAdvisorDuty), e.Id);
                 return ToDutyDTO(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SaveCourtDuty)); }
@@ -2463,6 +2542,9 @@ namespace DA_Business.Repository.BaronyRepos
                 {
                     await SyncDutyCaptainAssignmentAsync(ctx, person);
                     await ctx.SaveChangesAsync();
+                    await Chronicle(
+                        person.BaronyId, BaronyLogCategory.Court,
+                        $"Court duty removed from {person.Name}.", nameof(AvailableAdvisorDuty), id);
                 }
                 return 1;
             }
@@ -2514,6 +2596,9 @@ namespace DA_Business.Repository.BaronyRepos
                     return 0;
                 ctx.AvailableAdvisors.Remove(entity);
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    entity.BaronyId, BaronyLogCategory.Court,
+                    $"Courtier dismissed: {entity.Name}.", nameof(AvailableAdvisor), id);
                 return 1;
             }
             catch (System.Exception ex) { throw Err(ex, nameof(DeleteAvailableAdvisor)); }
@@ -2529,15 +2614,20 @@ namespace DA_Business.Repository.BaronyRepos
             {
                 using var ctx = await _db.CreateDbContextAsync();
                 var e = dto.Id > 0 ? await ctx.BaronyBuildings.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
+                var isNew = e is null;
                 if (e is null) { e = ToEntity(dto); ctx.BaronyBuildings.Add(e); }
                 else { ApplyBuilding(e, dto); }
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    e.BaronyId, BaronyLogCategory.Projects,
+                    $"City building {(isNew ? "added" : "updated")}: {e.Name}.", nameof(BaronyBuilding), e.Id);
                 return ToDTO(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SaveBuilding)); }
         }
 
-        public Task<int> DeleteBuilding(int id) => Delete(ctx => ctx.BaronyBuildings, id, nameof(DeleteBuilding));
+        public Task<int> DeleteBuilding(int id) =>
+            Delete(ctx => ctx.BaronyBuildings, id, nameof(DeleteBuilding), BaronyLogCategory.Projects, "City building");
 
         // ---------------- Social relations ----------------
         public async Task<List<SocialGroupRelationDTO>> GetSocialRelations(int baronyId) =>
@@ -2552,12 +2642,17 @@ namespace DA_Business.Repository.BaronyRepos
                 if (e is null) { e = ToEntity(dto); ctx.SocialGroupRelations.Add(e); }
                 else { ApplySocial(e, dto); }
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    e.BaronyId, BaronyLogCategory.Relations,
+                    $"Social group {e.Group}: relation {e.RelationLevel}, tax {e.TaxPercent?.ToString() ?? "-"}%.",
+                    nameof(SocialGroupRelation), e.Id);
                 return ToDTO(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SaveSocialRelation)); }
         }
 
-        public Task<int> DeleteSocialRelation(int id) => Delete(ctx => ctx.SocialGroupRelations, id, nameof(DeleteSocialRelation));
+        public Task<int> DeleteSocialRelation(int id) =>
+            Delete(ctx => ctx.SocialGroupRelations, id, nameof(DeleteSocialRelation), BaronyLogCategory.Relations, "Social group");
 
         // ---------------- Decrees ----------------
         public async Task<List<DecreeDTO>> GetDecrees(int baronyId) =>
@@ -2586,6 +2681,9 @@ namespace DA_Business.Repository.BaronyRepos
                 }
                 PermanentDecreesSeeder.ApplyMutualExclusivity(ctx, e);
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    e.BaronyId, BaronyLogCategory.Court,
+                    $"Decree {e.Name}: {(e.IsActive ? "in force" : "suspended")}.", nameof(Decree), e.Id);
                 return ToDTO(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SaveDecree)); }
@@ -2603,6 +2701,7 @@ namespace DA_Business.Repository.BaronyRepos
                     throw new RepositoryErrorException(Loc.T("This decree is permanent and cannot be removed."));
                 ctx.Decrees.Remove(e);
                 await ctx.SaveChangesAsync();
+                await Chronicle(e.BaronyId, BaronyLogCategory.Court, $"Decree revoked: {e.Name}.", nameof(Decree), id);
                 return 1;
             }
             catch (RepositoryErrorException) { throw; }
@@ -2619,15 +2718,21 @@ namespace DA_Business.Repository.BaronyRepos
             {
                 using var ctx = await _db.CreateDbContextAsync();
                 var e = dto.Id > 0 ? await ctx.BaronyEvents.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
+                var isNew = e is null;
                 if (e is null) { e = ToEntity(dto); ctx.BaronyEvents.Add(e); }
                 else { ApplyEvent(e, dto); }
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    e.BaronyId, BaronyLogCategory.Events,
+                    $"Event {(isNew ? "added" : "updated")}: {e.Name} (turns {dto.TurnRangeLabel}).",
+                    nameof(BaronyEvent), e.Id, important: isNew);
                 return ToDTO(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SaveEvent)); }
         }
 
-        public Task<int> DeleteEvent(int id) => Delete(ctx => ctx.BaronyEvents, id, nameof(DeleteEvent));
+        public Task<int> DeleteEvent(int id) =>
+            Delete(ctx => ctx.BaronyEvents, id, nameof(DeleteEvent), BaronyLogCategory.Events, "Event");
 
         // ---------------- Relations ----------------
         public async Task<List<BaronyRelationDTO>> GetRelations(int baronyId)
@@ -2656,10 +2761,12 @@ namespace DA_Business.Repository.BaronyRepos
             {
                 using var ctx = await _db.CreateDbContextAsync();
                 BaronyRelation e;
+                int? previousAttitude = null;
                 if (dto.Id > 0)
                 {
                     e = await ctx.BaronyRelations.Include(x => x.Modifiers).FirstOrDefaultAsync(x => x.Id == dto.Id)
                         ?? throw new InvalidOperationException($"Relation {dto.Id} not found.");
+                    previousAttitude = ToDTO(e).Attitude;
                     ApplyRelation(e, dto);
                     ctx.BaronyRelationModifiers.RemoveRange(e.Modifiers);
                     e.Modifiers.Clear();
@@ -2682,6 +2789,12 @@ namespace DA_Business.Repository.BaronyRepos
                 }
 
                 await ctx.SaveChangesAsync();
+                var summary = previousAttitude is int before && before != dto.Attitude
+                    ? $"Relation with {e.Name}: attitude {before} → {dto.Attitude}."
+                    : previousAttitude is null
+                        ? $"New relation: {e.Name} ({dto.Attitude})."
+                        : $"Relation updated: {e.Name}.";
+                await Chronicle(e.BaronyId, BaronyLogCategory.Relations, summary, nameof(BaronyRelation), e.Id);
                 return ToDTO(e);
             }
             catch (System.Exception ex) when (ex is not InvalidOperationException)
@@ -2691,7 +2804,7 @@ namespace DA_Business.Repository.BaronyRepos
         }
 
         public Task<int> DeleteRelation(int id) =>
-            Delete(ctx => ctx.BaronyRelations, id, nameof(DeleteRelation));
+            Delete(ctx => ctx.BaronyRelations, id, nameof(DeleteRelation), BaronyLogCategory.Relations, "Relation");
 
         public async Task SaveRelationNotes(int relationId, string? notes)
         {
@@ -3198,16 +3311,21 @@ namespace DA_Business.Repository.BaronyRepos
             {
                 using var ctx = await _db.CreateDbContextAsync();
                 var e = dto.Id > 0 ? await ctx.BaronArtifacts.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
+                var isNew = e is null;
                 if (e is null) { e = ToEntity(dto); ctx.BaronArtifacts.Add(e); }
                 else { ApplyBaronArtifact(e, dto); }
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    e.BaronyId, BaronyLogCategory.Resources,
+                    $"Baron artifact {(isNew ? "gained" : "updated")}: {e.Name}.", nameof(BaronArtifact), e.Id);
                 return ToDTO(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SaveBaronArtifact)); }
         }
 
         public Task<int> DeleteBaronArtifact(int id) =>
-            Delete(ctx => ctx.BaronArtifacts, id, nameof(DeleteBaronArtifact));
+            Delete(ctx => ctx.BaronArtifacts, id, nameof(DeleteBaronArtifact),
+                BaronyLogCategory.Resources, "Baron artifact");
 
         // ---------------- Baron time (BT) ----------------
         public async Task EnsureBaronTimeDefaults(int baronyId)
@@ -3251,16 +3369,22 @@ namespace DA_Business.Repository.BaronyRepos
             {
                 using var ctx = await _db.CreateDbContextAsync();
                 var e = dto.Id > 0 ? await ctx.BaronTimeModifiers.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
+                var isNew = e is null;
                 if (e is null) { e = ToEntity(dto); ctx.BaronTimeModifiers.Add(e); }
                 else { ApplyBaronTimeModifier(e, dto); }
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    e.BaronyId, BaronyLogCategory.BaronTime,
+                    $"Baron's time modifier {(isNew ? "added" : "updated")}: {e.Source} ({e.Percent:+0.##;-0.##}%).",
+                    nameof(BaronTimeModifier), e.Id);
                 return ToDTO(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SaveBaronTimeModifier)); }
         }
 
         public Task<int> DeleteBaronTimeModifier(int id) =>
-            Delete(ctx => ctx.BaronTimeModifiers, id, nameof(DeleteBaronTimeModifier));
+            Delete(ctx => ctx.BaronTimeModifiers, id, nameof(DeleteBaronTimeModifier),
+                BaronyLogCategory.BaronTime, "Baron's time modifier");
 
         public async Task<List<BaronTimeActionDTO>> GetBaronTimeActions(int baronyId) =>
             await GetList(ctx => ctx.BaronTimeActions, baronyId, ToDTO, nameof(GetBaronTimeActions));
@@ -3271,9 +3395,14 @@ namespace DA_Business.Repository.BaronyRepos
             {
                 using var ctx = await _db.CreateDbContextAsync();
                 var e = dto.Id > 0 ? await ctx.BaronTimeActions.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
+                var isNew = e is null;
                 if (e is null) { e = ToEntity(dto); ctx.BaronTimeActions.Add(e); }
                 else { ApplyBaronTimeAction(e, dto); }
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    e.BaronyId, BaronyLogCategory.BaronTime,
+                    $"Baron's time {(isNew ? "spent on" : "updated")}: {e.Name} ({e.CostJc} BT).",
+                    nameof(BaronTimeAction), e.Id);
                 return ToDTO(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SaveBaronTimeAction)); }
@@ -3290,6 +3419,9 @@ namespace DA_Business.Repository.BaronyRepos
                     throw new InvalidOperationException("Cannot delete the system Barony management action.");
                 ctx.BaronTimeActions.Remove(e);
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    e.BaronyId, BaronyLogCategory.BaronTime,
+                    $"Baron's time freed: {e.Name} ({e.CostJc} BT).", nameof(BaronTimeAction), id);
                 return id;
             }
             catch (System.Exception ex) { throw Err(ex, nameof(DeleteBaronTimeAction)); }
@@ -3892,6 +4024,14 @@ namespace DA_Business.Repository.BaronyRepos
                 }
 
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    e.BaronyId, BaronyLogCategory.Events,
+                    dto.Id > 0
+                        ? $"Hall event updated: {e.Title}."
+                        : scheduleForNextTurn
+                            ? $"Hall event scheduled for turn {e.TurnNumber}: {e.Title}."
+                            : $"Hall event published: {e.Title}.",
+                    nameof(BaronyHallEvent), e.Id, important: dto.Id <= 0);
                 return ToHallEventDto(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SaveHallEvent)); }
@@ -3991,6 +4131,10 @@ namespace DA_Business.Repository.BaronyRepos
                 }
 
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    e.BaronyId, BaronyLogCategory.Events,
+                    $"Baron answered hall event: {e.Title} — moved to audiences.",
+                    nameof(BaronyHallEvent), e.Id, important: true);
 
                 var audienceDto = await LoadAudienceDtoAsync(ctx, audience.Id);
                 return new HallEventAcknowledgeResultDTO
@@ -4012,6 +4156,9 @@ namespace DA_Business.Repository.BaronyRepos
                 e.Status = BaronyHallEventStatus.Archived;
                 e.UpdatedAtUtc = DateTime.UtcNow;
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    e.BaronyId, BaronyLogCategory.Events,
+                    $"Hall event archived: {e.Title}.", nameof(BaronyHallEvent), e.Id);
                 return ToHallEventDto(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(ArchiveHallEvent)); }
@@ -4042,6 +4189,9 @@ namespace DA_Business.Repository.BaronyRepos
                     return 0;
                 ctx.BaronyHallEvents.Remove(e);
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    e.BaronyId, BaronyLogCategory.Events,
+                    $"Hall event removed: {e.Title}.", nameof(BaronyHallEvent), id);
                 return 1;
             }
             catch (System.Exception ex) { throw Err(ex, nameof(DeleteHallEvent)); }
@@ -4799,12 +4949,21 @@ namespace DA_Business.Repository.BaronyRepos
                 }
 
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    e.BaronyId, BaronyLogCategory.Projects,
+                    becameCompleted
+                        ? $"Project completed by the Game Master: {e.Name}."
+                        : dto.Id > 0
+                            ? $"Project updated: {e.Name} ({e.Status})."
+                            : $"Project created: {e.Name} ({e.Status}).",
+                    nameof(BaronyProject), e.Id, important: becameCompleted);
                 return ToDTO(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SaveProject)); }
         }
 
-        public Task<int> DeleteProject(int id) => Delete(ctx => ctx.BaronyProjects, id, nameof(DeleteProject));
+        public Task<int> DeleteProject(int id) =>
+            Delete(ctx => ctx.BaronyProjects, id, nameof(DeleteProject), BaronyLogCategory.Projects, "Project");
 
         public async Task<BaronyProjectDTO> SettleBuyProduction(
             int baronyId,
@@ -5207,6 +5366,8 @@ namespace DA_Business.Repository.BaronyRepos
                 var e = dto.Id > 0
                     ? await ctx.BaronyUnits.FirstOrDefaultAsync(x => x.Id == dto.Id)
                     : null;
+                var isNewUnit = e is null;
+                var previousTroops = e?.TroopCount ?? 0;
                 if (e is null)
                 {
                     e = ToUnitEntity(dto);
@@ -5226,6 +5387,14 @@ namespace DA_Business.Repository.BaronyRepos
                 dto.CaptainIsBaron = e.CaptainIsBaron;
                 await SyncDutyFromUnitCaptainAsync(ctx, dto);
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    e.BaronyId, BaronyLogCategory.Army,
+                    isNewUnit
+                        ? $"Unit added: {e.Name} ({e.TroopCount} troops)."
+                        : previousTroops != e.TroopCount
+                            ? $"Unit {e.Name}: troops {previousTroops} → {e.TroopCount}."
+                            : $"Unit updated: {e.Name}.",
+                    nameof(BaronyUnit), e.Id);
                 return ToUnitDTO(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SaveUnit)); }
@@ -5247,6 +5416,9 @@ namespace DA_Business.Repository.BaronyRepos
 
                 ctx.BaronyUnits.Remove(unit);
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    unit.BaronyId, BaronyLogCategory.Army,
+                    $"Unit disbanded: {unit.Name}.", nameof(BaronyUnit), id, important: true);
                 return 1;
             }
             catch (System.Exception ex) { throw Err(ex, nameof(DeleteUnit)); }
@@ -5294,6 +5466,9 @@ namespace DA_Business.Repository.BaronyRepos
                 }
 
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    unit.BaronyId, BaronyLogCategory.Army,
+                    $"Unit activated: {unit.Name}.", nameof(BaronyUnit), unit.Id);
 
                 var dto = ToUnitDTO(unit);
                 if (openProjects.Count > 0)
@@ -5496,6 +5671,10 @@ namespace DA_Business.Repository.BaronyRepos
 
                 ctx.BaronyProjects.Add(project);
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    request.BaronyId, BaronyLogCategory.Army,
+                    $"Recruitment started: {unit.Name} ({recruit.Name}, {training.Name}).",
+                    nameof(BaronyUnit), unit.Id, important: true);
 
                 return new StartUnitTrainingResult
                 {
@@ -5617,6 +5796,10 @@ namespace DA_Business.Repository.BaronyRepos
 
                 ctx.BaronyProjects.Add(project);
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    request.BaronyId, BaronyLogCategory.Army,
+                    $"Reinforcement started: {unit.Name} (+{costs.TroopCount} troops).",
+                    nameof(BaronyUnit), unit.Id);
 
                 return new StartUnitReinforceResult
                 {
@@ -5757,6 +5940,10 @@ namespace DA_Business.Repository.BaronyRepos
 
                 ctx.BaronyProjects.Add(project);
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    request.BaronyId, BaronyLogCategory.Army,
+                    $"Re-equipment started: {unit.Name} ({gearSummary}).",
+                    nameof(BaronyUnit), unit.Id);
 
                 return new StartUnitChangeEquipmentResult
                 {
@@ -5789,6 +5976,9 @@ namespace DA_Business.Repository.BaronyRepos
                 dto.SelectedCostMode = mode;
                 ApplyProject(project, dto);
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    project.BaronyId, BaronyLogCategory.Projects,
+                    $"Project {project.Name}: payment method set to {mode}.", nameof(BaronyProject), project.Id);
                 return ToDTO(project);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SetProjectCostMode)); }
@@ -5861,6 +6051,15 @@ namespace DA_Business.Repository.BaronyRepos
                 barony.FoodInGranaries = stocks[Ppb.Food];
                 barony.TreasuryGold = stocks[Ppb.Treasury];
 
+                var funded = string.Join(", ", ResourceCatalog.All
+                    .Where(i => toAdd[i.Key] > 0m)
+                    .Select(i => $"{i.NameEn} {PpbFormat.Number(toAdd[i.Key])}"));
+                await _log.Attach(
+                    ctx, barony, BaronyLogCategory.Projects,
+                    $"Project {project.Name} funded: {funded}"
+                    + (dto.HasRemainingCost ? "." : " — fully funded, work begins."),
+                    entityType: nameof(BaronyProject), entityId: project.Id);
+
                 await ctx.SaveChangesAsync();
                 return ToDTO(project);
             }
@@ -5910,6 +6109,11 @@ namespace DA_Business.Repository.BaronyRepos
                 barony.FoodInGranaries = stocks[Ppb.Food];
                 barony.TreasuryGold = stocks[Ppb.Treasury];
 
+                await _log.Attach(
+                    ctx, barony, BaronyLogCategory.Projects,
+                    $"Project {project.Name}: allocated resources returned to stock.",
+                    entityType: nameof(BaronyProject), entityId: project.Id);
+
                 await ctx.SaveChangesAsync();
                 return ToDTO(project);
             }
@@ -5929,16 +6133,22 @@ namespace DA_Business.Repository.BaronyRepos
             {
                 using var ctx = await _db.CreateDbContextAsync();
                 var e = dto.Id > 0 ? await ctx.BaronyResourceSources.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
+                var isNew = e is null;
                 if (e is null) { e = ToEntity(dto); ctx.BaronyResourceSources.Add(e); }
                 else { ApplyResourceSource(e, dto); }
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    e.BaronyId, BaronyLogCategory.Resources,
+                    $"Resource entry {(isNew ? "added" : "updated")}: {e.Name}.",
+                    nameof(BaronyResourceSource), e.Id);
                 return ToDTO(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SaveResourceSource)); }
         }
 
         public Task<int> DeleteResourceSource(int id) =>
-            Delete(ctx => ctx.BaronyResourceSources, id, nameof(DeleteResourceSource));
+            Delete(ctx => ctx.BaronyResourceSources, id, nameof(DeleteResourceSource),
+                BaronyLogCategory.Resources, "Resource entry");
 
         // ---------------- Baron purse sources ----------------
         public async Task<List<BaronPurseSourceDTO>> GetPurseSources(int baronyId) =>
@@ -5950,16 +6160,22 @@ namespace DA_Business.Repository.BaronyRepos
             {
                 using var ctx = await _db.CreateDbContextAsync();
                 var e = dto.Id > 0 ? await ctx.BaronPurseSources.FirstOrDefaultAsync(x => x.Id == dto.Id) : null;
+                var isNew = e is null;
                 if (e is null) { e = ToEntity(dto); ctx.BaronPurseSources.Add(e); }
                 else { ApplyPurseSource(e, dto); }
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    e.BaronyId, BaronyLogCategory.Resources,
+                    $"Baron's purse entry {(isNew ? "added" : "updated")}: {e.Name} ({e.Amount:+0.##;-0.##} gold).",
+                    nameof(BaronPurseSource), e.Id);
                 return ToDTO(e);
             }
             catch (System.Exception ex) { throw Err(ex, nameof(SavePurseSource)); }
         }
 
         public Task<int> DeletePurseSource(int id) =>
-            Delete(ctx => ctx.BaronPurseSources, id, nameof(DeletePurseSource));
+            Delete(ctx => ctx.BaronPurseSources, id, nameof(DeletePurseSource),
+                BaronyLogCategory.Resources, "Baron's purse entry");
 
         // ---------------- Debts and loans ----------------
         public async Task<List<BaronyDebtDTO>> GetDebts(int baronyId) =>
@@ -6019,6 +6235,14 @@ namespace DA_Business.Repository.BaronyRepos
                     ApplyDebt(e!, dto);
                 }
 
+                await _log.Attach(
+                    ctx, barony, BaronyLogCategory.Resources,
+                    isNew
+                        ? $"{(DebtDirection.IsTaken(dto.Direction) ? "Loan taken from" : "Loan granted to")} "
+                          + $"{dto.CounterpartyName.Trim()}: {PpbFormat.Number(dto.Principal)} gold."
+                        : $"Loan updated: {dto.CounterpartyName.Trim()}.",
+                    entityType: nameof(BaronyDebt), important: isNew);
+
                 await ctx.SaveChangesAsync();
                 return ToDTO(e!);
             }
@@ -6040,6 +6264,10 @@ namespace DA_Business.Repository.BaronyRepos
 
                 e.PaymentPerTurn = PpbFormat.Round(Math.Max(0m, paymentPerTurn));
                 await ctx.SaveChangesAsync();
+                await Chronicle(
+                    e.BaronyId, BaronyLogCategory.Resources,
+                    $"Loan ({e.CounterpartyName}): payment per turn set to {PpbFormat.Number(e.PaymentPerTurn)} gold.",
+                    nameof(BaronyDebt), e.Id);
                 return ToDTO(e);
             }
             catch (System.Exception ex) when (ex is not InvalidOperationException)
@@ -6094,6 +6322,11 @@ namespace DA_Business.Repository.BaronyRepos
                 }
 
                 SyncBaronyTreasuryStock(barony);
+                await _log.Attach(
+                    ctx, barony, BaronyLogCategory.Resources,
+                    $"Early loan payment ({e.CounterpartyName}): {PpbFormat.Number(payment)} gold"
+                    + (e.IsActive ? $", {PpbFormat.Number(e.PrincipalRemaining)} left." : " — loan settled."),
+                    entityType: nameof(BaronyDebt), entityId: e.Id);
                 await ctx.SaveChangesAsync();
                 return ToDTO(e);
             }
@@ -6272,7 +6505,9 @@ namespace DA_Business.Repository.BaronyRepos
         private async Task<int> Delete<TEntity>(
             Func<ApplicationDbContext, DbSet<TEntity>> set,
             int id,
-            string method) where TEntity : class
+            string method,
+            string? logCategory = null,
+            string? logNoun = null) where TEntity : class
         {
             try
             {
@@ -6281,8 +6516,17 @@ namespace DA_Business.Repository.BaronyRepos
                 var e = await dbSet.FindAsync(id);
                 if (e is null)
                     return 0;
+                var baronyId = logCategory is null ? 0 : BaronyIdOf(e);
+                var name = logCategory is null ? "" : NameOf(e);
                 dbSet.Remove(e);
-                return await ctx.SaveChangesAsync();
+                var affected = await ctx.SaveChangesAsync();
+                if (logCategory is not null)
+                {
+                    await Chronicle(
+                        baronyId, logCategory, $"{logNoun ?? typeof(TEntity).Name} removed: {name}",
+                        typeof(TEntity).Name, id);
+                }
+                return affected;
             }
             catch (System.Exception ex) { throw Err(ex, method); }
         }

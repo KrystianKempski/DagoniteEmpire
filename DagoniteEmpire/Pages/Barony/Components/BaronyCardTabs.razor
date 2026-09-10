@@ -82,6 +82,7 @@
         new("known-lords", "Lords", "/barony/known-lords", SvgIcon: "/" + MyIcon.VerticalBanner),
         new("buildings", "Buildings", "/barony/buildings", SvgIcon: "/" + MyIcon.WoodCabinBlack),
         new("notes", "Notes", "/barony/notes", SvgIcon: "/" + MyIcon.Quill),
+        new("log", "Chronicle", "/barony/log", Icons.Material.Filled.History),
     };
 
     private List<TabItem> _orderedTabs = DefaultTabs.ToList();
@@ -275,6 +276,7 @@
     private IEnumerable<TabItem> VisibleDefaultTabs =>
         DefaultTabs.Where(t => (t.Key != "battle-map" || _showBattleMapTab)
                                && (t.Key != "notes" || _showNotesTab)
+                               && (t.Key != "log" || _isMg)
                                && (t.Key != "audience-hall" || _showAudienceHallTab));
 
     private async Task LoadOrderAsync()

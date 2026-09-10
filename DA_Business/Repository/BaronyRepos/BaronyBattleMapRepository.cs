@@ -1,5 +1,6 @@
 using DA_Business.Repository.CharacterReps.IRepository;
 using DA_Business.Services.Interfaces;
+using DA_Common.Barony;
 using DA_Common.Notifications;
 using DA_DataAccess.BaronyData;
 using DA_DataAccess.Data;
@@ -19,14 +20,17 @@ namespace DA_Business.Repository.BaronyRepos
 
         private readonly IDbContextFactory<ApplicationDbContext> _db;
         private readonly IGameNotificationQueue _notifications;
+        private readonly IBaronyLogService _log;
         private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
         public BaronyBattleMapRepository(
             IDbContextFactory<ApplicationDbContext> db,
-            IGameNotificationQueue notifications)
+            IGameNotificationQueue notifications,
+            IBaronyLogService log)
         {
             _db = db;
             _notifications = notifications;
+            _log = log;
         }
 
         public async Task<BaronyBattleMapDTO> GetOrCreate(int baronyId)
@@ -79,6 +83,7 @@ namespace DA_Business.Repository.BaronyRepos
                 // saves that only move tokens around.
                 var previousPhase = obj.Phase;
                 var previousTurnState = DeserializeTurnState(obj.TurnStateJson);
+                var previousActive = obj.IsActive;
 
                 obj.IsActive = dto.IsActive;
                 obj.Phase = string.IsNullOrWhiteSpace(dto.Phase) ? BaronyBattlePhases.Setup : dto.Phase;
@@ -93,6 +98,7 @@ namespace DA_Business.Repository.BaronyRepos
                 obj.XpSummaryJson = JsonSerializer.Serialize(dto.XpSummary, JsonOptions);
                 await ctx.SaveChangesAsync();
 
+                await ChronicleBattleMilestones(obj.BaronyId, dto, previousActive, previousPhase, previousTurnState);
                 NotifyIfTurnAdvanced(dto, previousPhase, previousTurnState);
 
                 return ToDTO(obj);
@@ -101,6 +107,42 @@ namespace DA_Business.Repository.BaronyRepos
             {
                 throw new RepositoryErrorException("Error in " + nameof(Update) + ": " + ex.Message, ex);
             }
+        }
+
+        /// <summary>
+        /// Only battle milestones reach the chronicle. Every token drag saves the whole map, so
+        /// logging each save would bury the turn in noise.
+        /// </summary>
+        private async Task ChronicleBattleMilestones(
+            int baronyId,
+            BaronyBattleMapDTO dto,
+            bool previousActive,
+            string? previousPhase,
+            BaronyBattleTurnStateDTO? previousTurnState)
+        {
+            if (previousActive != dto.IsActive)
+            {
+                await _log.Log(
+                    baronyId, BaronyLogCategory.Battle,
+                    dto.IsActive ? "Battle started." : "Battle ended.",
+                    important: true);
+                return;
+            }
+
+            if (!dto.IsActive)
+                return;
+
+            if (!string.Equals(previousPhase, dto.Phase, StringComparison.Ordinal))
+            {
+                await _log.Log(
+                    baronyId, BaronyLogCategory.Battle,
+                    $"Battle phase: {previousPhase} → {dto.Phase}.");
+                return;
+            }
+
+            var round = dto.TurnState?.Round ?? 0;
+            if (round > 0 && round != (previousTurnState?.Round ?? 0))
+                await _log.Log(baronyId, BaronyLogCategory.Battle, $"Battle round {round} begins.");
         }
 
         private static BaronyBattleTurnStateDTO? DeserializeTurnState(string? json)

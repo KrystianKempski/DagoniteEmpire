@@ -1,4 +1,5 @@
 using DA_Business.Repository.BaronyRepos;
+using DA_Business.Services;
 using DA_Business.Tests.Fixtures;
 using DA_Business.Tests.Helpers;
 using DA_Common.Notifications;
@@ -20,7 +21,7 @@ public class BattleTurnNotificationTests : IClassFixture<DatabaseFixture>
     {
         _fixture = fixture;
         _fixture.ResetDatabase();
-        _repository = new BaronyBattleMapRepository(_fixture.DbContextFactory, _queue);
+        _repository = new BaronyBattleMapRepository(_fixture.DbContextFactory, _queue, new NullBaronyLogService());
     }
 
     [Fact]
