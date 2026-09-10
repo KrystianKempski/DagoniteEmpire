@@ -43,10 +43,11 @@
 
     if (window.QuillFunctions && window.QuillFunctions.loadQuillHTMLContent) {
         // Keep Blazored's innerHTML loader — clipboard.convert/setContents breaks typing and blockquotes.
+        // Throw when Quill is not ready so NotesPage can retry instead of autosaving an empty editor.
         window.QuillFunctions.loadQuillHTMLContent = function (quillElement, quillHTMLContent) {
             var quill = quillElement && quillElement.__quill;
             if (!quill) {
-                return;
+                throw new Error('Quill instance is not ready');
             }
 
             quill.root.innerHTML = quillHTMLContent || '';

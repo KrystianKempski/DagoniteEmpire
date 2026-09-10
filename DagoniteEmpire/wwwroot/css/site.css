@@ -182,3 +182,32 @@ char-title {
     max-width: 100% !important;
     padding: 8px 4px !important;
 }
+
+/* Character switcher (AppBar avatar menu) — MudBlazor 9.4 portals the menu and wraps
+   the list in [data-testid=menu-wrapper], which breaks automatic viewport scroll.
+   Keep Notifications / Log out reachable on long GM character lists. */
+.mud-popover.character-switcher-popover {
+    --character-switcher-max-h: min(70dvh, calc(100dvh - 4.5rem - env(safe-area-inset-bottom, 0px)));
+    max-height: var(--character-switcher-max-h) !important;
+    overflow: hidden !important;
+}
+
+.mud-popover.character-switcher-popover [data-testid="menu-wrapper"] {
+    display: flex;
+    flex-direction: column;
+    max-height: var(--character-switcher-max-h);
+    min-height: 0;
+    overflow: hidden;
+}
+
+.mud-popover.character-switcher-popover .character-switcher-list,
+.character-switcher-list.mud-menu-list {
+    flex: 1 1 auto;
+    min-width: 12.5rem;
+    min-height: 0 !important;
+    max-height: var(--character-switcher-max-h, min(70dvh, calc(100dvh - 4.5rem))) !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+}

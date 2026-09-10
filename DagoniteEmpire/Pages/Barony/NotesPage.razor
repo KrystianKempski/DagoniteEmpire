@@ -293,6 +293,7 @@ else if (Barony is not null)
     private string NoteScope => IsGmScope ? BaronyPlayerNoteOwnerScope.Gm : BaronyPlayerNoteOwnerScope.Player;
 
     private bool _shouldLoadEditor;
+    private bool _editorContentVerified;
     private int _loadAttempts;
     private int _editorEpoch;
     private const int MaxLoadAttempts = 12;
@@ -413,10 +414,22 @@ else if (Barony is not null)
             }
 
             await _editor.LoadHTMLContent(initialHtml);
+
+            // Quill may not be ready yet (loadQuillHTMLContent used to no-op). Don't start
+            // autosave against an empty editor or blank HTML will overwrite the DB.
+            var loaded = await TryGetEditorHtmlAsync(_editor, null);
+            if (!IsBlankHtml(initialHtml) && IsBlankHtml(loaded))
+            {
+                await Task.Delay(50);
+                StateHasChanged();
+                return;
+            }
+
             _shouldLoadEditor = false;
+            _editorContentVerified = true;
 
             _lastSavedHtml = dbHtml;
-            _lastSeenHtml = initialHtml;
+            _lastSeenHtml = loaded ?? initialHtml;
             _isDirty = restored;
 
             StartAutoSaveLoop();
@@ -439,6 +452,7 @@ else if (Barony is not null)
         _editorEpoch++;
         _loadAttempts = 0;
         _shouldLoadEditor = true;
+        _editorContentVerified = false;
     }
 
     private async Task<BaronyPlayerNoteDTO> CreateThreadAsync(string title)
@@ -496,6 +510,10 @@ else if (Barony is not null)
         try
         {
             var html = await TryGetEditorHtmlAsync(_editor, _lastSavedHtml) ?? _lastSavedHtml;
+            // Before the editor is verified loaded, never persist blank over known content.
+            if (!_editorContentVerified && WouldWipeSavedContent(html, _lastSavedHtml))
+                html = _lastSavedHtml;
+
             _selected.Title = title;
             _selected.BodyHtml = html;
             var saved = await _notesRepo.Upsert(_selected);
@@ -740,6 +758,11 @@ else if (Barony is not null)
         if (html is null)
             return;
 
+        // Empty Quill during load/remount is not a real edit — never sync blank over content
+        // until LoadHTML has been verified. After that, intentional clears are allowed.
+        if (!_editorContentVerified && WouldWipeSavedContent(html, _lastSavedHtml))
+            return;
+
         if (html != _lastSeenHtml)
         {
             _lastSeenHtml = html;
@@ -779,8 +802,11 @@ else if (Barony is not null)
         if (_selected is null || _editor is null)
             return;
 
-        var html = await TryGetEditorHtmlAsync(_editor, null);
+        var html = await TryGetEditorHtmlAsync(_editor, _lastSavedHtml);
         if (html is null || html == _lastSavedHtml)
+            return;
+
+        if (!_editorContentVerified && WouldWipeSavedContent(html, _lastSavedHtml))
             return;
 
         _selected.BodyHtml = html;
@@ -857,10 +883,18 @@ else if (Barony is not null)
         return stripped.Length == 0;
     }
 
+    /// <summary>
+    /// True when <paramref name="candidate"/> is empty Quill HTML but we already have
+    /// non-blank saved content — typical during editor remount before LoadHTML finishes.
+    /// </summary>
+    private static bool WouldWipeSavedContent(string? candidate, string? saved) =>
+        IsBlankHtml(candidate) && !IsBlankHtml(saved);
+
     public async ValueTask DisposeAsync()
     {
         await StopAutoSaveAsync();
         // Final flush so nothing typed in the last second is lost on navigation.
+        // FlushCurrentAsync refuses blank-over-content, so a remount race cannot wipe notes.
         try { await FlushCurrentAsync(); }
         catch { }
     }
