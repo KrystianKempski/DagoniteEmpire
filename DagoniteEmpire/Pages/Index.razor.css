@@ -16,11 +16,13 @@ h1 {
 
 .hero-img {
     position: relative;
-    height: calc(100vh - 64px);
+    /* Fill .mud-main-content content box (parent is 100dvh minus app-bar padding). */
+    height: 100%;
     background-image: url('../images/EastMarchy_header.webp');
     background-size: cover;
     background-position: center;
-    background-attachment: fixed;
+    /* fixed is buggy on mobile and can leave a white strip; scroll is fine for a single-screen hero */
+    background-attachment: scroll;
     color: white;
     z-index: 0;
     margin: 0;

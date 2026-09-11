@@ -55,8 +55,18 @@
     flex-shrink: 0;
 }
 
+/* App bar is always 64px here; override Mud's mobile 7/8 padding (56px) so content
+   height math and the bar never leave an ~8px gap under the toolbar / at the bottom. */
 .mud-main-content {
-    padding-top: 64px;
+    padding-top: var(--mud-appbar-height, 64px);
+}
+
+/* Home hero: fill the viewport under the app bar (same pattern as Audience Hall). */
+.mud-main-content:has(.hero-img) {
+    height: 100dvh;
+    max-height: 100dvh;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 @media (max-width: 960px) {

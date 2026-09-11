@@ -2,7 +2,8 @@
     --throne: clamp(8rem, 30dvh, 20rem);
     max-width: 46rem;
     margin: 0 auto;
-    height: calc(100dvh - 64px);
+    /* Fill .barony-scope--audience-hall (parent is already viewport minus Mud appbar padding). */
+    height: 100%;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -47,13 +48,13 @@
 }
 
 .audience-hall__ring {
-    flex: 0 0 70%;
-    height: 70%;
+    flex: 0 0 80%;
+    height: 80%;
     min-height: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: .9rem;
+    gap: .0rem;
     width: 100%;
     animation: audience-hall-fade-up .6s cubic-bezier(.22, 1, .36, 1) both;
 }
@@ -137,7 +138,7 @@
     grid-template-rows: var(--advisor-icon-size) minmax(0, 1fr);
     justify-items: center;
     align-content: start;
-    gap: .2rem;
+    gap: .0rem;
     width: var(--advisor-card-width);
     min-width: var(--advisor-card-width);
     max-width: var(--advisor-card-width);
@@ -237,6 +238,36 @@
     padding: 0;
     font-size: .82rem;
     line-height: 1;
+}
+
+/* Overflow "More" rows — icons are full SVGs; without a size they blow the popover up. */
+.audience-hall__more-item {
+    display: flex;
+    align-items: center;
+    gap: .55rem;
+    max-width: 16rem;
+    min-width: 0;
+    font-family: 'IM Fell English', 'Times New Roman', serif;
+    font-size: .95rem;
+    line-height: 1.2;
+    color: var(--barony-ink, #2f2a24);
+}
+
+.audience-hall__more-item img {
+    display: block;
+    flex: 0 0 1.75rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    object-fit: contain;
+    filter: brightness(0);
+}
+
+.audience-hall__more-item > span:not(.audience-hall__badge) {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .audience-hall__more-item--hall-event img {

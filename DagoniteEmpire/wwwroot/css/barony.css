@@ -101,9 +101,12 @@
 }
 
 .barony-scope--audience-hall {
+    /* Fill mud-main-content's content box (after its padding-top). Do not subtract
+       a hardcoded 64px — on phones Mud uses appbar-height*7/8 (56px), which left an
+       ~8px white strip at the bottom when we assumed full 64px. */
     box-sizing: border-box;
-    height: calc(100dvh - 64px);
-    max-height: calc(100dvh - 64px);
+    height: 100%;
+    max-height: 100%;
     min-height: 0;
     overflow: hidden;
     padding: 0;
@@ -7975,8 +7978,8 @@ button.court-duty-name--editable:hover {
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    height: calc(100dvh - 64px);
-    max-height: calc(100dvh - 64px);
+    height: 100%;
+    max-height: 100%;
     min-height: 0;
     overflow: hidden;
     padding: 8px 12px 48px 12px;
@@ -9910,8 +9913,8 @@ button.artifact-location-btn {
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    height: calc(100dvh - 64px);
-    max-height: calc(100dvh - 64px);
+    height: 100%;
+    max-height: 100%;
     min-height: 0;
     overflow: hidden;
     padding: 0 0 44px 0;
@@ -10976,8 +10979,8 @@ button.artifact-location-btn {
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    height: calc(100dvh - 64px);
-    max-height: calc(100dvh - 64px);
+    height: 100%;
+    max-height: 100%;
     min-height: 0;
     overflow: hidden;
     padding: 0 0 44px 0;

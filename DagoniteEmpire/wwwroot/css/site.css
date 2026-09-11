@@ -192,6 +192,35 @@ char-title {
     overflow: hidden !important;
 }
 
+/* Audience Hall "More" overflow menu — same MudBlazor 9.4 portal scroll fix as character switcher.
+   Unconstrained orbit SVGs also used to inflate each row; item sizing lives in AudienceHallPage.razor.css. */
+.mud-popover.audience-hall-more-popover {
+    --audience-hall-more-max-h: min(50dvh, calc(100dvh - 6rem - env(safe-area-inset-bottom, 0px)));
+    max-width: min(18rem, calc(100vw - 1.25rem)) !important;
+    max-height: var(--audience-hall-more-max-h) !important;
+    overflow: hidden !important;
+}
+
+.mud-popover.audience-hall-more-popover [data-testid="menu-wrapper"] {
+    display: flex;
+    flex-direction: column;
+    max-height: var(--audience-hall-more-max-h);
+    min-height: 0;
+    overflow: hidden;
+}
+
+.mud-popover.audience-hall-more-popover .audience-hall-more-list,
+.audience-hall-more-list.mud-menu-list {
+    flex: 1 1 auto;
+    min-width: 11rem;
+    min-height: 0 !important;
+    max-height: var(--audience-hall-more-max-h, 50dvh) !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+}
+
 .mud-popover.character-switcher-popover [data-testid="menu-wrapper"] {
     display: flex;
     flex-direction: column;

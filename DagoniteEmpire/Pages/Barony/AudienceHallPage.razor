@@ -28,7 +28,7 @@
     {
         @if (CanManageAsMg)
         {
-            <div class="audience-hall__mg-bar d-flex flex-wrap gap-2 mb-3">
+            <div class="audience-hall__mg-bar d-flex flex-wrap gap-2 mb-1">
                 <MudButton Variant="Variant.Outlined"
                            Size="Size.Small"
                            StartIcon="@Icons.Material.Filled.Add"
@@ -166,9 +166,13 @@
                                     <MudMenu @bind-Open="_showMorePetitioners"
                                              CloseOnClick="false"
                                              Dense="true"
+                                             MaxHeight="360"
+                                             LockScroll="false"
                                              AnchorOrigin="Origin.BottomLeft"
                                              TransformOrigin="Origin.TopLeft"
-                                             Class="audience-hall__more-menu">
+                                             Class="audience-hall__more-menu"
+                                             ListClass="audience-hall-more-list"
+                                             PopoverClass="audience-hall-more-popover">
                                         <ActivatorContent>
                                             <button type="button"
                                                     class="audience-hall__advisor"
