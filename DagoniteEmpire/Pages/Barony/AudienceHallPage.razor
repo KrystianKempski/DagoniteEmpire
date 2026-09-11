@@ -162,44 +162,46 @@
                             }
                             @if (OverflowOrbitSatellites.Count > 0)
                             {
-                                <MudMenu @bind-Open="_showMorePetitioners"
-                                         CloseOnClick="false"
-                                         Dense="true"
-                                         AnchorOrigin="Origin.BottomCenter"
-                                         TransformOrigin="Origin.TopCenter"
-                                         Class="audience-hall__more-menu">
-                                    <ActivatorContent>
-                                        <button type="button"
-                                                class="audience-hall__advisor"
-                                                title="@L["More petitioners"]"
-                                                @onclick="() => _showMorePetitioners = true">
-                                            <span class="audience-hall__badge">@OverflowOrbitSatellites.Count</span>
-                                            <span class="audience-hall__advisor-icon">
-                                                <MudIcon Icon="@Icons.Material.Filled.MoreHoriz" />
-                                            </span>
-                                            <span class="audience-hall__advisor-label">@L["More"]</span>
-                                        </button>
-                                    </ActivatorContent>
-                                    <ChildContent>
-                                        @foreach (var item in OverflowOrbitSatellites)
-                                        {
-                                            <MudMenuItem OnClick="() => SelectOrbitItem(item)">
-                                                <div class="audience-hall__more-item @OrbitMoreItemClass(item)">
-                                                    <img src="@("/" + item.Icon)" alt="" />
-                                                    <span>@item.Label</span>
-                                                    @if (item.Kind == OrbitItemKind.HallEvent && item.NeedsAttention)
-                                                    {
-                                                        <span class="audience-hall__badge audience-hall__badge--hall-event audience-hall__badge--inline">!</span>
-                                                    }
-                                                    else if (item.Kind == OrbitItemKind.Audience && item.NeedsAttention)
-                                                    {
-                                                        <span class="audience-hall__badge audience-hall__badge--flag audience-hall__badge--inline">!</span>
-                                                    }
-                                                </div>
-                                            </MudMenuItem>
-                                        }
-                                    </ChildContent>
-                                </MudMenu>
+                                <div class="audience-hall__more">
+                                    <MudMenu @bind-Open="_showMorePetitioners"
+                                             CloseOnClick="false"
+                                             Dense="true"
+                                             AnchorOrigin="Origin.BottomLeft"
+                                             TransformOrigin="Origin.TopLeft"
+                                             Class="audience-hall__more-menu">
+                                        <ActivatorContent>
+                                            <button type="button"
+                                                    class="audience-hall__advisor"
+                                                    title="@L["More petitioners"]"
+                                                    @onclick="() => _showMorePetitioners = true">
+                                                <span class="audience-hall__badge">@OverflowOrbitSatellites.Count</span>
+                                                <span class="audience-hall__advisor-icon">
+                                                    <MudIcon Icon="@Icons.Material.Filled.MoreHoriz" />
+                                                </span>
+                                                <span class="audience-hall__advisor-label">@L["More"]</span>
+                                            </button>
+                                        </ActivatorContent>
+                                        <ChildContent>
+                                            @foreach (var item in OverflowOrbitSatellites)
+                                            {
+                                                <MudMenuItem OnClick="() => SelectOrbitItem(item)">
+                                                    <div class="audience-hall__more-item @OrbitMoreItemClass(item)">
+                                                        <img src="@("/" + item.Icon)" alt="" />
+                                                        <span>@item.Label</span>
+                                                        @if (item.Kind == OrbitItemKind.HallEvent && item.NeedsAttention)
+                                                        {
+                                                            <span class="audience-hall__badge audience-hall__badge--hall-event audience-hall__badge--inline">!</span>
+                                                        }
+                                                        else if (item.Kind == OrbitItemKind.Audience && item.NeedsAttention)
+                                                        {
+                                                            <span class="audience-hall__badge audience-hall__badge--flag audience-hall__badge--inline">!</span>
+                                                        }
+                                                    </div>
+                                                </MudMenuItem>
+                                            }
+                                        </ChildContent>
+                                    </MudMenu>
+                                </div>
                             }
                         </div>
                     </div>

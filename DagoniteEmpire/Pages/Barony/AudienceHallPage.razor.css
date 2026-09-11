@@ -91,7 +91,7 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: .7rem;
+    gap: .0rem;
     flex: 1 1 0;
     min-width: 0;
 }
@@ -102,6 +102,28 @@
 
 .audience-hall__satellites--right {
     align-items: flex-start;
+}
+
+/* Wrapper owns alignment — MudMenu itself tends to stretch/center in the column. */
+.audience-hall__more {
+    align-self: flex-start;
+    display: flex;
+    justify-content: flex-start;
+    width: auto;
+    max-width: 100%;
+}
+
+::deep .audience-hall__more-menu.mud-menu,
+::deep .audience-hall__more-menu {
+    display: inline-flex;
+    width: auto;
+    max-width: 100%;
+    justify-content: flex-start;
+}
+
+::deep .audience-hall__more-menu .mud-menu-activator {
+    display: inline-flex;
+    justify-content: flex-start;
 }
 
 /* Fixed card width + fixed icon slot: label length must not shift the icon. */
@@ -374,10 +396,6 @@
         min-width: 3.25rem;
         width: min(var(--throne), 34vw);
         height: min(var(--throne), 34vw);
-    }
-
-    .audience-hall__satellites {
-        gap: .4rem;
     }
 
     .audience-hall__advisor {
