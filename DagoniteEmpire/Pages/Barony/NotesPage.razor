@@ -109,10 +109,10 @@ else if (Barony is not null)
                             </div>
 
                             <div class="barony-notes__editor">
-                                <BlazoredTextEditor @ref="_editor" @key="_editorEpoch" Placeholder="@(L["Write your plans, ideas, reminders…"])">
-                                    <ToolbarContent>@JournalToolbar()</ToolbarContent>
-                                    <EditorContent></EditorContent>
-                                </BlazoredTextEditor>
+                                <JournalQuillEditor @ref="_journalEditor"
+                                                    Epoch="_editorEpoch"
+                                                    Placeholder="@(L["Write your plans, ideas, reminders…"])"
+                                                    Toolbar="JournalToolbar()" />
                             </div>
                         }
                     </section>
@@ -272,7 +272,8 @@ else if (Barony is not null)
 @code {
     private List<BaronyPlayerNoteDTO> _threads = new();
     private BaronyPlayerNoteDTO? _selected;
-    private BlazoredTextEditor? _editor;
+    private JournalQuillEditor? _journalEditor;
+    private BlazoredTextEditor? _editor => _journalEditor?.Editor;
 
     private List<BaronyPlayerNoteDTO> _stickies = new();
     private int? _dragStickyId;
@@ -433,12 +434,15 @@ else if (Barony is not null)
             _isDirty = restored;
 
             StartAutoSaveLoop();
-            StateHasChanged();
+            // Do not StateHasChanged() here: Quill already owns the editor DOM. A parent
+            // re-render would reconcile Blazor markers against Quill nodes and kill the circuit.
         }
         catch
         {
             await Task.Delay(50);
-            StateHasChanged();
+            // Retry via a second after-render without forcing a full tree rebuild when possible.
+            try { await InvokeAsync(StateHasChanged); }
+            catch { }
         }
     }
 
@@ -746,6 +750,12 @@ else if (Barony is not null)
                 await TickAsync();
         }
         catch (OperationCanceledException) { }
+        catch (JSDisconnectedException) { }
+        catch (ObjectDisposedException) { }
+        catch (Exception)
+        {
+            // Never let a background autosave fault terminate the Blazor circuit.
+        }
     }
 
     // Debounced autosave: mark pending while the text keeps changing, save once it settles.

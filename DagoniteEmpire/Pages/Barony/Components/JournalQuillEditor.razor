@@ -1,0 +1,34 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+
+@*
+  Isolates Blazored/Quill from parent re-renders. Quill owns the editor DOM after init;
+  if the parent calls StateHasChanged (autosave dirty icon, title, etc.) Blazor tries to
+  reconcile those nodes and the SignalR circuit dies with removeChild / interop errors.
+*@
+<BlazoredTextEditor @ref="_editor" @key="Epoch" Placeholder="@Placeholder">
+    <ToolbarContent>@Toolbar</ToolbarContent>
+    <EditorContent></EditorContent>
+</BlazoredTextEditor>
+
+@code {
+    [Parameter] public int Epoch { get; set; }
+    [Parameter] public string Placeholder { get; set; } = "";
+    [Parameter] public RenderFragment? Toolbar { get; set; }
+
+    private BlazoredTextEditor? _editor;
+    private int _renderedEpoch = int.MinValue;
+
+    public BlazoredTextEditor? Editor => _editor;
+
+    protected override bool ShouldRender()
+    {
+        // Remount only when the journal thread (Epoch) changes.
+        if (_renderedEpoch != Epoch)
+        {
+            _renderedEpoch = Epoch;
+            return true;
+        }
+
+        return false;
+    }
+}

@@ -33,8 +33,15 @@
     if (window.QuillFunctions && window.QuillFunctions.createQuill) {
         var originalCreateQuill = window.QuillFunctions.createQuill;
         window.QuillFunctions.createQuill = function () {
-            originalCreateQuill.apply(this, arguments);
             var quillElement = arguments[0];
+            // Blazor leaves empty-fragment comment markers inside EditorContent. Quill's
+            // clipboard.convert of those nodes can throw and tear down the SignalR circuit.
+            if (quillElement && quillElement.nodeType === 1) {
+                while (quillElement.firstChild) {
+                    quillElement.removeChild(quillElement.firstChild);
+                }
+            }
+            originalCreateQuill.apply(this, arguments);
             if (quillElement && quillElement.__quill) {
                 disableListAutoformatOnSpace(quillElement.__quill);
             }
@@ -43,14 +50,15 @@
 
     if (window.QuillFunctions && window.QuillFunctions.loadQuillHTMLContent) {
         // Keep Blazored's innerHTML loader — clipboard.convert/setContents breaks typing and blockquotes.
-        // Throw when Quill is not ready so NotesPage can retry instead of autosaving an empty editor.
+        // No-op when Quill is not ready so NotesPage can retry on blank content without a JSException.
         window.QuillFunctions.loadQuillHTMLContent = function (quillElement, quillHTMLContent) {
             var quill = quillElement && quillElement.__quill;
             if (!quill) {
-                throw new Error('Quill instance is not ready');
+                return false;
             }
 
             quill.root.innerHTML = quillHTMLContent || '';
+            return true;
         };
     }
 
