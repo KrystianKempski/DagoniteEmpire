@@ -38,7 +38,19 @@
                 @foreach (var x in Audience.Exchanges.OrderBy(e => e.SortOrder).ThenBy(e => e.Id))
                 {
                     <div class="audience-scroll__passage @ExchangeThemeClass(x)">
-                        <span class="audience-scroll__speaker">@ExchangeSpeakerDisplay(x)</span>
+                        <div class="audience-scroll__speaker-row">
+                            <span class="audience-scroll__speaker">@ExchangeSpeakerDisplay(x)</span>
+                            @if (CanShowEditButton(x))
+                            {
+                                <BaronyTooltip Text="@(L["Edit reply"])">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                   Size="Size.Small"
+                                                   Class="audience-exchange__edit-btn"
+                                                   Disabled="Busy"
+                                                   OnClick="@(() => BeginEditLastAsync(x))" />
+                                </BaronyTooltip>
+                            }
+                        </div>
                         <div class="audience-scroll__body">
                             @if (TryGetChapterLink(x, out var chapterId, out var chapterLabel))
                             {
@@ -90,7 +102,7 @@
                     <span>@ComposerCollapsedHint</span>
                 </div>
                 <div class="audience-scroll__dock-expanded">
-                    @if (CanWriteAsGm)
+                    @if (CanWriteAsGm && !IsEditing)
                     {
                         <div class="audience-scroll__modes audience-scroll__modes--gm">
                             <MudSelect T="string"
@@ -129,7 +141,7 @@
                             }
                         </div>
                     }
-                    else if (CanWriteAsBaron)
+                    else if (CanWriteAsBaron && !IsEditing)
                     {
                         <div class="audience-scroll__modes">
                             <button type="button"
@@ -146,6 +158,10 @@
                             </button>
                         </div>
                     }
+                    @if (IsEditing)
+                    {
+                        <p class="audience-scroll__edit-hint">@L["Editing last reply"]</p>
+                    }
                     <textarea class="audience-scroll__draft"
                               @ref="_draftInputRef"
                               rows="3"
@@ -158,8 +174,17 @@
                                 class="audience-hall__ink-btn audience-hall__ink-btn--strong"
                                 disabled="@(Busy || !CanSpeak)"
                                 @onclick="SpeakAsync">
-                            @L["Speak"]
+                            @(IsEditing ? L["Save"] : L["Speak"])
                         </button>
+                        @if (IsEditing)
+                        {
+                            <button type="button"
+                                    class="audience-hall__ink-btn"
+                                    disabled="@Busy"
+                                    @onclick="CancelEdit">
+                                @L["Cancel"]
+                            </button>
+                        }
                         @if (CanWriteAsGm)
                         {
                             <button type="button"
@@ -298,8 +323,17 @@ else
                 {
                     <div class="baron-audience__exchange @ExchangeThemeClass(x)">
                         <div class="baron-audience__exchange-head">
-                            @ExchangeSpeakerDisplay(x)
-                            <span>· T@(x.TurnNumber)</span>
+                            <span>@ExchangeSpeakerDisplay(x) · T@(x.TurnNumber)</span>
+                            @if (CanShowEditButton(x))
+                            {
+                                <BaronyTooltip Text="@(L["Edit reply"])">
+                                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                                   Size="Size.Small"
+                                                   Class="audience-exchange__edit-btn"
+                                                   Disabled="Busy"
+                                                   OnClick="@(() => BeginEditLastAsync(x))" />
+                                </BaronyTooltip>
+                            }
                         </div>
                         <div class="baron-audience__exchange-body">
                             @if (TryGetChapterLink(x, out var chapterId, out var chapterLabel))
@@ -369,7 +403,7 @@ else
             @if (CanReply)
             {
                 <div class="baron-audience__composer @(CanWriteAsGm ? "baron-audience__composer--gm" : "baron-audience__composer--baron")">
-                    @if (CanWriteAsGm)
+                    @if (CanWriteAsGm && !IsEditing)
                     {
                         <div class="baron-audience__speaker-row">
                             <MudSelect T="string"
@@ -390,7 +424,7 @@ else
                                 }
                                 else
                                 {
-                                <MudSelectItem Value="@SpeakerModePetitioner">@PetitionerDisplayName (petitioner)</MudSelectItem>
+                                    <MudSelectItem Value="@SpeakerModePetitioner">@PetitionerDisplayName (petitioner)</MudSelectItem>
                                     <MudSelectItem Value="@BaronCouncilSession.GameMasterSpeaker">@BaronCouncilSession.GameMasterSpeaker</MudSelectItem>
                                     <MudSelectItem Value="@SpeakerModeOther">@L["Other character"]</MudSelectItem>
                                 }
@@ -406,7 +440,7 @@ else
                             }
                         </div>
                     }
-                    else if (CanWriteAsBaron)
+                    else if (CanWriteAsBaron && !IsEditing)
                     {
                         <div class="baron-audience__speaker-row">
                             <MudSelect T="string"
@@ -421,6 +455,10 @@ else
                             </MudSelect>
                         </div>
                     }
+                    @if (IsEditing)
+                    {
+                        <MudText Typo="Typo.caption" Class="baron-audience__edit-hint">@L["Editing last reply"]</MudText>
+                    }
                     <MudTextField @bind-Value="_draft"
                                   Label="@(ComposerLabel)"
                                   Variant="Variant.Outlined"
@@ -434,8 +472,18 @@ else
                                    Class="barony-turn-btn barony-turn-btn--solid"
                                    Disabled="@(Busy || !CanSpeak)"
                                    OnClick="SpeakAsync">
-                            @L["Speak"]
+                            @(IsEditing ? L["Save"] : L["Speak"])
                         </MudButton>
+                        @if (IsEditing)
+                        {
+                            <MudButton Size="Size.Small"
+                                       Variant="Variant.Outlined"
+                                       Class="barony-turn-btn barony-turn-btn--ghost"
+                                       Disabled="Busy"
+                                       OnClick="CancelEdit">
+                                @L["Cancel"]
+                            </MudButton>
+                        }
                         @if (CanWriteAsGm)
                         {
                             <MudButton Size="Size.Small"
@@ -534,7 +582,7 @@ else
     public static string FormatChapterExchangeBody(string chapterName, int chapterId) =>
         $"Created chapter \"{chapterName}\".\n{ChapterLinkPrefix}{chapterId}";
 
-    public sealed record SpeakRequest(string Body, bool IsGmSide, string? SpeakerName);
+    public sealed record SpeakRequest(string Body, bool IsGmSide, string? SpeakerName, int ExchangeId = 0);
 
     [Parameter, EditorRequired] public BaronAudienceDTO Audience { get; set; } = default!;
     [Parameter] public bool ReadOnly { get; set; }
@@ -567,6 +615,7 @@ else
     private string _baronSpeakerMode = SpeakerModeBaron;
     private string _otherSpeaker = "";
     private bool _speakersInitialized;
+    private int? _editingExchangeId;
 
     /// <summary>Docked composer (Audience Hall only) — collapsed by default, expands on click.</summary>
     private readonly string ComposerDockId = "audience-hall-composer-" + Guid.NewGuid().ToString("N");
@@ -579,8 +628,12 @@ else
     private readonly string ScrollContainerId = "audience-hall-scroll-" + Guid.NewGuid().ToString("N");
     private int _lastScrolledExchangeCount = -1;
 
+    private bool IsEditing => _editingExchangeId is > 0;
+
     private string ComposerCollapsedHint =>
-        CanWriteAsGm
+        IsEditing
+            ? L["Editing last reply"].Value
+            : CanWriteAsGm
             ? L["Click to speak as petitioner, advisor, or GM…"].Value
             : _baronSpeakerMode == BaronCouncilSession.QuestionToGmSpeaker
                 ? L["Click to ask the GM…"].Value
@@ -631,7 +684,8 @@ else
 
     private bool CanSpeak =>
         !string.IsNullOrWhiteSpace(_draft)
-        && (!CanWriteAsGm
+        && (IsEditing
+            || !CanWriteAsGm
             || _speakerMode != SpeakerModeOther
             || !string.IsNullOrWhiteSpace(_otherSpeaker));
 
@@ -643,7 +697,9 @@ else
                 : L["Your reply…"].Value);
 
     private string ComposerLabel =>
-        CanWriteAsGm
+        IsEditing
+            ? L["Editing last reply"].Value
+            : CanWriteAsGm
             ? (_speakerMode == SpeakerModeOther
                 ? "Other character speaks…"
                 : _speakerMode == BaronCouncilSession.GameMasterSpeaker
@@ -661,6 +717,16 @@ else
         {
             _initialOpenApplied = true;
             _isOpen = InitiallyOpen;
+        }
+
+        if (_editingExchangeId is int editingId)
+        {
+            var editable = OwnLastEditableExchange();
+            if (editable is null || editable.Id != editingId)
+            {
+                _editingExchangeId = null;
+                _draft = "";
+            }
         }
 
         if (HasCourtSpeakers
@@ -811,6 +877,83 @@ else
     private static bool IsGameMaster(BaronAudienceExchangeDTO x) =>
         string.Equals(x.SpeakerName, BaronCouncilSession.GameMasterSpeaker, StringComparison.OrdinalIgnoreCase);
 
+    private static bool IsSpeakableExchange(BaronAudienceExchangeDTO x) =>
+        !x.IsResourceChange && !IsProjectNote(x) && !IsChapterNote(x);
+
+    /// <summary>
+    /// Last speakable line that belongs to the current writer, and only while the other side
+    /// has not answered yet (mirrors Letters “edit last outbound”).
+    /// </summary>
+    private BaronAudienceExchangeDTO? OwnLastEditableExchange()
+    {
+        if (!CanReply)
+            return null;
+
+        var lastSpeakable = Audience.Exchanges
+            .Where(IsSpeakableExchange)
+            .OrderByDescending(e => e.SortOrder)
+            .ThenByDescending(e => e.Id)
+            .FirstOrDefault();
+        if (lastSpeakable is null)
+            return null;
+
+        if (CanWriteAsGm)
+            return lastSpeakable.IsFromPetitioner ? lastSpeakable : null;
+        if (CanWriteAsBaron)
+            return !lastSpeakable.IsFromPetitioner ? lastSpeakable : null;
+        return null;
+    }
+
+    private bool CanShowEditButton(BaronAudienceExchangeDTO x) =>
+        !Busy
+        && !IsEditing
+        && OwnLastEditableExchange() is { } own
+        && own.Id == x.Id;
+
+    private async Task BeginEditLastAsync(BaronAudienceExchangeDTO x)
+    {
+        if (OwnLastEditableExchange()?.Id != x.Id)
+            return;
+
+        _editingExchangeId = x.Id;
+        _draft = x.Body ?? "";
+        _isOpen = true;
+
+        if (CanWriteAsGm)
+        {
+            if (IsGameMaster(x))
+                _speakerMode = BaronCouncilSession.GameMasterSpeaker;
+            else if (!string.IsNullOrWhiteSpace(x.SpeakerName)
+                     && HasCourtSpeakers
+                     && CourtSpeakerNames.Contains(x.SpeakerName.Trim(), StringComparer.OrdinalIgnoreCase))
+                _speakerMode = x.SpeakerName.Trim();
+            else if (!string.IsNullOrWhiteSpace(x.SpeakerName))
+            {
+                _speakerMode = SpeakerModeOther;
+                _otherSpeaker = x.SpeakerName.Trim();
+            }
+            else
+                _speakerMode = SpeakerModePetitioner;
+        }
+        else
+        {
+            _baronSpeakerMode = IsQuestionToGm(x)
+                ? BaronCouncilSession.QuestionToGmSpeaker
+                : SpeakerModeBaron;
+        }
+
+        if (HallLayout)
+            await ExpandComposerAsync();
+        else
+            StateHasChanged();
+    }
+
+    private void CancelEdit()
+    {
+        _editingExchangeId = null;
+        _draft = "";
+    }
+
     private static bool TryGetChapterLink(BaronAudienceExchangeDTO x, out int chapterId, out string label)
     {
         chapterId = 0;
@@ -838,6 +981,21 @@ else
         var text = _draft.Trim();
         if (string.IsNullOrEmpty(text) || !CanSpeak)
             return;
+
+        if (_editingExchangeId is int editId)
+        {
+            var existing = Audience.Exchanges.FirstOrDefault(e => e.Id == editId);
+            if (existing is null || !IsSpeakableExchange(existing))
+            {
+                CancelEdit();
+                return;
+            }
+
+            await OnSpeak.InvokeAsync(new SpeakRequest(
+                text, existing.IsFromPetitioner, existing.SpeakerName, editId));
+            CancelEdit();
+            return;
+        }
 
         string? speaker = null;
         var isGm = CanWriteAsGm;

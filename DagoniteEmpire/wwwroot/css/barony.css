@@ -10792,10 +10792,51 @@ button.artifact-location-btn {
 }
 
 .baron-audience__exchange-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.15rem 0.35rem;
     font-size: 0.75rem;
     font-weight: 700;
     color: var(--barony-muted);
     margin-bottom: 0.2rem;
+}
+
+.baron-audience__edit-hint {
+    color: var(--barony-muted);
+    margin: 0 0 0.25rem;
+}
+
+.audience-scroll__speaker-row {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+    margin-bottom: 0.15rem;
+}
+
+.audience-scroll__speaker-row .audience-scroll__speaker {
+    margin-bottom: 0;
+}
+
+.audience-scroll__edit-hint {
+    margin: 0 0 0.35rem;
+    font-size: 0.82rem;
+    font-style: italic;
+    color: #8a7a5c;
+}
+
+.audience-exchange__edit-btn.mud-icon-button {
+    color: var(--barony-muted, #6f6656);
+    opacity: 0.5;
+    padding: 2px;
+    width: 26px;
+    height: 26px;
+}
+
+.audience-exchange__edit-btn.mud-icon-button:hover {
+    opacity: 0.9;
+    color: var(--barony-muted, #6f6656);
+    background: transparent;
 }
 
 .baron-audience__exchange-body {
@@ -13221,5 +13262,88 @@ button.artifact-location-btn {
 
 .audience-scroll__draft:disabled {
     opacity: .65;
+}
+
+/* Phone Audience Hall: more reading width, less chrome above the dialogue. */
+@media (max-width: 640px) {
+    .audience-scroll {
+        gap: .35rem;
+    }
+
+    .audience-scroll__sheet {
+        padding: .55rem .55rem .65rem;
+        font-size: 1.02rem;
+        line-height: 1.5;
+        /* Soften the decorative rails so they don't waste vertical space. */
+        box-shadow:
+            0 4px 14px rgba(60, 42, 18, .18),
+            inset 0 0 28px rgba(120, 80, 30, .1);
+    }
+
+    .audience-scroll__sheet::before,
+    .audience-scroll__sheet::after {
+        left: 4%;
+        right: 4%;
+        height: 6px;
+        opacity: .3;
+    }
+
+    .audience-scroll__sheet::before { top: 4px; }
+    .audience-scroll__sheet::after { bottom: 4px; }
+
+    .audience-scroll__header {
+        align-items: center;
+        gap: .45rem;
+        margin-bottom: .35rem;
+    }
+
+    .audience-scroll__petitioner-icon {
+        width: 1.85rem;
+        height: 1.85rem;
+    }
+
+    .audience-scroll__header-text {
+        gap: .05rem;
+    }
+
+    .audience-scroll__meta {
+        font-size: .68rem;
+        letter-spacing: .04em;
+        gap: .3rem;
+        line-height: 1.2;
+    }
+
+    .barony-scope .audience-scroll__title {
+        font-size: .98rem;
+        line-height: 1.25;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        overflow: hidden;
+    }
+
+    .audience-scroll__passage {
+        margin-bottom: .65rem;
+    }
+
+    .audience-scroll__speaker {
+        font-size: .85rem;
+    }
+
+    .audience-scroll__dock-collapsed {
+        padding: .5rem .65rem;
+        font-size: .92rem;
+    }
+
+    .audience-scroll__dock--expanded .audience-scroll__dock-expanded {
+        padding: .55rem .55rem;
+    }
+
+    .audience-scroll__draft {
+        min-height: 5.5rem;
+        font-size: .98rem;
+        padding: .45rem .55rem;
+    }
 }
 

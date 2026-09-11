@@ -3804,7 +3804,15 @@ namespace DA_Business.Repository.BaronyRepos
                 {
                     e = await ctx.BaronAudienceExchanges.FirstOrDefaultAsync(x => x.Id == dto.Id)
                         ?? throw new InvalidOperationException("Exchange not found.");
+                    if (e.AudienceId != dto.AudienceId)
+                        throw new InvalidOperationException("Exchange does not belong to this audience.");
+                    var keepSort = e.SortOrder;
+                    var keepTurn = e.TurnNumber;
                     ApplyAudienceExchange(e, dto);
+                    if (dto.SortOrder <= 0)
+                        e.SortOrder = keepSort;
+                    if (dto.TurnNumber <= 0)
+                        e.TurnNumber = keepTurn;
                 }
                 else
                 {

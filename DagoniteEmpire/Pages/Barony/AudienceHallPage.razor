@@ -945,13 +945,28 @@
         _busy = true;
         try
         {
+            BaronAudienceExchangeDTO? existing = null;
+            if (req.ExchangeId > 0)
+            {
+                existing = audience.Exchanges.FirstOrDefault(x => x.Id == req.ExchangeId);
+                if (existing is null)
+                    return;
+            }
+
             await _baronyRepo.SaveAudienceExchange(new BaronAudienceExchangeDTO
             {
+                Id = existing?.Id ?? 0,
                 AudienceId = audience.Id,
                 Body = req.Body.Trim(),
-                IsFromPetitioner = req.IsGmSide,
-                SpeakerName = req.SpeakerName,
-                TurnNumber = Barony!.TurnNumber,
+                IsFromPetitioner = existing?.IsFromPetitioner ?? req.IsGmSide,
+                SpeakerName = existing is not null ? existing.SpeakerName : req.SpeakerName,
+                TurnNumber = existing?.TurnNumber ?? Barony!.TurnNumber,
+                SortOrder = existing?.SortOrder ?? 0,
+                IsResourceChange = existing?.IsResourceChange ?? false,
+                Additive = existing?.Additive?.Clone() ?? new(),
+                Prestige = existing?.Prestige ?? 0,
+                Honor = existing?.Honor ?? 0,
+                Fear = existing?.Fear ?? 0,
             });
             await ReloadAsync();
         }
