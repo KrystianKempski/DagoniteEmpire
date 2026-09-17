@@ -1,9 +1,9 @@
-/* Fill the viewport below app bar + bottom tabbar. Height hangs off .baron-mail__page
-   (scoped to this component) so the mailbox grid can stretch. */
+/* Parent .barony-scope--letters is a fixed-height flex column; fill its content box. */
 .baron-mail__page {
     display: flex;
     flex-direction: column;
-    height: calc(100dvh - var(--mud-appbar-height, 64px) - 24px - 96px);
+    flex: 1 1 auto;
+    height: 100%;
     min-height: 0;
 }
 
@@ -17,7 +17,56 @@
     height: 100%;
 }
 
-/* ---- Mobile: vertical stack (threads above conversation), same idea as Notes ---- */
+/* Header "New thread to baron" is mobile-only; desktop keeps it in the sidebar. */
+.baron-mail__page ::deep .baron-mail__new-thread--header {
+    display: none !important;
+}
+
+.baron-mail__page ::deep .baron-mail__inbound-quota--short {
+    display: none;
+}
+
+/* Desktop: one chrome row (label + handwriting + send), then full-width editor. */
+.baron-mail__page ::deep .baron-mail__composer-collapsed {
+    display: none !important;
+}
+
+.baron-mail__page ::deep .baron-mail__toolbar-toggle {
+    display: none !important;
+}
+
+.baron-mail__page ::deep .baron-mail__composer-chrome {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.baron-mail__page ::deep .baron-mail__composer-label {
+    flex: 1 1 auto;
+    margin: 0;
+}
+
+.baron-mail__page ::deep .baron-mail__composer-controls,
+.baron-mail__page ::deep .baron-mail__composer-actions {
+    flex: 0 0 auto;
+    margin: 0;
+    position: static;
+}
+
+.baron-mail__page ::deep .baron-mail__composer-shell,
+.baron-mail__page ::deep .baron-mail__editor-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    min-width: 0;
+}
+
+.baron-mail__page ::deep .baron-mail__editor.baron-letter-editor {
+    order: unset;
+}
+
+/* ---- Mobile: vertical stack + compact dock ---- */
 @media (max-width: 1279.98px) {
     .baron-mail__page {
         flex: 1 1 auto;
@@ -32,8 +81,26 @@
         gap: 6px;
     }
 
+    .baron-mail__page ::deep .baron-mail__new-thread--header {
+        display: inline-flex !important;
+    }
+
+    .baron-mail__page ::deep .baron-mail__new-thread--sidebar {
+        display: none !important;
+    }
+
     .baron-mail__page ::deep .baron-mail__summary-limits {
         display: none;
+    }
+
+    .baron-mail__page ::deep .baron-mail__inbound-quota--long {
+        display: none;
+    }
+
+    .baron-mail__page ::deep .baron-mail__inbound-quota--short {
+        display: inline;
+        margin-left: 0.25rem;
+        color: var(--barony-muted, #6f6656);
     }
 
     .baron-mail__page ::deep .baron-mail {
@@ -60,6 +127,11 @@
     .baron-mail__page ::deep .baron-mail__sidebar-actions {
         padding: 0.4rem 0.5rem;
         gap: 0.35rem;
+    }
+
+    /* GM-only: sidebar new-thread is hidden on mobile, so drop the empty actions strip. */
+    .baron-mail__page ::deep .baron-mail__sidebar-actions:not(:has(.barony-turn-btn--ghost)) {
+        display: none;
     }
 
     .baron-mail__page ::deep .baron-mail__sidebar-actions .mud-button {
@@ -118,11 +190,6 @@
         font-size: 0.7rem;
     }
 
-    .baron-mail__page ::deep .baron-mail__inbound-quota {
-        margin-left: 0.25rem;
-        color: var(--barony-muted, #6f6656);
-    }
-
     .baron-mail__page ::deep .baron-mail__posts {
         flex: 1 1 auto;
         min-height: 0;
@@ -143,14 +210,14 @@
         display: none;
     }
 
-    /* Compact dock: one-line pill when collapsed; ~half pane when expanded (ChapterThread-style). */
     .baron-mail__page ::deep .baron-mail__composer-shell {
         display: block;
         padding-top: 0;
+        gap: 0;
     }
 
     .baron-mail__page ::deep .baron-mail__composer-collapsed {
-        display: flex;
+        display: flex !important;
         align-items: center;
         gap: 0.55rem;
         padding: 0.55rem 0.75rem;
@@ -163,7 +230,7 @@
     }
 
     .baron-mail__page ::deep .baron-mail__composer--expanded .baron-mail__composer-collapsed {
-        display: none;
+        display: none !important;
     }
 
     .baron-mail__page ::deep .baron-mail__composer-collapsed-icon,
@@ -190,13 +257,13 @@
         border: none;
         border-radius: 0;
         background: transparent;
+        gap: 0;
         transition: max-height .28s ease, opacity .2s ease;
     }
 
     .baron-mail__page ::deep .baron-mail__composer--expanded .baron-mail__composer-expanded-body {
         position: relative;
         display: block;
-        gap: 0;
         max-height: 50vh;
         opacity: 1;
         overflow: hidden;
@@ -206,6 +273,11 @@
         background: color-mix(in srgb, white 55%, var(--barony-paper, #f7f1e4));
     }
 
+    /* Flatten chrome so font/Aa/Send float over the editor (no extra row). */
+    .baron-mail__page ::deep .baron-mail__composer-chrome {
+        display: contents;
+    }
+
     .baron-mail__page ::deep .baron-mail__composer-controls {
         display: flex;
         position: absolute;
@@ -213,12 +285,12 @@
         left: 4px;
         z-index: 3;
         gap: 0;
+        margin: 0;
         order: unset;
     }
 
-    /* On mobile the TextFormat toggle stays; keep hand picker beside it. */
-    .baron-mail__page ::deep .baron-mail__composer-controls .baron-mail__hand-menu {
-        display: inline-flex;
+    .baron-mail__page ::deep .baron-mail__toolbar-toggle {
+        display: inline-flex !important;
     }
 
     .baron-mail__page ::deep .baron-mail__composer-actions {
@@ -232,6 +304,7 @@
         margin: 0;
         padding: 0;
         gap: 0.15rem;
+        order: unset;
     }
 
     .baron-mail__page ::deep .baron-mail__action--text {
@@ -254,11 +327,11 @@
         color: #fff;
     }
 
-    /* Drop the sharp outer .baron-letter-editor frame and Quill's own borders. */
     .baron-mail__page ::deep .baron-mail__editor.baron-letter-editor {
         min-height: 0;
         border: none !important;
         background: transparent;
+        order: unset;
     }
 
     .baron-mail__page ::deep .baron-mail__composer--expanded .baron-mail__editor.baron-letter-editor {

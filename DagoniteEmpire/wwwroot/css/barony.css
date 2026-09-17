@@ -35,8 +35,29 @@
     color: var(--barony-ink);
     background: var(--barony-bg);
     min-height: calc(100vh - 64px);
+    /* Fixed tab bar clearance for fill-height pages (letters / notes). */
+    --barony-tabbar-height: 50px;
+    --barony-tabbar-clearance: calc(var(--barony-tabbar-height) + env(safe-area-inset-bottom, 0px));
     padding: 12px 12px 96px 12px;
     font-family: 'Open Sans', sans-serif;
+}
+
+/* Letters / Notes fill the viewport — bottom padding only clears the tab bar. */
+.barony-scope--letters,
+.barony-scope--notes {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    height: calc(100dvh - var(--mud-appbar-height, 64px));
+    max-height: calc(100dvh - var(--mud-appbar-height, 64px));
+    min-height: 0;
+    padding: 12px 12px var(--barony-tabbar-clearance);
+    overflow: hidden;
+}
+
+.barony-scope--letters .barony-page-header,
+.barony-scope--notes .barony-page-header {
+    flex: 0 0 auto;
 }
 
 /* The Barony layer is mostly desktop-only: hide it on medium-and-smaller screens
@@ -3493,7 +3514,7 @@ button.barony-meta-bar__stat--clickable:focus-visible {
         height: calc(100dvh - var(--mud-appbar-height, 64px));
         max-height: calc(100dvh - var(--mud-appbar-height, 64px));
         min-height: 0;
-        padding: 8px 8px 48px;
+        padding: 8px 8px var(--barony-tabbar-clearance);
         overflow: hidden;
     }
 
@@ -3509,7 +3530,7 @@ button.barony-meta-bar__stat--clickable:focus-visible {
         height: calc(100dvh - var(--mud-appbar-height, 64px));
         max-height: calc(100dvh - var(--mud-appbar-height, 64px));
         min-height: 0;
-        padding: 8px 8px 48px;
+        padding: 8px 8px var(--barony-tabbar-clearance);
         overflow: hidden;
     }
 
@@ -4695,7 +4716,7 @@ a.city-building-name-text--link:hover {
     display: grid;
     grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
     gap: 0;
-    min-height: min(70vh, 820px);
+    min-height: 0;
     border: 1px solid color-mix(in srgb, var(--barony-ink, #3a2e1f) 16%, transparent);
     background: color-mix(in srgb, var(--barony-paper, #f7f1e4) 88%, white);
     overflow: hidden;
@@ -4707,6 +4728,7 @@ a.city-building-name-text--link:hover {
     border-right: 1px solid color-mix(in srgb, var(--barony-ink, #3a2e1f) 14%, transparent);
     background: color-mix(in srgb, var(--barony-paper, #f7f1e4) 70%, #ebe3d2);
     min-height: 0;
+    height: 100%;
 }
 
 .baron-mail__sidebar-actions {
@@ -4836,6 +4858,7 @@ a.city-building-name-text--link:hover {
     flex-direction: column;
     min-width: 0;
     min-height: 0;
+    height: 100%;
     background: var(--barony-paper, #f7f1e4);
 }
 
@@ -4871,10 +4894,6 @@ a.city-building-name-text--link:hover {
     margin-top: 0.25rem;
     font-size: 0.8rem;
     color: var(--barony-muted, #6f6656);
-}
-
-.baron-mail__inbound-quota {
-    margin-left: 0.35rem;
 }
 
 .baron-mail__header-actions {
@@ -5008,6 +5027,15 @@ a.city-building-name-text--link:hover {
     letter-spacing: 0.02em;
 }
 
+.baron-mail__hand-menu-popover {
+    z-index: 1600 !important;
+}
+
+.baron-mail__hand-menu-list {
+    max-height: min(50vh, 22rem);
+    overflow-y: auto;
+}
+
 .baron-mail__hand-menu-item {
     display: block;
     min-width: 11rem;
@@ -5028,6 +5056,7 @@ a.city-building-name-text--link:hover {
     border-top: 1px solid color-mix(in srgb, var(--barony-ink, #3a2e1f) 14%, transparent);
     padding: 0.75rem 1rem 1rem;
     background: color-mix(in srgb, var(--barony-paper, #f7f1e4) 75%, #ebe3d2);
+    flex: 0 0 auto;
 }
 
 .baron-mail__composer--waiting {
@@ -5042,7 +5071,11 @@ a.city-building-name-text--link:hover {
 .baron-mail__composer-label {
     font-size: 0.8rem;
     color: var(--barony-muted, #6f6656);
-    margin-bottom: 0.4rem;
+    margin: 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .baron-mail__save-hint {
@@ -5065,22 +5098,42 @@ a.city-building-name-text--link:hover {
     position: relative;
     display: flex;
     flex-direction: column;
-    gap: 0.55rem;
+    gap: 0.45rem;
     min-width: 0;
+}
+
+.baron-mail__composer-chrome {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    min-width: 0;
+    flex: 0 0 auto;
+}
+
+.baron-mail__composer-chrome .baron-mail__composer-label {
+    flex: 1 1 auto;
 }
 
 .baron-mail__composer-controls {
     display: flex;
     align-items: center;
     gap: 0.15rem;
-    order: 0;
+    flex: 0 0 auto;
+}
+
+.baron-mail__composer-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.35rem;
+    flex: 0 0 auto;
+    margin: 0;
 }
 
 .baron-mail__editor.baron-letter-editor {
     display: flex;
     flex-direction: column;
     min-height: 280px;
-    order: 1;
 }
 
 .baron-mail__editor .ql-toolbar.ql-snow {
@@ -5095,15 +5148,6 @@ a.city-building-name-text--link:hover {
 
 .baron-mail__editor .ql-editor {
     min-height: 220px;
-}
-
-.baron-mail__composer-actions {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 0.45rem;
-    margin-top: 0.1rem;
-    order: 2;
 }
 
 .baron-mail__action--icon {

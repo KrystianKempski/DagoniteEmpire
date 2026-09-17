@@ -1,12 +1,13 @@
-/* Fill the visible viewport below the fixed barony header + bottom tabbar. The height
-   rules must hang off .barony-notes__page (a real element in THIS component, so it carries
-   the scoped attribute) and reach into MudTabs via ::deep — a class on the MudTabs root
-   itself would not receive the scope attribute. */
+/* Parent .barony-scope--notes is a fixed-height flex column; fill its content box.
+   Height hung off .barony-notes__page so MudTabs can stretch via ::deep. */
 .barony-notes__page {
     display: flex;
     flex-direction: column;
-    height: calc(100dvh - var(--mud-appbar-height, 64px) - 24px - 96px);
+    flex: 1 1 auto;
     min-height: 0;
+    /* Scope already sizes to the viewport (minus appbar) and pads for the tab bar. */
+    height: 100%;
+    max-height: 100%;
 }
 
 .barony-notes__page > .mud-typography,
@@ -57,6 +58,7 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .barony-notes__layout {
@@ -65,6 +67,7 @@
     display: flex;
     gap: 16px;
     align-items: stretch;
+    overflow: hidden;
 }
 
 .barony-notes__threads {
@@ -141,6 +144,7 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .barony-notes__editor-head {
@@ -171,6 +175,7 @@
     min-height: 0;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 /* Blazored/Quill wrappers must participate in the flex height chain. */
@@ -180,23 +185,17 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .barony-notes__editor ::deep .ql-toolbar.ql-snow {
     flex: 0 0 auto;
-}
-
-.barony-notes__editor ::deep .ql-container {
-    flex: 1 1 auto;
-    min-height: 0;
-    height: auto !important;
-    font-size: 1rem;
-}
-
-/* Keep the Quill toolbar on a single row instead of wrapping every icon group. */
-.barony-notes__editor ::deep .ql-toolbar.ql-snow {
+    position: relative;
+    z-index: 2;
+    /* Keep icons on one row when possible, but never clip picker menus.
+       overflow-x:auto forces overflow-y to auto and hides .ql-picker-options. */
     white-space: nowrap;
-    overflow-x: auto;
+    overflow: visible;
 }
 
 .barony-notes__editor ::deep .ql-toolbar.ql-snow .ql-formats {
@@ -205,9 +204,31 @@
     vertical-align: middle;
 }
 
+.barony-notes__editor ::deep .ql-picker-options {
+    z-index: 30;
+}
+
+.barony-notes__editor ::deep .ql-container {
+    flex: 1 1 auto;
+    min-height: 12rem;
+    /* Must stretch with flex — height:auto collapsed the writing area. */
+    height: 100% !important;
+    font-size: 1rem;
+    overflow: hidden;
+}
+
 .barony-notes__editor ::deep .ql-editor {
     height: 100%;
+    min-height: 12rem;
     overflow-y: auto;
+}
+
+/* Link tooltip: pin inside the editor so parent overflow:hidden cannot clip it. */
+.barony-notes__editor ::deep .ql-tooltip {
+    z-index: 20;
+    top: 0.5rem !important;
+    left: 0.5rem !important;
+    right: auto !important;
 }
 
 .barony-notes__placeholder {
@@ -442,9 +463,9 @@
 /* ---- Mobile: vertical stack (threads above editor), same idea as BaronQaPanel ---- */
 @media (max-width: 1279.98px) {
     .barony-notes__page {
-        /* Parent .barony-scope--notes is a fixed-height flex column; fill it. */
         flex: 1 1 auto;
         height: 100%;
+        max-height: 100%;
         min-height: 0;
         overflow: hidden;
     }
@@ -452,6 +473,8 @@
     .barony-notes__layout {
         flex-direction: column;
         gap: 0.55rem;
+        min-height: 0;
+        overflow: hidden;
     }
 
     .barony-notes__threads {
@@ -465,6 +488,16 @@
     .barony-notes__editor-pane {
         flex: 1 1 auto;
         min-height: 0;
+        overflow: hidden;
+    }
+
+    .barony-notes__editor ::deep .ql-toolbar.ql-snow {
+        white-space: normal;
+    }
+
+    .barony-notes__editor ::deep .ql-container,
+    .barony-notes__editor ::deep .ql-editor {
+        min-height: 10rem;
     }
 
     .barony-notes__thread-item {
