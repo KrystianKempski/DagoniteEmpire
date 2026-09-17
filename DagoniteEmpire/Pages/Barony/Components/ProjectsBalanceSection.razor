@@ -1,14 +1,14 @@
 @namespace DagoniteEmpire.Pages.Barony.Components
 @inject IJSRuntime Js
 
-<BaronySection Title="@(L["Project Summary"])">
+<BaronySection Title="@(L["Project Summary"])" DefaultOpen="@_summaryDefaultOpen">
     <Summary>
         <span class="projects-summary">
             <span class="projects-summary__item">@_rows.Count project@(_rows.Count == 1 ? "" : "s")</span>
         </span>
     </Summary>
     <ChildContent>
-        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3">
+        <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-3 projects-section-blurb">
             @L["Overview of open projects. Click a project name to jump to its card below."]
         </MudText>
 
@@ -183,6 +183,10 @@
     [Parameter] public int CurrentTurn { get; set; } = 1;
     [Parameter] public bool CanManage { get; set; }
 
+    /// <summary>Wide summary table starts collapsed until we know viewport width; desktop opens it.</summary>
+    private bool _summaryDefaultOpen;
+    private bool _summaryDefaultSettled;
+
     private List<BalanceRow> _rows = new();
     private PpbVector _allocatedTotal = new();
     private PpbVector _outputAddTotal = new();
@@ -195,6 +199,28 @@
     private bool HasAdventureRow => !_adventureAdd.IsEmpty || !_adventurePct.IsEmpty;
 
     protected override void OnParametersSet() => RebuildRows();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_summaryDefaultSettled)
+            return;
+
+        try
+        {
+            var width = await Js.InvokeAsync<double>("GetWindowWidth");
+            _summaryDefaultSettled = true;
+            var open = width >= BaronyMobile.MaxWidthPx;
+            if (open != _summaryDefaultOpen)
+            {
+                _summaryDefaultOpen = open;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch
+        {
+            // JS not ready — retry next render.
+        }
+    }
 
     private void RebuildRows()
     {

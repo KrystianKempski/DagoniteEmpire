@@ -5,34 +5,56 @@
 .barony-notes__page {
     display: flex;
     flex-direction: column;
-    height: calc(100dvh - 64px - 12px - 96px);
-    min-height: 34rem;
+    height: calc(100dvh - var(--mud-appbar-height, 64px) - 24px - 96px);
+    min-height: 0;
 }
 
+.barony-notes__page > .mud-typography,
+.barony-notes__page ::deep > .barony-page-header {
+    flex: 0 0 auto;
+}
+
+.barony-notes__page ::deep .mud-tabs.terrain-brush-tabs,
 .barony-notes__page ::deep .mud-tabs {
     flex: 1 1 auto;
     min-height: 0;
+    height: 100%;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .barony-notes__page ::deep .mud-tabs-panels {
     flex: 1 1 auto;
     min-height: 0;
+    height: 100%;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
-.barony-notes__page ::deep .mud-tab-panel {
+/* Active panel must stretch; Mud hides inactive ones with .mud-tab-panel-hidden. */
+.barony-notes__page ::deep .mud-tabs-panels > .mud-tab-panel,
+.barony-notes__page ::deep .mud-tabs-panels > [role="tabpanel"] {
     flex: 1 1 auto;
     min-height: 0;
+    height: 100%;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
-.barony-notes__journal {
+.barony-notes__page ::deep .mud-tab-panel-hidden {
+    display: none !important;
+}
+
+.barony-notes__journal,
+.barony-notes__sticky,
+.barony-notes__reminders,
+.barony-notes__page ::deep .baron-qa {
     flex: 1 1 auto;
     min-height: 0;
+    height: 100%;
     display: flex;
     flex-direction: column;
 }
@@ -151,9 +173,23 @@
     flex-direction: column;
 }
 
+/* Blazored/Quill wrappers must participate in the flex height chain. */
+.barony-notes__editor ::deep > div {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.barony-notes__editor ::deep .ql-toolbar.ql-snow {
+    flex: 0 0 auto;
+}
+
 .barony-notes__editor ::deep .ql-container {
     flex: 1 1 auto;
     min-height: 0;
+    height: auto !important;
     font-size: 1rem;
 }
 
@@ -185,13 +221,6 @@
 }
 
 /* ---- Sticky notes board ---- */
-.barony-notes__sticky {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-}
-
 .barony-notes__sticky-toolbar {
     display: flex;
     align-items: center;
@@ -307,13 +336,6 @@
 }
 
 /* ---- Reminders ---- */
-.barony-notes__reminders {
-    flex: 1 1 auto;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-}
-
 .barony-notes__reminder-add {
     display: flex;
     flex-wrap: wrap;
@@ -415,4 +437,73 @@
 
 .barony-notes__reminder-card--due ::deep .barony-notes__reminder-toggle {
     color: #c0392b;
+}
+
+/* ---- Mobile: vertical stack (threads above editor), same idea as BaronQaPanel ---- */
+@media (max-width: 1279.98px) {
+    .barony-notes__page {
+        /* Parent .barony-scope--notes is a fixed-height flex column; fill it. */
+        flex: 1 1 auto;
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .barony-notes__layout {
+        flex-direction: column;
+        gap: 0.55rem;
+    }
+
+    .barony-notes__threads {
+        flex: 0 0 auto;
+        width: 100%;
+        max-width: none;
+        max-height: 28%;
+        min-height: 7rem;
+    }
+
+    .barony-notes__editor-pane {
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+
+    .barony-notes__thread-item {
+        min-height: 2.5rem;
+        padding: 0.55rem 0.65rem;
+    }
+
+    .barony-notes__sticky-toolbar {
+        flex-wrap: wrap;
+        gap: 0.45rem 0.75rem;
+    }
+
+    .barony-notes__sticky-card {
+        flex: 1 1 100%;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .barony-notes__sticky-grip {
+        display: none;
+    }
+
+    .barony-notes__reminder-add {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.55rem;
+    }
+
+    .barony-notes__reminder-text {
+        flex: 1 1 auto;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .barony-notes__reminder-in {
+        flex-wrap: wrap;
+    }
+
+    .barony-notes__placeholder {
+        padding: 1.5rem 0.75rem;
+    }
 }

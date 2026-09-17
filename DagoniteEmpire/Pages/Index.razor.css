@@ -16,8 +16,10 @@ h1 {
 
 .hero-img {
     position: relative;
-    /* Fill .mud-main-content content box (parent is 100dvh minus app-bar padding). */
-    height: 100%;
+    /* Explicit viewport fill — do not use height:100% here. MainLayout's :has(.hero-img)
+       is CSS-isolated and does not match Index's hero, so % collapsed to the text box. */
+    height: calc(100dvh - var(--mud-appbar-height, 64px));
+    min-height: calc(100dvh - var(--mud-appbar-height, 64px));
     background-image: url('../images/EastMarchy_header.webp');
     background-size: cover;
     background-position: center;

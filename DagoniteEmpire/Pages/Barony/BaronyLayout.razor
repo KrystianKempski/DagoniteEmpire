@@ -5,14 +5,14 @@
 @inject IJSRuntime JS
 @implements IDisposable
 
-<div class="barony-mobile-block @(IsAudienceHall ? "barony-mobile-block--hidden" : "")">
+<div class="barony-mobile-block @(IsMobileAllowedPage ? "barony-mobile-block--hidden" : "")">
     <div class="barony-mobile-block__card">
         <span class="barony-mobile-block__title">@L["Not available on mobile yet"]</span>
         <span class="barony-mobile-block__hint">@L["The Barony view needs a larger screen. Please open it on a desktop."]</span>
     </div>
 </div>
 
-<div class="barony-scope @(IsDomainPanel ? "barony-scope--domain-panel" : "") @(IsBuildingsCatalog ? "barony-scope--buildings-catalog" : "") @(IsMarchMap ? "barony-scope--march-map" : "") @(IsBattleMap ? "barony-scope--battle-map" : "") @(IsAudienceHall ? "barony-scope--audience-hall" : "")">
+<div class="barony-scope @(IsDomainPanel ? "barony-scope--domain-panel" : "") @(IsBuildingsCatalog ? "barony-scope--buildings-catalog" : "") @(IsMarchMap ? "barony-scope--march-map" : "") @(IsBattleMap ? "barony-scope--battle-map" : "") @(IsAudienceHall ? "barony-scope--audience-hall" : "") @(IsProjects ? "barony-scope--projects" : "") @(IsCharacterCard ? "barony-scope--character-card" : "") @(IsNotes ? "barony-scope--notes" : "") @(IsLetters ? "barony-scope--letters" : "") @(IsMobileAllowedPage ? "barony-scope--mobile-ok" : "")">
     <DemoModeBanner />
     <CascadingValue Value="@_viewOptions">
         @* Fill wrapper only for full-viewport map pages — plain pages stay unwrapped. *@
@@ -82,16 +82,24 @@
 
     private bool IsBattleMap => CurrentPath == "/barony/battle-map";
 
-    /// <summary>Only page allowed on mobile — hub is a single-column visual view, works on any screen size.</summary>
     private bool IsAudienceHall => CurrentPath == "/barony/audience-hall";
+
+    private bool IsProjects => CurrentPath == "/barony/projects";
+
+    private bool IsCharacterCard => CurrentPath == "/barony/character-card";
+
+    private bool IsNotes => CurrentPath == "/barony/notes";
+
+    private bool IsLetters => CurrentPath == "/barony/letters";
+
+    /// <summary>Pages with a working mobile layout — others stay behind the desktop-only gate.</summary>
+    private bool IsMobileAllowedPage => BaronyMobile.IsAllowedPath(CurrentPath);
 
     /// <summary>Any Barony route (Domain Panel or a tab). Non-barony app pages must never be intercepted.</summary>
     private bool IsBaronyPath =>
         CurrentPath == "/barony"
         || CurrentPath.StartsWith("/barony/", StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>Matches <c>.barony-mobile-block</c> in barony.css (<c>max-width: 1279.98px</c>).</summary>
-    private const double MobileBaronyMaxWidth = 1280;
     private bool _narrowRedirectSettled;
 
     protected override void OnInitialized()
@@ -101,31 +109,32 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await TrySendMobileToAudienceHallAsync();
+        await TrySendMobileToAllowedPageAsync();
     }
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
         _narrowRedirectSettled = false;
-        _ = InvokeAsync(TrySendMobileToAudienceHallAsync);
+        _ = InvokeAsync(TrySendMobileToAllowedPageAsync);
     }
 
     /// <summary>
-    /// On phone/tablet, other Barony tabs are CSS-hidden. If the user opens one (or lands on
-    /// <c>/barony</c>), send them to Audience Hall. Do not touch Character / Campaign / Wiki / etc.
-    /// — <see cref="LocationChanged"/> also fires while leaving Barony, and must not yank them back.
+    /// On phone/tablet, non-mobile Barony tabs are CSS-hidden. If the user opens one (or lands on
+    /// <c>/barony</c>), send them to the mobile fallback (Audience Hall). Do not touch Character /
+    /// Campaign / Wiki / etc. — <see cref="LocationChanged"/> also fires while leaving Barony,
+    /// and must not yank them back.
     /// </summary>
-    private async Task TrySendMobileToAudienceHallAsync()
+    private async Task TrySendMobileToAllowedPageAsync()
     {
-        if (!IsBaronyPath || IsAudienceHall || _narrowRedirectSettled)
+        if (!IsBaronyPath || IsMobileAllowedPage || _narrowRedirectSettled)
             return;
 
         try
         {
             var width = await JS.InvokeAsync<double>("GetWindowWidth");
             _narrowRedirectSettled = true;
-            if (width < MobileBaronyMaxWidth)
-                NavigationManager.NavigateTo("/barony/audience-hall", replace: true);
+            if (width < BaronyMobile.MaxWidthPx)
+                NavigationManager.NavigateTo(BaronyMobile.FallbackHref, replace: true);
         }
         catch
         {

@@ -64,26 +64,24 @@
 
         <div class="baron-time-block">
             <div class="baron-time-block__title">@L["Actions this turn"]</div>
-            <div style="overflow-x:auto;">
-                <table class="ppb-table ppb-table--source ppb-table--lined baron-time-table">
+            <div class="baron-table-wrap baron-table-wrap--time">
+                <table class="ppb-table ppb-table--source ppb-table--lined baron-time-table baron-time-table--stacked-desc">
                     <colgroup>
                         <col class="baron-time-col-name" />
                         <col class="baron-time-col-kind" />
                         <col class="baron-time-col-cost" />
-                        <col class="baron-time-col-desc" />
                     </colgroup>
                     <thead>
                         <tr>
                             <th class="ppb-row-label source-col">@L["Action"]</th>
                             <th class="baron-time-col-kind">@L["Type"]</th>
                             <th class="baron-time-col-cost">@L["Cost"]</th>
-                            <th class="baron-time-col-desc">@L["Description"]</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var action in _actions)
                         {
-                            <tr class="@(action.IsSystem ? "source-row--system" : "")">
+                            <tr class="@(action.IsSystem ? "source-row--system" : "") baron-time-row--main">
                                 <td class="ppb-row-label source-col">
                                     <div class="source-cell">
                                         <span class="source-cell__name">@DisplayActionName(action)</span>
@@ -101,13 +99,17 @@
                                 </td>
                                 <td class="baron-time-col-kind">@L[action.Kind]</td>
                                 <td class="baron-time-cost">@action.CostJc BT</td>
-                                <td class="baron-time-col-desc">@(action.Description ?? "")</td>
                             </tr>
+                            @if (!string.IsNullOrWhiteSpace(action.Description))
+                            {
+                                <tr class="baron-time-row--desc @(action.IsSystem ? "source-row--system" : "")">
+                                    <td colspan="3" class="baron-time-col-desc">@action.Description</td>
+                                </tr>
+                            }
                         }
                         <tr class="ppb-summary-row">
                             <td class="ppb-row-label" colspan="2">@L["Σ spent"]</td>
                             <td class="baron-time-cost"><b>@_budget.SpentJc BT</b></td>
-                            <td class="baron-time-col-desc"></td>
                         </tr>
                     </tbody>
                 </table>
@@ -130,24 +132,22 @@
             }
             else
             {
-                <div style="overflow-x:auto;">
-                    <table class="ppb-table ppb-table--source ppb-table--lined baron-time-table">
+                <div class="baron-table-wrap baron-table-wrap--time">
+                    <table class="ppb-table ppb-table--source ppb-table--lined baron-time-table baron-time-table--stacked-desc">
                         <colgroup>
                             <col class="baron-time-col-name" />
                             <col class="baron-time-col-cost" />
-                            <col class="baron-time-col-desc" />
                         </colgroup>
                         <thead>
                             <tr>
                                 <th class="ppb-row-label source-col">@L["Source"]</th>
                                 <th class="baron-time-col-cost">%</th>
-                                <th class="baron-time-col-desc">@L["Description"]</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var mod in _modifiers)
                             {
-                                <tr>
+                                <tr class="baron-time-row--main">
                                     <td class="ppb-row-label source-col">
                                         <div class="source-cell">
                                             <span class="source-cell__name">@mod.Source</span>
@@ -161,13 +161,17 @@
                                         </div>
                                     </td>
                                     <td class="@PercentClass(mod.Percent)">@BaronyCalc.FormatPercent(mod.Percent)</td>
-                                    <td class="baron-time-col-desc">@(mod.Description ?? "")</td>
                                 </tr>
+                                @if (!string.IsNullOrWhiteSpace(mod.Description))
+                                {
+                                    <tr class="baron-time-row--desc">
+                                        <td colspan="2" class="baron-time-col-desc">@mod.Description</td>
+                                    </tr>
+                                }
                             }
                             <tr class="ppb-summary-row">
                                 <td class="ppb-row-label">@L["Σ modifiers"]</td>
                                 <td class="@PercentClass(_budget.ModifierPercent)"><b>@BaronyCalc.FormatPercent(_budget.ModifierPercent)</b></td>
-                                <td class="baron-time-col-desc"></td>
                             </tr>
                         </tbody>
                     </table>

@@ -1,0 +1,307 @@
+/* Fill the viewport below app bar + bottom tabbar. Height hangs off .baron-mail__page
+   (scoped to this component) so the mailbox grid can stretch. */
+.baron-mail__page {
+    display: flex;
+    flex-direction: column;
+    height: calc(100dvh - var(--mud-appbar-height, 64px) - 24px - 96px);
+    min-height: 0;
+}
+
+.baron-mail__page ::deep > .barony-page-header {
+    flex: 0 0 auto;
+}
+
+.baron-mail__page ::deep .baron-mail {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: 100%;
+}
+
+/* ---- Mobile: vertical stack (threads above conversation), same idea as Notes ---- */
+@media (max-width: 1279.98px) {
+    .baron-mail__page {
+        flex: 1 1 auto;
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .baron-mail__page ::deep .barony-page-header {
+        margin: 2px 0 8px 0;
+        padding-bottom: 6px;
+        gap: 6px;
+    }
+
+    .baron-mail__page ::deep .baron-mail__summary-limits {
+        display: none;
+    }
+
+    .baron-mail__page ::deep .baron-mail {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        min-height: 0;
+        height: 100%;
+        border: none;
+        background: transparent;
+        overflow: hidden;
+    }
+
+    .baron-mail__page ::deep .baron-mail__sidebar {
+        flex: 0 0 auto;
+        width: 100%;
+        max-height: 22%;
+        min-height: 5.25rem;
+        border-right: 0;
+        border: 1px solid color-mix(in srgb, var(--barony-ink, #3a2e1f) 14%, transparent);
+        background: color-mix(in srgb, var(--barony-paper, #f7f1e4) 70%, #ebe3d2);
+    }
+
+    .baron-mail__page ::deep .baron-mail__sidebar-actions {
+        padding: 0.4rem 0.5rem;
+        gap: 0.35rem;
+    }
+
+    .baron-mail__page ::deep .baron-mail__sidebar-actions .mud-button {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
+
+    .baron-mail__page ::deep .baron-mail__folder-summary {
+        padding: 0.35rem 0.55rem;
+        gap: 0.35rem;
+    }
+
+    .baron-mail__page ::deep .baron-mail__folder-title {
+        font-size: 0.75rem;
+    }
+
+    .baron-mail__page ::deep .baron-mail__thread {
+        min-height: 0;
+        padding: 0.35rem 0.55rem 0.35rem 0.85rem;
+    }
+
+    .baron-mail__page ::deep .baron-mail__thread-title {
+        font-size: 0.88rem;
+        line-height: 1.2;
+    }
+
+    .baron-mail__page ::deep .baron-mail__thread-meta {
+        margin-top: 0.05rem;
+        font-size: 0.68rem;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .baron-mail__page ::deep .baron-mail__main {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid color-mix(in srgb, var(--barony-ink, #3a2e1f) 14%, transparent);
+        overflow: hidden;
+    }
+
+    .baron-mail__page ::deep .baron-mail__header {
+        flex: 0 0 auto;
+        padding: 0.4rem 0.55rem;
+        gap: 0.35rem;
+    }
+
+    .baron-mail__page ::deep .baron-mail__title {
+        font-size: 1.05rem;
+    }
+
+    .baron-mail__page ::deep .baron-mail__header-meta {
+        font-size: 0.7rem;
+    }
+
+    .baron-mail__page ::deep .baron-mail__inbound-quota {
+        margin-left: 0.25rem;
+        color: var(--barony-muted, #6f6656);
+    }
+
+    .baron-mail__page ::deep .baron-mail__posts {
+        flex: 1 1 auto;
+        min-height: 0;
+        padding: 0.5rem;
+        gap: 0.5rem;
+    }
+
+    .baron-mail__page ::deep .baron-mail__placeholder {
+        padding: 1rem 0.65rem;
+    }
+
+    .baron-mail__page ::deep .baron-mail__composer {
+        flex: 0 0 auto;
+        padding: 0.35rem 0.45rem 0.5rem;
+    }
+
+    .baron-mail__page ::deep .baron-mail__composer-label {
+        display: none;
+    }
+
+    /* Compact dock: one-line pill when collapsed; ~half pane when expanded (ChapterThread-style). */
+    .baron-mail__page ::deep .baron-mail__composer-shell {
+        display: block;
+        padding-top: 0;
+    }
+
+    .baron-mail__page ::deep .baron-mail__composer-collapsed {
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.55rem 0.75rem;
+        border: 1px solid color-mix(in srgb, var(--barony-ink, #3a2e1f) 16%, transparent);
+        border-radius: 10px;
+        background: color-mix(in srgb, white 55%, var(--barony-paper, #f7f1e4));
+        color: var(--barony-muted, #6f6656);
+        cursor: text;
+        user-select: none;
+    }
+
+    .baron-mail__page ::deep .baron-mail__composer--expanded .baron-mail__composer-collapsed {
+        display: none;
+    }
+
+    .baron-mail__page ::deep .baron-mail__composer-collapsed-icon,
+    .baron-mail__page ::deep .baron-mail__composer-collapsed-chevron {
+        flex: 0 0 auto;
+        opacity: 0.7;
+    }
+
+    .baron-mail__page ::deep .baron-mail__composer-collapsed-hint {
+        flex: 1 1 auto;
+        min-width: 0;
+        font-size: 0.88rem;
+        line-height: 1.3;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .baron-mail__page ::deep .baron-mail__composer-expanded-body {
+        max-height: 0;
+        opacity: 0;
+        overflow: hidden;
+        pointer-events: none;
+        border: none;
+        border-radius: 0;
+        background: transparent;
+        transition: max-height .28s ease, opacity .2s ease;
+    }
+
+    .baron-mail__page ::deep .baron-mail__composer--expanded .baron-mail__composer-expanded-body {
+        position: relative;
+        display: block;
+        gap: 0;
+        max-height: 50vh;
+        opacity: 1;
+        overflow: hidden;
+        pointer-events: auto;
+        border: 1px solid color-mix(in srgb, var(--barony-ink, #3a2e1f) 16%, transparent);
+        border-radius: 10px;
+        background: color-mix(in srgb, white 55%, var(--barony-paper, #f7f1e4));
+    }
+
+    .baron-mail__page ::deep .baron-mail__composer-controls {
+        display: flex;
+        position: absolute;
+        top: 4px;
+        left: 4px;
+        z-index: 3;
+        gap: 0;
+        order: unset;
+    }
+
+    /* On mobile the TextFormat toggle stays; keep hand picker beside it. */
+    .baron-mail__page ::deep .baron-mail__composer-controls .baron-mail__hand-menu {
+        display: inline-flex;
+    }
+
+    .baron-mail__page ::deep .baron-mail__composer-actions {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        z-index: 3;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        margin: 0;
+        padding: 0;
+        gap: 0.15rem;
+    }
+
+    .baron-mail__page ::deep .baron-mail__action--text {
+        display: none !important;
+    }
+
+    .baron-mail__page ::deep .baron-mail__action--icon {
+        display: inline-flex !important;
+    }
+
+    .baron-mail__page ::deep .baron-mail__send-btn {
+        border-radius: 50%;
+        background-color: var(--barony-ink, #2f2a24);
+        color: var(--barony-surface, #fbf8f1);
+        box-shadow: 0 1px 4px rgba(47, 42, 36, 0.28);
+    }
+
+    .baron-mail__page ::deep .baron-mail__send-btn:hover:not(:disabled) {
+        background-color: var(--barony-accent, #9c7a33);
+        color: #fff;
+    }
+
+    /* Drop the sharp outer .baron-letter-editor frame and Quill's own borders. */
+    .baron-mail__page ::deep .baron-mail__editor.baron-letter-editor {
+        min-height: 0;
+        border: none !important;
+        background: transparent;
+    }
+
+    .baron-mail__page ::deep .baron-mail__composer--expanded .baron-mail__editor.baron-letter-editor {
+        min-height: calc(50vh - 2.5rem);
+    }
+
+    .baron-mail__page ::deep .baron-mail__editor .ql-toolbar.ql-snow {
+        display: none;
+        flex-wrap: wrap;
+        row-gap: 0.15rem;
+        padding: 0.2rem 2.75rem 0.25rem 2.25rem;
+        border: none !important;
+        background: color-mix(in srgb, var(--barony-paper, #f7f1e4) 80%, white);
+    }
+
+    .baron-mail__page ::deep .baron-mail__composer--toolbar .baron-mail__editor .ql-toolbar.ql-snow {
+        display: block;
+        border-bottom: 1px solid color-mix(in srgb, var(--barony-ink, #3a2e1f) 12%, transparent) !important;
+    }
+
+    .baron-mail__page ::deep .baron-mail__editor .ql-container,
+    .baron-mail__page ::deep .baron-mail__editor .ql-container.ql-snow {
+        min-height: 0;
+        border: none !important;
+        border-radius: 0;
+        background: transparent;
+    }
+
+    .baron-mail__page ::deep .baron-mail__composer--expanded .baron-mail__editor .ql-container,
+    .baron-mail__page ::deep .baron-mail__composer--expanded .baron-mail__editor .ql-container.ql-snow {
+        min-height: calc(50vh - 2.5rem);
+    }
+
+    .baron-mail__page ::deep .baron-mail__editor .ql-editor {
+        min-height: 0;
+        max-height: none;
+        overflow-y: auto;
+        padding: 0.45rem 0.65rem;
+    }
+
+    .baron-mail__page ::deep .baron-mail__composer--expanded .baron-mail__editor .ql-editor {
+        min-height: calc(50vh - 2.5rem);
+        max-height: calc(50vh - 2.5rem);
+        padding: 2.15rem 0.65rem 0.55rem;
+    }
+}

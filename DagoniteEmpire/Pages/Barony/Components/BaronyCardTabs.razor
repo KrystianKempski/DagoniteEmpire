@@ -10,20 +10,95 @@
 @inject IBaronyRepository _baronyRepo
 @inject IBaronyBattleMapRepository _battleMapRepo
 @inject CallbackService _callbackService
+@inject IJSRuntime _js
 
-<nav class="barony-tabbar"
+<nav class="barony-tabbar @(!UseDesktopTabChrome ? "barony-tabbar--mobile" : "")"
      aria-label="@(L["Barony tabs"])"
      @ondragover="OnNavDragOver"
      @ondragover:preventDefault>
-    @foreach (var tab in _orderedTabs)
+    @if (UseDesktopTabChrome)
+    {
+        @foreach (var tab in VisibleTabs)
+        {
+            @RenderTab(tab, tipReorder: true)
+        }
+    }
+    else
+    {
+        @foreach (var tab in MobilePrimaryTabs)
+        {
+            @RenderTab(tab, tipReorder: false)
+        }
+        @if (ShowMobileMore)
+        {
+            <div class="barony-tabbar__more">
+                <button type="button"
+                        class="barony-tabbar__tab barony-tabbar__tab--mobile-ok barony-tabbar__tab--more @(IsMobileOverflowActive ? "barony-tabbar__tab--active" : "") @(_moreOpen ? "barony-tabbar__tab--more-open" : "")"
+                        aria-haspopup="menu"
+                        aria-expanded="@_moreOpen"
+                        @onclick="ToggleMoreMenu"
+                        @onclick:stopPropagation="true">
+                    <MudIcon Icon="@Icons.Material.Filled.MoreHoriz" Size="Size.Small" />
+                    <span class="barony-tabbar__label">@L["More"]</span>
+                    @if (MobileOverflowHallBadge > 0)
+                    {
+                        <span class="barony-tabbar__badge">@MobileOverflowHallBadge</span>
+                    }
+                </button>
+                @if (_moreOpen)
+                {
+                    <div class="barony-tabbar__more-backdrop" @onclick="CloseMoreMenu"></div>
+                    <div class="barony-tabbar__more-panel" role="menu" aria-label="@(L["More"])">
+                        @foreach (var tab in MobileOverflowTabs)
+                        {
+                            var overflowKey = tab.Key;
+                            var overflowLocked = IsTabLocked(overflowKey);
+                            <button type="button"
+                                    role="menuitem"
+                                    disabled="@overflowLocked"
+                                    class="barony-tabbar__more-item @(IsActive(tab.Href) ? "barony-tabbar__more-item--active" : "") @(overflowLocked ? "barony-tabbar__more-item--locked" : "")"
+                                    @onclick="() => OnOverflowTabActivate(tab.Href, overflowKey)">
+                                @if (!string.IsNullOrEmpty(tab.SvgIcon))
+                                {
+                                    <img src="@tab.SvgIcon"
+                                         class="barony-tabbar__svg-icon @(tab.Key == "relations" ? "barony-tabbar__svg-icon--lg" : "")"
+                                         alt="" />
+                                }
+                                else if (!string.IsNullOrEmpty(tab.Icon))
+                                {
+                                    <MudIcon Icon="@tab.Icon" Size="Size.Small" />
+                                }
+                                <span>@L[tab.Label]</span>
+                                @if (overflowLocked)
+                                {
+                                    <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" />
+                                }
+                                else if (overflowKey == "audience-hall" && _hallEventPendingCount > 0)
+                                {
+                                    <span class="barony-tabbar__more-badge">@_hallEventPendingCount</span>
+                                }
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    }
+</nav>
+
+@code {
+    private RenderFragment RenderTab(TabItem tab, bool tipReorder) => __builder =>
     {
         var key = tab.Key;
         var locked = IsTabLocked(key);
-        <BaronyTooltip Text="@(locked ? L["Closed while the Game Master resolves the turn"] : L["Hold and drag to reorder"])">
+        var tip = locked
+            ? L["Closed while the Game Master resolves the turn"].Value
+            : (tipReorder ? L["Hold and drag to reorder"].Value : null);
+        <BaronyTooltip Text="@tip">
         <div role="link"
              tabindex="0"
-             draggable="true"
-             class="barony-tabbar__tab @(IsActive(tab.Href) ? "barony-tabbar__tab--active" : "") @(locked ? "barony-tabbar__tab--locked" : "") @(_dragKey == key ? "barony-tabbar__tab--dragging" : "") @(_dropTargetKey == key ? "barony-tabbar__tab--drop-target" : "")"
+             draggable="@UseDesktopTabChrome"
+             class="barony-tabbar__tab @(IsActive(tab.Href) ? "barony-tabbar__tab--active" : "") @(locked ? "barony-tabbar__tab--locked" : "") @(BaronyMobile.IsAllowedTab(key) ? "barony-tabbar__tab--mobile-ok" : "") @(key == "audience-hall" ? "barony-tabbar__tab--audience-hall" : "") @(_dragKey == key ? "barony-tabbar__tab--dragging" : "") @(_dropTargetKey == key ? "barony-tabbar__tab--drop-target" : "")"
              @ondragstart="e => OnDragStart(e, key)"
              @ondragenter="e => OnDragEnter(e, key)"
              @ondragleave="() => OnDragLeave(key)"
@@ -45,7 +120,7 @@
                 var mudIcon = tab.Icon;
                 <MudIcon Icon="@mudIcon" Size="Size.Small" />
             }
-            @L[tab.Label]
+            <span class="barony-tabbar__label">@L[tab.Label]</span>
             @if (locked)
             {
                 <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Class="barony-tabbar__lock" />
@@ -56,10 +131,8 @@
             }
         </div>
         </BaronyTooltip>
-    }
-</nav>
+    };
 
-@code {
     private sealed record TabItem(string Key, string Label, string Href, string? Icon = null, string? SvgIcon = null);
 
     private static readonly TabItem[] DefaultTabs =
@@ -99,6 +172,58 @@
     private int _hallEventPendingCount;
     private HubConnection? _hubConnection;
     private int _baronyId;
+    private bool _narrowViewport = true;
+    private bool _narrowViewportSettled;
+    private bool _moreOpen;
+
+    /// <summary>Desktop chrome (drag-reorder + tip) only after we know the viewport is wide.</summary>
+    private bool UseDesktopTabChrome => _narrowViewportSettled && !_narrowViewport;
+
+    /// <summary>How many content tabs sit on the mobile bar before the More overflow slot.</summary>
+    private const int MobilePrimarySlotCount = 3;
+
+    /// <summary>Desktop: all visible tabs. Mobile / unsettled: only pages with a mobile layout.</summary>
+    private IEnumerable<TabItem> VisibleTabs =>
+        UseDesktopTabChrome
+            ? _orderedTabs
+            : _orderedTabs.Where(t => BaronyMobile.IsAllowedTab(t.Key));
+
+    private List<TabItem> MobileTabs =>
+        _orderedTabs.Where(t => BaronyMobile.IsAllowedTab(t.Key)).ToList();
+
+    private bool ShowMobileMore => MobileTabs.Count > MobilePrimarySlotCount;
+
+    private List<TabItem> MobilePrimaryTabs
+    {
+        get
+        {
+            var all = MobileTabs;
+            if (all.Count <= MobilePrimarySlotCount)
+                return all;
+
+            var primary = all.Take(MobilePrimarySlotCount).ToList();
+            var active = all.FirstOrDefault(t => IsActive(t.Href));
+            if (active is not null && primary.All(p => p.Key != active.Key))
+                primary[MobilePrimarySlotCount - 1] = active;
+
+            return primary;
+        }
+    }
+
+    private List<TabItem> MobileOverflowTabs
+    {
+        get
+        {
+            var primaryKeys = MobilePrimaryTabs.Select(t => t.Key).ToHashSet(StringComparer.Ordinal);
+            return MobileTabs.Where(t => !primaryKeys.Contains(t.Key)).ToList();
+        }
+    }
+
+    private bool IsMobileOverflowActive =>
+        MobileOverflowTabs.Any(t => IsActive(t.Href));
+
+    private int MobileOverflowHallBadge =>
+        MobileOverflowTabs.Any(t => t.Key == "audience-hall") ? _hallEventPendingCount : 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -108,6 +233,28 @@
         await RefreshHallEventBadgeAsync();
         await LoadOrderAsync();
         await InitializeSignalRAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_narrowViewportSettled)
+            return;
+
+        try
+        {
+            var width = await _js.InvokeAsync<double>("GetWindowWidth");
+            _narrowViewportSettled = true;
+            var narrow = width < BaronyMobile.MaxWidthPx;
+            if (narrow != _narrowViewport)
+            {
+                _narrowViewport = narrow;
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch
+        {
+            // JS not ready — retry next render.
+        }
     }
 
     private void OnSelectedCharacterChanged() =>
@@ -342,6 +489,9 @@
 
     private void OnDragStart(DragEventArgs e, string key)
     {
+        if (!UseDesktopTabChrome)
+            return;
+
         _dragKey = key;
         _dropTargetKey = null;
         _lastHoverKey = null;
@@ -350,11 +500,16 @@
         e.DataTransfer.EffectAllowed = "move";
     }
 
-    private void OnNavDragOver(DragEventArgs e) => e.DataTransfer.DropEffect = "move";
+    private void OnNavDragOver(DragEventArgs e)
+    {
+        if (!UseDesktopTabChrome)
+            return;
+        e.DataTransfer.DropEffect = "move";
+    }
 
     private void RememberHover(string key)
     {
-        if (_dragKey is null || _dragKey == key)
+        if (!UseDesktopTabChrome || _dragKey is null || _dragKey == key)
             return;
         _dropTargetKey = key;
         _lastHoverKey = key;
@@ -362,18 +517,24 @@
 
     private void OnItemDragOver(DragEventArgs e, string key)
     {
+        if (!UseDesktopTabChrome)
+            return;
         e.DataTransfer.DropEffect = "move";
         RememberHover(key);
     }
 
     private void OnDragEnter(DragEventArgs e, string key)
     {
+        if (!UseDesktopTabChrome)
+            return;
         e.DataTransfer.DropEffect = "move";
         RememberHover(key);
     }
 
     private void OnDragLeave(string key)
     {
+        if (!UseDesktopTabChrome)
+            return;
         // Only clear highlight — keep _lastHoverKey for dragend fallback.
         if (_dropTargetKey == key)
             _dropTargetKey = null;
@@ -381,6 +542,8 @@
 
     private void OnDrop(DragEventArgs e, string targetKey)
     {
+        if (!UseDesktopTabChrome)
+            return;
         _lastHoverKey = targetKey;
         ApplyMove(_dragKey, targetKey);
         _suppressNextClick = true;
@@ -416,6 +579,9 @@
 
     private async Task OnDragEndAsync()
     {
+        if (!UseDesktopTabChrome)
+            return;
+
         // Browsers / Blazor sometimes skip drop; commit using last hover target.
         if (!_orderChanged)
             ApplyMove(_dragKey, _lastHoverKey);
@@ -435,11 +601,13 @@
 
     private void OnTabActivate(string href, string key)
     {
-        if (_suppressNextClick)
+        if (UseDesktopTabChrome && _suppressNextClick)
         {
             _suppressNextClick = false;
             return;
         }
+
+        _suppressNextClick = false;
 
         if (IsTabLocked(key))
             return;
@@ -447,6 +615,16 @@
         if (!IsActive(href))
             _navigationManager.NavigateTo(href);
     }
+
+    private void OnOverflowTabActivate(string href, string key)
+    {
+        _moreOpen = false;
+        OnTabActivate(href, key);
+    }
+
+    private void ToggleMoreMenu() => _moreOpen = !_moreOpen;
+
+    private void CloseMoreMenu() => _moreOpen = false;
 
     private void OnTabKeyDown(KeyboardEventArgs e, string href, string key)
     {
@@ -473,6 +651,7 @@
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e) =>
         InvokeAsync(async () =>
         {
+            _moreOpen = false;
             await LoadBattleMapVisibilityAsync();
             await RefreshHallEventBadgeAsync();
             _orderedTabs = ApplySavedOrder(await SafeGetTabOrderJson());

@@ -29,20 +29,6 @@
         @if (CanManageAsMg)
         {
             <div class="audience-hall__mg-bar d-flex flex-wrap gap-2 mb-1">
-                <MudButton Variant="Variant.Outlined"
-                           Size="Size.Small"
-                           StartIcon="@Icons.Material.Filled.Add"
-                           OnClick="CreateAudienceAsync"
-                           Disabled="_busy">
-                    @L["New audience"]
-                </MudButton>
-                <MudButton Variant="Variant.Outlined"
-                           Size="Size.Small"
-                           StartIcon="@Icons.Material.Filled.Add"
-                           OnClick="CreateHallEventAsync"
-                           Disabled="_busy">
-                    @L["New hall event"]
-                </MudButton>
                 @if (_mode == HallMode.Council)
                 {
                     <MudButton Variant="Variant.Outlined"
@@ -63,6 +49,23 @@
                         @L["Add adventure"]
                     </MudButton>
                 }
+                else
+                {
+                    <MudButton Variant="Variant.Outlined"
+                               Size="Size.Small"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               OnClick="CreateAudienceAsync"
+                               Disabled="_busy">
+                        @L["New audience"]
+                    </MudButton>
+                }
+                <MudButton Variant="Variant.Outlined"
+                           Size="Size.Small"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           OnClick="CreateHallEventAsync"
+                           Disabled="_busy">
+                    @L["New hall event"]
+                </MudButton>
             </div>
         }
 

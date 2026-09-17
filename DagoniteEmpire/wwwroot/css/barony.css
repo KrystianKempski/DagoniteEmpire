@@ -20,9 +20,17 @@
     --php-honor: #3a5f8a;
     --php-fear: #7a3030;
 
-    /* Letter handwriting (baron vs correspondent) */
+    /* Letter handwriting — defaults + user-picked faces */
     --baron-letter-font-baron: 'Caveat', 'Segoe Script', 'Bradley Hand', cursive;
     --baron-letter-font-correspondent: 'Pinyon Script', 'Segoe Script', 'Brush Script MT', cursive;
+    --baron-letter-font-caveat: 'Caveat', 'Segoe Script', cursive;
+    --baron-letter-font-homemade-apple: 'Homemade Apple', 'Segoe Script', cursive;
+    --baron-letter-font-shadows-into-light: 'Shadows Into Light', 'Segoe Script', cursive;
+    --baron-letter-font-dancing-script: 'Dancing Script', 'Segoe Script', cursive;
+    --baron-letter-font-sacramento: 'Sacramento', 'Segoe Script', cursive;
+    --baron-letter-font-la-belle-aurore: 'La Belle Aurore', 'Segoe Script', cursive;
+    --baron-letter-font-great-vibes: 'Great Vibes', 'Segoe Script', cursive;
+    --baron-letter-font-pinyon: 'Pinyon Script', 'Segoe Script', cursive;
 
     color: var(--barony-ink);
     background: var(--barony-bg);
@@ -31,7 +39,8 @@
     font-family: 'Open Sans', sans-serif;
 }
 
-/* The Barony layer is desktop-only for now: hide it on medium-and-smaller screens. */
+/* The Barony layer is mostly desktop-only: hide it on medium-and-smaller screens
+   except pages marked .barony-scope--mobile-ok (Audience Hall, Projects, …). */
 .barony-mobile-block {
     display: none;
 }
@@ -41,14 +50,12 @@
         display: none !important;
     }
 
-    /* Audience Hall is the one Barony page allowed on mobile/tablet. */
-    .barony-scope--audience-hall {
+    .barony-scope--mobile-ok {
         display: block !important;
     }
 
-    /* No other Barony page can be reached on mobile anyway — hide the tab bar entirely
-       so there is nothing to tap into a blocked page with. */
-    .barony-scope--audience-hall .barony-tabbar {
+    /* Only tabs with a mobile layout stay reachable from the bottom bar. */
+    .barony-scope--mobile-ok .barony-tabbar__tab:not(.barony-tabbar__tab--mobile-ok) {
         display: none !important;
     }
 
@@ -109,7 +116,8 @@
     max-height: 100%;
     min-height: 0;
     overflow: hidden;
-    padding: 0;
+    /* Leave room for the fixed bottom tab bar (Audience Hall + Projects on mobile). */
+    padding: 0 0 40px;
 }
 
 .barony-scope h1,
@@ -3206,6 +3214,10 @@ button.barony-meta-bar__stat--clickable:focus-visible {
 .ppb-table--projects-balance {
     width: max-content;
     min-width: 100%;
+    /* separate + spacing 0 keeps sticky name borders from leaking scrolled cells underneath
+       (collapse shares borders and paints them poorly with position:sticky). */
+    border-collapse: separate;
+    border-spacing: 0;
 }
 
 .ppb-table--projects-balance col.projects-balance-col-name {
@@ -3227,16 +3239,27 @@ button.barony-meta-bar__stat--clickable:focus-visible {
     width: 9rem;
     max-width: 12rem;
     text-align: left;
+    box-sizing: border-box;
+}
+
+/* Whole Project name column stays pinned (header + body) while cost/output scrolls.
+   Use border-collapse:separate (set on the table) so sticky edges do not leak. */
+.ppb-table--projects-balance thead th.projects-balance-col-name,
+.ppb-table--projects-balance td.projects-balance-col-name {
     position: sticky;
     left: 0;
     background: var(--barony-surface);
-    box-shadow: 2px 0 4px rgba(47, 42, 36, 0.06);
-    box-sizing: border-box;
-    z-index: 2;
+    border-right: 1px solid var(--barony-border);
+    box-shadow: 6px 0 8px -4px rgba(47, 42, 36, 0.18);
 }
 
 .ppb-table--projects-balance thead th.projects-balance-col-name {
+    top: 0;
     z-index: 4;
+}
+
+.ppb-table--projects-balance td.projects-balance-col-name {
+    z-index: 2;
 }
 
 .ppb-table--projects-balance tbody tr:hover td.projects-balance-col-name {
@@ -3362,6 +3385,277 @@ button.barony-meta-bar__stat--clickable:focus-visible {
 .projects-summary__item--active {
     color: var(--barony-accent);
     font-weight: 600;
+}
+
+/* Projects — narrow screens: stack cost/output panels, keep tables scrollable. */
+@media (max-width: 1279.98px) {
+    .barony-scope--projects {
+        padding: 10px 8px 88px;
+    }
+
+    .barony-scope--projects .barony-page-header {
+        margin-bottom: 0.65rem;
+    }
+
+    .barony-scope--projects .barony-page-header__lead {
+        gap: 0.35rem;
+    }
+
+    .project-card__header {
+        padding: 0.7rem 0.75rem 0.6rem;
+    }
+
+    .project-card__title {
+        font-size: 0.95rem;
+    }
+
+    .project-card__actions {
+        gap: 0.4rem;
+    }
+
+    .project-card__actions .mud-button {
+        flex: 1 1 auto;
+        min-height: 2.25rem;
+    }
+
+    .project-card__panels {
+        flex-direction: column;
+    }
+
+    .project-card__panel--cost {
+        flex: 1 1 auto;
+        width: 100%;
+        max-width: none;
+        border-right: none;
+        border-bottom: 1px solid var(--barony-border);
+    }
+
+    .project-card__panel--output {
+        flex: 1 1 auto;
+    }
+
+    .ppb-table--project-cost {
+        width: 100%;
+        max-width: none;
+        --project-cost-name-width: 4.75rem;
+        --project-cost-value-width: auto;
+    }
+
+    .ppb-table--project-cost col.project-cost-col-value {
+        width: auto;
+    }
+
+    /* Summary / output grids stay horizontally scrollable — do not force wrap.
+       Keep projects-balance wrap padding-free so sticky name cells sit flush
+       against the scrollport (padding was letting cells slide underneath). */
+    .project-card__panel--output .project-card__table-wrap {
+        margin-inline: -0.25rem;
+        padding-inline: 0.25rem;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .projects-balance-table-wrap {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .ppb-table--projects-balance th.projects-balance-col-name,
+    .ppb-table--projects-balance td.projects-balance-col-name {
+        min-width: 7.5rem;
+        width: 7.5rem;
+        max-width: 9rem;
+    }
+
+    .barony-scope--projects .projects-section-blurb {
+        display: none;
+    }
+}
+
+/* Shared horizontal scrollport for Baron card tables (Influence / PHP / Time / Artifacts). */
+.baron-table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Baron card — narrow screens: scrollable tables with sticky source/name cells. */
+@media (max-width: 1279.98px) {
+    .barony-scope--character-card {
+        padding: 10px 8px 88px;
+    }
+
+    .barony-scope--character-card .barony-page-header {
+        margin-bottom: 0.65rem;
+    }
+
+    .barony-scope--notes {
+        display: flex !important;
+        flex-direction: column;
+        box-sizing: border-box;
+        height: calc(100dvh - var(--mud-appbar-height, 64px));
+        max-height: calc(100dvh - var(--mud-appbar-height, 64px));
+        min-height: 0;
+        padding: 8px 8px 48px;
+        overflow: hidden;
+    }
+
+    .barony-scope--notes .barony-page-header {
+        margin-bottom: 0.45rem;
+        flex: 0 0 auto;
+    }
+
+    .barony-scope--letters {
+        display: flex !important;
+        flex-direction: column;
+        box-sizing: border-box;
+        height: calc(100dvh - var(--mud-appbar-height, 64px));
+        max-height: calc(100dvh - var(--mud-appbar-height, 64px));
+        min-height: 0;
+        padding: 8px 8px 48px;
+        overflow: hidden;
+    }
+
+    .barony-scope--letters .barony-page-header {
+        margin-bottom: 0.45rem;
+        flex: 0 0 auto;
+    }
+
+    .barony-scope--character-card .ppb-table--source,
+    .barony-scope--character-card .baron-php-table,
+    .barony-scope--character-card .baron-time-table,
+    .barony-scope--character-card .baron-artifacts-table {
+        width: max-content;
+        min-width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .barony-scope--character-card .baron-artifacts-table {
+        table-layout: auto;
+    }
+
+    /* Whole Source/Name column stays pinned (header + body) while PPB cols scroll. */
+    .barony-scope--character-card .ppb-table--source thead th.ppb-row-label,
+    .barony-scope--character-card .baron-artifacts-table thead th.ppb-row-label,
+    .barony-scope--character-card .ppb-table--source tbody td.ppb-row-label,
+    .barony-scope--character-card .baron-artifacts-table tbody td.ppb-row-label {
+        position: sticky;
+        left: 0;
+        background: var(--barony-surface);
+        border-right: 1px solid var(--barony-border);
+        box-shadow: 6px 0 8px -4px rgba(47, 42, 36, 0.18);
+        min-width: 7.5rem;
+        max-width: 10rem;
+        overflow: hidden;
+    }
+
+    .barony-scope--character-card .ppb-table--source thead th.ppb-row-label,
+    .barony-scope--character-card .baron-artifacts-table thead th.ppb-row-label {
+        top: 0;
+        z-index: 4;
+    }
+
+    .barony-scope--character-card .ppb-table--source tbody td.ppb-row-label,
+    .barony-scope--character-card .baron-artifacts-table tbody td.ppb-row-label {
+        z-index: 2;
+    }
+
+    .barony-scope--character-card .ppb-table--source tbody tr:hover td.ppb-row-label,
+    .barony-scope--character-card .baron-artifacts-table tbody tr:hover td.ppb-row-label {
+        background: var(--barony-accent-soft);
+    }
+
+    .barony-scope--character-card .ppb-table--source .ppb-summary-row td.ppb-row-label,
+    .barony-scope--character-card .baron-artifacts-table .ppb-summary-row td.ppb-row-label {
+        background: var(--barony-surface);
+    }
+
+    .barony-scope--character-card .ppb-table--source .source-col {
+        min-width: 7.5rem;
+        max-width: 10rem;
+    }
+
+    .barony-scope--character-card .baron-artifacts-table td.artifact-col-desc {
+        min-width: 10rem;
+    }
+
+    /* PHP: icon-only headers + compact metric columns → no horizontal scroll. */
+    .barony-scope--character-card .baron-table-wrap--php {
+        overflow-x: visible;
+    }
+
+    .barony-scope--character-card .baron-php-table:not(.baron-artifacts-table) {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .barony-scope--character-card .baron-php-table:not(.baron-artifacts-table) .php-metric-heading__text {
+        display: none;
+    }
+
+    .barony-scope--character-card .baron-php-table:not(.baron-artifacts-table) th:not(.source-col),
+    .barony-scope--character-card .baron-php-table:not(.baron-artifacts-table) td:not(.source-col) {
+        min-width: 2.1rem;
+        width: 2.4rem;
+        padding-left: 0.15rem;
+        padding-right: 0.15rem;
+    }
+
+    .barony-scope--character-card .baron-php-table:not(.baron-artifacts-table) tbody td.ppb-row-label,
+    .barony-scope--character-card .baron-php-table:not(.baron-artifacts-table) .source-col {
+        position: static;
+        left: auto;
+        box-shadow: none;
+        border-right: none;
+        max-width: none;
+        min-width: 0;
+        width: auto;
+    }
+
+    /* Time: stacked descriptions — fit on screen without horizontal scroll. */
+    .barony-scope--character-card .baron-table-wrap--time {
+        overflow-x: visible;
+    }
+
+    .barony-scope--character-card .baron-time-table--stacked-desc {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .barony-scope--character-card .baron-time-table--stacked-desc tbody td.ppb-row-label,
+    .barony-scope--character-card .baron-time-table--stacked-desc .source-col {
+        position: static;
+        left: auto;
+        box-shadow: none;
+        border-right: none;
+        max-width: none;
+        min-width: 0;
+    }
+
+    .barony-scope--character-card .baron-time-table--stacked-desc .baron-time-row--desc td.baron-time-col-desc {
+        min-width: 0;
+    }
+
+    .barony-scope--character-card .court-commander-panel__cx {
+        flex-wrap: wrap;
+        gap: 0.35rem 0.75rem;
+    }
+
+    .barony-scope--character-card .baron-reputation-track {
+        padding: 0.65rem 0.7rem;
+    }
+}
+
+@media (max-width: 720px) {
+    .mud-dialog.court-commander-tree-dialog {
+        max-width: 100vw !important;
+    }
+
+    .mud-dialog.court-commander-tree-dialog .court-commander-tree-dialog__content {
+        max-width: 100%;
+    }
+
+    .court-commander-tree__trunk .court-commander-tree__tiers {
+        flex-wrap: wrap;
+    }
 }
 
 .project-edit-dialog .ppb-editor + .ppb-editor {
@@ -3704,10 +3998,36 @@ a.city-building-name-text--link:hover {
     align-items: center;
     gap: 4px;
     justify-content: space-between;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.ppb-table--source .source-cell > .mud-tooltip-root,
+.ppb-table--source .source-cell > .mud-tooltip-inline,
+.ppb-table--source .source-cell > .barony-tip-anchor {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.ppb-table--source .source-cell .barony-tip-anchor {
+    display: block;
+    overflow: hidden;
+}
+
+.ppb-table--source .source-cell__name {
+    display: block;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .ppb-table--source .source-cell__actions {
     display: inline-flex;
+    flex: 0 0 auto;
     gap: 0;
     opacity: 0.7;
 }
@@ -4038,6 +4358,33 @@ a.city-building-name-text--link:hover {
 .ppb-table.baron-time-table th.baron-time-col-desc {
     vertical-align: middle;
     font-weight: 600;
+}
+
+/* Description sits on its own full-width row under Action / Type / Cost. */
+.baron-time-table--stacked-desc {
+    width: 100%;
+}
+
+.baron-time-table--stacked-desc .baron-time-row--desc td.baron-time-col-desc {
+    width: auto;
+    min-width: 0;
+    padding-top: 0.05rem;
+    padding-bottom: 0.55rem;
+    color: var(--barony-muted, #6f6656);
+    font-size: 0.88em;
+}
+
+.ppb-table--lined tbody tr.baron-time-row--main:has(+ .baron-time-row--desc) > td {
+    border-bottom: none;
+    padding-bottom: 0.15rem;
+}
+
+.ppb-table--lined tbody tr.baron-time-row--desc:hover {
+    background: transparent;
+}
+
+.ppb-table--lined tbody tr.baron-time-row--main:has(+ .baron-time-row--desc):hover + .baron-time-row--desc {
+    background: var(--barony-accent-soft);
 }
 
 .baron-time-cost {
@@ -4526,6 +4873,10 @@ a.city-building-name-text--link:hover {
     color: var(--barony-muted, #6f6656);
 }
 
+.baron-mail__inbound-quota {
+    margin-left: 0.35rem;
+}
+
 .baron-mail__header-actions {
     display: flex;
     align-items: flex-start;
@@ -4580,7 +4931,7 @@ a.city-building-name-text--link:hover {
     min-height: 0;
 }
 
-/* Baron’s hand — clear, brisk script */
+/* Baron’s hand — clear, brisk script (fallback when no per-letter face is stored) */
 .baron-mail__post--outbound .baron-mail__post-body .ql-editor,
 .baron-mail__hand--baron .ql-editor {
     font-family: var(--baron-letter-font-baron);
@@ -4596,6 +4947,81 @@ a.city-building-name-text--link:hover {
     font-size: 1.22rem;
     line-height: 1.48;
     letter-spacing: 0.02em;
+}
+
+/* User-picked handwriting faces (composer + stored letter marker). */
+.baron-mail__hand-font--caveat .ql-editor,
+.baron-mail__post.baron-mail__hand-font--caveat .baron-mail__post-body .ql-editor {
+    font-family: var(--baron-letter-font-caveat);
+    font-size: 1.38rem;
+    line-height: 1.4;
+}
+
+.baron-mail__hand-font--homemade-apple .ql-editor,
+.baron-mail__post.baron-mail__hand-font--homemade-apple .baron-mail__post-body .ql-editor {
+    font-family: var(--baron-letter-font-homemade-apple);
+    font-size: 1.2rem;
+    line-height: 1.55;
+    letter-spacing: 0.01em;
+}
+
+.baron-mail__hand-font--shadows-into-light .ql-editor,
+.baron-mail__post.baron-mail__hand-font--shadows-into-light .baron-mail__post-body .ql-editor {
+    font-family: var(--baron-letter-font-shadows-into-light);
+    font-size: 1.4rem;
+    line-height: 1.45;
+}
+
+.baron-mail__hand-font--dancing-script .ql-editor,
+.baron-mail__post.baron-mail__hand-font--dancing-script .baron-mail__post-body .ql-editor {
+    font-family: var(--baron-letter-font-dancing-script);
+    font-size: 1.42rem;
+    line-height: 1.4;
+}
+
+.baron-mail__hand-font--sacramento .ql-editor,
+.baron-mail__post.baron-mail__hand-font--sacramento .baron-mail__post-body .ql-editor {
+    font-family: var(--baron-letter-font-sacramento);
+    font-size: 1.55rem;
+    line-height: 1.35;
+}
+
+.baron-mail__hand-font--la-belle-aurore .ql-editor,
+.baron-mail__post.baron-mail__hand-font--la-belle-aurore .baron-mail__post-body .ql-editor {
+    font-family: var(--baron-letter-font-la-belle-aurore);
+    font-size: 1.45rem;
+    line-height: 1.45;
+}
+
+.baron-mail__hand-font--great-vibes .ql-editor,
+.baron-mail__post.baron-mail__hand-font--great-vibes .baron-mail__post-body .ql-editor {
+    font-family: var(--baron-letter-font-great-vibes);
+    font-size: 1.55rem;
+    line-height: 1.4;
+}
+
+.baron-mail__hand-font--pinyon .ql-editor,
+.baron-mail__post.baron-mail__hand-font--pinyon .baron-mail__post-body .ql-editor {
+    font-family: var(--baron-letter-font-pinyon);
+    font-size: 1.35rem;
+    line-height: 1.48;
+    letter-spacing: 0.02em;
+}
+
+.baron-mail__hand-menu-item {
+    display: block;
+    min-width: 11rem;
+    padding: 0.15rem 0;
+    font-size: 1.35rem;
+    line-height: 1.3;
+}
+
+.baron-mail__hand-menu-item-meta {
+    display: block;
+    margin-top: 0.1rem;
+    font-size: 0.72rem;
+    font-family: 'Open Sans', sans-serif;
+    opacity: 0.65;
 }
 
 .baron-mail__composer {
@@ -4623,10 +5049,38 @@ a.city-building-name-text--link:hover {
     opacity: 0.8;
 }
 
+.baron-mail__composer-shell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    min-width: 0;
+}
+
+.baron-mail__composer-collapsed {
+    display: none;
+}
+
+.baron-mail__editor-wrap {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    min-width: 0;
+}
+
+.baron-mail__composer-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+    order: 0;
+}
+
 .baron-mail__editor.baron-letter-editor {
     display: flex;
     flex-direction: column;
     min-height: 280px;
+    order: 1;
 }
 
 .baron-mail__editor .ql-toolbar.ql-snow {
@@ -4646,20 +5100,18 @@ a.city-building-name-text--link:hover {
 .baron-mail__composer-actions {
     display: flex;
     justify-content: flex-end;
-    margin-top: 0.6rem;
+    align-items: center;
+    gap: 0.45rem;
+    margin-top: 0.1rem;
+    order: 2;
 }
 
-@media (max-width: 900px) {
-    .baron-mail {
-        grid-template-columns: 1fr;
-        min-height: auto;
-    }
+.baron-mail__action--icon {
+    display: none !important;
+}
 
-    .baron-mail__sidebar {
-        border-right: 0;
-        border-bottom: 1px solid color-mix(in srgb, var(--barony-ink, #3a2e1f) 14%, transparent);
-        max-height: 40vh;
-    }
+.baron-mail__hand-menu-item--active {
+    background: var(--barony-accent-soft, #ece0c4);
 }
 
 .baron-php-table th.php-col {
@@ -6935,6 +7387,155 @@ button.court-duty-name--editable:hover {
 /* Keep DnD hit-testing on the tab itself (MudIcon otherwise steals drag/drop). */
 .barony-tabbar__tab > * {
     pointer-events: none;
+}
+
+/* Touch: no drag-reorder affordance; tabs are plain taps. */
+.barony-tabbar--mobile {
+    overflow-x: hidden;
+    overflow-y: visible;
+    justify-content: stretch;
+    align-items: stretch;
+    gap: 3px;
+    padding: 0 6px;
+}
+
+.barony-tabbar--mobile .barony-tabbar__tab {
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+    flex: 1 1 0;
+    min-width: 0;
+    height: 100%;
+    margin-top: 0;
+    justify-content: center;
+    padding: 0 6px;
+    font-size: 0.72rem;
+    gap: 4px;
+    /* Keep active/inactive the same height (desktop uses margin-top offset). */
+    border-bottom: 3px solid transparent;
+}
+
+.barony-tabbar--mobile .barony-tabbar__tab--active {
+    margin-top: 0;
+    border-bottom-color: var(--barony-accent);
+}
+
+.barony-tabbar--mobile .barony-tabbar__tab--audience-hall {
+    flex: 1.55 1 0;
+    min-width: 5.75rem;
+}
+
+.barony-tabbar--mobile .barony-tabbar__label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.barony-tabbar__more {
+    position: relative;
+    flex: 0.9 1 0;
+    min-width: 0;
+    display: flex;
+    align-items: stretch;
+    align-self: stretch;
+    height: 100%;
+}
+
+.barony-tabbar__more .barony-tabbar__tab--more {
+    width: 100%;
+    height: 100%;
+    margin-top: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: inherit;
+    font: inherit;
+    appearance: none;
+    -webkit-appearance: none;
+    background: var(--barony-surface);
+    cursor: pointer;
+}
+
+.barony-tabbar__more-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1590;
+    background: transparent;
+}
+
+/* Fixed panel above the tab bar — never portaled MudPopover (that was expanding the page). */
+.barony-tabbar__more-panel {
+    position: fixed;
+    right: 6px;
+    bottom: calc(40px + env(safe-area-inset-bottom, 0px) + 6px);
+    z-index: 1600;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 11rem;
+    max-width: min(16rem, calc(100vw - 12px));
+    max-height: min(50dvh, calc(100dvh - 5.5rem - env(safe-area-inset-bottom, 0px)));
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 6px;
+    background: var(--barony-surface);
+    border: 1px solid var(--barony-border-strong);
+    border-radius: 8px;
+    box-shadow: 0 -4px 18px rgba(47, 42, 36, 0.22);
+}
+
+.barony-tabbar__more-item {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    width: 100%;
+    margin: 0;
+    padding: 0.55rem 0.65rem;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--barony-ink);
+    font: inherit;
+    font-size: 0.88rem;
+    text-align: left;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.barony-tabbar__more-item:hover,
+.barony-tabbar__more-item:focus-visible {
+    background: var(--barony-accent-soft);
+    outline: none;
+}
+
+.barony-tabbar__more-item--active {
+    font-weight: 700;
+    background: var(--barony-accent-soft);
+}
+
+.barony-tabbar__more-item--locked {
+    opacity: 0.45;
+    cursor: not-allowed;
+    font-style: italic;
+}
+
+.barony-tabbar__more-badge {
+    margin-left: auto;
+    min-width: 1.1rem;
+    height: 1.1rem;
+    padding: 0 0.22rem;
+    border-radius: 999px;
+    background: var(--barony-neg);
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1.1rem;
+    text-align: center;
 }
 
 .barony-tabbar__tab:hover {

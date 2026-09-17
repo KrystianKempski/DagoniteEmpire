@@ -4,6 +4,7 @@
 @implements IAsyncDisposable
 @attribute [Authorize(Roles = SD.Role_Admin + "," + SD.Role_GameMaster + "," + SD.Role_DukePlayer)]
 @inject IDialogService _dialogService
+@inject IJSRuntime _js
 
 <PageTitle>Dagonite Empire | @L["Letters"]</PageTitle>
 
@@ -21,22 +22,36 @@ else if (TurnResolveLocked)
 }
 else if (Barony is not null)
 {
-    <BaronyPageHeader Title="@(L["Letters"])" HelpKey="letters">
+    <div class="baron-mail__page">
+    <BaronyPageHeader Title="@(L["Letters"])" HelpKey="letters" ShowSectionToggle="false">
         <Summary>
             <span class="projects-summary">
                 <span class="projects-summary__item">@_threads.Count @(_threads.Count == 1 ? L["thread"] : L["Threads"])</span>
-                <span class="projects-summary__item">
+                <span class="projects-summary__item baron-mail__summary-limits">
                     @L["Inbound / turn: Eastern March {0} · Empire/Other {1}", BaronLetterRules.MaxInboundEasternMarchPerTurn, BaronLetterRules.MaxInboundEmpirePerTurn]
                 </span>
             </span>
         </Summary>
+        <Actions>
+            @if (CanWriteAsGm)
+            {
+                <MudButton Variant="Variant.Filled"
+                           Size="Size.Small"
+                           Class="barony-turn-btn barony-turn-btn--solid"
+                           StartIcon="@Icons.Material.Filled.Mail"
+                           OnClick="@(() => CreateThreadAsync(isInbound: true))"
+                           Disabled="@_busy">
+                    @L["New thread to baron"]
+                </MudButton>
+            }
+        </Actions>
     </BaronyPageHeader>
 
     <div class="baron-mail">
         <aside class="baron-mail__sidebar">
-            <div class="baron-mail__sidebar-actions">
-                @if (CanWriteAsBaron)
-                {
+            @if (CanWriteAsBaron)
+            {
+                <div class="baron-mail__sidebar-actions">
                     <MudButton Variant="Variant.Outlined"
                                Size="Size.Small"
                                Class="barony-turn-btn barony-turn-btn--ghost"
@@ -45,19 +60,8 @@ else if (Barony is not null)
                                Disabled="@_busy">
                         @L["New thread"]
                     </MudButton>
-                }
-                @if (CanWriteAsGm)
-                {
-                    <MudButton Variant="Variant.Filled"
-                               Size="Size.Small"
-                               Class="barony-turn-btn barony-turn-btn--solid"
-                               StartIcon="@Icons.Material.Filled.Mail"
-                               OnClick="@(() => CreateThreadAsync(isInbound: true))"
-                               Disabled="@_busy">
-                        @L["New thread to baron"]
-                    </MudButton>
-                }
-            </div>
+                </div>
+            }
 
             @if (_threads.Count == 0)
             {
@@ -153,7 +157,7 @@ else if (Barony is not null)
                             {
                                 <text> · @_selected.CorrespondentTitle</text>
                             }
-                            · @L["{0}/{1} from this person this turn", _receivedThisTurn, MaxInboundForSelected]
+                            <span class="baron-mail__inbound-quota">(@_receivedThisTurn/@MaxInboundForSelected)</span>
                         </div>
                     </div>
                     <div class="baron-mail__header-actions">
@@ -184,7 +188,12 @@ else if (Barony is not null)
                             && BaronIsAwaitingReply(_selected)
                             && !post.IsInbound
                             && post.Id == LastDelivered(_selected)?.Id;
-                        <article class="baron-mail__post @(post.IsInbound ? "baron-mail__post--inbound" : "baron-mail__post--outbound") @(post.IsDraft ? "baron-mail__post--draft" : "")">
+                        var postHand = BaronLetterHandFonts.Split(post.BodyHtml);
+                        var postBody = string.IsNullOrWhiteSpace(postHand.BodyHtml) ? "<p></p>" : postHand.BodyHtml;
+                        var postHandClass = string.IsNullOrEmpty(postHand.Key)
+                            ? null
+                            : BaronLetterHandFonts.CssClass(postHand.Key);
+                        <article class="baron-mail__post @(post.IsInbound ? "baron-mail__post--inbound" : "baron-mail__post--outbound") @(post.IsDraft ? "baron-mail__post--draft" : "") @(postHandClass)">
                             <header class="baron-mail__post-head">
                                 <span class="baron-mail__post-dir">@(post.IsInbound ? L["→ Baron"] : L["Baron →"])</span>
                                 <span class="baron-mail__post-when">
@@ -226,7 +235,7 @@ else if (Barony is not null)
                             </header>
                             <div class="ql-snow baron-mail__post-body">
                                 <div class="ql-editor">
-                                    @((MarkupString)(string.IsNullOrWhiteSpace(post.BodyHtml) ? "<p></p>" : post.BodyHtml))
+                                    @((MarkupString)postBody)
                                 </div>
                             </div>
                         </article>
@@ -256,7 +265,8 @@ else if (Barony is not null)
                 }
                 else if (_showComposerEditor)
                 {
-                    <div class="baron-mail__composer @ComposerHandClass">
+                    <div id="baron-mail-composer-dock"
+                         class="baron-mail__composer @ComposerHandClass @ComposerHandFontClass @(_toolbarExpanded ? "baron-mail__composer--toolbar" : null) @(_editorExpanded ? "baron-mail__composer--expanded" : "baron-mail__composer--collapsed")">
                         <div class="baron-mail__composer-label">
                             @if (_editingLastLetter)
                             {
@@ -275,37 +285,106 @@ else if (Barony is not null)
                                 <span class="baron-mail__save-hint"> · @_saveHint</span>
                             }
                         </div>
-                        <div class="baron-letter-editor baron-mail__editor @ComposerHandClass">
-                            <BlazoredTextEditor @ref="_editor" @key="_editorEpoch" Placeholder="@(L["Write your letter…"])">
-                                <ToolbarContent>@Toolbar()</ToolbarContent>
-                                <EditorContent></EditorContent>
-                            </BlazoredTextEditor>
-                        </div>
-                        <div class="baron-mail__composer-actions">
-                            @if (_editingLastLetter)
-                            {
-                                <MudButton Variant="Variant.Outlined"
-                                           Class="barony-turn-btn barony-turn-btn--ghost"
-                                           OnClick="CancelEditLastLetterAsync"
-                                           Disabled="@_busy">
-                                    @L["Cancel"]
-                                </MudButton>
-                                <MudButton Class="barony-turn-btn barony-turn-btn--solid"
-                                           Variant="Variant.Filled"
-                                           OnClick="SaveEditAsync"
-                                           Disabled="@_busy">
-                                    @L["Save"]
-                                </MudButton>
-                            }
-                            else
-                            {
-                                <MudButton Class="barony-turn-btn barony-turn-btn--solid"
-                                           Variant="Variant.Filled"
-                                           OnClick="SendAsync"
-                                           Disabled="@_busy">
-                                    @L["Send"]
-                                </MudButton>
-                            }
+                        <div class="baron-mail__composer-shell">
+                            <div class="baron-mail__composer-collapsed"
+                                 role="button"
+                                 tabindex="0"
+                                 @onclick="ExpandEditorAsync"
+                                 @onkeydown="OnCollapsedKeyDown">
+                                <MudIcon Icon="@Icons.Material.Filled.Edit" Class="baron-mail__composer-collapsed-icon" Size="Size.Small" />
+                                <span class="baron-mail__composer-collapsed-hint">@ComposerCollapsedHint</span>
+                                <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowUp" Class="baron-mail__composer-collapsed-chevron" Size="Size.Small" />
+                            </div>
+                            <div class="baron-mail__editor-wrap baron-mail__composer-expanded-body">
+                                <div class="baron-mail__composer-controls">
+                                    <MudMenu Dense="true"
+                                             AnchorOrigin="Origin.TopLeft"
+                                             TransformOrigin="Origin.BottomLeft"
+                                             Class="baron-mail__hand-menu">
+                                        <ActivatorContent>
+                                            <MudIconButton Icon="@Icons.Material.Filled.FontDownload"
+                                                           Size="Size.Small"
+                                                           Title="@(L["Handwriting"])"
+                                                           aria-label="@(L["Handwriting"])" />
+                                        </ActivatorContent>
+                                        <ChildContent>
+                                            @foreach (var font in BaronLetterHandFonts.All)
+                                            {
+                                                var fontKey = font.Key;
+                                                <MudMenuItem OnClick="() => SelectHandFontAsync(fontKey)"
+                                                             Class="@(_handFontKey == fontKey ? "baron-mail__hand-menu-item--active" : null)">
+                                                    <span class="baron-mail__hand-menu-item" style="@($"font-family:'{font.Family}', cursive;")">
+                                                        @L["Sample handwriting"]
+                                                        <span class="baron-mail__hand-menu-item-meta">@font.Label</span>
+                                                    </span>
+                                                </MudMenuItem>
+                                            }
+                                        </ChildContent>
+                                    </MudMenu>
+                                    <MudIconButton Icon="@Icons.Material.Filled.TextFormat"
+                                                   Size="Size.Small"
+                                                   Color="@(_toolbarExpanded ? Color.Primary : Color.Default)"
+                                                   Class="baron-mail__toolbar-toggle"
+                                                   OnClick="ToggleToolbar"
+                                                   Title="@(_toolbarExpanded ? L["Hide formatting"] : L["Show formatting"])"
+                                                   aria-label="@(_toolbarExpanded ? L["Hide formatting"] : L["Show formatting"])" />
+                                </div>
+                                <div class="baron-mail__composer-actions">
+                                    @if (_editingLastLetter)
+                                    {
+                                        <MudButton Variant="Variant.Outlined"
+                                                   Class="barony-turn-btn barony-turn-btn--ghost baron-mail__action--text"
+                                                   OnClick="CancelEditLastLetterAsync"
+                                                   Disabled="@_busy">
+                                            @L["Cancel"]
+                                        </MudButton>
+                                        <MudButton Class="barony-turn-btn barony-turn-btn--solid baron-mail__action--text"
+                                                   Variant="Variant.Filled"
+                                                   OnClick="SaveEditAsync"
+                                                   Disabled="@_busy">
+                                            @L["Save"]
+                                        </MudButton>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Close"
+                                                       Size="Size.Small"
+                                                       Class="baron-mail__action--icon"
+                                                       OnClick="CancelEditLastLetterAsync"
+                                                       Disabled="@_busy"
+                                                       Title="@(L["Cancel"])"
+                                                       aria-label="@(L["Cancel"])" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.Check"
+                                                       Variant="Variant.Filled"
+                                                       Size="Size.Small"
+                                                       Class="baron-mail__send-btn baron-mail__action--icon"
+                                                       OnClick="SaveEditAsync"
+                                                       Disabled="@_busy"
+                                                       Title="@(L["Save"])"
+                                                       aria-label="@(L["Save"])" />
+                                    }
+                                    else
+                                    {
+                                        <MudButton Class="barony-turn-btn barony-turn-btn--solid baron-mail__action--text"
+                                                   Variant="Variant.Filled"
+                                                   OnClick="SendAsync"
+                                                   Disabled="@_busy">
+                                            @L["Send"]
+                                        </MudButton>
+                                        <MudIconButton Icon="@Icons.Material.Filled.Send"
+                                                       Variant="Variant.Filled"
+                                                       Size="Size.Small"
+                                                       Class="baron-mail__send-btn baron-mail__action--icon"
+                                                       OnClick="SendAsync"
+                                                       Disabled="@_busy"
+                                                       Title="@(L["Send"])"
+                                                       aria-label="@(L["Send"])" />
+                                    }
+                                </div>
+                                <div id="baron-mail-letter-editor" class="baron-letter-editor baron-mail__editor @ComposerHandClass @ComposerHandFontClass">
+                                    <BlazoredTextEditor @ref="_editor" @key="_editorEpoch" Placeholder="@(L["Write your letter…"])">
+                                        <ToolbarContent>@Toolbar()</ToolbarContent>
+                                        <EditorContent></EditorContent>
+                                    </BlazoredTextEditor>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 }
@@ -319,6 +398,7 @@ else if (Barony is not null)
                 }
             }
         </section>
+    </div>
     </div>
 }
 
@@ -349,6 +429,13 @@ else if (Barony is not null)
             ? "baron-mail__hand--correspondent"
             : "baron-mail__hand--baron";
 
+    private string ComposerHandFontClass => BaronLetterHandFonts.CssClass(_handFontKey);
+
+    private string ComposerCollapsedHint =>
+        _editingLastLetter
+            ? L["Click to continue editing the letter…"]
+            : L["Click to write a letter…"];
+
     private BlazoredTextEditor? _editor;
     private bool _shouldLoadEditor;
     private int _loadAttempts;
@@ -364,6 +451,15 @@ else if (Barony is not null)
     private string _titleEdit = "";
     private int _receivedThisTurn;
     private ElementReference _postsPane;
+    private bool _toolbarExpanded;
+    private bool _editorExpanded;
+    private bool _outsideCollapseRegistered;
+    private DotNetObjectReference<LettersPage>? _dotNetRef;
+    private string _handFontKey = BaronLetterHandFonts.DefaultBaronKey;
+    private bool _handFontPrefsLoaded;
+
+    private const string ComposerDockId = "baron-mail-composer-dock";
+    private const string LetterEditorHostId = "baron-mail-letter-editor";
 
     private CancellationTokenSource? _autoSaveCts;
     private PeriodicTimer? _autoSaveTimer;
@@ -432,7 +528,14 @@ else if (Barony is not null)
 
         try
         {
-            await _editor.LoadHTMLContent(_draft?.BodyHtml ?? "<p></p>");
+            var raw = _draft?.BodyHtml ?? "<p></p>";
+            var split = BaronLetterHandFonts.Split(raw);
+            if (!string.IsNullOrEmpty(split.Key))
+                _handFontKey = split.Key;
+            else
+                await EnsureHandFontPreferenceAsync();
+
+            await _editor.LoadHTMLContent(string.IsNullOrWhiteSpace(split.BodyHtml) ? "<p></p>" : split.BodyHtml);
             _shouldLoadEditor = false;
         }
         catch
@@ -596,6 +699,10 @@ else if (Barony is not null)
         _loadAttempts = 0;
         _editor = null;
         _saveHint = null;
+        _editorExpanded = false;
+        _toolbarExpanded = false;
+        await EnsureHandFontPreferenceAsync();
+        await SyncOutsideCollapseListenerAsync();
 
         if (CanWriteAsBaron && !CanWriteAsGm && thread.HasUnreadForBaron)
         {
@@ -646,7 +753,7 @@ else if (Barony is not null)
         _editor = null;
         _saveHint = null;
         StartAutoSaveLoop();
-        StateHasChanged();
+        await ExpandEditorAsync();
     }
 
     private async Task CancelEditLastLetterAsync()
@@ -848,6 +955,106 @@ else if (Barony is not null)
         }
     }
 
+    private void ToggleToolbar() => _toolbarExpanded = !_toolbarExpanded;
+
+    private async Task SelectHandFontAsync(string key)
+    {
+        _handFontKey = BaronLetterHandFonts.Get(key).Key;
+        await SaveHandFontPreferenceAsync();
+        StateHasChanged();
+    }
+
+    private string HandFontStorageKey =>
+        _composeInbound && !_editingLastLetter
+            ? BaronLetterHandFonts.LocalStorageCorrespondentKey
+            : BaronLetterHandFonts.LocalStorageBaronKey;
+
+    private async Task EnsureHandFontPreferenceAsync()
+    {
+        var fallback = _composeInbound && !_editingLastLetter
+            ? BaronLetterHandFonts.DefaultCorrespondentKey
+            : BaronLetterHandFonts.DefaultBaronKey;
+
+        try
+        {
+            var stored = await _js.InvokeAsync<string?>("localStorage.getItem", HandFontStorageKey);
+            _handFontKey = BaronLetterHandFonts.IsKnown(stored) ? stored! : fallback;
+        }
+        catch
+        {
+            _handFontKey = fallback;
+        }
+
+        _handFontPrefsLoaded = true;
+    }
+
+    private async Task SaveHandFontPreferenceAsync()
+    {
+        try
+        {
+            await _js.InvokeVoidAsync("localStorage.setItem", HandFontStorageKey, _handFontKey);
+        }
+        catch { /* preference is best-effort */ }
+    }
+
+    private async Task ExpandEditorAsync()
+    {
+        if (_editorExpanded)
+            return;
+
+        _editorExpanded = true;
+        StateHasChanged();
+        await Task.Delay(30);
+        try
+        {
+            await _js.InvokeVoidAsync("QuillPostEditor.focus", LetterEditorHostId);
+        }
+        catch { /* focus is best-effort */ }
+
+        await SyncOutsideCollapseListenerAsync();
+    }
+
+    private async Task OnCollapsedKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or " ")
+            await ExpandEditorAsync();
+    }
+
+    [JSInvokable]
+    public async Task CollapseEditorFromJs()
+    {
+        if (!_editorExpanded)
+            return;
+
+        _editorExpanded = false;
+        _toolbarExpanded = false;
+        StateHasChanged();
+        await SyncOutsideCollapseListenerAsync();
+    }
+
+    private async Task SyncOutsideCollapseListenerAsync()
+    {
+        try
+        {
+            if (_editorExpanded && !_outsideCollapseRegistered)
+            {
+                _dotNetRef ??= DotNetObjectReference.Create(this);
+                await _js.InvokeVoidAsync(
+                    "QuillPostEditor.enableOutsideClickCollapse",
+                    ComposerDockId,
+                    _dotNetRef,
+                    nameof(CollapseEditorFromJs));
+                _outsideCollapseRegistered = true;
+            }
+            else if (!_editorExpanded && _outsideCollapseRegistered)
+            {
+                await _js.InvokeVoidAsync("QuillPostEditor.disableOutsideClickCollapse", ComposerDockId);
+                _outsideCollapseRegistered = false;
+            }
+        }
+        catch { /* outside-click collapse is best-effort on mobile */ }
+    }
+
     private async Task SendAsync()
     {
         if (_selected is null || _draft is null || Barony is null || !_canUseComposer || _editingLastLetter)
@@ -881,7 +1088,8 @@ else if (Barony is not null)
         _busy = true;
         try
         {
-            var html = await TryGetEditorHtmlAsync(_editor, _draft.BodyHtml) ?? _draft.BodyHtml;
+            var html = await TryGetEditorHtmlAsync(_editor, BaronLetterHandFonts.Strip(_draft.BodyHtml))
+                       ?? BaronLetterHandFonts.Strip(_draft.BodyHtml);
             if (IsEffectivelyEmptyHtml(html))
             {
                 _snackBar.Add(L["Write something before sending."], Severity.Warning);
@@ -889,7 +1097,7 @@ else if (Barony is not null)
                 return;
             }
 
-            _draft.BodyHtml = html;
+            _draft.BodyHtml = BaronLetterHandFonts.Embed(_handFontKey, html);
             _draft.Status = BaronLetterStatus.Sent;
             _draft.SentAtUtc = DateTime.UtcNow;
             _draft.TurnNumber = Barony.TurnNumber;
@@ -929,6 +1137,9 @@ else if (Barony is not null)
             // Baron: reload into edit-last-letter mode. GM: reload may create a new inbound draft.
             _skipNextDraftPersist = true;
             _snackBar.Add(L["Letter sent."], Severity.Success);
+            _editorExpanded = false;
+            _toolbarExpanded = false;
+            await SyncOutsideCollapseListenerAsync();
             await ReloadAsync(selectThreadId: _selected.Id);
         }
         catch (Exception ex)
@@ -954,7 +1165,8 @@ else if (Barony is not null)
         _busy = true;
         try
         {
-            var html = await TryGetEditorHtmlAsync(_editor, _draft.BodyHtml) ?? _draft.BodyHtml;
+            var html = await TryGetEditorHtmlAsync(_editor, BaronLetterHandFonts.Strip(_draft.BodyHtml))
+                       ?? BaronLetterHandFonts.Strip(_draft.BodyHtml);
             if (IsEffectivelyEmptyHtml(html))
             {
                 _snackBar.Add(L["Letter cannot be empty."], Severity.Warning);
@@ -962,7 +1174,7 @@ else if (Barony is not null)
                 return;
             }
 
-            _draft.BodyHtml = html;
+            _draft.BodyHtml = BaronLetterHandFonts.Embed(_handFontKey, html);
             _draft.Status = BaronLetterStatus.Sent;
             // Keep original in-world date / turn — this is an edit, not a new letter.
             var saved = await _baronyRepo.SaveLetterMessage(_draft);
@@ -1041,7 +1253,9 @@ else if (Barony is not null)
         var msgId = msg.Id;
         var editing = _editingLastLetter;
 
-        var html = await TryGetEditorHtmlAsync(_editor, msg.BodyHtml) ?? msg.BodyHtml;
+        var html = await TryGetEditorHtmlAsync(_editor, BaronLetterHandFonts.Strip(msg.BodyHtml))
+                   ?? BaronLetterHandFonts.Strip(msg.BodyHtml);
+        html = BaronLetterHandFonts.Embed(_handFontKey, html);
 
         if (_draft is null || _draft.Id != msgId || _editingLastLetter != editing)
             return;
@@ -1177,6 +1391,15 @@ else if (Barony is not null)
         }
         catch { /* ignore on dispose */ }
 
+        try
+        {
+            if (_outsideCollapseRegistered)
+                await _js.InvokeVoidAsync("QuillPostEditor.disableOutsideClickCollapse", ComposerDockId);
+        }
+        catch { /* ignore on dispose */ }
+
+        _dotNetRef?.Dispose();
+        _dotNetRef = null;
         await StopAutoSaveAsync();
     }
 }
