@@ -178,8 +178,8 @@
     overflow: hidden;
 }
 
-/* Blazored/Quill wrappers must participate in the flex height chain. */
-.barony-notes__editor ::deep > div {
+/* JournalQuillEditor shell — Blazored emits toolbar + container as siblings. */
+.barony-notes__editor ::deep .barony-notes__quill {
     flex: 1 1 auto;
     min-height: 0;
     height: 100%;
@@ -190,10 +190,10 @@
 
 .barony-notes__editor ::deep .ql-toolbar.ql-snow {
     flex: 0 0 auto;
+    flex-shrink: 0;
     position: relative;
     z-index: 2;
-    /* Keep icons on one row when possible, but never clip picker menus.
-       overflow-x:auto forces overflow-y to auto and hides .ql-picker-options. */
+    /* Do not use overflow-x:auto — it forces overflow-y:auto and clips .ql-picker-options. */
     white-space: nowrap;
     overflow: visible;
 }
@@ -210,20 +210,23 @@
 
 .barony-notes__editor ::deep .ql-container {
     flex: 1 1 auto;
-    min-height: 12rem;
-    /* Must stretch with flex — height:auto collapsed the writing area. */
-    height: 100% !important;
+    min-height: 0;
+    /* Override Quill snow's height:100% so flex can give leftover space to the editor. */
+    height: auto !important;
     font-size: 1rem;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .barony-notes__editor ::deep .ql-editor {
+    flex: 1 1 auto;
+    min-height: 0;
     height: 100%;
-    min-height: 12rem;
     overflow-y: auto;
 }
 
-/* Link tooltip: pin inside the editor so parent overflow:hidden cannot clip it. */
+/* Link tooltip: keep inside the writing area so parent overflow cannot clip it. */
 .barony-notes__editor ::deep .ql-tooltip {
     z-index: 20;
     top: 0.5rem !important;
@@ -495,8 +498,7 @@
         white-space: normal;
     }
 
-    .barony-notes__editor ::deep .ql-container,
-    .barony-notes__editor ::deep .ql-editor {
+    .barony-notes__editor ::deep .ql-container {
         min-height: 10rem;
     }
 

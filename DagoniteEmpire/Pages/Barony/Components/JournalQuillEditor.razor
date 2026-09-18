@@ -4,11 +4,16 @@
   Isolates Blazored/Quill from parent re-renders. Quill owns the editor DOM after init;
   if the parent calls StateHasChanged (autosave dirty icon, title, etc.) Blazor tries to
   reconcile those nodes and the SignalR circuit dies with removeChild / interop errors.
+
+  BlazoredTextEditor renders toolbar + container as sibling roots (no wrapper). This shell
+  is the single flex column parent so CSS never applies height:100% to the toolbar.
 *@
-<BlazoredTextEditor @ref="_editor" @key="Epoch" Placeholder="@Placeholder">
-    <ToolbarContent>@Toolbar</ToolbarContent>
-    <EditorContent></EditorContent>
-</BlazoredTextEditor>
+<div class="barony-notes__quill">
+    <BlazoredTextEditor @ref="_editor" @key="Epoch" Placeholder="@Placeholder">
+        <ToolbarContent>@Toolbar</ToolbarContent>
+        <EditorContent></EditorContent>
+    </BlazoredTextEditor>
+</div>
 
 @code {
     [Parameter] public int Epoch { get; set; }
