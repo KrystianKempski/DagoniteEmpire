@@ -46,6 +46,7 @@ namespace DA_Business.Services
             var plan = notification switch
             {
                 BaronLetterDelivered n => await PlanBaronLetter(n, cancellationToken),
+                BaronAudienceExchangePosted n => await PlanBaronAudience(n, cancellationToken),
                 ChapterPostAdded n => await PlanChapterPost(n, cancellationToken),
                 BaronyTurnResolved n => await PlanTurnResolved(n, cancellationToken),
                 CampaignChatMessageSent n => await PlanChatMessage(n, cancellationToken),
@@ -131,6 +132,70 @@ namespace DA_Business.Services
                 {
                     Title = Loc.T("Letter from the baron of {0}", thread.BaronyName),
                     Body = $"{correspondent} — {thread.Title}",
+                    Url = url,
+                    Tag = tag,
+                });
+        }
+
+        private async Task<Plan?> PlanBaronAudience(
+            BaronAudienceExchangePosted n,
+            CancellationToken ct)
+        {
+            using var ctx = await _db.CreateDbContextAsync(ct);
+            var audience = await (
+                from a in ctx.BaronAudiences.AsNoTracking()
+                join b in ctx.Baronies.AsNoTracking() on a.BaronyId equals b.Id
+                where a.Id == n.AudienceId
+                select new
+                {
+                    a.Title,
+                    a.PetitionerName,
+                    BaronyName = b.Name,
+                    a.BaronyId,
+                }
+            ).FirstOrDefaultAsync(ct);
+
+            if (audience is null)
+                return null;
+
+            var url = $"/barony/audience-hall?audience={n.AudienceId}";
+            var tag = $"baron-audience-{n.AudienceId}";
+            var petitioner = string.IsNullOrWhiteSpace(audience.PetitionerName)
+                ? Loc.T("a petitioner")
+                : audience.PetitionerName;
+            var title = string.IsNullOrWhiteSpace(audience.Title)
+                ? Loc.T("Untitled audience")
+                : audience.Title;
+
+            if (n.IsFromPetitioner)
+            {
+                // GM / petitioner spoke — only the baron who owns the seat cares.
+                var baronId = await _recipients.UserIdForBarony(audience.BaronyId, ct);
+                if (baronId is null)
+                    return null;
+
+                return new Plan(
+                    new List<string> { baronId },
+                    new PushNotificationDTO
+                    {
+                        Title = Loc.T("Audience reply from {0}", petitioner),
+                        Body = title,
+                        Url = url,
+                        Tag = tag,
+                    });
+            }
+
+            // The baron answered; the Game Master plays every petitioner / NPC.
+            var gmIds = await _recipients.GameMasterUserIds(ct);
+            if (gmIds.Count == 0)
+                return null;
+
+            return new Plan(
+                gmIds,
+                new PushNotificationDTO
+                {
+                    Title = Loc.T("Audience reply from the baron of {0}", audience.BaronyName),
+                    Body = $"{petitioner} — {title}",
                     Url = url,
                     Tag = tag,
                 });

@@ -2321,20 +2321,34 @@ button.barony-meta-bar__stat--clickable:focus-visible {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 2.6rem;
-        height: 2.6rem;
+        width: 2.75rem;
+        height: 2.75rem;
         padding: 0;
-        border-radius: 999px;
-        background: linear-gradient(180deg, rgba(36, 30, 24, 0.94), rgba(22, 18, 14, 0.96));
-        border: 1px solid rgba(212, 180, 100, 0.28);
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+        border-radius: 50%;
+        /* Light parchment — same family as inbox FABs; crate SVG is black. */
+        background: linear-gradient(180deg, #f7f1e4, #e8dfc8);
+        border: 1px solid color-mix(in srgb, var(--barony-ink, #3a2e1f) 22%, transparent);
+        box-shadow: 0 4px 14px rgba(40, 28, 12, 0.28);
         cursor: pointer;
     }
 
+    .barony-resource-hud__toggle:hover,
+    .barony-resource-hud__toggle:focus-visible {
+        background: linear-gradient(180deg, #fff8ea, #efe4c8);
+        outline: none;
+    }
+
+    .barony-resource-hud--open .barony-resource-hud__toggle {
+        background: linear-gradient(180deg, #efe4c8, #e0d4b8);
+        border-color: color-mix(in srgb, var(--barony-accent, #9c7a33) 55%, transparent);
+    }
+
     .barony-resource-hud__toggle img {
-        width: 1.4rem;
-        height: 1.4rem;
+        width: 1.45rem;
+        height: 1.45rem;
         object-fit: contain;
+        display: block;
+        pointer-events: none;
     }
 
     .barony-resource-hud__list {

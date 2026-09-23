@@ -4,6 +4,22 @@ html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
+/* Home hero: fill the viewport under the app bar. Lives in global CSS so :has()
+   reaches MudMainContent (scoped MainLayout CSS cannot). Same pattern as the
+   Audience Hall / battle-map fullscreen scopes — height 100% of the padded box,
+   not calc(100dvh - 64px), which left an ~8px white strip on iPhone. */
+.mud-main-content:has(.hero-img) {
+    overflow: hidden;
+    height: 100dvh;
+    max-height: 100dvh;
+    box-sizing: border-box;
+}
+
+.mud-main-content:has(.hero-img) > .hero-img {
+    height: 100%;
+    min-height: 100%;
+}
+
 
 h1:focus {
     outline: none;

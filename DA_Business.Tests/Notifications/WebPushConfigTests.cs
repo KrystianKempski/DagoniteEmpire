@@ -63,6 +63,7 @@ public class WebPushConfigTests
         var hero = NotificationTopic.ForAccount(includeBarony: false);
         Assert.Equal(new[] { NotificationTopic.Posts, NotificationTopic.Chat }, hero);
         Assert.DoesNotContain(NotificationTopic.BaronLetter, hero);
+        Assert.DoesNotContain(NotificationTopic.BaronAudience, hero);
         Assert.DoesNotContain(NotificationTopic.BattleTurn, hero);
     }
 

@@ -6,19 +6,32 @@
     </TitleContent>
     <DialogContent>
         <div class="barony-dialog-theme">
-            <MudSelect T="string"
-                       @bind-Value="_advisorLabel"
-                       Label="@(L["Advisor"])"
-                       Variant="Variant.Outlined"
-                       Margin="Margin.Dense"
-                       Dense="true"
-                       HelperText="@(L["Which advisor brings this topic to the Council"])"
-                       Class="mb-2">
-                @foreach (var name in Advisors)
-                {
-                    <MudSelectItem Value="@name">@name</MudSelectItem>
-                }
-            </MudSelect>
+            @if (SpeakerLocked)
+            {
+                <MudTextField Value="@_advisorLabel"
+                              Label="@(L["Speaker"])"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              ReadOnly="true"
+                              HelperText="@(L["You speak as the baron — this cannot be changed"])"
+                              Class="mb-2" />
+            }
+            else
+            {
+                <MudSelect T="string"
+                           @bind-Value="_advisorLabel"
+                           Label="@(L["Speaker"])"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Dense="true"
+                           HelperText="@(L["Who brings this topic to the Council — an advisor or the baron"])"
+                           Class="mb-2">
+                    @foreach (var name in Advisors)
+                    {
+                        <MudSelectItem Value="@name">@name</MudSelectItem>
+                    }
+                </MudSelect>
+            }
             <MudTextField @bind-Value="_title"
                           Label="@(L["Topic title"])"
                           Variant="Variant.Outlined"
@@ -32,7 +45,7 @@
                           Margin="Margin.Dense"
                           Lines="5"
                           Immediate="true"
-                          HelperText="@(L["What the advisor says first"])" />
+                          HelperText="@(SpeakerLocked ? L["What you say first"] : L["What the advisor says first"])" />
         </div>
     </DialogContent>
     <DialogActions>
@@ -48,14 +61,21 @@
 
     [Parameter, EditorRequired] public IReadOnlyList<string> Advisors { get; set; } = Array.Empty<string>();
 
+    /// <summary>When set, the speaker field is fixed to this label and cannot be changed.</summary>
+    [Parameter] public string? FixedSpeaker { get; set; }
+
     private string _advisorLabel = "";
     private string _title = "";
     private string _opening = "";
     private bool _busy;
 
+    private bool SpeakerLocked => !string.IsNullOrWhiteSpace(FixedSpeaker);
+
     protected override void OnInitialized()
     {
-        if (Advisors.Count > 0)
+        if (SpeakerLocked)
+            _advisorLabel = FixedSpeaker!.Trim();
+        else if (Advisors.Count > 0)
             _advisorLabel = Advisors[0];
     }
 
@@ -70,8 +90,9 @@
     {
         if (!CanSubmit) return;
         _busy = true;
+        var speaker = SpeakerLocked ? FixedSpeaker!.Trim() : _advisorLabel.Trim();
         MudDialog.Close(DialogResult.Ok(new NewCouncilTopicResult(
-            _advisorLabel.Trim(),
+            speaker,
             _title.Trim(),
             _opening.Trim())));
     }

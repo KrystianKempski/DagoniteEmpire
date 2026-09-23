@@ -84,4 +84,15 @@ namespace DA_Common.Notifications
     {
         public override string Topic => NotificationTopic.BaronLetter;
     }
+
+    /// <summary>A spoken turn was posted in an Audience Hall / Audiences thread.</summary>
+    /// <param name="AudienceId">Audience that received the exchange.</param>
+    /// <param name="IsFromPetitioner">
+    /// True when the GM side spoke (petitioner / NPC / Game Master) — notify the baron.
+    /// False when the baron spoke — notify the Game Master.
+    /// </param>
+    public sealed record BaronAudienceExchangePosted(int AudienceId, bool IsFromPetitioner) : GameNotification
+    {
+        public override string Topic => NotificationTopic.BaronAudience;
+    }
 }

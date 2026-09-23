@@ -3800,7 +3800,8 @@ namespace DA_Business.Repository.BaronyRepos
 
                 var now = DateTime.UtcNow;
                 BaronAudienceExchange e;
-                if (dto.Id > 0)
+                var isNew = dto.Id <= 0;
+                if (!isNew)
                 {
                     e = await ctx.BaronAudienceExchanges.FirstOrDefaultAsync(x => x.Id == dto.Id)
                         ?? throw new InvalidOperationException("Exchange not found.");
@@ -3842,6 +3843,14 @@ namespace DA_Business.Repository.BaronyRepos
                 audience.UpdatedAtUtc = now;
 
                 await ctx.SaveChangesAsync();
+
+                // Only a new spoken turn is news — edits and system notes (resource / project /
+                // chapter) must not ping the other side again.
+                if (isNew && BaronAudienceExchangeRules.IsSpeakable(e.IsResourceChange, e.SpeakerName))
+                {
+                    _notifications.Enqueue(new BaronAudienceExchangePosted(e.AudienceId, e.IsFromPetitioner));
+                }
+
                 return ToDTO(e);
             }
             catch (System.Exception ex) when (ex is not InvalidOperationException)

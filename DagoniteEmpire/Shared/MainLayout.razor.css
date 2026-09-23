@@ -3,7 +3,9 @@
     /*position:absolute;*/
 }
 
-.app-bar {
+/* ::deep — MudAppBar / MudMainContent are child components; without it, Blazor
+   CSS isolation rewrites these selectors so they never match Mud's markup. */
+::deep .app-bar {
     width: 100%;
     height: 64px;
     padding-left: 0.5rem;
@@ -45,19 +47,19 @@
     display: none;
 }
 
-.mud-appbar .mud-toolbar-appbar {
+/* Keep the toolbar at the full 64px on phones — Mud shrinks it to 7/8 (56px). */
+::deep .mud-appbar .mud-toolbar-appbar {
     height: 64px;
     flex-wrap: nowrap;
     gap: 0.25rem;
 }
 
-.mud-appbar .campaign-chat-launcher {
+::deep .mud-appbar .campaign-chat-launcher {
     flex-shrink: 0;
 }
 
-/* App bar is always 64px here; override Mud's mobile 7/8 padding (56px) so content
-   height math and the bar never leave an ~8px gap under the toolbar / at the bottom. */
-.mud-main-content {
+/* Match content offset to the forced 64px bar (Mud's default mobile padding is 56px). */
+::deep .mud-main-content {
     padding-top: var(--mud-appbar-height, 64px);
 }
 
@@ -120,5 +122,3 @@
 .mud-drawer .mud-drawer-content {
     height: calc(100% - 168px);
 }*/
-
-

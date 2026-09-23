@@ -23,6 +23,9 @@ namespace DA_Common.Notifications
         /// <summary>A letter was delivered in a baron correspondence thread.</summary>
         public const string BaronLetter = "baron-letter";
 
+        /// <summary>A spoken reply in an Audience Hall / Audiences thread.</summary>
+        public const string BaronAudience = "baron-audience";
+
         public static readonly string[] All =
         {
             Posts,
@@ -31,6 +34,7 @@ namespace DA_Common.Notifications
             BattleTurn,
             Chat,
             BaronLetter,
+            BaronAudience,
         };
 
         /// <summary>Topics that only make sense for barons (and Game Masters who run baronies).</summary>
@@ -40,6 +44,7 @@ namespace DA_Common.Notifications
             GmQuestion,
             BattleTurn,
             BaronLetter,
+            BaronAudience,
         };
 
         public static bool IsBarony(string? key)
@@ -76,6 +81,7 @@ namespace DA_Common.Notifications
             BattleTurn => Loc.T("My turn in a battle"),
             Chat => Loc.T("Private messages"),
             BaronLetter => Loc.T("Baron letters"),
+            BaronAudience => Loc.T("Audience replies"),
             _ => Loc.T("Notifications"),
         };
     }

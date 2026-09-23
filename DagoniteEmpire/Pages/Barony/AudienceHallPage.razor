@@ -26,6 +26,18 @@
     }
     else if (Barony is not null)
     {
+        @if (CanWriteAsBaron && _mode == HallMode.Council)
+        {
+            <button type="button"
+                    class="audience-hall__add-topic"
+                    title="@L["Add council topic"]"
+                    disabled="@(_busy || string.IsNullOrWhiteSpace(BaronCouncilLabel))"
+                    @onclick="CreateCouncilTopicAsync"
+                    aria-label="@L["Add council topic"]">
+                +
+            </button>
+        }
+
         @if (CanManageAsMg)
         {
             <div class="audience-hall__mg-bar d-flex flex-wrap gap-2 mb-1">
@@ -75,43 +87,83 @@
                 {
                     <div class="audience-hall__ring">
                         <div class="audience-hall__satellites audience-hall__satellites--left">
-                            @foreach (var seat in LeftCouncilSeats)
+                            @foreach (var item in LeftCouncilOrbitSatellites)
                             {
                                 <button type="button"
-                                        class="audience-hall__advisor @(_selectedSeatKey == seat.Key ? "is-on" : "")"
-                                        title="@seat.Label"
-                                        @onclick="() => SelectSeat(seat)">
-                                    @if (seat.Topics.Count > 0)
+                                        class="audience-hall__advisor @(CurrentCouncilTopic?.Id == item.Id ? "is-on" : "")"
+                                        title="@item.Title"
+                                        @onclick="() => SelectCouncilTopic(item.Id)">
+                                    @if (item.NeedsAttention)
                                     {
-                                        <span class="audience-hall__badge">@seat.Topics.Count</span>
+                                        <span class="audience-hall__badge audience-hall__badge--flag">!</span>
                                     }
                                     <span class="audience-hall__advisor-icon">
-                                        <img src="@("/" + seat.Icon)" alt="" />
+                                        <img src="@("/" + item.Icon)" alt="" />
                                     </span>
-                                    <span class="audience-hall__advisor-label">@seat.ShortLabel</span>
+                                    <span class="audience-hall__advisor-label">@item.Label</span>
                                 </button>
                             }
                         </div>
-                        <div class="audience-hall__ring-core audience-hall__ring-core--static"
-                             title="@L["General Council"]">
-                            <img src="@("/" + MyIcon.CouncilTable)" class="audience-hall__throne" alt="" />
-                        </div>
+                        <img src="@("/" + MyIcon.CouncilTable)" class="audience-hall__throne" alt="" />
                         <div class="audience-hall__satellites audience-hall__satellites--right">
-                            @foreach (var seat in RightCouncilSeats)
+                            @foreach (var item in RightCouncilOrbitSatellites)
                             {
                                 <button type="button"
-                                        class="audience-hall__advisor @(_selectedSeatKey == seat.Key ? "is-on" : "")"
-                                        title="@seat.Label"
-                                        @onclick="() => SelectSeat(seat)">
-                                    @if (seat.Topics.Count > 0)
+                                        class="audience-hall__advisor @(CurrentCouncilTopic?.Id == item.Id ? "is-on" : "")"
+                                        title="@item.Title"
+                                        @onclick="() => SelectCouncilTopic(item.Id)">
+                                    @if (item.NeedsAttention)
                                     {
-                                        <span class="audience-hall__badge">@seat.Topics.Count</span>
+                                        <span class="audience-hall__badge audience-hall__badge--flag">!</span>
                                     }
                                     <span class="audience-hall__advisor-icon">
-                                        <img src="@("/" + seat.Icon)" alt="" />
+                                        <img src="@("/" + item.Icon)" alt="" />
                                     </span>
-                                    <span class="audience-hall__advisor-label">@seat.ShortLabel</span>
+                                    <span class="audience-hall__advisor-label">@item.Label</span>
                                 </button>
+                            }
+                            @if (OverflowCouncilOrbitSatellites.Count > 0)
+                            {
+                                <div class="audience-hall__more">
+                                    <MudMenu @bind-Open="_showMoreCouncil"
+                                             CloseOnClick="false"
+                                             Dense="true"
+                                             MaxHeight="360"
+                                             LockScroll="false"
+                                             AnchorOrigin="Origin.BottomLeft"
+                                             TransformOrigin="Origin.TopLeft"
+                                             Class="audience-hall__more-menu"
+                                             ListClass="audience-hall-more-list"
+                                             PopoverClass="audience-hall-more-popover">
+                                        <ActivatorContent>
+                                            <button type="button"
+                                                    class="audience-hall__advisor"
+                                                    title="@L["More"]"
+                                                    @onclick="() => _showMoreCouncil = true">
+                                                <span class="audience-hall__badge">@OverflowCouncilOrbitSatellites.Count</span>
+                                                <span class="audience-hall__advisor-icon">
+                                                    <MudIcon Icon="@Icons.Material.Filled.MoreHoriz" />
+                                                </span>
+                                                <span class="audience-hall__advisor-label">@L["More"]</span>
+                                            </button>
+                                        </ActivatorContent>
+                                        <ChildContent>
+                                            @foreach (var item in OverflowCouncilOrbitSatellites)
+                                            {
+                                                <MudMenuItem OnClick="() => SelectCouncilTopicFromMore(item.Id)">
+                                                    <div class="audience-hall__more-item">
+                                                        <img src="@("/" + item.Icon)" alt="" />
+                                                        <span>@item.Label</span>
+                                                        @if (item.NeedsAttention)
+                                                        {
+                                                            <span class="audience-hall__badge audience-hall__badge--flag audience-hall__badge--inline">!</span>
+                                                        }
+                                                    </div>
+                                                </MudMenuItem>
+                                            }
+                                        </ChildContent>
+                                    </MudMenu>
+                                </div>
                             }
                         </div>
                     </div>
@@ -271,9 +323,9 @@
                             class="audience-hall__tile @(_mode == HallMode.Council ? "is-on" : "")"
                             disabled="@(_mode == HallMode.Council)"
                             @onclick="ToggleCouncil">
-                        @if (OpenCouncilTopics.Count > 0)
+                        @if (PendingCouncilTopicsForTileBadge.Count > 0)
                         {
-                            <span class="audience-hall__badge">@OpenCouncilTopics.Count</span>
+                            <span class="audience-hall__badge">@PendingCouncilTopicsForTileBadge.Count</span>
                         }
                         <img src="@("/" + MyIcon.People)" alt="" />
                         <span>@L["Council"]</span>
@@ -321,19 +373,11 @@
                                            OnResolve="() => ResolveAsync(CurrentAudience)"
                                            OnDefer="() => DeferAsync(CurrentAudience)"
                                            OnDismiss="() => DismissAsync(CurrentAudience)" />
-                            @if (ActiveAudiences.Count > 1)
-                            {
-                                <div class="audience-hall__pager">
-                                    <button type="button" class="audience-hall__ink-btn" disabled="@(_audienceIndex <= 0)" @onclick="() => StepTopic(-1)">‹</button>
-                                    <span>@(_audienceIndex + 1) / @ActiveAudiences.Count</span>
-                                    <button type="button" class="audience-hall__ink-btn" disabled="@(_audienceIndex >= ActiveAudiences.Count - 1)" @onclick="() => StepTopic(1)">›</button>
-                                </div>
-                            }
                         }
                     }
-                    else if (_mode == HallMode.Council && _selectedSeatKey is not null)
+                    else if (_mode == HallMode.Council)
                     {
-                        @if (CurrentCouncilTopic is null)
+                        @if (OpenCouncilTopics.Count == 0)
                         {
                             <div class="audience-scroll">
                                 <div class="audience-scroll__sheet audience-scroll__sheet--empty">
@@ -341,7 +385,7 @@
                                 </div>
                             </div>
                         }
-                        else
+                        else if (CurrentCouncilTopic is not null)
                         {
                             <AudiencePanel @key="CurrentCouncilTopic.Id"
                                            Audience="CurrentCouncilTopic"
@@ -358,14 +402,6 @@
                                            OnMakeChapter="() => MakeChapterAsync(CurrentCouncilTopic)"
                                            OnResolve="() => ResolveAsync(CurrentCouncilTopic)"
                                            OnDismiss="() => DismissAsync(CurrentCouncilTopic)" />
-                            @if (SelectedCouncilTopics.Count > 1)
-                            {
-                                <div class="audience-hall__pager">
-                                    <button type="button" class="audience-hall__ink-btn" disabled="@(_councilIndex <= 0)" @onclick="() => StepTopic(-1)">‹</button>
-                                    <span>@(_councilIndex + 1) / @SelectedCouncilTopics.Count</span>
-                                    <button type="button" class="audience-hall__ink-btn" disabled="@(_councilIndex >= SelectedCouncilTopics.Count - 1)" @onclick="() => StepTopic(1)">›</button>
-                                </div>
-                            }
                         }
                     }
                 </div>
@@ -407,9 +443,10 @@
 
     private enum OrbitItemKind { Audience, HallEvent }
 
-    private const string GeneralSeatKey = "";
+    [SupplyParameterFromQuery(Name = "audience")] public int? AudienceQuery { get; set; }
 
-    private sealed record CouncilSeat(string Key, string Label, string ShortLabel, string Icon, List<BaronAudienceDTO> Topics);
+    /// <summary>One orbit icon per open council topic (advisor or baron).</summary>
+    private sealed record CouncilTopicSatellite(int Id, string Icon, string Label, string Title, bool NeedsAttention);
 
     private sealed record PetitionerSatellite(int Id, string Icon, string Label, bool NeedsAttention);
 
@@ -431,14 +468,13 @@
     private List<AdvisorDTO> _advisors = new();
     private List<string> _courtSpeakers = new();
     private List<string> _councilAdvisorOptions = new();
-    // -1 = no audience picked yet (petitioner ring shows on load, but the parchment stays empty
-    // until an icon is clicked); ClampIndexes/StepTopic already treat this as "unselected".
+    // -1 = no topic picked yet (orbit shows; parchment stays empty until an icon is clicked).
     private int _audienceIndex = -1;
-    private int _councilIndex;
+    private int _councilIndex = -1;
     private int _overlayEventIndex;
-    private string? _selectedSeatKey;
     private bool _busy;
     private bool _showMorePetitioners;
+    private bool _showMoreCouncil;
     private bool _overlayMinimized = true;
     private bool _overlayAutoOpened;
 
@@ -467,20 +503,45 @@
             .Where(AudienceNeedsAttention)
             .ToList();
 
+    /// <summary>
+    /// Unanswered topics for the Audiences / Council mode tiles — count of threads
+    /// waiting on a reply from the viewing side (not total open topics).
+    /// </summary>
     private IReadOnlyList<BaronAudienceDTO> PendingAudiencesForTileBadge =>
-        ActiveAudiences
-            .Where(AudienceNeedsAttentionForTileBadge)
-            .ToList();
+        ActiveAudiences.Where(TopicNeedsTileBadge).ToList();
 
-    private bool AudienceNeedsAttention(BaronAudienceDTO a) =>
-        CanManageAsMg
-            ? a.LastExchange is null || !a.LastExchange.IsFromPetitioner
-            : a.LastExchange is null || a.LastExchange.IsFromPetitioner;
+    private IReadOnlyList<BaronAudienceDTO> PendingCouncilTopicsForTileBadge =>
+        OpenCouncilTopics.Where(TopicNeedsTileBadge).ToList();
 
-    private bool AudienceNeedsAttentionForTileBadge(BaronAudienceDTO a) =>
-        ShouldPresentHallEventsToBaron
-            ? a.LastExchange is null || a.LastExchange.IsFromPetitioner
-            : AudienceNeedsAttention(a);
+    private bool AudienceNeedsAttention(BaronAudienceDTO a)
+    {
+        // Ignore resource / project / chapter notes — only spoken turns decide whose move it is
+        // (same idea as letters: once you replied, the badge goes away).
+        var last = LastSpeakableExchange(a);
+        return CanManageAsMg
+            ? last is null || !last.IsFromPetitioner
+            : last is null || last.IsFromPetitioner;
+    }
+
+    /// <summary>
+    /// Tile badges follow the baron's inbox when the hall is shown as the baron
+    /// (including MG impersonating); otherwise the Game Master's.
+    /// </summary>
+    private bool TopicNeedsTileBadge(BaronAudienceDTO a)
+    {
+        if (!ShouldPresentHallEventsToBaron)
+            return AudienceNeedsAttention(a);
+
+        var last = LastSpeakableExchange(a);
+        return last is null || last.IsFromPetitioner;
+    }
+
+    private static BaronAudienceExchangeDTO? LastSpeakableExchange(BaronAudienceDTO a) =>
+        a.Exchanges
+            .Where(x => BaronAudienceExchangeRules.IsSpeakable(x.IsResourceChange, x.SpeakerName))
+            .OrderByDescending(x => x.SortOrder)
+            .ThenByDescending(x => x.Id)
+            .FirstOrDefault();
 
     private IReadOnlyList<BaronAudienceDTO> OpenCouncilTopics =>
         _audiences
@@ -489,31 +550,93 @@
             .ThenBy(a => a.Id)
             .ToList();
 
-    private IReadOnlyList<BaronAudienceDTO> UnassignedCouncilTopics =>
-        OpenCouncilTopics.Where(t => CouncilSeats.All(s => !TopicsForAdvisor(s, t))).ToList();
+    /// <summary>One orbit icon per open council topic — same model as audiences around the throne.</summary>
+    private List<CouncilTopicSatellite> CouncilTopicSatellites =>
+        OpenCouncilTopics
+            .Select(t => new CouncilTopicSatellite(
+                t.Id,
+                CouncilTopicIcon(t),
+                CouncilTopicOrbitLabel(t),
+                CouncilTopicTooltip(t),
+                AudienceNeedsAttention(t)))
+            .OrderByDescending(s => s.NeedsAttention)
+            .ThenBy(s => s.Id)
+            .ToList();
 
-    private List<CouncilSeat> CouncilSeats
+    private bool HasCouncilOrbitOverflow => CouncilTopicSatellites.Count > MaxVisibleOrbitItems;
+
+    private List<CouncilTopicSatellite> VisibleCouncilOrbitSatellites =>
+        CouncilTopicSatellites.Take(HasCouncilOrbitOverflow ? MaxVisibleOrbitItems - 1 : MaxVisibleOrbitItems).ToList();
+
+    private List<CouncilTopicSatellite> OverflowCouncilOrbitSatellites =>
+        CouncilTopicSatellites.Skip(HasCouncilOrbitOverflow ? MaxVisibleOrbitItems - 1 : MaxVisibleOrbitItems).ToList();
+
+    private List<CouncilTopicSatellite> LeftCouncilOrbitSatellites =>
+        HasCouncilOrbitOverflow
+            ? SplitSides(VisibleCouncilOrbitSatellites).Right
+            : SplitSides(VisibleCouncilOrbitSatellites).Left;
+
+    private List<CouncilTopicSatellite> RightCouncilOrbitSatellites =>
+        HasCouncilOrbitOverflow
+            ? SplitSides(VisibleCouncilOrbitSatellites).Left
+            : SplitSides(VisibleCouncilOrbitSatellites).Right;
+
+    private string? BaronPersonName =>
+        _advisors.FirstOrDefault(a => a.IsBaron)?.PersonName?.Trim()
+        ?? BaronCharacterName?.Trim();
+
+    private string BaronCouncilLabel
     {
         get
         {
-            var topics = OpenCouncilTopics;
-            var seats = new List<CouncilSeat>();
-            foreach (var advisor in BaronyCalc.OrderAdvisors(_advisors.Where(a => !a.IsBaron && !string.IsNullOrWhiteSpace(a.PersonName))))
-            {
-                var role = BaronyCalc.AdvisorRoleLabel(advisor);
-                var name = advisor.PersonName.Trim();
-                var label = $"{role} \u2014 {name}";
-                var matched = topics.Where(t => TopicBelongsTo(t, label, name)).ToList();
-                seats.Add(new CouncilSeat(label, label, role, AdvisorIconCatalog.IconFor(advisor.OfficeType, advisor.Id, advisor.IconPath), matched));
-            }
-
-            return seats;
+            var baron = _advisors.FirstOrDefault(a => a.IsBaron);
+            var name = BaronPersonName;
+            if (baron is not null && !string.IsNullOrWhiteSpace(name))
+                return $"{BaronyCalc.AdvisorRoleLabel(baron)} \u2014 {name}";
+            if (!string.IsNullOrWhiteSpace(name))
+                return $"{L["Baron"].Value} \u2014 {name}";
+            return L["Baron"].Value;
         }
     }
 
-    private List<CouncilSeat> LeftCouncilSeats => SplitSides(CouncilSeats).Left;
+    private bool IsBaronCouncilTopic(BaronAudienceDTO t)
+    {
+        var name = BaronPersonName;
+        return MatchesAdvisorText(t.AssignedAdvisorName, BaronCouncilLabel, name ?? "")
+               || MatchesAdvisorText(t.PetitionerName, BaronCouncilLabel, name ?? "");
+    }
 
-    private List<CouncilSeat> RightCouncilSeats => SplitSides(CouncilSeats).Right;
+    private string CouncilTopicIcon(BaronAudienceDTO t)
+    {
+        if (IsBaronCouncilTopic(t))
+            return MyIcon.JewelCrown;
+
+        foreach (var advisor in _advisors.Where(a => !a.IsBaron && !string.IsNullOrWhiteSpace(a.PersonName)))
+        {
+            var role = BaronyCalc.AdvisorRoleLabel(advisor);
+            var name = advisor.PersonName.Trim();
+            var label = $"{role} \u2014 {name}";
+            if (TopicBelongsTo(t, label, name))
+                return AdvisorIconCatalog.IconFor(advisor.OfficeType, advisor.Id, advisor.IconPath);
+        }
+
+        return MyIcon.JewelCrown;
+    }
+
+    private string CouncilTopicOrbitLabel(BaronAudienceDTO t) =>
+        string.IsNullOrWhiteSpace(t.Title)
+            ? (t.AssignedAdvisorName ?? t.PetitionerName ?? L["Council"].Value)
+            : t.Title.Trim();
+
+    private string CouncilTopicTooltip(BaronAudienceDTO t)
+    {
+        var who = string.IsNullOrWhiteSpace(t.AssignedAdvisorName)
+            ? t.PetitionerName
+            : t.AssignedAdvisorName;
+        if (string.IsNullOrWhiteSpace(who))
+            return CouncilTopicOrbitLabel(t);
+        return $"{who} — {CouncilTopicOrbitLabel(t)}";
+    }
 
     private List<PetitionerSatellite> PetitionerSatellites =>
         ActiveAudiences
@@ -647,44 +770,31 @@
                && text.Contains(personName, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static bool TopicsForAdvisor(CouncilSeat seat, BaronAudienceDTO topic)
-    {
-        var dash = seat.Label.LastIndexOf('\u2014');
-        var person = dash >= 0 ? seat.Label[(dash + 1)..].Trim() : seat.Label;
-        return TopicBelongsTo(topic, seat.Label, person);
-    }
-
-    private IReadOnlyList<BaronAudienceDTO> SelectedCouncilTopics
-    {
-        get
-        {
-            if (_selectedSeatKey is null)
-                return Array.Empty<BaronAudienceDTO>();
-            if (_selectedSeatKey == GeneralSeatKey)
-                return UnassignedCouncilTopics;
-            return CouncilSeats.FirstOrDefault(s => s.Key == _selectedSeatKey)?.Topics
-                   ?? (IReadOnlyList<BaronAudienceDTO>)Array.Empty<BaronAudienceDTO>();
-        }
-    }
-
     private BaronAudienceDTO? CurrentAudience =>
         _audienceIndex >= 0 && _audienceIndex < ActiveAudiences.Count ? ActiveAudiences[_audienceIndex] : null;
 
     private BaronAudienceDTO? CurrentCouncilTopic =>
-        _councilIndex >= 0 && _councilIndex < SelectedCouncilTopics.Count ? SelectedCouncilTopics[_councilIndex] : null;
+        _councilIndex >= 0 && _councilIndex < OpenCouncilTopics.Count ? OpenCouncilTopics[_councilIndex] : null;
 
-    // Icon of the advisor whose seat is selected — null for the General Council bucket.
     private string? CurrentCouncilAdvisorIcon =>
-        _selectedSeatKey is not null && _selectedSeatKey != GeneralSeatKey
-            ? CouncilSeats.FirstOrDefault(s => s.Key == _selectedSeatKey)?.Icon
-            : null;
+        CurrentCouncilTopic is null ? null : CouncilTopicIcon(CurrentCouncilTopic);
 
     protected override async Task OnInitializedAsync()
     {
         _callbackService.OnChange += OnSelectedCharacterChanged;
         await LoadBaronyAsync();
         if (Barony is not null && !TurnResolveLocked)
+        {
             await ReloadAsync();
+            ApplyAudienceQuery();
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Barony is null || TurnResolveLocked || AudienceQuery is not int)
+            return;
+        ApplyAudienceQuery();
     }
 
     private void OnSelectedCharacterChanged()
@@ -694,13 +804,41 @@
             _overlayAutoOpened = false;
             await LoadBaronyAsync();
             if (Barony is not null && !TurnResolveLocked)
+            {
                 await ReloadAsync();
+                ApplyAudienceQuery();
+            }
             else
                 StateHasChanged();
         });
     }
 
     public void Dispose() => _callbackService.OnChange -= OnSelectedCharacterChanged;
+
+    /// <summary>
+    /// Opens the audience (or council topic) named in <c>?audience=</c> — used by push
+    /// notification deep links.
+    /// </summary>
+    private void ApplyAudienceQuery()
+    {
+        if (AudienceQuery is not int id || id <= 0)
+            return;
+
+        var audience = ActiveAudiences.FirstOrDefault(a => a.Id == id);
+        if (audience is not null)
+        {
+            _mode = HallMode.Audiences;
+            SelectAudience(id);
+            return;
+        }
+
+        var council = OpenCouncilTopics.FirstOrDefault(a => a.Id == id);
+        if (council is null)
+            return;
+
+        _mode = HallMode.Council;
+        SelectCouncilTopic(id);
+    }
 
     private async Task ReloadAsync()
     {
@@ -719,16 +857,16 @@
                 .ToList();
 
             var officeAdvisors = await _baronyRepo.GetAdvisors(Barony.Id);
-            _councilAdvisorOptions = officeAdvisors
-                .Where(a => !a.IsBaron && !string.IsNullOrWhiteSpace(a.PersonName))
-                .Select(a => $"{BaronyCalc.AdvisorRoleLabel(a)} \u2014 {a.PersonName.Trim()}")
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
-                .ToList();
+            _advisors = officeAdvisors;
+            _councilAdvisorOptions = BuildCouncilSpeakerOptions(officeAdvisors);
         }
 
         _audiences = await _baronyRepo.GetAudiences(BaronyId);
-        _advisors = await _baronyRepo.GetAdvisors(Barony.Id);
+        if (!CanManageAsMg)
+        {
+            _advisors = await _baronyRepo.GetAdvisors(Barony.Id);
+            _councilAdvisorOptions = BuildCouncilSpeakerOptions(_advisors);
+        }
         _hallAdventures = await _baronyRepo.GetHallAdventures(BaronyId);
         _hallEvents = await _baronyRepo.GetHallEvents(
             BaronyId,
@@ -789,14 +927,10 @@
     {
         if (_audienceIndex >= ActiveAudiences.Count)
             _audienceIndex = Math.Max(0, ActiveAudiences.Count - 1);
-        if (_councilIndex >= SelectedCouncilTopics.Count)
-            _councilIndex = Math.Max(0, SelectedCouncilTopics.Count - 1);
+        if (_councilIndex >= OpenCouncilTopics.Count)
+            _councilIndex = Math.Max(0, OpenCouncilTopics.Count - 1);
         if (_overlayEventIndex >= OverlayHallEvents.Count)
             _overlayEventIndex = Math.Max(0, OverlayHallEvents.Count - 1);
-        if (_selectedSeatKey is not null
-            && _selectedSeatKey != GeneralSeatKey
-            && CouncilSeats.All(s => s.Key != _selectedSeatKey))
-            _selectedSeatKey = null;
     }
 
     // These only ENTER their mode now (buttons are disabled while already active, see markup)
@@ -805,7 +939,6 @@
     {
         if (_mode == HallMode.Audiences)
             return;
-        _selectedSeatKey = null;
         _mode = HallMode.Audiences;
     }
 
@@ -814,15 +947,13 @@
         if (_mode == HallMode.Council)
             return;
         _mode = HallMode.Council;
-        _selectedSeatKey = null;
-        _councilIndex = 0;
+        _councilIndex = -1;
     }
 
     private void ToggleAdventures()
     {
         if (_mode == HallMode.Adventures)
             return;
-        _selectedSeatKey = null;
         _mode = HallMode.Adventures;
     }
 
@@ -834,10 +965,24 @@
     private void StepOverlayEvent(int delta) =>
         _overlayEventIndex = Math.Clamp(_overlayEventIndex + delta, 0, Math.Max(0, OverlayHallEvents.Count - 1));
 
-    private void SelectSeat(CouncilSeat seat)
+    private void SelectCouncilTopic(int topicId)
     {
-        _selectedSeatKey = seat.Key;
-        _councilIndex = 0;
+        _showMoreCouncil = false;
+        var list = OpenCouncilTopics;
+        for (var i = 0; i < list.Count; i++)
+        {
+            if (list[i].Id == topicId)
+            {
+                _councilIndex = i;
+                return;
+            }
+        }
+    }
+
+    private void SelectCouncilTopicFromMore(int topicId)
+    {
+        _showMoreCouncil = false;
+        SelectCouncilTopic(topicId);
     }
 
     private void SelectAudience(int audienceId)
@@ -942,8 +1087,33 @@
     {
         if (_mode == HallMode.Audiences)
             _audienceIndex = Math.Clamp(_audienceIndex + delta, 0, Math.Max(0, ActiveAudiences.Count - 1));
-        else if (_mode == HallMode.Council)
-            _councilIndex = Math.Clamp(_councilIndex + delta, 0, Math.Max(0, SelectedCouncilTopics.Count - 1));
+    }
+
+    private bool IsBaronCouncilLabel(string? label)
+    {
+        if (string.IsNullOrWhiteSpace(label))
+            return false;
+        return string.Equals(label.Trim(), BaronCouncilLabel, StringComparison.OrdinalIgnoreCase)
+               || MatchesAdvisorText(label, BaronCouncilLabel, BaronPersonName ?? "");
+    }
+
+    private List<string> BuildCouncilSpeakerOptions(IEnumerable<AdvisorDTO> officeAdvisors)
+    {
+        var options = new List<string>();
+        var list = officeAdvisors.ToList();
+        var baron = list.FirstOrDefault(a => a.IsBaron);
+        if (baron is not null && !string.IsNullOrWhiteSpace(baron.PersonName))
+            options.Add($"{BaronyCalc.AdvisorRoleLabel(baron)} \u2014 {baron.PersonName.Trim()}");
+        else if (!string.IsNullOrWhiteSpace(BaronCharacterName))
+            options.Add($"{L["Baron"].Value} \u2014 {BaronCharacterName.Trim()}");
+
+        options.AddRange(list
+            .Where(a => !a.IsBaron && !string.IsNullOrWhiteSpace(a.PersonName))
+            .Select(a => $"{BaronyCalc.AdvisorRoleLabel(a)} \u2014 {a.PersonName.Trim()}")
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(n => n, StringComparer.OrdinalIgnoreCase));
+
+        return options;
     }
 
     private async Task SendReplyAsync(BaronAudienceDTO? audience, AudiencePanel.SpeakRequest req)
@@ -1288,8 +1458,15 @@
 
     private async Task CreateCouncilTopicAsync()
     {
+        var parameters = new DialogParameters<NewCouncilTopicDialog>
+        {
+            { x => x.Advisors, _councilAdvisorOptions },
+        };
+        if (CanWriteAsBaron)
+            parameters.Add(x => x.FixedSpeaker, BaronCouncilLabel);
+
         var dialog = await _dialogService.ShowAsync<NewCouncilTopicDialog>(L["New council topic"],
-            new DialogParameters<NewCouncilTopicDialog> { { x => x.Advisors, _councilAdvisorOptions } },
+            parameters,
             new DialogOptions { MaxWidth = MaxWidth.Small, FullWidth = true });
         var result = await dialog.Result;
         if (result is null || result.Canceled || result.Data is not NewCouncilTopicDialog.NewCouncilTopicResult data)
@@ -1298,11 +1475,13 @@
         _busy = true;
         try
         {
+            var speaker = CanWriteAsBaron ? BaronCouncilLabel : data.AdvisorLabel;
+            var fromBaron = IsBaronCouncilLabel(speaker);
             var created = await _baronyRepo.SaveAudience(new BaronAudienceDTO
             {
                 BaronyId = BaronyId,
-                PetitionerName = data.AdvisorLabel,
-                AssignedAdvisorName = data.AdvisorLabel,
+                PetitionerName = speaker,
+                AssignedAdvisorName = speaker,
                 Title = data.Title,
                 Kind = BaronAudienceKind.Council,
                 Status = BaronAudienceStatus.Scheduled,
@@ -1312,14 +1491,14 @@
             {
                 AudienceId = created.Id,
                 Body = data.OpeningBody,
-                IsFromPetitioner = true,
-                SpeakerName = data.AdvisorLabel,
+                // Baron raises the topic as the lord; advisors speak as the petitioner side.
+                IsFromPetitioner = !fromBaron,
+                SpeakerName = speaker,
                 TurnNumber = Barony.TurnNumber,
             });
             await ReloadAsync();
             _mode = HallMode.Council;
-            _selectedSeatKey = data.AdvisorLabel;
-            _councilIndex = 0;
+            SelectCouncilTopic(created.Id);
             _snackBar.Add(L["Council topic opened."], Severity.Success);
         }
         catch (Exception ex)

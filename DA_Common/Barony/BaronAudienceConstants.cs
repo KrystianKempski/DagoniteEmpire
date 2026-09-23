@@ -164,4 +164,27 @@ namespace DA_Common.Barony
             return $"Council session. {year}, {seasonLabel}";
         }
     }
+
+    /// <summary>
+    /// System vs spoken lines in an audience thread. Resource / project / chapter notes are
+    /// silent bookkeeping — only speakable turns raise push notifications.
+    /// </summary>
+    public static class BaronAudienceExchangeRules
+    {
+        public const string ProjectSpeaker = "Project";
+        public const string ChapterSpeaker = "Chapter";
+
+        public static bool IsSpeakable(bool isResourceChange, string? speakerName)
+        {
+            if (isResourceChange)
+                return false;
+
+            if (string.IsNullOrWhiteSpace(speakerName))
+                return true;
+
+            var speaker = speakerName.Trim();
+            return !string.Equals(speaker, ProjectSpeaker, StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(speaker, ChapterSpeaker, StringComparison.OrdinalIgnoreCase);
+        }
+    }
 }

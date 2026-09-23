@@ -76,6 +76,60 @@ public class GameNotificationDispatcherTests : IClassFixture<DatabaseFixture>
     }
 
     [Fact]
+    public async Task PetitionerAudienceReply_GoesToTheBaron()
+    {
+        var baronyId = SeedBaronyOwnedBy("id-baron", "duke");
+        var audienceId = SeedAudience(baronyId, "Prośba o zboże", "Farmer Tobin");
+
+        await _dispatcher.Dispatch(new BaronAudienceExchangePosted(audienceId, IsFromPetitioner: true));
+
+        var sent = Assert.Single(_push.Sent);
+        Assert.Equal(new[] { "id-baron" }, sent.UserIds);
+        Assert.Equal(NotificationTopic.BaronAudience, sent.Topic);
+        Assert.Contains("Farmer Tobin", sent.Payload.Title);
+        Assert.Equal("Prośba o zboże", sent.Payload.Body);
+        Assert.Equal($"/barony/audience-hall?audience={audienceId}", sent.Payload.Url);
+        Assert.Equal($"baron-audience-{audienceId}", sent.Payload.Tag);
+    }
+
+    [Fact]
+    public async Task BaronAudienceReply_GoesToTheGameMaster()
+    {
+        var baronyId = SeedBaronyOwnedBy("id-baron", "duke");
+        var audienceId = SeedAudience(baronyId, "Prośba o zboże", "Farmer Tobin");
+        SeedGameMaster("id-gm", "gm");
+
+        await _dispatcher.Dispatch(new BaronAudienceExchangePosted(audienceId, IsFromPetitioner: false));
+
+        var sent = Assert.Single(_push.Sent);
+        Assert.Equal(new[] { "id-gm" }, sent.UserIds);
+        Assert.Contains("Darkhold", sent.Payload.Title);
+        Assert.Contains("Farmer Tobin", sent.Payload.Body);
+        Assert.Contains("Prośba o zboże", sent.Payload.Body);
+    }
+
+    [Fact]
+    public async Task BaronAudienceReply_IsSkipped_WhenThereIsNoGameMaster()
+    {
+        var baronyId = SeedBaronyOwnedBy("id-baron", "duke");
+        var audienceId = SeedAudience(baronyId, "Prośba o zboże", "Farmer Tobin");
+
+        var delivered = await _dispatcher.Dispatch(
+            new BaronAudienceExchangePosted(audienceId, IsFromPetitioner: false));
+
+        Assert.Equal(0, delivered);
+        Assert.Empty(_push.Sent);
+    }
+
+    [Fact]
+    public async Task UnknownAudience_IsIgnored()
+    {
+        Assert.Equal(0, await _dispatcher.Dispatch(
+            new BaronAudienceExchangePosted(9999, IsFromPetitioner: true)));
+        Assert.Empty(_push.Sent);
+    }
+
+    [Fact]
     public async Task UnknownThread_IsIgnored()
     {
         Assert.Equal(0, await _dispatcher.Dispatch(new BaronLetterDelivered(9999, IsInbound: true)));
@@ -221,6 +275,23 @@ public class GameNotificationDispatcherTests : IClassFixture<DatabaseFixture>
         ctx.BaronLetterThreads.Add(thread);
         ctx.SaveChanges();
         return thread.Id;
+    }
+
+    private int SeedAudience(int baronyId, string title, string petitioner)
+    {
+        using var ctx = _fixture.CreateContext();
+        var audience = new BaronAudience
+        {
+            BaronyId = baronyId,
+            Title = title,
+            PetitionerName = petitioner,
+            Kind = BaronAudienceKind.Audience,
+            Status = BaronAudienceStatus.InProgress,
+            TurnNumber = 1,
+        };
+        ctx.BaronAudiences.Add(audience);
+        ctx.SaveChanges();
+        return audience.Id;
     }
 
     private int SeedQaThread(int baronyId, string title)

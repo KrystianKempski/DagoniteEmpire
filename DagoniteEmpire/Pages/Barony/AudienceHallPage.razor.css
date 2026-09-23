@@ -2,11 +2,44 @@
     --throne: clamp(8rem, 30dvh, 20rem);
     max-width: 46rem;
     margin: 0 auto;
+    position: relative;
     /* Fill .barony-scope--audience-hall (parent is already viewport minus Mud appbar padding). */
     height: 100%;
     display: flex;
     flex-direction: column;
     overflow: hidden;
+}
+
+.audience-hall__add-topic {
+    position: absolute;
+    top: .25rem;
+    left: .25rem;
+    z-index: 6;
+    width: 1.85rem;
+    height: 1.85rem;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border: 1px solid color-mix(in srgb, var(--barony-ink, #3a2c18) 28%, transparent);
+    border-radius: .35rem;
+    background: color-mix(in srgb, #f7ecd0 82%, white);
+    color: var(--barony-ink, #3a2c18);
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(47, 42, 36, .18);
+    transition: background .15s ease, transform .15s ease, opacity .15s ease;
+}
+
+.audience-hall__add-topic:hover:not(:disabled) {
+    background: color-mix(in srgb, #f0dfb4 88%, white);
+    transform: scale(1.06);
+}
+
+.audience-hall__add-topic:disabled {
+    opacity: .45;
+    cursor: not-allowed;
 }
 
 .audience-hall__hub {
@@ -16,7 +49,7 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
-    padding: .35rem .75rem 0;
+    padding: 0 .75rem 0;
     gap: .6rem;
     overflow: hidden;
 }
@@ -27,6 +60,7 @@
 .audience-hall__stage {
     flex: 0 0 40dvh;
     height: 40dvh;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -51,6 +85,9 @@
     flex: 0 0 80%;
     height: 80%;
     min-height: 0;
+    /* In-flow inset — padding on an overflow:hidden ancestor clips into the padding
+       band; margin keeps badges / hover lift / glow inside the content box. */
+    margin-top: .75rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -147,7 +184,7 @@
     max-height: var(--advisor-card-height);
     flex: 0 0 var(--advisor-card-width);
     padding: .2rem .35rem;
-    overflow: hidden;
+    overflow: visible;
     background: transparent;
     border: none;
     cursor: pointer;
@@ -338,7 +375,7 @@
     width: 100%;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: visible;
     padding: 0 .75rem .75rem;
 }
 
@@ -408,7 +445,7 @@
     }
 
     .audience-hall__hub {
-        padding: .2rem .15rem 0;
+        padding: 0 .15rem 0;
         gap: .35rem;
     }
 
@@ -420,6 +457,7 @@
 
     .audience-hall__ring {
         gap: .35rem;
+        margin-top: .55rem;
     }
 
     .audience-hall__throne {

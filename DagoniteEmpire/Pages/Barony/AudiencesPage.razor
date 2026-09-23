@@ -462,6 +462,7 @@ else if (Barony is not null)
     private List<BaronyHallEventTemplateDTO> _hallEventTemplates = new();
     private List<string> _courtSpeakers = new();
     private List<string> _councilAdvisorOptions = new();
+    private string? _baronCouncilLabel;
     private readonly HashSet<int> _expandedArchiveTurns = new();
     private readonly HashSet<int> _expandedHallEventTurns = new();
     private bool _showArchivedHallEvents;
@@ -634,18 +635,37 @@ else if (Barony is not null)
                 .ToList();
 
             var officeAdvisors = await _baronyRepo.GetAdvisors(Barony.Id);
-            _councilAdvisorOptions = officeAdvisors
-                .Where(a => !a.IsBaron && !string.IsNullOrWhiteSpace(a.PersonName))
-                .Select(a => $"{BaronyCalc.AdvisorRoleLabel(a)} \u2014 {a.PersonName.Trim()}")
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
-                .ToList();
+            _councilAdvisorOptions = BuildCouncilSpeakerOptions(officeAdvisors);
         }
 
         _audiences = await _baronyRepo.GetAudiences(BaronyId);
         _hallEvents = await _baronyRepo.GetHallEvents(BaronyId, includeArchived: true, includeScheduled: true, includeConverted: true);
         _hallEventTemplates = await _baronyRepo.GetHallEventTemplates(BaronyId);
         StateHasChanged();
+    }
+
+    private List<string> BuildCouncilSpeakerOptions(IEnumerable<AdvisorDTO> officeAdvisors)
+    {
+        var options = new List<string>();
+        var list = officeAdvisors.ToList();
+        var baron = list.FirstOrDefault(a => a.IsBaron);
+        var baronName = baron?.PersonName?.Trim() ?? UserInfo?.SelectedCharacter?.NPCName?.Trim();
+        _baronCouncilLabel = null;
+        if (baron is not null && !string.IsNullOrWhiteSpace(baron.PersonName))
+            _baronCouncilLabel = $"{BaronyCalc.AdvisorRoleLabel(baron)} \u2014 {baron.PersonName.Trim()}";
+        else if (!string.IsNullOrWhiteSpace(baronName))
+            _baronCouncilLabel = $"{L["Baron"].Value} \u2014 {baronName}";
+
+        if (_baronCouncilLabel is not null)
+            options.Add(_baronCouncilLabel);
+
+        options.AddRange(list
+            .Where(a => !a.IsBaron && !string.IsNullOrWhiteSpace(a.PersonName))
+            .Select(a => $"{BaronyCalc.AdvisorRoleLabel(a)} \u2014 {a.PersonName.Trim()}")
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(n => n, StringComparer.OrdinalIgnoreCase));
+
+        return options;
     }
 
     private void ToggleHallEventFolder(int turn)
@@ -666,6 +686,9 @@ else if (Barony is not null)
         _busy = true;
         try
         {
+            var fromBaron = !string.IsNullOrWhiteSpace(_baronCouncilLabel)
+                            && string.Equals(data.AdvisorLabel, _baronCouncilLabel, StringComparison.OrdinalIgnoreCase);
+
             var created = await _baronyRepo.SaveAudience(new BaronAudienceDTO
             {
                 BaronyId = BaronyId,
@@ -680,7 +703,7 @@ else if (Barony is not null)
             {
                 AudienceId = created.Id,
                 Body = data.OpeningBody,
-                IsFromPetitioner = true,
+                IsFromPetitioner = !fromBaron,
                 SpeakerName = data.AdvisorLabel,
                 TurnNumber = Barony.TurnNumber,
             });

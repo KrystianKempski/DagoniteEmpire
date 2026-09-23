@@ -13,6 +13,7 @@
         'battle-turn',
         'chat',
         'baron-letter',
+        'baron-audience',
     ];
 
     function isStandalone() {
