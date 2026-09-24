@@ -1,5 +1,5 @@
 .audience-hall {
-    --throne: clamp(8rem, 30dvh, 20rem);
+    --throne: clamp(9.2rem, 34.5dvh, 23rem);
     max-width: 46rem;
     margin: 0 auto;
     position: relative;
@@ -54,9 +54,8 @@
     overflow: hidden;
 }
 
-/* Stage: throne/ring + mode tiles. Fixed 40% of the screen height regardless of mode, so
-   Audiences/Council/Adventures all share the exact same "big icon" area size. Ring/tiles
-   split 70/30 of that (see their own rules) so each zone centers its own content. */
+/* Stage: throne/ring + mode tiles. Fixed screen height regardless of mode.
+   Ring fills remaining space; tiles keep a natural height so icon + label stay visible. */
 .audience-hall__stage {
     flex: 0 0 40dvh;
     height: 40dvh;
@@ -77,17 +76,40 @@
     filter: drop-shadow(0 6px 14px rgba(47, 42, 36, .34));
 }
 
+.audience-hall__throne-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    gap: .35rem;
+    min-width: 0;
+}
+
+.audience-hall__throne-label {
+    display: block;
+    max-width: min(12rem, 42vw);
+    text-align: center;
+    color: var(--barony-ink);
+    font-family: 'IM Fell English', 'Times New Roman', serif;
+    font-size: clamp(.95rem, 2.4vw, 1.2rem);
+    letter-spacing: .03em;
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .audience-hall__throne--zoom {
     transform: scale(1.4);
 }
 
 .audience-hall__ring {
-    flex: 0 0 80%;
-    height: 80%;
+    flex: 1 1 auto;
     min-height: 0;
     /* In-flow inset — padding on an overflow:hidden ancestor clips into the padding
        band; margin keeps badges / hover lift / glow inside the content box. */
-    margin-top: .75rem;
+    /* margin-top: .75rem; */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -328,14 +350,15 @@
 }
 
 .audience-hall__tiles {
-    flex: 0 0 30%;
-    height: 30%;
+    flex: 0 0 auto;
+    height: auto;
     min-height: 0;
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    gap: 1.4rem;
+    gap: 2.25rem;
     width: 100%;
+    padding-bottom: .15rem;
 }
 
 .audience-hall__tile {
@@ -343,25 +366,34 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: .35rem;
-    min-width: 5.25rem;
-    padding: .35rem .45rem;
+    justify-content: center;
+    min-width: 3.75rem;
+    padding: .3rem .5rem;
     background: transparent;
     border: none;
     cursor: pointer;
     color: var(--barony-ink);
-    font-family: 'IM Fell English', 'Times New Roman', serif;
-    font-size: .82rem;
 }
 
 .audience-hall__tile img {
-    width: 2.15rem;
-    height: 2.15rem;
+    display: block;
+    flex: 0 0 auto;
+    width: 2.6rem;
+    height: 2.6rem;
     object-fit: contain;
 }
 
 .audience-hall__tile.is-on {
     color: var(--barony-accent);
+}
+
+.audience-hall__tile .audience-hall__badge {
+    top: 0;
+    right: 0;
+    min-width: .95rem;
+    height: .95rem;
+    padding: 0 .2rem;
+    font-size: .62rem;
 }
 
 .audience-hall__tile:disabled {
@@ -401,6 +433,7 @@
     border-radius: 999px;
     background: var(--barony-neg);
     color: #fff;
+    font-family: 'IM Fell English', 'Times New Roman', serif;
     font-size: .72rem;
     font-weight: 700;
     display: flex;
@@ -440,7 +473,7 @@
        flex columns and got clipped by stage/hub overflow:hidden — left cards on the
        left edge, right cards (and their badges) on the right edge. */
     .audience-hall {
-        --throne: clamp(4.25rem, 16dvh, 8rem);
+        --throne: clamp(4.9rem, 18.4dvh, 9.2rem);
         max-width: none;
     }
 
@@ -451,20 +484,20 @@
 
     /* Give the parchment more vertical room — the throne ring is secondary on phones. */
     .audience-hall__stage {
-        flex: 0 0 28dvh;
-        height: 28dvh;
+        flex: 0 0 240px;
+        height: 240px;
     }
 
     .audience-hall__ring {
         gap: .35rem;
-        margin-top: .55rem;
+        /* margin-top: .55rem; */
     }
 
     .audience-hall__throne {
         flex-shrink: 1;
         min-width: 3.25rem;
-        width: min(var(--throne), 34vw);
-        height: min(var(--throne), 34vw);
+        width: min(var(--throne), 39vw);
+        height: min(var(--throne), 39vw);
     }
 
     .audience-hall__advisor {
@@ -512,8 +545,13 @@
     }
 
     .audience-hall__tiles {
-        gap: .35rem;
-        padding-inline: .15rem;
+        gap: 1.35rem;
+        padding-inline: .35rem;
+    }
+
+    .audience-hall__tile img {
+        width: 2.4rem;
+        height: 2.4rem;
     }
 }
 

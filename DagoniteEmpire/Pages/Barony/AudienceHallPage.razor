@@ -104,7 +104,10 @@
                                 </button>
                             }
                         </div>
-                        <img src="@("/" + MyIcon.CouncilTable)" class="audience-hall__throne" alt="" />
+                        <div class="audience-hall__throne-wrap">
+                            <img src="@("/" + MyIcon.CouncilTable)" class="audience-hall__throne" alt="" />
+                            <span class="audience-hall__throne-label">@L["Council"]</span>
+                        </div>
                         <div class="audience-hall__satellites audience-hall__satellites--right">
                             @foreach (var item in RightCouncilOrbitSatellites)
                             {
@@ -193,7 +196,10 @@
                                 </button>
                             }
                         </div>
-                        <img src="@("/" + MyIcon.Throne)" class="audience-hall__throne" alt="" />
+                        <div class="audience-hall__throne-wrap">
+                            <img src="@("/" + MyIcon.Throne)" class="audience-hall__throne" alt="" />
+                            <span class="audience-hall__throne-label">@L["Audiences"]</span>
+                        </div>
                         <div class="audience-hall__satellites audience-hall__satellites--right">
                             @foreach (var item in RightOrbitSatellites)
                             {
@@ -282,7 +288,10 @@
                                 </button>
                             }
                         </div>
-                        <img src="@("/" + MyIcon.AdventureCamp)" class="audience-hall__throne audience-hall__throne--zoom" alt="" />
+                        <div class="audience-hall__throne-wrap">
+                            <img src="@("/" + MyIcon.AdventureCamp)" class="audience-hall__throne audience-hall__throne--zoom" alt="" />
+                            <span class="audience-hall__throne-label">@L["Adventures"]</span>
+                        </div>
                         <div class="audience-hall__satellites audience-hall__satellites--right">
                             @foreach (var a in RightAdventureSatellites)
                             {
@@ -311,35 +320,35 @@
                     <button type="button"
                             class="audience-hall__tile @(_mode == HallMode.Audiences ? "is-on" : "")"
                             disabled="@(_mode == HallMode.Audiences)"
+                            title="@L["Audiences"]"
                             @onclick="ToggleAudiences">
                         @if (PendingAudiencesForTileBadge.Count > 0)
                         {
                             <span class="audience-hall__badge">@PendingAudiencesForTileBadge.Count</span>
                         }
                         <img src="@("/" + MyIcon.TiedScroll)" alt="" />
-                        <span>@L["Audiences"]</span>
                     </button>
                     <button type="button"
                             class="audience-hall__tile @(_mode == HallMode.Council ? "is-on" : "")"
                             disabled="@(_mode == HallMode.Council)"
+                            title="@L["Council"]"
                             @onclick="ToggleCouncil">
                         @if (PendingCouncilTopicsForTileBadge.Count > 0)
                         {
                             <span class="audience-hall__badge">@PendingCouncilTopicsForTileBadge.Count</span>
                         }
                         <img src="@("/" + MyIcon.People)" alt="" />
-                        <span>@L["Council"]</span>
                     </button>
                     <button type="button"
                             class="audience-hall__tile @(_mode == HallMode.Adventures ? "is-on" : "")"
                             disabled="@(_mode == HallMode.Adventures)"
+                            title="@L["Adventures"]"
                             @onclick="ToggleAdventures">
                         @if (_hallAdventures.Count > 0)
                         {
                             <span class="audience-hall__badge">@_hallAdventures.Count</span>
                         }
                         <img src="@("/" + MyIcon.Bookmark)" alt="" />
-                        <span>@L["Adventures"]</span>
                     </button>
                 </div>
             </div>
