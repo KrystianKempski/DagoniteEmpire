@@ -60,18 +60,29 @@
                             @L["Applies only to this device. Other phones keep their own selection."]
                         </MudText>
 
-                        <div class="d-flex flex-column gap-1">
-                            @foreach (var topic in _availableTopics)
-                            {
-                                <MudCheckBox T="bool"
-                                             Dense="true"
-                                             Color="Color.Primary"
-                                             Disabled="@_busy"
-                                             Value="@_selected.Contains(topic)"
-                                             ValueChanged="@(v => OnTopicChangedAsync(topic, v))"
-                                             Label="@NotificationTopic.DisplayName(topic)" />
-                            }
-                        </div>
+                        @if (!_status.ServerKnown)
+                        {
+                            <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-2">
+                                @L["This device is not synced with the server yet. Turn notifications off and on again."]
+                            </MudAlert>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column gap-1">
+                                @foreach (var topic in _availableTopics)
+                                {
+                                    var t = topic;
+                                    <MudCheckBox T="bool"
+                                                 @key="t"
+                                                 Dense="true"
+                                                 Color="Color.Primary"
+                                                 Disabled="@_busy"
+                                                 Value="@_selected.Contains(t)"
+                                                 ValueChanged="@(v => OnTopicChangedAsync(t, v))"
+                                                 Label="@NotificationTopic.DisplayName(t)" />
+                                }
+                            </div>
+                        }
                     </div>
                 }
             </div>
@@ -183,42 +194,56 @@
 
     private async Task OnTopicChangedAsync(string topic, bool enabled)
     {
-        if (_busy || _status is null || !_status.Subscribed)
+        if (_busy || _status is null || !_status.Subscribed || !_status.ServerKnown)
             return;
+
+        var previous = new HashSet<string>(_selected, StringComparer.Ordinal);
 
         if (enabled)
             _selected.Add(topic);
         else
             _selected.Remove(topic);
 
-        // Never persist barony categories for hero accounts — even if an old subscription still has them.
-        var toSave = _selected.Where(t => _availableTopics.Contains(t)).ToArray();
-
+        // Keep the checkbox on the optimistic value while the round-trip runs —
+        // otherwise MudBlazor re-syncs to the pre-click Value and it looks like a flick-back.
         _busy = true;
+        StateHasChanged();
+
         try
         {
+            // Never persist barony categories for hero accounts — even if an old subscription still has them.
+            var toSave = _selected.Where(t => _availableTopics.Contains(t)).ToArray();
             var result = await _js.InvokeAsync<PushTopicsResult>(
                 "dagonitePush.saveTopics",
                 toSave);
 
             if (!result.Ok)
             {
+                RestoreSelection(previous);
                 _snackBar.Add(L["Could not save notification preferences."], Severity.Warning);
-                await RefreshStatusAsync();
                 return;
             }
 
-            ApplyTopics(result.Topics);
+            // Keep the optimistic selection — re-applying server Topics used to snap checkboxes
+            // back when the payload was empty/stale (common on mobile round-trips).
+            _status.Topics = _selected.ToList();
         }
         catch (Exception ex)
         {
+            RestoreSelection(previous);
             _snackBar.Add(ex.Message, Severity.Error);
-            await RefreshStatusAsync();
         }
         finally
         {
             _busy = false;
         }
+    }
+
+    private void RestoreSelection(HashSet<string> previous)
+    {
+        _selected.Clear();
+        foreach (var t in previous)
+            _selected.Add(t);
     }
 
     private string DescribeResult(PushResult result, bool enabling) => result.Reason switch
