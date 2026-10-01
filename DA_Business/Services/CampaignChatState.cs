@@ -18,7 +18,7 @@ namespace DA_Business.Services
         private readonly IUserService _userService;
         private readonly ICampaignChatBroadcaster _broadcaster;
         private readonly CallbackService _callback;
-        private IDisposable? _broadcastSub;
+        private readonly List<IDisposable> _broadcastSubs = new();
         private bool _initialized;
         /// <summary>
         /// Bumps on every identity reload so a slow "no character yet" call cannot overwrite a
@@ -111,7 +111,6 @@ namespace DA_Business.Services
             _inThread = false;
             SelectedPeerCharacterId = null;
             Messages = Array.Empty<CampaignChatMessageDTO>();
-            Resubscribe();
             await LoadContactsAsync();
             Notify();
         }
@@ -267,7 +266,7 @@ namespace DA_Business.Services
                 IsVisible = false;
                 UnreadTotal = 0;
                 Campaigns = Array.Empty<CampaignDTO>();
-                DisposeSubscription();
+                DisposeSubscriptions();
                 Notify();
                 return;
             }
@@ -305,7 +304,7 @@ namespace DA_Business.Services
             if (!IsVisible)
             {
                 IsOpen = false;
-                DisposeSubscription();
+                DisposeSubscriptions();
                 UnreadTotal = 0;
                 Notify();
                 return;
@@ -369,22 +368,36 @@ namespace DA_Business.Services
             }
         }
 
+        /// <summary>
+        /// Listen to every campaign this character can see. The drawer selector only changes
+        /// which thread is on screen — it must not mute the AppBar badge for the others.
+        /// </summary>
         private void Resubscribe()
         {
-            DisposeSubscription();
-            if (SelectedCampaignId is null || _myCharacterId <= 0)
+            DisposeSubscriptions();
+            if (_myCharacterId <= 0)
                 return;
 
-            _broadcastSub = _broadcaster.Subscribe(
-                SelectedCampaignId.Value,
-                _myCharacterId,
-                OnBroadcastAsync);
+            foreach (var campaign in Campaigns)
+            {
+                _broadcastSubs.Add(_broadcaster.Subscribe(
+                    campaign.Id,
+                    _myCharacterId,
+                    OnBroadcastAsync));
+            }
         }
 
         private async Task OnBroadcastAsync(CampaignChatMessageDTO message)
         {
             if (SelectedCampaignId != message.CampaignId)
+            {
+                if (message.SenderCharacterId != _myCharacterId)
+                {
+                    UnreadTotal++;
+                    Notify();
+                }
                 return;
+            }
 
             var viewingThisThread = _inThread && (
                 (SelectedPeerCharacterId is null && message.RecipientCharacterId is null)
@@ -427,10 +440,11 @@ namespace DA_Business.Services
 
         private void OnCharacterChanged() => _ = ReloadIdentityAsync();
 
-        private void DisposeSubscription()
+        private void DisposeSubscriptions()
         {
-            _broadcastSub?.Dispose();
-            _broadcastSub = null;
+            foreach (var sub in _broadcastSubs)
+                sub.Dispose();
+            _broadcastSubs.Clear();
         }
 
         private void Notify() => OnChange?.Invoke();
@@ -438,7 +452,7 @@ namespace DA_Business.Services
         public ValueTask DisposeAsync()
         {
             _callback.OnChange -= OnCharacterChanged;
-            DisposeSubscription();
+            DisposeSubscriptions();
             return ValueTask.CompletedTask;
         }
     }

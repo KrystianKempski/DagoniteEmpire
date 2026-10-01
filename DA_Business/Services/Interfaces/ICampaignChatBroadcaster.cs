@@ -11,6 +11,7 @@ namespace DA_Business.Services.Interfaces
 
         /// <summary>
         /// Subscribe to messages visible to <paramref name="characterId"/> in <paramref name="campaignId"/>.
+        /// One subscription covers one campaign — listen to every campaign you care about.
         /// Dispose the returned handle to unsubscribe.
         /// </summary>
         IDisposable Subscribe(int campaignId, int characterId, Func<CampaignChatMessageDTO, Task> handler);
