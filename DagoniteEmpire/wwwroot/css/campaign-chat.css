@@ -23,6 +23,17 @@
     color: var(--cc-ink);
 }
 
+/* Temporary drawer defaults to ~appbar+2 (~1102), which sits under the fixed
+   barony tab bar (z-index 1500) and clips the composer. Keep chat above it. */
+.campaign-chat-drawer.mud-drawer.mud-drawer-temporary {
+    z-index: 1700 !important;
+}
+
+body:has(.campaign-chat-drawer.mud-drawer--open) .mud-overlay.mud-overlay-drawer,
+body:has(.campaign-chat-drawer.mud-drawer--open) .mud-drawer-overlay.mud-drawer-overlay-temporary {
+    z-index: 1650 !important;
+}
+
 .campaign-chat-drawer .mud-drawer-content {
     display: flex;
     flex-direction: column;
