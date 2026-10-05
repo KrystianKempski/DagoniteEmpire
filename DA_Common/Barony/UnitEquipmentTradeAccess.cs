@@ -4,7 +4,8 @@ namespace DA_Common.Barony
 {
     /// <summary>
     /// Maps unit weapons / armor / shields to trade-good access keys
-    /// (<c>access-arms-*</c>, <c>access-armor-*</c>). Simple weapons need no trade good.
+    /// (<c>access-arms-*</c>, <c>access-armor-*</c>). Simple weapons and simple-tier
+    /// shields need no trade good.
     /// </summary>
     public static class UnitEquipmentTradeAccess
     {
@@ -27,6 +28,7 @@ namespace DA_Common.Barony
         /// <summary>
         /// Shields and body armor follow the Excel tier groupings
         /// (Simple / Medium / Heavy), not raw <see cref="UnitArmorDef.ArmorClass"/>.
+        /// Simple-tier shields are always available (no light-armor trade good).
         /// </summary>
         public static string? RequiredGoodKey(UnitArmorDef a)
         {
@@ -36,7 +38,8 @@ namespace DA_Common.Barony
                     continue;
                 return title switch
                 {
-                    "Simple armor" => LightArmor,
+                    // Wooden buckler / medium / large: always recruitable without access-armor-light.
+                    "Simple armor" => a.IsShield ? null : LightArmor,
                     "Medium armor" => MediumArmor,
                     "Heavy armor" => HeavyArmor,
                     _ => null,
@@ -44,6 +47,8 @@ namespace DA_Common.Barony
             }
 
             // Fallback by armor class if not listed in Excel tiers.
+            if (a.IsShield)
+                return LightArmor;
             return a.ArmorClass.ToLowerInvariant() switch
             {
                 "light" => LightArmor,

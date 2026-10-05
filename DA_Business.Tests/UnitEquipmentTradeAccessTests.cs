@@ -18,13 +18,16 @@ public class UnitEquipmentTradeAccessTests
     }
 
     [Theory]
-    [InlineData("wooden-medium-shield", "access-armor-light")]
+    [InlineData("wooden-buckler", null)]
+    [InlineData("wooden-medium-shield", null)]
+    [InlineData("wooden-large-shield", null)]
     [InlineData("light-leather", "access-armor-light")]
+    [InlineData("heavy-leather", "access-armor-light")]
     [InlineData("mail-and-gambeson", "access-armor-medium")]
     [InlineData("studded-medium-shield", "access-armor-medium")]
     [InlineData("full-plate", "access-armor-heavy")]
     [InlineData("metal-large-shield", "access-armor-heavy")]
-    public void RequiredGoodKey_ArmorTiers(string armorKey, string expectedGood)
+    public void RequiredGoodKey_ArmorTiers(string armorKey, string? expectedGood)
     {
         var a = UnitArmorCatalog.Find(armorKey);
         Assert.NotNull(a);
@@ -36,6 +39,17 @@ public class UnitEquipmentTradeAccessTests
     {
         var spears = UnitWeaponCatalog.Find("short-spears")!;
         Assert.True(UnitEquipmentTradeAccess.MeetsWeapon(spears, build: 1, agility: 1, availability: EmptySnap(), out _));
+    }
+
+    [Fact]
+    public void MeetsArmor_SimpleShieldsAlwaysWithoutTradeGood()
+    {
+        var shield = UnitArmorCatalog.Find("wooden-medium-shield")!;
+        Assert.True(UnitEquipmentTradeAccess.MeetsArmor(shield, build: 2, armorSkill: 3, EmptySnap(), out _));
+
+        var leather = UnitArmorCatalog.Find("light-leather")!;
+        Assert.False(UnitEquipmentTradeAccess.MeetsArmor(leather, build: 10, armorSkill: 10, EmptySnap(), out _));
+        Assert.True(UnitEquipmentTradeAccess.MeetsArmor(leather, build: 10, armorSkill: 10, Snap("access-armor-light"), out _));
     }
 
     [Fact]
