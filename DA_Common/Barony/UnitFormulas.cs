@@ -266,12 +266,13 @@ namespace DA_Common.Barony
     /// <summary>
     /// Per-turn unit maintenance (Active units / Domain Panel Army).
     /// Gold = base wage + floor(Σ equipment Mkt / 100) × 2.
-    /// Defense = floor(Σ equipment Mkt / 100) × 5 (replaces the old flat 5).
+    /// Defense = floor(Σ equipment Mkt / 40) × 1 (replaces the old flat 5).
     /// Food = stored UpkeepFood. Starter units with wage/food/defense all 0 are exempt.
     /// </summary>
     public sealed record UnitUpkeepTotals(
         int GearMarketGold,
         int GearBlocks,
+        int GearDefenseBlocks,
         int BaseWage,
         int GearGold,
         int Gold,
@@ -314,15 +315,18 @@ namespace DA_Common.Barony
             string? mountKey = null)
         {
             var mkt = EquipmentMarketGold(weapon1Key, weapon2Key, armorKey, shieldKey, mountKey);
-            var blocks = mkt / UnitRules.GearUpkeepMarketGoldPerBlock; // floor for non-negative
-            var gearGold = blocks * UnitRules.GearUpkeepGoldPerBlock;
-            var gearDef = blocks * UnitRules.GearUpkeepDefensePerBlock;
+            // Gold and Defense use separate Mkt block sizes (100 vs 40).
+            var goldBlocks = mkt / UnitRules.GearUpkeepMarketGoldPerBlock; // floor for non-negative
+            var defBlocks = mkt / UnitRules.GearUpkeepDefenseMarketGoldPerBlock;
+            var gearGold = goldBlocks * UnitRules.GearUpkeepGoldPerBlock;
+            var gearDef = defBlocks * UnitRules.GearUpkeepDefensePerBlock;
 
             if (IsMaintenanceExempt(baseWage, upkeepFood, storedUpkeepDefense))
             {
                 return new UnitUpkeepTotals(
                     GearMarketGold: mkt,
-                    GearBlocks: blocks,
+                    GearBlocks: goldBlocks,
+                    GearDefenseBlocks: defBlocks,
                     BaseWage: 0,
                     GearGold: 0,
                     Gold: 0,
@@ -333,7 +337,8 @@ namespace DA_Common.Barony
 
             return new UnitUpkeepTotals(
                 GearMarketGold: mkt,
-                GearBlocks: blocks,
+                GearBlocks: goldBlocks,
+                GearDefenseBlocks: defBlocks,
                 BaseWage: Math.Max(0, baseWage),
                 GearGold: gearGold,
                 Gold: Math.Max(0, baseWage) + gearGold,
@@ -350,16 +355,15 @@ namespace DA_Common.Barony
                 return Loc.T("Maintenance paid elsewhere (no gold, food, or Defense upkeep).");
 
             return Loc.T(
-                "Gold / turn = base wage {0} + gear ({1} × {2} from {3} Mkt) = {4}. Defense / turn = {5} × {6} = {7} (floor of equipment market gold / {8}). Food / turn = {9}.",
+                "Gold / turn = base wage {0} + gear ({1} × {2} from {3} Mkt) = {4}. Defense / turn = equipment market price / {5} = {6} / {5} = {7}. Food / turn = {8}.",
                 u.BaseWage,
                 u.GearBlocks,
                 UnitRules.GearUpkeepGoldPerBlock,
                 u.GearMarketGold,
                 u.Gold,
-                u.GearBlocks,
-                UnitRules.GearUpkeepDefensePerBlock,
+                UnitRules.GearUpkeepDefenseMarketGoldPerBlock,
+                u.GearMarketGold,
                 u.Defense,
-                UnitRules.GearUpkeepMarketGoldPerBlock,
                 u.Food.ToString("0.#"));
         }
     }

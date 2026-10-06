@@ -171,12 +171,14 @@ namespace DA_Common.Barony
         public const decimal DefaultUpkeepFood = 0.5m;
         /// <summary>Legacy flat Defense upkeep — replaced by gear Mkt blocks (<see cref="UnitUpkeepFormulas"/>).</summary>
         public const int DefaultUpkeepDefense = 5;
-        /// <summary>Each full 100 market-gold of equipped gear is one upkeep block.</summary>
+        /// <summary>Each full 100 market-gold of equipped gear is one gold-wage upkeep block.</summary>
         public const int GearUpkeepMarketGoldPerBlock = 100;
+        /// <summary>Each full 40 market-gold of equipped gear is one Defense upkeep block.</summary>
+        public const int GearUpkeepDefenseMarketGoldPerBlock = 40;
         /// <summary>Gold added to wage per gear Mkt block (floor).</summary>
         public const int GearUpkeepGoldPerBlock = 2;
-        /// <summary>Defense upkeep per gear Mkt block (floor) — replaces flat DefaultUpkeepDefense.</summary>
-        public const int GearUpkeepDefensePerBlock = 5;
+        /// <summary>Defense upkeep per Defense Mkt block (floor) — replaces flat DefaultUpkeepDefense.</summary>
+        public const int GearUpkeepDefensePerBlock = 1;
 
         /// <summary>
         /// Reinforce people cost uses Selected volunteers + Standard training, scaled by troops/50.
