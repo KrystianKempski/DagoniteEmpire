@@ -1,0 +1,71 @@
+---
+description: Invariants of the account-to-account chat (threads, GM role, unread, push)
+globs: DagoniteEmpire/DA_DataAccess/Chat/**,DagoniteEmpire/DA_Business/Repository/ChatRepos/**,DagoniteEmpire/DA_Business/Services/Chat*.cs,DagoniteEmpire/DA_Models/ChatModels/**,DagoniteEmpire/DagoniteEmpire/Shared/Chat*.razor,DagoniteEmpire/DagoniteEmpire/wwwroot/service-worker.js
+alwaysApply: false
+---
+
+# Chat architecture
+
+Chat is **account to account**. Characters play no part in it. The previous design keyed messages on
+characters and campaigns, which broke every player holding heroes in more than one campaign: the
+drawer, the unread badge and the push deep link all followed the *selected* character, so messages to
+any other hero were invisible. Do not reintroduce a character or campaign id into the chat path.
+
+Where things live: entities in `DA_DataAccess/Chat`, the access rule in `DA_Business/Services/ChatAccess.cs`,
+queries in `DA_Business/Repository/ChatRepos/ChatRepository.cs`, per-circuit UI state in
+`DA_Business/Services/ChatState.cs`, push shaping in `GameNotificationDispatcher.PlanChatMessage`.
+
+## Invariants
+
+- **One thread per pair.** `ChatConversation.PairKey` (built only by `ChatPairKey`) is unique, and that
+  unique index is the sole guard against duplicate threads — `GetOrCreateAsync` relies on the loser of a
+  race failing its insert and re-reading. Never build a pair key by hand.
+- **The Game Master is a role, not an account.** A direct thread with the GM holds a `ChatParticipant`
+  with `UserId == null` and `IsGameMasterRole`, and its key is `ChatPairKey.Direct(playerId, null)`. When a
+  GM writes to a player the thread is still keyed by the *player*, so handing the campaign to another GM
+  keeps the history. GMs are excluded from each other's peer lists: a GM is reachable only through the role.
+- **Read state is per account** (`ChatReadState`), deliberately apart from participation, so one GM
+  opening a thread does not clear the badge for the others.
+- **Party membership is derived, never stored.** A `CampaignParty` thread has no participant rows; its
+  members are the campaign roster plus the GMs, read at query time. Adding a character to a campaign must
+  not require touching chat.
+- **Read paths never write.** Threads are created on first use (`GetOrCreate*`), so a contact row with
+  `ConversationId == null` is normal and means "reachable peer, nothing said yet".
+- **Recipients are resolved once,** by `ChatAccess.RecipientsAsync`. The in-process broadcaster and the
+  push dispatcher both call it, which is what keeps a message from reaching one channel and missing the
+  other. Do not hand-roll a second recipient query.
+- **Demo accounts have no chat.** `ChatAccess.ResolveIdentityAsync` returns null for them; they are shared
+  throwaway logins, so a thread would leak between strangers trying the demo.
+
+## Push
+
+Chat sends a **fresh `Tag` per message** plus a stable `ThreadKey`. iOS WebKit ignores `renotify`, so
+reusing one tag per thread swapped the tray entry in silence and follow-up messages never alerted. The
+service worker closes earlier notifications matching `data.threadKey` before showing the new one, which
+keeps the tray tidy without losing the alert. Other topics (turn, battle, letters) still want collapsing
+and must leave `ThreadKey` null.
+
+Deep link is `/?chat={conversationId}` — nothing character- or campaign-shaped to validate, so the link
+cannot land on a thread the reader cannot open.
+
+## UI state
+
+`ChatState` takes identity from the circuit's claims (`ClaimTypes.NameIdentifier`), **not** from
+`UserInfo.SelectedCharacter` and not from `ProtectedSessionStorage` (unreliable in `OnInitialized` on iOS
+WebKit). That is why this class needs no identity-reload generations or `OnAfterRender` retries — do not
+add them back. `EnsureInitializedAsync` caches the init *task*, so late callers await the first load.
+
+`ChatMessageDTO` instances are published to every circuit, so `IsMine` must be set on a copy
+(`ChatState.ForMe`). Writing it in place flips bubble alignment for other readers.
+
+## Timestamps
+
+Chat stores `DateTime.UtcNow`, but the Npgsql legacy timestamp switch maps every `DateTime` to
+`timestamp without time zone`, so values read back have `DateTimeKind.Unspecified`. Tag before converting:
+`DateTime.SpecifyKind(value, DateTimeKind.Utc).ToLocalTime()`.
+
+## Known duplication
+
+`ChatAccess.GameMasterUserIdsAsync` and `NotificationRecipientLookup.GameMasterUserIds` answer the same
+question against different contexts — `ChatAccess` methods take the caller's `ApplicationDbContext` so a
+repository operation stays on one connection. If you touch GM resolution, change both.

@@ -60,16 +60,17 @@ namespace DA_Common.Notifications
         public override string Topic => NotificationTopic.BattleTurn;
     }
 
-    /// <summary>A campaign chat message was sent.</summary>
-    /// <param name="CampaignId">Campaign the message belongs to.</param>
-    /// <param name="SenderCharacterId">Author character, excluded from recipients.</param>
-    /// <param name="RecipientCharacterId">
-    /// Direct addressee; null means the party channel (all campaign players + GM).
+    /// <summary>A chat message was posted. Chat is account-to-account; characters play no part in it.</summary>
+    /// <param name="ConversationId">Thread that received the message.</param>
+    /// <param name="MessageId">
+    /// The message itself. Part of the push tag so every message alerts separately — iOS silently
+    /// replaces a notification that reuses a tag, which used to swallow follow-up messages.
     /// </param>
-    public sealed record CampaignChatMessageSent(
-        int CampaignId,
-        int SenderCharacterId,
-        int? RecipientCharacterId) : GameNotification
+    /// <param name="SenderUserId">Author account, excluded from the recipients.</param>
+    public sealed record ChatMessagePosted(
+        long ConversationId,
+        long MessageId,
+        string SenderUserId) : GameNotification
     {
         public override string Topic => NotificationTopic.Chat;
     }

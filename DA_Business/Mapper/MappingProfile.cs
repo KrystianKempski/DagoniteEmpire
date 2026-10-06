@@ -58,10 +58,8 @@ namespace DA_Business.Mapper
                 .ForMember(dest => dest.Chapter, opt => opt.Ignore());
 
             CreateMap<Campaign, CampaignDTO>().ReverseMap();
-            CreateMap<CampaignChatMessage, CampaignChatMessageDTO>()
-                .ForMember(dest => dest.SenderName, opt => opt.Ignore())
-                .ForMember(dest => dest.SenderImageUrl, opt => opt.Ignore())
-                .ForMember(dest => dest.IsMine, opt => opt.Ignore());
+            // Chat DTOs are built by hand in ChatRepository: the sender name, portrait and IsMine all
+            // depend on who is reading, which AutoMapper has no way of knowing.
             CreateMap<BattlePhase, BattlePhaseDTO>().ReverseMap();
             CreateMap<BattleEvent, BattleEventDTO>().ReverseMap();
             CreateMap<SpellCircle, SpellCircleDTO>().ReverseMap();

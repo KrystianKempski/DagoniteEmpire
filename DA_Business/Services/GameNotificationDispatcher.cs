@@ -3,6 +3,7 @@ using DA_Business.Services.Interfaces;
 using DA_Common;
 using DA_Common.Localization;
 using DA_Common.Notifications;
+using DA_DataAccess.Chat;
 using DA_DataAccess.Data;
 using DA_Models.BaronyModels;
 using DA_Models.NotificationModels;
@@ -49,7 +50,7 @@ namespace DA_Business.Services
                 BaronAudienceExchangePosted n => await PlanBaronAudience(n, cancellationToken),
                 ChapterPostAdded n => await PlanChapterPost(n, cancellationToken),
                 BaronyTurnResolved n => await PlanTurnResolved(n, cancellationToken),
-                CampaignChatMessageSent n => await PlanChatMessage(n, cancellationToken),
+                ChatMessagePosted n => await PlanChatMessage(n, cancellationToken),
                 GmQuestionPosted n => await PlanGmQuestion(n, cancellationToken),
                 BattleTurnAdvanced n => await PlanBattleTurn(n, cancellationToken),
                 _ => null,
@@ -381,98 +382,80 @@ namespace DA_Business.Services
                 });
         }
 
-        private async Task<Plan?> PlanChatMessage(CampaignChatMessageSent n, CancellationToken ct)
+        private async Task<Plan?> PlanChatMessage(ChatMessagePosted n, CancellationToken ct)
         {
-            if (n.CampaignId <= 0 || n.SenderCharacterId <= 0)
+            if (n.ConversationId <= 0 || string.IsNullOrWhiteSpace(n.SenderUserId))
                 return null;
 
-            string? senderName;
-            string? senderUserName;
-            List<string?> rosterUserNames;
-            using (var ctx = await _db.CreateDbContextAsync(ct))
-            {
-                var sender = await ctx.Characters
-                    .AsNoTracking()
-                    .Where(c => c.Id == n.SenderCharacterId)
-                    .Select(c => new { c.NPCName, c.UserName })
-                    .FirstOrDefaultAsync(ct);
+            using var ctx = await _db.CreateDbContextAsync(ct);
 
-                senderName = sender?.NPCName;
-                senderUserName = sender?.UserName;
-                if (string.Equals(senderName, SD.GameMaster_NPCName, StringComparison.Ordinal))
-                    senderName = Loc.T("Game Master");
+            var conversation = await ctx.ChatConversations
+                .AsNoTracking()
+                .Include(c => c.Participants)
+                .FirstOrDefaultAsync(c => c.Id == n.ConversationId, ct);
 
-                if (n.RecipientCharacterId is int peerId)
-                {
-                    var peerOwner = await ctx.Characters
-                        .AsNoTracking()
-                        .Where(c => c.Id == peerId)
-                        .Select(c => new { c.UserName, c.NPCName })
-                        .FirstOrDefaultAsync(ct);
+            if (conversation is null)
+                return null;
 
-                    if (peerOwner is null)
-                        return null;
-
-                    List<string> userIds;
-                    if (string.Equals(peerOwner.NPCName, SD.GameMaster_NPCName, StringComparison.Ordinal))
-                    {
-                        userIds = await _recipients.GameMasterUserIds(ct);
-                    }
-                    else
-                    {
-                        userIds = await _recipients.UserIdsForUserNames(new[] { peerOwner.UserName }, ct);
-                    }
-
-                    // Exclude the sender's own account when they somehow match.
-                    var senderIds = await _recipients.UserIdsForUserNames(new[] { senderUserName }, ct);
-                    userIds = userIds.Where(id => !senderIds.Contains(id)).ToList();
-                    if (userIds.Count == 0)
-                        return null;
-
-                    return new Plan(
-                        userIds,
-                        new PushNotificationDTO
-                        {
-                            Title = Loc.T("New private message"),
-                            Body = string.IsNullOrWhiteSpace(senderName)
-                                ? Loc.T("You have a new message.")
-                                : Loc.T("{0} wrote to you.", senderName),
-                            Url = $"/?chat={n.CampaignId}:{n.SenderCharacterId}",
-                            Tag = $"chat-{n.CampaignId}-{n.SenderCharacterId}",
-                        });
-                }
-
-                rosterUserNames = await ctx.Campaigns
-                    .AsNoTracking()
-                    .Where(c => c.Id == n.CampaignId)
-                    .SelectMany(c => c.Characters)
-                    .Select(c => c.UserName)
-                    .ToListAsync(ct);
-            }
-
-            var partyIds = await _recipients.UserIdsForUserNames(rosterUserNames, ct);
-            var gmIds = await _recipients.GameMasterUserIds(ct);
-            var senderAccountIds = await _recipients.UserIdsForUserNames(new[] { senderUserName }, ct);
-
-            var recipients = partyIds
-                .Concat(gmIds)
-                .Distinct(StringComparer.Ordinal)
-                .Where(id => !senderAccountIds.Contains(id))
-                .ToList();
-
+            // Same resolution the in-app broadcaster uses, so a message cannot reach one channel and
+            // miss the other.
+            var recipients = await ChatAccess.RecipientsAsync(ctx, conversation, n.SenderUserId, ct);
             if (recipients.Count == 0)
                 return null;
+
+            var sentAsGameMaster = await ctx.ChatMessages
+                .AsNoTracking()
+                .Where(m => m.Id == n.MessageId)
+                .Select(m => m.SentAsGameMaster)
+                .FirstOrDefaultAsync(ct);
+
+            string senderName;
+            if (sentAsGameMaster)
+            {
+                senderName = Loc.T("Game Master");
+            }
+            else
+            {
+                var accounts = await ChatAccess.AccountsAsync(ctx, new[] { n.SenderUserId }, ct);
+                senderName = accounts.GetValueOrDefault(n.SenderUserId)?.DisplayName ?? string.Empty;
+            }
+
+            string title;
+            string body;
+            if (conversation.Kind == ChatConversationKind.CampaignParty)
+            {
+                var campaignName = await ctx.Campaigns
+                    .AsNoTracking()
+                    .Where(c => c.Id == conversation.CampaignId)
+                    .Select(c => c.Name)
+                    .FirstOrDefaultAsync(ct);
+
+                title = string.IsNullOrWhiteSpace(campaignName)
+                    ? Loc.T("New message in the party chat")
+                    : Loc.T("New message in {0}", campaignName);
+                body = string.IsNullOrWhiteSpace(senderName)
+                    ? Loc.T("Someone wrote to the party.")
+                    : Loc.T("{0} wrote to the party.", senderName);
+            }
+            else
+            {
+                title = Loc.T("New private message");
+                body = string.IsNullOrWhiteSpace(senderName)
+                    ? Loc.T("You have a new message.")
+                    : Loc.T("{0} wrote to you.", senderName);
+            }
 
             return new Plan(
                 recipients,
                 new PushNotificationDTO
                 {
-                    Title = Loc.T("New private message"),
-                    Body = string.IsNullOrWhiteSpace(senderName)
-                        ? Loc.T("You have a new message.")
-                        : Loc.T("{0} wrote to you.", senderName),
-                    Url = $"/?chat={n.CampaignId}:",
-                    Tag = $"chat-{n.CampaignId}-party",
+                    Title = title,
+                    Body = body,
+                    Url = $"/?chat={conversation.Id}",
+                    // A tag per message, because every message matters and iOS replaces a reused tag
+                    // without alerting. ThreadKey lets the worker clear the thread's earlier entries.
+                    Tag = $"chat-{conversation.Id}-{n.MessageId}",
+                    ThreadKey = $"chat-{conversation.Id}",
                 });
         }
     }

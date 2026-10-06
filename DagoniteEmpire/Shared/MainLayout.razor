@@ -5,7 +5,7 @@
 @inject IUserService _userService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager Navigation
-@inject CampaignChatState ChatState
+@inject ChatState ChatState
 @inherits LayoutComponentBase
 @implements IDisposable
 
@@ -43,7 +43,7 @@ MaxWidth="MaxWidth.Large" />
         <MudSpacer />
         <AuthorizeView>
             <Authorized>
-                <CampaignChatLauncher />
+                <ChatLauncher />
             </Authorized>
         </AuthorizeView>
         <LanguageSwitcher />
@@ -51,7 +51,7 @@ MaxWidth="MaxWidth.Large" />
     </MudAppBar>
     <AuthorizeView>
         <Authorized>
-            <CampaignChatDrawer />
+            <ChatDrawer />
         </Authorized>
     </AuthorizeView>
     <MudHidden Breakpoint="Breakpoint.MdAndDown" Invert="true">
@@ -136,15 +136,10 @@ MaxWidth="MaxWidth.Large" />
             if (string.IsNullOrWhiteSpace(raw))
                 return;
 
-            var parts = raw.Split(':', 2);
-            if (!int.TryParse(parts[0], out var campaignId) || campaignId <= 0)
+            if (!long.TryParse(raw, out var conversationId) || conversationId <= 0)
                 return;
 
-            int? peerId = null;
-            if (parts.Length > 1 && int.TryParse(parts[1], out var parsedPeer) && parsedPeer > 0)
-                peerId = parsedPeer;
-
-            await ChatState.ApplyDeepLinkAsync(campaignId, peerId);
+            await ChatState.ApplyDeepLinkAsync(conversationId);
 
             // Strip the query so refreshing does not reopen forever.
             var path = uri.AbsolutePath;

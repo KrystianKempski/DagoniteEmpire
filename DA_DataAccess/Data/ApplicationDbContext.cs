@@ -43,8 +43,10 @@ namespace DA_DataAccess.Data
         public DbSet<SpellSlot> SpellSlots { get; set; }
         public DbSet<Spell> Spells { get; set; }
 
-        public DbSet<CampaignChatMessage> CampaignChatMessages { get; set; }
-        public DbSet<CampaignChatRead> CampaignChatReads { get; set; }
+        public DbSet<ChatConversation> ChatConversations { get; set; }
+        public DbSet<ChatParticipant> ChatParticipants { get; set; }
+        public DbSet<ChatMessage> ChatMessages { get; set; }
+        public DbSet<ChatReadState> ChatReadStates { get; set; }
         public DbSet<Post> Posts { get; set; }
         public DbSet<Chapter> Chapters { get; set; }
         public DbSet<Campaign> Campaigns { get; set; }
@@ -327,35 +329,58 @@ namespace DA_DataAccess.Data
             //    .WithMany(y => y.PassiveSkills)
             //    .HasForeignKey(a => a.PassiveProfessionId).OnDelete(DeleteBehavior.NoAction);
 
-            modelBuilder.Entity<CampaignChatMessage>(entity =>
+            modelBuilder.Entity<ChatConversation>(entity =>
             {
                 entity.HasOne(d => d.Campaign)
                     .WithMany()
                     .HasForeignKey(d => d.CampaignId)
                     .OnDelete(DeleteBehavior.Cascade);
-                entity.HasOne(d => d.SenderCharacter)
-                    .WithMany()
-                    .HasForeignKey(d => d.SenderCharacterId)
-                    .OnDelete(DeleteBehavior.ClientSetNull);
-                entity.HasOne(d => d.RecipientCharacter)
-                    .WithMany()
-                    .HasForeignKey(d => d.RecipientCharacterId)
-                    .OnDelete(DeleteBehavior.ClientSetNull);
-                entity.HasIndex(e => new { e.CampaignId, e.RecipientCharacterId, e.CreatedDate });
-                entity.HasIndex(e => new { e.CampaignId, e.SenderCharacterId, e.CreatedDate });
+                entity.Property(e => e.PairKey).HasMaxLength(200).IsRequired();
+                // The only guard against duplicate threads; "get or create" relies on it.
+                entity.HasIndex(e => e.PairKey).IsUnique();
+                entity.HasIndex(e => e.LastMessageUtc);
             });
 
-            modelBuilder.Entity<CampaignChatRead>(entity =>
+            modelBuilder.Entity<ChatParticipant>(entity =>
             {
-                entity.HasOne(d => d.Campaign)
-                    .WithMany()
-                    .HasForeignKey(d => d.CampaignId)
+                entity.HasOne(d => d.Conversation)
+                    .WithMany(c => c.Participants)
+                    .HasForeignKey(d => d.ConversationId)
                     .OnDelete(DeleteBehavior.Cascade);
-                entity.HasOne(d => d.Character)
+                entity.HasOne(d => d.User)
                     .WithMany()
-                    .HasForeignKey(d => d.CharacterId)
+                    .HasForeignKey(d => d.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
-                entity.HasIndex(e => new { e.CampaignId, e.CharacterId, e.PeerCharacterId });
+                entity.HasIndex(e => new { e.ConversationId, e.UserId });
+                entity.HasIndex(e => e.UserId);
+            });
+
+            modelBuilder.Entity<ChatMessage>(entity =>
+            {
+                entity.HasOne(d => d.Conversation)
+                    .WithMany()
+                    .HasForeignKey(d => d.ConversationId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(d => d.SenderUser)
+                    .WithMany()
+                    .HasForeignKey(d => d.SenderUserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(e => new { e.ConversationId, e.Id });
+                entity.HasIndex(e => new { e.ConversationId, e.CreatedUtc });
+            });
+
+            modelBuilder.Entity<ChatReadState>(entity =>
+            {
+                entity.HasOne(d => d.Conversation)
+                    .WithMany()
+                    .HasForeignKey(d => d.ConversationId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(d => d.User)
+                    .WithMany()
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasIndex(e => new { e.ConversationId, e.UserId }).IsUnique();
+                entity.HasIndex(e => e.UserId);
             });
 
             //modelBuilder.Entity<Character>()
