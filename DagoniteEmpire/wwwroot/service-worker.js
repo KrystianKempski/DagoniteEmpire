@@ -30,16 +30,36 @@ self.addEventListener('push', (event) => {
     }
 
     const title = payload.title || 'Dagonite Empire';
+    const threadKey = payload.threadKey || null;
     const options = {
         body: payload.body || '',
         icon: NOTIFICATION_ICON,
         badge: NOTIFICATION_ICON,
         tag: payload.tag || undefined,
         renotify: !!payload.tag,
-        data: { url: payload.url || '/' },
+        data: { url: payload.url || '/', threadKey: threadKey },
     };
 
-    event.waitUntil(self.registration.showNotification(title, options));
+    event.waitUntil((async () => {
+        // A payload with a threadKey wants every item to alert, so the server sends a fresh tag per
+        // message. iOS ignores `renotify`, which means reusing one tag per thread swapped the tray
+        // entry in silence and follow-up messages went unnoticed. Clearing the thread's earlier
+        // entries here keeps the tray tidy without losing the alert.
+        if (threadKey) {
+            try {
+                const open = await self.registration.getNotifications();
+                for (const existing of open) {
+                    if (existing.data && existing.data.threadKey === threadKey) {
+                        existing.close();
+                    }
+                }
+            } catch {
+                // getNotifications is unavailable on some platforms; stacking is the lesser evil.
+            }
+        }
+
+        await self.registration.showNotification(title, options);
+    })());
 });
 
 self.addEventListener('notificationclick', (event) => {

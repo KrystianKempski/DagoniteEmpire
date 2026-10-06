@@ -176,9 +176,9 @@ public class Program
         builder.Services.AddScoped<IPostRepository, PostRepository>();
         builder.Services.AddScoped<IChapterRepository, ChapterRepository>();
         builder.Services.AddScoped<ICampaignRepository, CampaignRepository>();
-        builder.Services.AddScoped<ICampaignChatRepository, CampaignChatRepository>();
-        builder.Services.AddSingleton<ICampaignChatBroadcaster, CampaignChatBroadcaster>();
-        builder.Services.AddScoped<CampaignChatState>();
+        builder.Services.AddScoped<IChatRepository, ChatRepository>();
+        builder.Services.AddSingleton<IChatBroadcaster, ChatBroadcaster>();
+        builder.Services.AddScoped<ChatState>();
         builder.Services.AddScoped<IBattlePhaseRepository, BattlePhaseRepository>();
         builder.Services.AddScoped<IBattleMapRepository, BattleMapRepository>();
         builder.Services.AddScoped<IBattleEventRepository, BattleEventRepository>();

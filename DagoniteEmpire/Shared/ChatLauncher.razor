@@ -1,5 +1,5 @@
 @using DA_Business.Services
-@inject CampaignChatState ChatState
+@inject ChatState ChatState
 @implements IDisposable
 
 @if (ChatState.IsVisible)
@@ -7,7 +7,7 @@
     <MudBadge Content="@(ChatState.UnreadTotal > 0 ? ChatState.UnreadTotal.ToString() : null)"
               Overlap="true"
               Visible="@(ChatState.UnreadTotal > 0)"
-              Class="mr-1 campaign-chat-launcher">
+              Class="mr-1 chat-panel-launcher">
         <MudIconButton Icon="@Icons.Material.Outlined.Forum"
                        Color="Color.Inherit"
                        Title="@L["Chat"]"
@@ -29,27 +29,9 @@
         await ChatState.EnsureInitializedAsync();
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender)
-            return;
-
-        // ProtectedSessionStorage is unreliable in OnInitialized on iOS WebKit.
-        try
-        {
-            await ChatState.RefreshIdentityAsync();
-        }
-        catch
-        {
-        }
-    }
-
     private void Toggle() => ChatState.Toggle();
 
-    private void OnStateChanged()
-    {
-        _ = InvokeAsync(StateHasChanged);
-    }
+    private void OnStateChanged() => _ = InvokeAsync(StateHasChanged);
 
     public void Dispose()
     {

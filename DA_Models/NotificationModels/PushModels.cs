@@ -46,5 +46,13 @@ namespace DA_Models.NotificationModels
         /// instead of stacking (e.g. one entry per chapter).
         /// </summary>
         public string? Tag { get; set; }
+
+        /// <summary>
+        /// Lets the service worker tidy up earlier notifications of the same thread while still using a
+        /// fresh <see cref="Tag"/> per message. Needed because iOS ignores <c>renotify</c>: reusing a tag
+        /// swaps the tray entry without alerting, so follow-up messages went unnoticed. Set it for
+        /// streams where every item matters (chat); leave it null where collapsing is the point.
+        /// </summary>
+        public string? ThreadKey { get; set; }
     }
 }
