@@ -121,7 +121,7 @@ namespace DagoniteEmpire.Pages.Barony.Components
                             "Reinforce, re-equip, rename and inspect the log of each unit.",
                             "Assign a peacetime action (patrol, reconnaissance, training, labour, partial demobilization). Patrol / scout / labour add Domain Skills; partial demobilization halves upkeep; Training XP applies on Resolve Turn.",
                             "Plan upkeep: only active units cost wages, food and defence each turn — training units are free until they graduate.",
-                            "Defense / turn = equipment market price / 40; gold wage gear add-on still uses market price / 100 × 2.",
+                            "Defense / turn = equipment market price / 50; gold wage gear add-on still uses market price / 100 × 2.",
                         }),
                         new BaronyHelpSection("Working with the Game Master", new[]
                         {

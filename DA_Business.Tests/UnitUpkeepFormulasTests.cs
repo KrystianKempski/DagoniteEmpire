@@ -9,7 +9,7 @@ public class UnitUpkeepFormulasTests
     {
         // Short spears Mkt 20 + light leather 60 + wooden medium shield 30 = 110.
         // Gold blocks: floor(110/100) = 1 → gear gold 2.
-        // Defense blocks: floor(110/40) = 2 → defense 2.
+        // Defense blocks: floor(110/50) = 2 → defense 2.
         var u = UnitUpkeepFormulas.Compute(
             baseWage: 10,
             upkeepFood: 0.5m,
@@ -28,9 +28,9 @@ public class UnitUpkeepFormulasTests
     }
 
     [Fact]
-    public void Compute_DefenseBlockSizeIs40()
+    public void Compute_DefenseBlockSizeIs50()
     {
         Assert.Equal(100, UnitRules.GearUpkeepMarketGoldPerBlock);
-        Assert.Equal(40, UnitRules.GearUpkeepDefenseMarketGoldPerBlock);
+        Assert.Equal(50, UnitRules.GearUpkeepDefenseMarketGoldPerBlock);
     }
 }

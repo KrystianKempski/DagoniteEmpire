@@ -362,7 +362,7 @@ Seeded once in `CreateForCharacter` via `StarterUnitsSeeder` (not Ensure):
 - Wage (stored) = recruit wage + training wage
 - **Per-turn upkeep (Active only)** — Domain Panel → **Army** (`UnitUpkeepFormulas` / `BaronyCalc.ArmyRows`):
   - **Gold** = base `Wage` (recruit + training) + `floor(Σ equipment Mkt / 100) × 2`
-  - **Defense** = equipment market price / 40 (floored; replaces the old flat 5)
+  - **Defense** = equipment market price / 50 (floored; replaces the old flat 5)
   - **Food** = `UpkeepFood` (default **0.5**)
   - Equipment Mkt = weapon1 + weapon2 + armor + shield + mount catalog market gold; round blocks **down** (gold and Defense use separate divisors).
   - Seeded free companies (wage/food/stored defense all **0**, e.g. City Watch / Baron's Guard) pay **nothing**.

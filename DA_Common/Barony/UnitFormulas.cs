@@ -266,7 +266,7 @@ namespace DA_Common.Barony
     /// <summary>
     /// Per-turn unit maintenance (Active units / Domain Panel Army).
     /// Gold = base wage + floor(Σ equipment Mkt / 100) × 2.
-    /// Defense = floor(Σ equipment Mkt / 40) × 1 (replaces the old flat 5).
+    /// Defense = floor(Σ equipment Mkt / 50) × 1 (replaces the old flat 5).
     /// Food = stored UpkeepFood. Starter units with wage/food/defense all 0 are exempt.
     /// </summary>
     public sealed record UnitUpkeepTotals(
@@ -315,7 +315,7 @@ namespace DA_Common.Barony
             string? mountKey = null)
         {
             var mkt = EquipmentMarketGold(weapon1Key, weapon2Key, armorKey, shieldKey, mountKey);
-            // Gold and Defense use separate Mkt block sizes (100 vs 40).
+            // Gold and Defense use separate Mkt block sizes (100 vs 50).
             var goldBlocks = mkt / UnitRules.GearUpkeepMarketGoldPerBlock; // floor for non-negative
             var defBlocks = mkt / UnitRules.GearUpkeepDefenseMarketGoldPerBlock;
             var gearGold = goldBlocks * UnitRules.GearUpkeepGoldPerBlock;

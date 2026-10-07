@@ -173,8 +173,8 @@ namespace DA_Common.Barony
         public const int DefaultUpkeepDefense = 5;
         /// <summary>Each full 100 market-gold of equipped gear is one gold-wage upkeep block.</summary>
         public const int GearUpkeepMarketGoldPerBlock = 100;
-        /// <summary>Each full 40 market-gold of equipped gear is one Defense upkeep block.</summary>
-        public const int GearUpkeepDefenseMarketGoldPerBlock = 40;
+        /// <summary>Each full 50 market-gold of equipped gear is one Defense upkeep block.</summary>
+        public const int GearUpkeepDefenseMarketGoldPerBlock = 50;
         /// <summary>Gold added to wage per gear Mkt block (floor).</summary>
         public const int GearUpkeepGoldPerBlock = 2;
         /// <summary>Defense upkeep per Defense Mkt block (floor) — replaces flat DefaultUpkeepDefense.</summary>
