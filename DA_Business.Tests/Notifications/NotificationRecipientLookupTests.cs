@@ -72,6 +72,21 @@ public class NotificationRecipientLookupTests : IClassFixture<DatabaseFixture>
         Assert.Equal(new[] { "id-gm" }, ids);
     }
 
+    [Fact]
+    public async Task GameMasterUserIds_IncludesAdmin_SameAsIsAdminOrMgElsewhere()
+    {
+        SeedUser("id-admin", "GameMaster");
+        SeedUser("id-player", "player");
+        SeedRole("role-admin", SD.Role_Admin);
+        SeedRole("role-player", SD.Role_HeroPlayer);
+        SeedUserRole("id-admin", "role-admin");
+        SeedUserRole("id-player", "role-player");
+
+        var ids = await _lookup.GameMasterUserIds();
+
+        Assert.Equal(new[] { "id-admin" }, ids);
+    }
+
     private void SeedUser(string id, string userName)
     {
         using var ctx = _fixture.CreateContext();

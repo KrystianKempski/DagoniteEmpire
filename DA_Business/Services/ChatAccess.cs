@@ -89,7 +89,11 @@ namespace DA_Business.Services
                 campaignIds);
         }
 
-        /// <summary>Identity ids holding the Game Master role, demo accounts excluded.</summary>
+        /// <summary>
+        /// Identity ids holding Admin or Game Master — the rest of the app treats both as MG
+        /// (<c>IsAdminOrMG</c>), and chat must match so a seeded Admin account still sees the drawer.
+        /// Demo accounts excluded.
+        /// </summary>
         public static async Task<List<string>> GameMasterUserIdsAsync(
             ApplicationDbContext ctx,
             CancellationToken ct = default)
@@ -98,7 +102,7 @@ namespace DA_Business.Services
                 from ur in ctx.UserRoles.AsNoTracking()
                 join r in ctx.Roles.AsNoTracking() on ur.RoleId equals r.Id
                 join u in ctx.Users.AsNoTracking() on ur.UserId equals u.Id
-                where r.Name == SD.Role_GameMaster
+                where r.Name == SD.Role_GameMaster || r.Name == SD.Role_Admin
                 select new { u.Id, u.UserName }
             ).ToListAsync(ct);
 

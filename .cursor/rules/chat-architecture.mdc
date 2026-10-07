@@ -24,6 +24,8 @@ queries in `DA_Business/Repository/ChatRepos/ChatRepository.cs`, per-circuit UI 
   with `UserId == null` and `IsGameMasterRole`, and its key is `ChatPairKey.Direct(playerId, null)`. When a
   GM writes to a player the thread is still keyed by the *player*, so handing the campaign to another GM
   keeps the history. GMs are excluded from each other's peer lists: a GM is reachable only through the role.
+  **Admin counts as GM** in `GameMasterUserIdsAsync` / `NotificationRecipientLookup` — same as `IsAdminOrMG`
+  elsewhere — so a seeded Admin-only account still receives chat and barony GM pushes.
 - **Read state is per account** (`ChatReadState`), deliberately apart from participation, so one GM
   opening a thread does not clear the badge for the others.
 - **Party membership is derived, never stored.** A `CampaignParty` thread has no participant rows; its
@@ -67,5 +69,6 @@ Chat stores `DateTime.UtcNow`, but the Npgsql legacy timestamp switch maps every
 ## Known duplication
 
 `ChatAccess.GameMasterUserIdsAsync` and `NotificationRecipientLookup.GameMasterUserIds` answer the same
-question against different contexts — `ChatAccess` methods take the caller's `ApplicationDbContext` so a
-repository operation stays on one connection. If you touch GM resolution, change both.
+question (Admin ∪ GameMaster, demo excluded) against different contexts — `ChatAccess` methods take the
+caller's `ApplicationDbContext` so a repository operation stays on one connection. If you touch GM
+resolution, change both.

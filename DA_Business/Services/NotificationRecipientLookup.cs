@@ -66,7 +66,9 @@ namespace DA_Business.Services
             return ids.FirstOrDefault();
         }
 
-        /// <summary>Identity ids of the real Game Masters, excluding the public demo GM.</summary>
+        /// <summary>
+        /// Identity ids of real Admin / Game Master accounts (same pair as chat), excluding the public demo GM.
+        /// </summary>
         public async Task<List<string>> GameMasterUserIds(CancellationToken cancellationToken = default)
         {
             using var ctx = await _db.CreateDbContextAsync(cancellationToken);
@@ -74,7 +76,7 @@ namespace DA_Business.Services
                 from ur in ctx.UserRoles
                 join r in ctx.Roles on ur.RoleId equals r.Id
                 join u in ctx.Users on ur.UserId equals u.Id
-                where r.Name == SD.Role_GameMaster
+                where r.Name == SD.Role_GameMaster || r.Name == SD.Role_Admin
                 select new { u.Id, u.UserName }
             ).ToListAsync(cancellationToken);
 

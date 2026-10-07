@@ -24,6 +24,7 @@ public class ChatRepositoryTests : IClassFixture<DatabaseFixture>
     private const string Carol = "id-carol";
     private const string Gm = "id-gm";
     private const string SecondGm = "id-gm-2";
+    private const string AdminOnly = "id-admin";
 
     private readonly DatabaseFixture _fixture;
     private readonly RecordingNotificationQueue _notifications = new();
@@ -219,6 +220,19 @@ public class ChatRepositoryTests : IClassFixture<DatabaseFixture>
     }
 
     [Fact]
+    public async Task AdminOnlyAccount_SeesPartyChannelsLikeAGameMaster()
+    {
+        // Seeded production MG is often Admin without the GameMaster role — chat must still open.
+        SeedAdmin(AdminOnly, "admin");
+
+        var contacts = await _repository.GetContactsAsync(AdminOnly);
+
+        Assert.Contains(contacts, c => c.IsPartyChannel && c.CampaignId == _campaignOne);
+        Assert.Contains(contacts, c => c.IsPartyChannel && c.CampaignId == _campaignTwo);
+        Assert.DoesNotContain(contacts, c => c.PeerIsGameMaster);
+    }
+
+    [Fact]
     public async Task Contacts_KeepAThreadWhoseCampaignEnded()
     {
         var conversationId = await SendDirect(Alice, Bob, "before the campaign ended");
@@ -341,6 +355,27 @@ public class ChatRepositoryTests : IClassFixture<DatabaseFixture>
         }
 
         ctx.UserRoles.Add(new IdentityUserRole<string> { UserId = id, RoleId = "role-gm" });
+        ctx.SaveChanges();
+    }
+
+    private void SeedAdmin(string id, string userName)
+    {
+        SeedUser(id, userName);
+
+        using var ctx = _fixture.CreateContext();
+        if (!ctx.Roles.Any(r => r.Name == SD.Role_Admin))
+        {
+            ctx.Roles.Add(new IdentityRole
+            {
+                Id = "role-admin",
+                Name = SD.Role_Admin,
+                NormalizedName = SD.Role_Admin.ToUpperInvariant(),
+            });
+            ctx.SaveChanges();
+        }
+
+        var roleId = ctx.Roles.First(r => r.Name == SD.Role_Admin).Id;
+        ctx.UserRoles.Add(new IdentityUserRole<string> { UserId = id, RoleId = roleId });
         ctx.SaveChanges();
     }
 }
