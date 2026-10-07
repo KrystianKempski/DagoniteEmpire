@@ -98,10 +98,9 @@
         return postJson('/api/push/subscribe', payload);
     }
 
-    /// <summary>
-    /// Browser may still hold a PushSubscription after the server row was wiped (DB reset,
-    /// different account, etc.). Re-upload quietly so topic GETs stop 404-ing.
-    /// </summary>
+    // Browser may still hold a PushSubscription after the server row was wiped (DB reset) or after
+    // switching Identity accounts on the same device. Topics are looked up for the *current* cookie
+    // user, so a 404 means "this endpoint is not ours yet" — re-upload reclaims UserId on the row.
     async function ensureServerKnows(subscription) {
         const topicsUrl = `/api/push/topics?endpoint=${encodeURIComponent(subscription.endpoint)}`;
         const existing = await getJson(topicsUrl);
@@ -124,6 +123,29 @@
     window.dagonitePush = {
         allTopics: function () {
             return ALL_TOPICS.slice();
+        },
+
+        /// Called on login so a device that stayed subscribed under another account (e.g. GM →
+        /// player on the same browser) stops receiving that account's pushes.
+        claimForCurrentUser: async function () {
+            if (!isSupported()) {
+                return { ok: false, reason: 'unsupported' };
+            }
+
+            try {
+                const subscription = await currentSubscription();
+                if (!subscription) {
+                    return { ok: true, reason: 'not-subscribed' };
+                }
+
+                const synced = await ensureServerKnows(subscription);
+                return {
+                    ok: synced.known,
+                    reason: synced.known ? 'claimed' : 'claim-failed',
+                };
+            } catch {
+                return { ok: false, reason: 'error' };
+            }
         },
 
         status: async function () {

@@ -60,6 +60,20 @@ public class PushTopicPreferenceTests : IClassFixture<DatabaseFixture>
     }
 
     [Fact]
+    public async Task SaveSubscription_ReclaimsEndpoint_WhenAccountSwitches()
+    {
+        // Same browser endpoint after GM logout → player login: reclaim so GM fan-out stops here.
+        await _service.SaveSubscription("id-gm", SampleSubscription("https://push/device"), null);
+        await _service.SaveSubscription("id-player", SampleSubscription("https://push/device"), null);
+
+        using var ctx = _fixture.CreateContext();
+        var row = Assert.Single(ctx.WebPushSubscriptions);
+        Assert.Equal("id-player", row.UserId);
+        Assert.Null(await _service.GetTopics("id-gm", "https://push/device"));
+        Assert.NotNull(await _service.GetTopics("id-player", "https://push/device"));
+    }
+
+    [Fact]
     public async Task FreshSubscription_WithoutTopics_ReceivesEverything()
     {
         await _service.SaveSubscription("user-1", SampleSubscription("https://push/fresh"), null);

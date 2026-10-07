@@ -110,12 +110,27 @@ MaxWidth="MaxWidth.Large" />
             }
             else
             {
+                // Reclaim the browser push endpoint for this Identity user. Same device can stay
+                // subscribed after GM ↔ player logout; without this the tray still follows the old UserId.
+                await TryClaimPushSubscriptionAsync();
                 await TryApplyDeepLinksAsync();
             }
         }
         catch
         {
             // Ignore during prerender / reconnect — cookie auth is authoritative.
+        }
+    }
+
+    private async Task TryClaimPushSubscriptionAsync()
+    {
+        try
+        {
+            await _jsRuntime.InvokeVoidAsync("dagonitePush.claimForCurrentUser");
+        }
+        catch
+        {
+            // Push is optional; missing JS during prerender must not break the layout.
         }
     }
 
