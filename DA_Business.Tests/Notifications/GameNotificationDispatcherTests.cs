@@ -218,7 +218,47 @@ public class GameNotificationDispatcherTests : IClassFixture<DatabaseFixture>
     }
 
     [Fact]
-    public async Task ChapterPost_NotifiesTheOtherParticipantsOnly()
+    public async Task ChapterPost_NotifiesOtherParticipantsAndTheGameMaster()
+    {
+        var professionId = SeedProfession();
+        var authorId = SeedCharacter("author-user", "Autor", professionId);
+        var readerId = SeedCharacter("reader-user", "Czytelnik", professionId);
+        SeedUser("id-author", "author-user");
+        SeedUser("id-reader", "reader-user");
+        SeedGameMaster("id-gm", "gm");
+        var chapterId = SeedChapter("Rozdział I", authorId, readerId);
+
+        await _dispatcher.Dispatch(new ChapterPostAdded(chapterId, PostId: 42, authorId));
+
+        var sent = Assert.Single(_push.Sent);
+        Assert.Equal(new[] { "id-reader", "id-gm" }.OrderBy(x => x), sent.UserIds.OrderBy(x => x));
+        Assert.Equal(NotificationTopic.Posts, sent.Topic);
+        Assert.Contains("Rozdział I", sent.Payload.Title);
+        Assert.Contains("Autor", sent.Payload.Body);
+        Assert.Equal($"/chapter/{chapterId}", sent.Payload.Url);
+        Assert.Equal($"chapter-{chapterId}-42", sent.Payload.Tag);
+        Assert.Equal($"chapter-{chapterId}", sent.Payload.ThreadKey);
+    }
+
+    [Fact]
+    public async Task ChapterPost_FromGameMasterActor_DoesNotNotifyOtherGameMasters()
+    {
+        var professionId = SeedProfession();
+        var gmActorId = SeedCharacter("gm-actor", SD.GameMaster_NPCName, professionId);
+        var readerId = SeedCharacter("reader-user", "Czytelnik", professionId);
+        SeedUser("id-reader", "reader-user");
+        SeedGameMaster("id-gm", "gm");
+        SeedAdmin("id-admin", "admin");
+        var chapterId = SeedChapter("Rozdział I", gmActorId, readerId);
+
+        await _dispatcher.Dispatch(new ChapterPostAdded(chapterId, PostId: 7, gmActorId));
+
+        var sent = Assert.Single(_push.Sent);
+        Assert.Equal(new[] { "id-reader" }, sent.UserIds);
+    }
+
+    [Fact]
+    public async Task TwoPostsInOneChapter_GetSeparateTags_SoBothAlertOnIos()
     {
         var professionId = SeedProfession();
         var authorId = SeedCharacter("author-user", "Autor", professionId);
@@ -227,14 +267,13 @@ public class GameNotificationDispatcherTests : IClassFixture<DatabaseFixture>
         SeedUser("id-reader", "reader-user");
         var chapterId = SeedChapter("Rozdział I", authorId, readerId);
 
-        await _dispatcher.Dispatch(new ChapterPostAdded(chapterId, authorId));
+        await _dispatcher.Dispatch(new ChapterPostAdded(chapterId, PostId: 1, authorId));
+        await _dispatcher.Dispatch(new ChapterPostAdded(chapterId, PostId: 2, authorId));
 
-        var sent = Assert.Single(_push.Sent);
-        Assert.Equal(new[] { "id-reader" }, sent.UserIds);
-        Assert.Equal(NotificationTopic.Posts, sent.Topic);
-        Assert.Contains("Rozdział I", sent.Payload.Title);
-        Assert.Contains("Autor", sent.Payload.Body);
-        Assert.Equal($"/chapter/{chapterId}", sent.Payload.Url);
+        Assert.Equal(2, _push.Sent.Count);
+        Assert.NotEqual(_push.Sent[0].Payload.Tag, _push.Sent[1].Payload.Tag);
+        Assert.Equal($"chapter-{chapterId}", _push.Sent[0].Payload.ThreadKey);
+        Assert.Equal($"chapter-{chapterId}", _push.Sent[1].Payload.ThreadKey);
     }
 
     [Fact]
@@ -437,17 +476,41 @@ public class GameNotificationDispatcherTests : IClassFixture<DatabaseFixture>
     private void SeedGameMaster(string id, string userName)
     {
         SeedUser(id, userName);
+        EnsureRole("role-gm", SD.Role_GameMaster);
 
         using var ctx = _fixture.CreateContext();
+        if (!ctx.UserRoles.Any(ur => ur.UserId == id && ur.RoleId == "role-gm"))
+        {
+            ctx.UserRoles.Add(new IdentityUserRole<string> { UserId = id, RoleId = "role-gm" });
+            ctx.SaveChanges();
+        }
+    }
+
+    private void SeedAdmin(string id, string userName)
+    {
+        SeedUser(id, userName);
+        EnsureRole("role-admin", SD.Role_Admin);
+
+        using var ctx = _fixture.CreateContext();
+        if (!ctx.UserRoles.Any(ur => ur.UserId == id && ur.RoleId == "role-admin"))
+        {
+            ctx.UserRoles.Add(new IdentityUserRole<string> { UserId = id, RoleId = "role-admin" });
+            ctx.SaveChanges();
+        }
+    }
+
+    private void EnsureRole(string id, string name)
+    {
+        using var ctx = _fixture.CreateContext();
+        if (ctx.Roles.Any(r => r.Id == id || r.Name == name))
+            return;
+
         ctx.Roles.Add(new IdentityRole
         {
-            Id = "role-gm",
-            Name = SD.Role_GameMaster,
-            NormalizedName = SD.Role_GameMaster.ToUpperInvariant(),
+            Id = id,
+            Name = name,
+            NormalizedName = name.ToUpperInvariant(),
         });
-        ctx.SaveChanges();
-
-        ctx.UserRoles.Add(new IdentityUserRole<string> { UserId = id, RoleId = "role-gm" });
         ctx.SaveChanges();
     }
 }

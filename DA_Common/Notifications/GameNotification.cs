@@ -19,8 +19,9 @@ namespace DA_Common.Notifications
 
     /// <summary>A new post was added to a chapter.</summary>
     /// <param name="ChapterId">Chapter that received the post.</param>
+    /// <param name="PostId">The post itself, so every entry alerts separately on iOS.</param>
     /// <param name="AuthorCharacterId">Author, excluded from the recipients.</param>
-    public sealed record ChapterPostAdded(int ChapterId, int AuthorCharacterId) : GameNotification
+    public sealed record ChapterPostAdded(int ChapterId, int PostId, int AuthorCharacterId) : GameNotification
     {
         public override string Topic => NotificationTopic.Posts;
     }

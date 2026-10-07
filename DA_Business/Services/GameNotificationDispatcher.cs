@@ -232,6 +232,8 @@ namespace DA_Business.Services
         {
             string? chapterName;
             string? authorName;
+            string? authorUserName;
+            string? authorNpcName;
             List<string?> ownerNames;
 
             using (var ctx = await _db.CreateDbContextAsync(ct))
@@ -242,10 +244,9 @@ namespace DA_Business.Services
                     .Select(c => new
                     {
                         c.Name,
-                        Participants = c.Characters
-                            .Where(ch => ch.Id != n.AuthorCharacterId)
-                            .Select(ch => ch.UserName)
-                            .ToList(),
+                        // Whole roster — author is stripped by Identity id below, so a multi-hero
+                        // account still gets one push when another of its heroes wrote.
+                        Participants = c.Characters.Select(ch => ch.UserName).ToList(),
                     })
                     .FirstOrDefaultAsync(ct);
 
@@ -255,15 +256,35 @@ namespace DA_Business.Services
                 chapterName = chapter.Name;
                 ownerNames = chapter.Participants.Cast<string?>().ToList();
 
-                authorName = await ctx.Characters
+                var author = await ctx.Characters
                     .AsNoTracking()
                     .Where(c => c.Id == n.AuthorCharacterId)
-                    .Select(c => c.NPCName)
+                    .Select(c => new { c.NPCName, c.UserName })
                     .FirstOrDefaultAsync(ct);
+
+                authorName = author?.NPCName;
+                authorUserName = author?.UserName;
+                authorNpcName = author?.NPCName;
             }
 
-            // Several characters of one player in the same chapter must not mean several pushes.
+            // Anyone with chapter access: roster accounts plus Admin/GM (same pair as chat).
             var userIds = await _recipients.UserIdsForUserNames(ownerNames, ct);
+            var gmIds = await _recipients.GameMasterUserIds(ct);
+            userIds = userIds
+                .Concat(gmIds)
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+
+            // Do not ping the writer. The shared "Game Master" character has UserName "GM", which
+            // is not the Admin login — so when that actor posts, drop every MG account.
+            var exclude = await _recipients.UserIdsForUserNames(new[] { authorUserName }, ct);
+            if (string.Equals(authorNpcName, SD.GameMaster_NPCName, StringComparison.Ordinal))
+                exclude = exclude.Concat(gmIds).Distinct(StringComparer.Ordinal).ToList();
+
+            userIds = userIds
+                .Where(id => !exclude.Contains(id, StringComparer.Ordinal))
+                .ToList();
+
             if (userIds.Count == 0)
                 return null;
 
@@ -278,7 +299,9 @@ namespace DA_Business.Services
                         ? Loc.T("Someone added a new post.")
                         : Loc.T("{0} added a new post.", authorName),
                     Url = $"/chapter/{n.ChapterId}",
-                    Tag = $"chapter-{n.ChapterId}",
+                    // Per-post tag + chapter ThreadKey — iOS would otherwise replace follow-ups silently.
+                    Tag = $"chapter-{n.ChapterId}-{n.PostId}",
+                    ThreadKey = $"chapter-{n.ChapterId}",
                 });
         }
 

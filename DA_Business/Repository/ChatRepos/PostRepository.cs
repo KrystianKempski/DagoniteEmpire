@@ -43,6 +43,7 @@ namespace DA_Business.Repository.ChatRepos
                 // create posts through here.
                 _notifications.Enqueue(new ChapterPostAdded(
                     addedObj.Entity.ChapterId,
+                    addedObj.Entity.Id,
                     addedObj.Entity.CharacterId));
 
                 return _mapper.Map<Post, PostDTO>(addedObj.Entity);
