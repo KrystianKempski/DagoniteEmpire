@@ -150,6 +150,36 @@ namespace DA_Business.Repository.BaronyRepos
             catch (System.Exception ex) { throw Err(ex, nameof(GetAllSummaries)); }
         }
 
+        public async Task<List<BaronyListItemDTO>> GetSummariesForUser(string userName)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(userName))
+                    return new List<BaronyListItemDTO>();
+
+                using var ctx = await _db.CreateDbContextAsync();
+                return await ctx.Baronies.AsNoTracking()
+                    .Join(
+                        ctx.Characters.AsNoTracking(),
+                        b => b.CharacterId,
+                        c => c.Id,
+                        (b, c) => new { Barony = b, Character = c })
+                    .Where(x => x.Character.UserName != null
+                        && x.Character.UserName.ToUpper() == userName.ToUpper())
+                    .Select(x => new BaronyListItemDTO
+                    {
+                        Id = x.Barony.Id,
+                        CharacterId = x.Barony.CharacterId,
+                        Name = x.Barony.Name,
+                        BaronName = x.Character.NPCName ?? string.Empty,
+                        Notes = x.Barony.Notes,
+                    })
+                    .OrderBy(b => b.Name)
+                    .ToListAsync();
+            }
+            catch (System.Exception ex) { throw Err(ex, nameof(GetSummariesForUser)); }
+        }
+
         public async Task<BaronyDTO> CreateForCharacter(int characterId, string name, string? notes = null, string? seedProfile = null)
         {
             try
@@ -3606,7 +3636,7 @@ namespace DA_Business.Repository.BaronyRepos
                 // delivered letter must not notify again.
                 if (bumpThreadActivity && !wasDelivered)
                 {
-                    _notifications.Enqueue(new BaronLetterDelivered(e.ThreadId, e.IsInbound));
+                    _notifications.Enqueue(new BaronLetterDelivered(e.ThreadId, e.Id, e.IsInbound));
                 }
 
                 return ToDTO(e);
@@ -3663,20 +3693,28 @@ namespace DA_Business.Repository.BaronyRepos
             catch (System.Exception ex) { throw Err(ex, nameof(MarkLetterThreadSeenByGm)); }
         }
 
-        public async Task<BaronLetterInboxBadgeDTO> GetLetterInboxBadgeForBaron(int baronyId)
+        public async Task<BaronLetterInboxBadgeDTO> GetLetterInboxBadgeForBaron(IReadOnlyCollection<int> baronyIds)
         {
             try
             {
+                if (baronyIds is null || baronyIds.Count == 0)
+                    return new BaronLetterInboxBadgeDTO();
+
+                var ids = baronyIds.ToList();
                 using var ctx = await _db.CreateDbContextAsync();
+                // Skip baronies whose Letters tab is locked while the MG writes the turn — otherwise a
+                // multi-baron account would see a count (or hide the FAB) for mail it cannot open yet.
                 var rows = await (
                     from m in ctx.BaronLetterMessages.AsNoTracking()
                     join t in ctx.BaronLetterThreads.AsNoTracking() on m.ThreadId equals t.Id
-                    where t.BaronyId == baronyId
+                    join b in ctx.Baronies.AsNoTracking() on t.BaronyId equals b.Id
+                    where ids.Contains(t.BaronyId)
+                        && !b.TurnResolving
                         && !m.SeenByBaron
                         && m.IsInbound
                         && m.Status != BaronLetterStatus.Draft
                     orderby (m.SentAtUtc ?? m.UpdatedAtUtc) descending, m.Id descending
-                    select new { m.ThreadId, t.BaronyId }
+                    select new { m.ThreadId, t.BaronyId, b.CharacterId }
                 ).ToListAsync();
 
                 var latest = rows.FirstOrDefault();
@@ -3684,7 +3722,8 @@ namespace DA_Business.Repository.BaronyRepos
                 {
                     UnreadCount = rows.Count,
                     LatestThreadId = latest?.ThreadId,
-                    BaronyId = latest?.BaronyId ?? baronyId,
+                    BaronyId = latest?.BaronyId,
+                    CharacterId = latest?.CharacterId,
                 };
             }
             catch (System.Exception ex) { throw Err(ex, nameof(GetLetterInboxBadgeForBaron)); }
@@ -3848,7 +3887,8 @@ namespace DA_Business.Repository.BaronyRepos
                 // chapter) must not ping the other side again.
                 if (isNew && BaronAudienceExchangeRules.IsSpeakable(e.IsResourceChange, e.SpeakerName))
                 {
-                    _notifications.Enqueue(new BaronAudienceExchangePosted(e.AudienceId, e.IsFromPetitioner));
+                    _notifications.Enqueue(
+                        new BaronAudienceExchangePosted(e.AudienceId, e.Id, e.IsFromPetitioner));
                 }
 
                 return ToDTO(e);

@@ -22,6 +22,9 @@ public class GameNotificationDispatcherTests : IClassFixture<DatabaseFixture>
     private readonly CapturingPushService _push = new();
     private readonly GameNotificationDispatcher _dispatcher;
 
+    /// <summary>Baron character of the barony seeded last — deep links name it.</summary>
+    private int _baronCharacterId;
+
     public GameNotificationDispatcherTests(DatabaseFixture fixture)
     {
         _fixture = fixture;
@@ -39,14 +42,16 @@ public class GameNotificationDispatcherTests : IClassFixture<DatabaseFixture>
         var baronyId = SeedBaronyOwnedBy("id-baron", "duke");
         var threadId = SeedThread(baronyId, "Sprawa podatków", "Lord Varen");
 
-        await _dispatcher.Dispatch(new BaronLetterDelivered(threadId, IsInbound: true));
+        await _dispatcher.Dispatch(new BaronLetterDelivered(threadId, MessageId: 1, IsInbound: true));
 
         var sent = Assert.Single(_push.Sent);
         Assert.Equal(new[] { "id-baron" }, sent.UserIds);
         Assert.Equal(NotificationTopic.BaronLetter, sent.Topic);
         Assert.Contains("Lord Varen", sent.Payload.Title);
         Assert.Equal("Sprawa podatków", sent.Payload.Body);
-        Assert.Equal($"/barony/letters?thread={threadId}", sent.Payload.Url);
+        Assert.Equal(
+            $"/barony/letters?thread={threadId}&character={_baronCharacterId}",
+            sent.Payload.Url);
     }
 
     [Fact]
@@ -56,7 +61,7 @@ public class GameNotificationDispatcherTests : IClassFixture<DatabaseFixture>
         var threadId = SeedThread(baronyId, "Prośba o wsparcie", "Lord Varen");
         SeedGameMaster("id-gm", "gm");
 
-        await _dispatcher.Dispatch(new BaronLetterDelivered(threadId, IsInbound: false));
+        await _dispatcher.Dispatch(new BaronLetterDelivered(threadId, MessageId: 1, IsInbound: false));
 
         var sent = Assert.Single(_push.Sent);
         Assert.Equal(new[] { "id-gm" }, sent.UserIds);
@@ -70,10 +75,67 @@ public class GameNotificationDispatcherTests : IClassFixture<DatabaseFixture>
         var baronyId = SeedBaronyOwnedBy("id-baron", "duke");
         var threadId = SeedThread(baronyId, "Prośba o wsparcie", "Lord Varen");
 
-        var delivered = await _dispatcher.Dispatch(new BaronLetterDelivered(threadId, IsInbound: false));
+        var delivered = await _dispatcher.Dispatch(new BaronLetterDelivered(threadId, MessageId: 1, IsInbound: false));
 
         Assert.Equal(0, delivered);
         Assert.Empty(_push.Sent);
+    }
+
+    [Fact]
+    public async Task LettersFromTwoBaronies_ReachTheGameMaster_EachNamingItsOwnBarony()
+    {
+        var firstBarony = SeedBaronyOwnedBy("id-baron-1", "duke1", "Darkhold", "Baron Starszy");
+        var firstCharacter = _baronCharacterId;
+        var secondBarony = SeedBaronyOwnedBy("id-baron-2", "duke2", "Stonewatch", "Baron Młodszy");
+        var secondCharacter = _baronCharacterId;
+        SeedGameMaster("id-gm", "gm");
+
+        var firstThread = SeedThread(firstBarony, "Podatki", "Lord Varen");
+        var secondThread = SeedThread(secondBarony, "Granica", "Lady Mira");
+
+        await _dispatcher.Dispatch(new BaronLetterDelivered(firstThread, MessageId: 1, IsInbound: false));
+        await _dispatcher.Dispatch(new BaronLetterDelivered(secondThread, MessageId: 2, IsInbound: false));
+
+        Assert.Equal(2, _push.Sent.Count);
+        Assert.All(_push.Sent, s => Assert.Equal(new[] { "id-gm" }, s.UserIds));
+        // Whichever barony the GM browsed last, the link carries the one the letter belongs to.
+        Assert.Contains($"character={firstCharacter}", _push.Sent[0].Payload.Url);
+        Assert.Contains($"character={secondCharacter}", _push.Sent[1].Payload.Url);
+    }
+
+    [Fact]
+    public async Task TwoBaroniesOfOneAccount_BothNotifyThatAccount()
+    {
+        var firstBarony = SeedBaronyOwnedBy("id-baron", "duke", "Darkhold", "Baron Starszy");
+        var firstCharacter = _baronCharacterId;
+        var secondBarony = SeedBaronyOwnedBy(
+            "id-baron", "duke", "Stonewatch", "Baron Młodszy", userAlreadySeeded: true);
+        var secondCharacter = _baronCharacterId;
+
+        await _dispatcher.Dispatch(new BaronyTurnResolved(firstBarony, 4));
+        await _dispatcher.Dispatch(new BaronyTurnResolved(secondBarony, 9));
+
+        Assert.Equal(2, _push.Sent.Count);
+        Assert.All(_push.Sent, s => Assert.Equal(new[] { "id-baron" }, s.UserIds));
+        Assert.Equal($"/barony?character={firstCharacter}", _push.Sent[0].Payload.Url);
+        Assert.Equal($"/barony?character={secondCharacter}", _push.Sent[1].Payload.Url);
+        // Separate tags, or the second barony's turn would replace the first in the tray.
+        Assert.NotEqual(_push.Sent[0].Payload.Tag, _push.Sent[1].Payload.Tag);
+    }
+
+    [Fact]
+    public async Task TwoLettersInOneThread_GetSeparateTags_SoBothAlertOnIos()
+    {
+        var baronyId = SeedBaronyOwnedBy("id-baron", "duke");
+        var threadId = SeedThread(baronyId, "Sprawa podatków", "Lord Varen");
+
+        await _dispatcher.Dispatch(new BaronLetterDelivered(threadId, MessageId: 1, IsInbound: true));
+        await _dispatcher.Dispatch(new BaronLetterDelivered(threadId, MessageId: 2, IsInbound: true));
+
+        Assert.Equal(2, _push.Sent.Count);
+        Assert.NotEqual(_push.Sent[0].Payload.Tag, _push.Sent[1].Payload.Tag);
+        Assert.Equal($"baron-letter-{threadId}", _push.Sent[0].Payload.ThreadKey);
+        Assert.Equal($"baron-letter-{threadId}", _push.Sent[1].Payload.ThreadKey);
     }
 
     [Fact]
@@ -82,15 +144,18 @@ public class GameNotificationDispatcherTests : IClassFixture<DatabaseFixture>
         var baronyId = SeedBaronyOwnedBy("id-baron", "duke");
         var audienceId = SeedAudience(baronyId, "Prośba o zboże", "Farmer Tobin");
 
-        await _dispatcher.Dispatch(new BaronAudienceExchangePosted(audienceId, IsFromPetitioner: true));
+        await _dispatcher.Dispatch(new BaronAudienceExchangePosted(audienceId, ExchangeId: 1, IsFromPetitioner: true));
 
         var sent = Assert.Single(_push.Sent);
         Assert.Equal(new[] { "id-baron" }, sent.UserIds);
         Assert.Equal(NotificationTopic.BaronAudience, sent.Topic);
         Assert.Contains("Farmer Tobin", sent.Payload.Title);
         Assert.Equal("Prośba o zboże", sent.Payload.Body);
-        Assert.Equal($"/barony/audience-hall?audience={audienceId}", sent.Payload.Url);
-        Assert.Equal($"baron-audience-{audienceId}", sent.Payload.Tag);
+        Assert.Equal(
+            $"/barony/audience-hall?audience={audienceId}&character={_baronCharacterId}",
+            sent.Payload.Url);
+        Assert.Equal($"baron-audience-{audienceId}-1", sent.Payload.Tag);
+        Assert.Equal($"baron-audience-{audienceId}", sent.Payload.ThreadKey);
     }
 
     [Fact]
@@ -100,7 +165,7 @@ public class GameNotificationDispatcherTests : IClassFixture<DatabaseFixture>
         var audienceId = SeedAudience(baronyId, "Prośba o zboże", "Farmer Tobin");
         SeedGameMaster("id-gm", "gm");
 
-        await _dispatcher.Dispatch(new BaronAudienceExchangePosted(audienceId, IsFromPetitioner: false));
+        await _dispatcher.Dispatch(new BaronAudienceExchangePosted(audienceId, ExchangeId: 1, IsFromPetitioner: false));
 
         var sent = Assert.Single(_push.Sent);
         Assert.Equal(new[] { "id-gm" }, sent.UserIds);
@@ -116,7 +181,7 @@ public class GameNotificationDispatcherTests : IClassFixture<DatabaseFixture>
         var audienceId = SeedAudience(baronyId, "Prośba o zboże", "Farmer Tobin");
 
         var delivered = await _dispatcher.Dispatch(
-            new BaronAudienceExchangePosted(audienceId, IsFromPetitioner: false));
+            new BaronAudienceExchangePosted(audienceId, ExchangeId: 1, IsFromPetitioner: false));
 
         Assert.Equal(0, delivered);
         Assert.Empty(_push.Sent);
@@ -126,14 +191,14 @@ public class GameNotificationDispatcherTests : IClassFixture<DatabaseFixture>
     public async Task UnknownAudience_IsIgnored()
     {
         Assert.Equal(0, await _dispatcher.Dispatch(
-            new BaronAudienceExchangePosted(9999, IsFromPetitioner: true)));
+            new BaronAudienceExchangePosted(9999, ExchangeId: 1, IsFromPetitioner: true)));
         Assert.Empty(_push.Sent);
     }
 
     [Fact]
     public async Task UnknownThread_IsIgnored()
     {
-        Assert.Equal(0, await _dispatcher.Dispatch(new BaronLetterDelivered(9999, IsInbound: true)));
+        Assert.Equal(0, await _dispatcher.Dispatch(new BaronLetterDelivered(9999, MessageId: 1, IsInbound: true)));
         Assert.Empty(_push.Sent);
     }
 
@@ -149,7 +214,7 @@ public class GameNotificationDispatcherTests : IClassFixture<DatabaseFixture>
         Assert.Equal(NotificationTopic.TurnResolved, sent.Topic);
         Assert.Contains("7", sent.Payload.Title);
         Assert.Contains("Darkhold", sent.Payload.Body);
-        Assert.Equal("/barony", sent.Payload.Url);
+        Assert.Equal($"/barony?character={_baronCharacterId}", sent.Payload.Url);
     }
 
     [Fact]
@@ -179,13 +244,15 @@ public class GameNotificationDispatcherTests : IClassFixture<DatabaseFixture>
         SeedGameMaster("id-gm", "gm");
         var threadId = SeedQaThread(baronyId, "Czy mogę zbudować most?");
 
-        await _dispatcher.Dispatch(new GmQuestionPosted(threadId, FromGameMaster: true));
+        await _dispatcher.Dispatch(new GmQuestionPosted(threadId, MessageId: 1, FromGameMaster: true));
 
         var sent = Assert.Single(_push.Sent);
         Assert.Equal(new[] { "id-baron" }, sent.UserIds);
         Assert.Equal(NotificationTopic.GmQuestion, sent.Topic);
         Assert.Equal("Czy mogę zbudować most?", sent.Payload.Body);
-        Assert.Equal($"/barony/notes?tab=qa&thread={threadId}", sent.Payload.Url);
+        Assert.Equal(
+            $"/barony/notes?tab=qa&thread={threadId}&character={_baronCharacterId}",
+            sent.Payload.Url);
     }
 
     [Fact]
@@ -195,7 +262,7 @@ public class GameNotificationDispatcherTests : IClassFixture<DatabaseFixture>
         SeedGameMaster("id-gm", "gm");
         var threadId = SeedQaThread(baronyId, "Czy mogę zbudować most?");
 
-        await _dispatcher.Dispatch(new GmQuestionPosted(threadId, FromGameMaster: false));
+        await _dispatcher.Dispatch(new GmQuestionPosted(threadId, MessageId: 1, FromGameMaster: false));
 
         var sent = Assert.Single(_push.Sent);
         Assert.Equal(new[] { "id-gm" }, sent.UserIds);
@@ -252,13 +319,21 @@ public class GameNotificationDispatcherTests : IClassFixture<DatabaseFixture>
 
     // ---------------- seeding ----------------
 
-    private int SeedBaronyOwnedBy(string userId, string userName)
+    private int SeedBaronyOwnedBy(
+        string userId,
+        string userName,
+        string baronyName = "Darkhold",
+        string baronName = "Baron",
+        bool userAlreadySeeded = false)
     {
-        SeedUser(userId, userName);
-        var characterId = SeedCharacter(userName, "Baron", SeedProfession());
+        if (!userAlreadySeeded)
+            SeedUser(userId, userName);
+
+        var characterId = SeedCharacter(userName, baronName, SeedProfession());
+        _baronCharacterId = characterId;
 
         using var ctx = _fixture.CreateContext();
-        var barony = new DA_DataAccess.BaronyData.Barony { CharacterId = characterId, Name = "Darkhold" };
+        var barony = new DA_DataAccess.BaronyData.Barony { CharacterId = characterId, Name = baronyName };
         ctx.Baronies.Add(barony);
         ctx.SaveChanges();
         return barony.Id;

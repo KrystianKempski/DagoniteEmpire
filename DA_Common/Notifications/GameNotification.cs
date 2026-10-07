@@ -35,8 +35,9 @@ namespace DA_Common.Notifications
 
     /// <summary>A message was posted in a Questions-for-GM thread.</summary>
     /// <param name="ThreadId">Thread that received the message.</param>
+    /// <param name="MessageId">The message itself, so every entry in a thread alerts separately.</param>
     /// <param name="FromGameMaster">True when the GM answered, false when a player asked.</param>
-    public sealed record GmQuestionPosted(int ThreadId, bool FromGameMaster) : GameNotification
+    public sealed record GmQuestionPosted(int ThreadId, int MessageId, bool FromGameMaster) : GameNotification
     {
         public override string Topic => NotificationTopic.GmQuestion;
     }
@@ -77,22 +78,27 @@ namespace DA_Common.Notifications
 
     /// <summary>A letter was delivered in a baron correspondence thread.</summary>
     /// <param name="ThreadId">Thread the letter belongs to.</param>
+    /// <param name="MessageId">The letter itself, so every letter in a thread alerts separately.</param>
     /// <param name="IsInbound">
     /// True when a correspondent wrote to the baron (notify the baron), false when the baron
     /// wrote out (notify the Game Master, who plays the correspondents).
     /// </param>
-    public sealed record BaronLetterDelivered(int ThreadId, bool IsInbound) : GameNotification
+    public sealed record BaronLetterDelivered(int ThreadId, int MessageId, bool IsInbound) : GameNotification
     {
         public override string Topic => NotificationTopic.BaronLetter;
     }
 
     /// <summary>A spoken turn was posted in an Audience Hall / Audiences thread.</summary>
     /// <param name="AudienceId">Audience that received the exchange.</param>
+    /// <param name="ExchangeId">The spoken turn itself, so every entry alerts separately.</param>
     /// <param name="IsFromPetitioner">
     /// True when the GM side spoke (petitioner / NPC / Game Master) — notify the baron.
     /// False when the baron spoke — notify the Game Master.
     /// </param>
-    public sealed record BaronAudienceExchangePosted(int AudienceId, bool IsFromPetitioner) : GameNotification
+    public sealed record BaronAudienceExchangePosted(
+        int AudienceId,
+        int ExchangeId,
+        bool IsFromPetitioner) : GameNotification
     {
         public override string Topic => NotificationTopic.BaronAudience;
     }

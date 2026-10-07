@@ -31,11 +31,17 @@ namespace DA_Models.BaronyModels
         public bool SeenByGm { get; set; } = true;
     }
 
-    /// <summary>Lightweight unread badge for the QA FAB (baron or MG, single barony).</summary>
+    /// <summary>
+    /// Unread badge for the QA FAB, counted across every barony the reader can reach — the Game Master
+    /// runs several of them and a player may hold more than one baron character.
+    /// <see cref="CharacterId"/> is the baron of <see cref="BaronyId"/>, so opening the inbox can switch
+    /// to the barony the newest question belongs to.
+    /// </summary>
     public class BaronQaInboxBadgeDTO
     {
         public int UnreadCount { get; set; }
         public int? LatestThreadId { get; set; }
-        public int BaronyId { get; set; }
+        public int? BaronyId { get; set; }
+        public int? CharacterId { get; set; }
     }
 }

@@ -63,6 +63,17 @@ namespace DA_Business.Services
         }
 
         /// <summary>
+        /// Barony pages resolve their barony from the selected character, so a link that does not name
+        /// one opens whichever barony the reader browsed last — and silently drops the thread id. Adding
+        /// the baron character lets the app switch to the right barony before rendering. Matters for a
+        /// Game Master running several baronies and for a player holding more than one baron character.
+        /// </summary>
+        private static string BaronyUrl(string path, int characterId) =>
+            characterId <= 0
+                ? path
+                : $"{path}{(path.Contains('?') ? '&' : '?')}character={characterId}";
+
+        /// <summary>
         /// The worker thread has no request culture, so restore the one captured when the event
         /// was raised. Unknown names are ignored rather than fatal.
         /// </summary>
@@ -92,14 +103,23 @@ namespace DA_Business.Services
                 from t in ctx.BaronLetterThreads.AsNoTracking()
                 join b in ctx.Baronies.AsNoTracking() on t.BaronyId equals b.Id
                 where t.Id == n.ThreadId
-                select new { t.Title, t.CorrespondentName, BaronyName = b.Name, t.BaronyId }
+                select new
+                {
+                    t.Title,
+                    t.CorrespondentName,
+                    BaronyName = b.Name,
+                    t.BaronyId,
+                    b.CharacterId,
+                }
             ).FirstOrDefaultAsync(ct);
 
             if (thread is null)
                 return null;
 
-            var url = $"/barony/letters?thread={n.ThreadId}";
-            var tag = $"baron-letter-{n.ThreadId}";
+            var url = BaronyUrl($"/barony/letters?thread={n.ThreadId}", thread.CharacterId);
+            // A tag per letter, with the thread as ThreadKey — see PlanChatMessage for why.
+            var tag = $"baron-letter-{n.ThreadId}-{n.MessageId}";
+            var threadKey = $"baron-letter-{n.ThreadId}";
             var correspondent = string.IsNullOrWhiteSpace(thread.CorrespondentName)
                 ? Loc.T("a correspondent")
                 : thread.CorrespondentName;
@@ -119,6 +139,7 @@ namespace DA_Business.Services
                         Body = thread.Title,
                         Url = url,
                         Tag = tag,
+                        ThreadKey = threadKey,
                     });
             }
 
@@ -135,6 +156,7 @@ namespace DA_Business.Services
                     Body = $"{correspondent} — {thread.Title}",
                     Url = url,
                     Tag = tag,
+                    ThreadKey = threadKey,
                 });
         }
 
@@ -153,14 +175,16 @@ namespace DA_Business.Services
                     a.PetitionerName,
                     BaronyName = b.Name,
                     a.BaronyId,
+                    b.CharacterId,
                 }
             ).FirstOrDefaultAsync(ct);
 
             if (audience is null)
                 return null;
 
-            var url = $"/barony/audience-hall?audience={n.AudienceId}";
-            var tag = $"baron-audience-{n.AudienceId}";
+            var url = BaronyUrl($"/barony/audience-hall?audience={n.AudienceId}", audience.CharacterId);
+            var tag = $"baron-audience-{n.AudienceId}-{n.ExchangeId}";
+            var threadKey = $"baron-audience-{n.AudienceId}";
             var petitioner = string.IsNullOrWhiteSpace(audience.PetitionerName)
                 ? Loc.T("a petitioner")
                 : audience.PetitionerName;
@@ -183,6 +207,7 @@ namespace DA_Business.Services
                         Body = title,
                         Url = url,
                         Tag = tag,
+                        ThreadKey = threadKey,
                     });
             }
 
@@ -199,6 +224,7 @@ namespace DA_Business.Services
                     Body = $"{petitioner} — {title}",
                     Url = url,
                     Tag = tag,
+                    ThreadKey = threadKey,
                 });
         }
 
@@ -259,13 +285,17 @@ namespace DA_Business.Services
         private async Task<Plan?> PlanTurnResolved(BaronyTurnResolved n, CancellationToken ct)
         {
             string? baronyName;
+            int characterId;
             using (var ctx = await _db.CreateDbContextAsync(ct))
             {
-                baronyName = await ctx.Baronies
+                var barony = await ctx.Baronies
                     .AsNoTracking()
                     .Where(b => b.Id == n.BaronyId)
-                    .Select(b => b.Name)
+                    .Select(b => new { b.Name, b.CharacterId })
                     .FirstOrDefaultAsync(ct);
+
+                baronyName = barony?.Name;
+                characterId = barony?.CharacterId ?? 0;
             }
 
             if (baronyName is null)
@@ -281,7 +311,8 @@ namespace DA_Business.Services
                 {
                     Title = Loc.T("Turn {0} resolved", n.TurnNumber),
                     Body = Loc.T("{0} is ready for your orders.", baronyName),
-                    Url = "/barony",
+                    Url = BaronyUrl("/barony", characterId),
+                    // One entry per barony — a newer turn replaces the previous, which is the point here.
                     Tag = $"turn-{n.BaronyId}",
                 });
         }
@@ -289,17 +320,19 @@ namespace DA_Business.Services
         private async Task<Plan?> PlanGmQuestion(GmQuestionPosted n, CancellationToken ct)
         {
             using var ctx = await _db.CreateDbContextAsync(ct);
-            var thread = await ctx.BaronQaThreads
-                .AsNoTracking()
-                .Where(t => t.Id == n.ThreadId)
-                .Select(t => new { t.Title, t.BaronyId })
-                .FirstOrDefaultAsync(ct);
+            var thread = await (
+                from t in ctx.BaronQaThreads.AsNoTracking()
+                join b in ctx.Baronies.AsNoTracking() on t.BaronyId equals b.Id
+                where t.Id == n.ThreadId
+                select new { t.Title, t.BaronyId, b.CharacterId }
+            ).FirstOrDefaultAsync(ct);
 
             if (thread is null)
                 return null;
 
-            var url = $"/barony/notes?tab=qa&thread={n.ThreadId}";
-            var tag = $"gm-question-{n.ThreadId}";
+            var url = BaronyUrl($"/barony/notes?tab=qa&thread={n.ThreadId}", thread.CharacterId);
+            var tag = $"gm-question-{n.ThreadId}-{n.MessageId}";
+            var threadKey = $"gm-question-{n.ThreadId}";
 
             if (n.FromGameMaster)
             {
@@ -316,6 +349,7 @@ namespace DA_Business.Services
                         Body = thread.Title,
                         Url = url,
                         Tag = tag,
+                        ThreadKey = threadKey,
                     });
             }
 
@@ -331,19 +365,24 @@ namespace DA_Business.Services
                     Body = thread.Title,
                     Url = url,
                     Tag = tag,
+                    ThreadKey = threadKey,
                 });
         }
 
         private async Task<Plan?> PlanBattleTurn(BattleTurnAdvanced n, CancellationToken ct)
         {
             string? baronyName;
+            int characterId;
             using (var ctx = await _db.CreateDbContextAsync(ct))
             {
-                baronyName = await ctx.Baronies
+                var barony = await ctx.Baronies
                     .AsNoTracking()
                     .Where(b => b.Id == n.BaronyId)
-                    .Select(b => b.Name)
+                    .Select(b => new { b.Name, b.CharacterId })
                     .FirstOrDefaultAsync(ct);
+
+                baronyName = barony?.Name;
+                characterId = barony?.CharacterId ?? 0;
             }
 
             if (baronyName is null)
@@ -377,7 +416,7 @@ namespace DA_Business.Services
                         : Loc.T("Your move in the battle"),
                     Body = body,
                     // One notification per battle — a newer one replaces the previous.
-                    Url = "/barony/battle-map",
+                    Url = BaronyUrl("/barony/battle-map", characterId),
                     Tag = $"battle-{n.BaronyId}",
                 });
         }

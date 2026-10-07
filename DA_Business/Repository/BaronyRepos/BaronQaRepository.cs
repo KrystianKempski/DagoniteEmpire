@@ -126,7 +126,7 @@ namespace DA_Business.Repository.BaronyRepos
 
                 // Editing an existing message is not news for the other side.
                 if (isNewMessage)
-                    _notifications.Enqueue(new GmQuestionPosted(thread.Id, e.IsFromGm));
+                    _notifications.Enqueue(new GmQuestionPosted(thread.Id, e.Id, e.IsFromGm));
 
                 return ToMessageDto(e);
             }
@@ -161,38 +161,47 @@ namespace DA_Business.Repository.BaronyRepos
             catch (Exception ex) { throw Err(ex, nameof(MarkThreadSeen)); }
         }
 
-        public async Task<BaronQaInboxBadgeDTO> GetInboxBadgeForBaron(int baronyId)
+        public async Task<BaronQaInboxBadgeDTO> GetInboxBadgeForBaron(IReadOnlyCollection<int> baronyIds)
         {
             try
             {
+                if (baronyIds is null || baronyIds.Count == 0)
+                    return new BaronQaInboxBadgeDTO();
+
                 using var ctx = await _db.CreateDbContextAsync();
-                return await LoadInboxBadgeAsync(ctx, baronyId, asGm: false);
+                return await LoadInboxBadgeAsync(ctx, baronyIds, asGm: false);
             }
             catch (Exception ex) { throw Err(ex, nameof(GetInboxBadgeForBaron)); }
         }
 
-        public async Task<BaronQaInboxBadgeDTO> GetInboxBadgeForGm(int baronyId)
+        public async Task<BaronQaInboxBadgeDTO> GetInboxBadgeForGm()
         {
             try
             {
                 using var ctx = await _db.CreateDbContextAsync();
-                return await LoadInboxBadgeAsync(ctx, baronyId, asGm: true);
+                return await LoadInboxBadgeAsync(ctx, baronyIds: null, asGm: true);
             }
             catch (Exception ex) { throw Err(ex, nameof(GetInboxBadgeForGm)); }
         }
 
+        /// <summary>
+        /// Counts unread questions / answers. A null <paramref name="baronyIds"/> means every barony,
+        /// which is what the Game Master needs — the badge must not depend on the barony last browsed.
+        /// </summary>
         private static async Task<BaronQaInboxBadgeDTO> LoadInboxBadgeAsync(
             ApplicationDbContext ctx,
-            int baronyId,
+            IReadOnlyCollection<int>? baronyIds,
             bool asGm)
         {
+            var ids = baronyIds?.ToList();
             var rows = await (
                 from m in ctx.BaronQaMessages.AsNoTracking()
                 join t in ctx.BaronQaThreads.AsNoTracking() on m.ThreadId equals t.Id
-                where t.BaronyId == baronyId
+                join b in ctx.Baronies.AsNoTracking() on t.BaronyId equals b.Id
+                where (ids == null || ids.Contains(t.BaronyId))
                     && (asGm ? !m.IsFromGm && !m.SeenByGm : m.IsFromGm && !m.SeenByBaron)
                 orderby m.CreatedAtUtc descending, m.Id descending
-                select new { m.ThreadId }
+                select new { m.ThreadId, t.BaronyId, b.CharacterId }
             ).ToListAsync();
 
             var latest = rows.FirstOrDefault();
@@ -200,7 +209,8 @@ namespace DA_Business.Repository.BaronyRepos
             {
                 UnreadCount = rows.Count,
                 LatestThreadId = latest?.ThreadId,
-                BaronyId = baronyId,
+                BaronyId = latest?.BaronyId,
+                CharacterId = latest?.CharacterId,
             };
         }
 

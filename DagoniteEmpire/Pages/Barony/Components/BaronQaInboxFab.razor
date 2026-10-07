@@ -23,9 +23,9 @@
 @code {
     private bool _visible;
     private bool _asGm;
-    private int _baronyId;
     private int _unreadCount;
     private int? _latestThreadId;
+    private int? _latestCharacterId;
     private CancellationTokenSource? _cts;
     private PeriodicTimer? _timer;
     private Task? _loop;
@@ -69,33 +69,15 @@
 
         try
         {
-            if (_baronyId <= 0)
-            {
-                var user = await _userService.GetUserInfo();
-                var characterId = user?.SelectedCharacter?.Id ?? 0;
-                if (characterId <= 0)
-                {
-                    _unreadCount = 0;
-                    StateHasChanged();
-                    return;
-                }
-
-                var barony = await _baronyRepo.GetByCharacterId(characterId);
-                if (barony is null)
-                {
-                    _unreadCount = 0;
-                    StateHasChanged();
-                    return;
-                }
-
-                _baronyId = barony.Id;
-            }
-
+            // The Game Master answers for every barony, a baron may hold more than one — neither badge
+            // may depend on the barony that happens to be selected.
             var badge = _asGm
-                ? await _qaRepo.GetInboxBadgeForGm(_baronyId)
-                : await _qaRepo.GetInboxBadgeForBaron(_baronyId);
+                ? await _qaRepo.GetInboxBadgeForGm()
+                : await _qaRepo.GetInboxBadgeForBaron(await OwnBaronyIdsAsync());
+
             _unreadCount = badge.UnreadCount;
             _latestThreadId = badge.LatestThreadId;
+            _latestCharacterId = badge.CharacterId;
 
             StateHasChanged();
         }
@@ -105,11 +87,36 @@
         }
     }
 
-    private void OpenInboxAsync()
+    /// <summary>Every barony of this account, so no owned barony's answers go unnoticed.</summary>
+    private async Task<List<int>> OwnBaronyIdsAsync()
+    {
+        var user = await _userService.GetUserInfo();
+        if (string.IsNullOrWhiteSpace(user?.UserName))
+            return new List<int>();
+
+        var baronies = await _baronyRepo.GetSummariesForUser(user.UserName);
+        return baronies.Select(b => b.Id).ToList();
+    }
+
+    private async Task OpenInboxAsync()
     {
         var url = _latestThreadId is int id
             ? $"/barony/notes?tab=qa&thread={id}"
             : "/barony/notes?tab=qa";
+
+        // The Notes page reads the selected character's barony, so switch when the newest question
+        // belongs to another one.
+        if (_latestCharacterId is int charId and > 0)
+        {
+            var user = await _userService.GetUserInfo();
+            if (user?.SelectedCharacter?.Id != charId)
+            {
+                await _userService.SetSelectedCharId(charId);
+                _nav.NavigateTo(url, forceLoad: true);
+                return;
+            }
+        }
+
         _nav.NavigateTo(url);
     }
 

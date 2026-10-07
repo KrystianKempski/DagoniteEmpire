@@ -9,7 +9,9 @@ namespace DA_Business.Repository.BaronyRepos
         Task<int> DeleteThread(int threadId);
         Task<BaronQaMessageDTO> SaveMessage(BaronQaMessageDTO dto);
         Task MarkThreadSeen(int threadId, bool asGm);
-        Task<BaronQaInboxBadgeDTO> GetInboxBadgeForBaron(int baronyId);
-        Task<BaronQaInboxBadgeDTO> GetInboxBadgeForGm(int baronyId);
+        /// <summary>Unread GM answers across the baronies this account owns.</summary>
+        Task<BaronQaInboxBadgeDTO> GetInboxBadgeForBaron(IReadOnlyCollection<int> baronyIds);
+        /// <summary>Unread player questions across every barony — the GM answers for all of them.</summary>
+        Task<BaronQaInboxBadgeDTO> GetInboxBadgeForGm();
     }
 }

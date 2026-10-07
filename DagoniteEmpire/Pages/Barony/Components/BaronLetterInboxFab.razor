@@ -4,8 +4,8 @@
 @inject IBaronyRepository _baronyRepo
 @inject NavigationManager _nav
 
-@* Hidden for the baron while the MG writes the turn — the Letters tab is closed then. *@
-@if (_visible && !_turnResolving && _unreadCount > 0)
+@* Baron badge query already skips TurnResolving baronies; a positive count means openable mail. *@
+@if (_visible && _unreadCount > 0)
 {
     <div class="baron-letter-inbox-fab">
         <MudBadge Content="@_unreadCount" Color="Color.Error" Overlap="true" Bordered="true">
@@ -23,8 +23,6 @@
 @code {
     private bool _visible;
     private bool _asGm;
-    private bool _turnResolving;
-    private int _baronyId;
     private int _unreadCount;
     private int? _latestThreadId;
     private int? _latestCharacterId;
@@ -72,50 +70,13 @@
 
         try
         {
-            if (_asGm)
-            {
-                var badge = await _baronyRepo.GetLetterInboxBadgeForGm();
-                _unreadCount = badge.UnreadCount;
-                _latestThreadId = badge.LatestThreadId;
-                _latestCharacterId = badge.CharacterId;
-                _baronyId = badge.BaronyId ?? 0;
-            }
-            else
-            {
-                BaronyDTO? barony;
-                if (_baronyId > 0)
-                {
-                    barony = await _baronyRepo.GetById(_baronyId);
-                }
-                else
-                {
-                    var user = await _userService.GetUserInfo();
-                    var characterId = user?.SelectedCharacter?.Id ?? 0;
-                    if (characterId <= 0)
-                    {
-                        _unreadCount = 0;
-                        StateHasChanged();
-                        return;
-                    }
+            var badge = _asGm
+                ? await _baronyRepo.GetLetterInboxBadgeForGm()
+                : await _baronyRepo.GetLetterInboxBadgeForBaron(await OwnBaronyIdsAsync());
 
-                    barony = await _baronyRepo.GetByCharacterId(characterId);
-                }
-
-                if (barony is null)
-                {
-                    _unreadCount = 0;
-                    StateHasChanged();
-                    return;
-                }
-
-                _baronyId = barony.Id;
-                _turnResolving = barony.TurnResolving;
-
-                var badge = await _baronyRepo.GetLetterInboxBadgeForBaron(_baronyId);
-                _unreadCount = badge.UnreadCount;
-                _latestThreadId = badge.LatestThreadId;
-                _latestCharacterId = null;
-            }
+            _unreadCount = badge.UnreadCount;
+            _latestThreadId = badge.LatestThreadId;
+            _latestCharacterId = badge.CharacterId;
 
             StateHasChanged();
         }
@@ -125,13 +86,28 @@
         }
     }
 
+    /// <summary>
+    /// Every barony of this account, so the badge counts letters the player has not read in any of
+    /// them — not only in the one whose character happens to be selected.
+    /// </summary>
+    private async Task<List<int>> OwnBaronyIdsAsync()
+    {
+        var user = await _userService.GetUserInfo();
+        if (string.IsNullOrWhiteSpace(user?.UserName))
+            return new List<int>();
+
+        var baronies = await _baronyRepo.GetSummariesForUser(user.UserName);
+        return baronies.Select(b => b.Id).ToList();
+    }
+
     private async Task OpenInboxAsync()
     {
         var url = _latestThreadId is int id
             ? $"/barony/letters?thread={id}"
             : "/barony/letters";
 
-        if (_asGm && _latestCharacterId is int charId and > 0)
+        // The newest openable letter may belong to another barony — Letters shows the selected one.
+        if (_latestCharacterId is int charId and > 0)
         {
             var user = await _userService.GetUserInfo();
             if (user?.SelectedCharacter?.Id != charId)

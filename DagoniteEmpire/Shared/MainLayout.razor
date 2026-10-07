@@ -3,6 +3,7 @@
 @inject ISnackbar _snackBar
 @inject IJSRuntime _jsRuntime
 @inject IUserService _userService
+@inject ICharacterRepository _characterRepo
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager Navigation
 @inject ChatState ChatState
@@ -109,7 +110,7 @@ MaxWidth="MaxWidth.Large" />
             }
             else
             {
-                await TryApplyChatDeepLinkAsync();
+                await TryApplyDeepLinksAsync();
             }
         }
         catch
@@ -120,7 +121,98 @@ MaxWidth="MaxWidth.Large" />
 
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
     {
-        _ = InvokeAsync(TryApplyChatDeepLinkAsync);
+        _ = InvokeAsync(TryApplyDeepLinksAsync);
+    }
+
+    private async Task TryApplyDeepLinksAsync()
+    {
+        // The barony link reloads the page once the right barony is selected, and the stripped URL
+        // comes back through LocationChanged — so the chat link gets its turn then.
+        if (await TryApplyBaronyCharacterDeepLinkAsync())
+            return;
+
+        await TryApplyChatDeepLinkAsync();
+    }
+
+    /// <summary>
+    /// Barony notifications carry <c>?character={id}</c> because barony pages read their barony from
+    /// the selected character. Without it a Game Master running several baronies (or a player with two
+    /// baron characters) lands on whichever barony they browsed last and the thread id is dropped.
+    /// Returns true when the link was ours, so the caller stops — a switch reloads the page.
+    /// </summary>
+    private async Task<bool> TryApplyBaronyCharacterDeepLinkAsync()
+    {
+        try
+        {
+            var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+            var query = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+            if (!query.TryGetValue("character", out var raw))
+                return false;
+
+            // Always leave with the parameter gone, so a refresh cannot switch characters again.
+            var stripped = StripQueryParam(uri, "character");
+
+            if (!int.TryParse(raw.ToString(), out var characterId) || characterId <= 0)
+            {
+                Navigation.NavigateTo(stripped, replace: true);
+                return true;
+            }
+
+            var user = await _userService.GetUserInfo();
+            if (user is null || !await MaySelectCharacterAsync(user, characterId))
+            {
+                Navigation.NavigateTo(stripped, replace: true);
+                return true;
+            }
+
+            if (user.SelectedCharacter?.Id == characterId)
+            {
+                Navigation.NavigateTo(stripped, replace: true);
+                return true;
+            }
+
+            await _userService.SetSelectedCharId(characterId);
+            // Session storage holds the selection, so the target page has to be rendered afresh.
+            Navigation.NavigateTo(stripped, forceLoad: true);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// A link must not hand someone another player's character. Game Masters switch freely — that is
+    /// how they visit baronies — everyone else only to a character they own.
+    /// </summary>
+    private async Task<bool> MaySelectCharacterAsync(UserInfo user, int characterId)
+    {
+        if (user.IsAdminOrMG == true || user.Role == SD.Role_Admin || user.Role == SD.Role_GameMaster)
+            return true;
+
+        if (string.IsNullOrWhiteSpace(user.UserName))
+            return false;
+
+        var character = await _characterRepo.GetById(characterId);
+        return character.Id == characterId
+            && string.Equals(character.UserName, user.UserName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string StripQueryParam(Uri uri, string name)
+    {
+        var kept = Microsoft.AspNetCore.WebUtilities.QueryHelpers
+            .ParseQuery(uri.Query)
+            .Where(p => !string.Equals(p.Key, name, StringComparison.OrdinalIgnoreCase))
+            .SelectMany(p => p.Value.Select(v => (p.Key, Value: v)))
+            .ToList();
+
+        var path = string.IsNullOrEmpty(uri.AbsolutePath) ? "/" : uri.AbsolutePath;
+        return kept.Count == 0
+            ? path
+            : Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString(
+                path,
+                kept.Select(p => new KeyValuePair<string, string?>(p.Key, p.Value)));
     }
 
     private async Task TryApplyChatDeepLinkAsync()

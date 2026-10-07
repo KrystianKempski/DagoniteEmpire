@@ -9,6 +9,8 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<BaronyDTO?> GetByCharacterId(int characterId);
         Task<BaronyDTO?> GetById(int id);
         Task<List<BaronyListItemDTO>> GetAllSummaries();
+        /// <summary>Baronies whose baron character belongs to this account — all of them, not the selected one.</summary>
+        Task<List<BaronyListItemDTO>> GetSummariesForUser(string userName);
         Task<BaronyDTO> CreateForCharacter(int characterId, string name, string? notes = null, string? seedProfile = null);
         Task<BaronyDTO> UpdateBarony(BaronyDTO dto);
         Task<BaronyOverviewDTO?> GetOverview(int baronyId);
@@ -127,8 +129,11 @@ namespace DA_Business.Repository.CharacterReps.IRepository
         Task<int> DeleteLetterMessage(int id);
         Task MarkLetterThreadSeenByBaron(int threadId);
         Task MarkLetterThreadSeenByGm(int threadId);
-        /// <summary>Unread inbound letters for the baron of this barony.</summary>
-        Task<BaronLetterInboxBadgeDTO> GetLetterInboxBadgeForBaron(int baronyId);
+        /// <summary>
+        /// Unread inbound letters across the baronies this account owns. Baronies with
+        /// <c>TurnResolving</c> are omitted — the Letters tab is closed there for the player.
+        /// </summary>
+        Task<BaronLetterInboxBadgeDTO> GetLetterInboxBadgeForBaron(IReadOnlyCollection<int> baronyIds);
         /// <summary>Unread outbound (baron→) letters across all baronies — for MG/Admin FAB.</summary>
         Task<BaronLetterInboxBadgeDTO> GetLetterInboxBadgeForGm();
 
