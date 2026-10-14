@@ -7399,6 +7399,7 @@ button.court-duty-name--editable:hover {
 
 /* ---- Bottom "Barony Tabs" bar (Excel-like tabs) ---- */
 .barony-tabbar {
+    --barony-tabbar-chrome-height: 40px;
     position: fixed;
     left: 0;
     right: 0;
@@ -7408,11 +7409,48 @@ button.court-duty-name--editable:hover {
     align-items: stretch;
     gap: 2px;
     padding: 0 8px;
-    height: 40px;
+    height: var(--barony-tabbar-chrome-height);
     background: var(--barony-surface-2);
     border-top: 2px solid var(--barony-border-strong);
     overflow-x: auto;
     box-shadow: 0 -2px 6px rgba(47, 42, 36, 0.12);
+}
+
+/* Wide desktop: tabs fit without horizontal scroll. Classic scrollbars leave an
+   empty strip under the tabs once they disappear (~2070px for the full tab set);
+   shrink the chrome and drop overflow so that strip is gone. */
+@media (min-width: 2070px) {
+    .barony-tabbar:not(.barony-tabbar--mobile) {
+        --barony-tabbar-chrome-height: 32px;
+        overflow-x: hidden;
+    }
+}
+
+/* HudTip wrappers are the flex items; stretch them so tabs meet the bar bottom
+   whenever a classic scrollbar is not taking layout space. */
+.barony-tabbar > .barony-hud-tip {
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    min-width: 0;
+}
+
+.barony-tabbar > .barony-hud-tip > .barony-tabbar__tab {
+    height: 100%;
+    box-sizing: border-box;
+}
+
+/* Open above the fixed bottom bar (default HUD tips open downward). */
+.barony-tabbar .barony-hud-tip__popup {
+    top: auto;
+    bottom: calc(100% + 6px);
+    z-index: 1600;
+}
+
+/* Hide tips while reordering — avoids covering drop targets. */
+.barony-tabbar--dragging .barony-hud-tip__popup {
+    visibility: hidden !important;
+    opacity: 0 !important;
 }
 
 /* Above fixed barony tab bar (z-index 1500) and clear of its height. */
@@ -7527,7 +7565,7 @@ button.court-duty-name--editable:hover {
 .barony-tabbar__more-panel {
     position: fixed;
     right: 6px;
-    bottom: calc(40px + env(safe-area-inset-bottom, 0px) + 6px);
+    bottom: calc(var(--barony-tabbar-chrome-height, 40px) + env(safe-area-inset-bottom, 0px) + 6px);
     z-index: 1600;
     display: flex;
     flex-direction: column;
@@ -11440,18 +11478,7 @@ button.artifact-location-btn {
     }
 }
 
-.baron-audience__ppb-delta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem 0.55rem;
-    margin-top: 0.25rem;
-    font-size: 0.85rem;
-    font-weight: 600;
-}
-
-.baron-audience__ppb-delta-item {
-    white-space: nowrap;
-}
+/* Resource-change chips: shared .audience-delta-chip (Hall + classic panel). */
 
 .baron-audience__exchange-head {
     display: flex;
@@ -13814,13 +13841,28 @@ button.artifact-location-btn {
     white-space: pre-wrap;
 }
 
-.audience-scroll__delta {
+.audience-scroll__delta,
+.baron-audience__ppb-delta {
     display: flex;
     flex-wrap: wrap;
-    gap: .4rem .7rem;
+    gap: .35rem .65rem;
     margin-top: .35rem;
-    font-size: .85rem;
-    color: #6b542e;
+    font-size: .9rem;
+    font-weight: 600;
+}
+
+.audience-delta-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.28rem;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+.audience-delta-chip .barony-res-icon,
+.audience-delta-chip .php-metric-icon {
+    width: 0.9rem;
+    height: 0.9rem;
 }
 
 /* Docked reply composer — collapsed pill by default, expands on click,

@@ -202,7 +202,24 @@ window.uploadEllipseIcon = async (sourceCanvas, folder) => {
     return await window.uploadPortraitDataUrl(dataUrl, folder);
 };
 
-/** Pick Mud Placement so a ~22rem tooltip stays in the viewport. Prefers Right. */
+/** Sync HTML5 drag payload for barony tabs (Blazor Server is too late for setData). */
+if (!window.__baronyTabDragStartBound) {
+    window.__baronyTabDragStartBound = true;
+    document.addEventListener('dragstart', function (e) {
+        var t = e.target && e.target.closest && e.target.closest('.barony-tabbar__tab[data-tab-key]');
+        if (!t || !e.dataTransfer)
+            return;
+        try {
+            e.dataTransfer.setData('text/plain', t.getAttribute('data-tab-key') || 'tab');
+            e.dataTransfer.effectAllowed = 'move';
+        } catch (_) { /* ignore */ }
+    }, true);
+}
+
+/** Pick Mud Placement so a ~22rem tooltip stays in the viewport. Prefers Right.
+ *  Left/Right tips are vertically centered on the anchor — reject them when that
+ *  would spill past the viewport (e.g. bottom tab bar), or the page grows a
+ *  vertical scrollbar and shifts layout. */
 window.baronyPickTooltipPlacement = function (el, preferred) {
     if (!el || typeof el.getBoundingClientRect !== 'function') {
         return preferred || 'Right';
@@ -221,19 +238,31 @@ window.baronyPickTooltipPlacement = function (el, preferred) {
     };
     const need = { Right: needW, Left: needW, Bottom: needH, Top: needH };
     const pref = preferred || 'Right';
+    const midY = (r.top + r.bottom) / 2;
 
-    if ((space[pref] ?? 0) >= (need[pref] ?? needW)) {
+    function fits(side) {
+        if ((space[side] ?? 0) < (need[side] ?? needW)) {
+            return false;
+        }
+        // Side placements center vertically on the anchor.
+        if (side === 'Right' || side === 'Left') {
+            return (midY - needH / 2) >= 0 && (midY + needH / 2) <= vh;
+        }
+        return true;
+    }
+
+    if (fits(pref)) {
         return pref;
     }
 
-    const order = ['Right', 'Left', 'Bottom', 'Top'];
+    const order = ['Right', 'Left', 'Top', 'Bottom'];
     for (const side of order) {
-        if ((space[side] ?? 0) >= (need[side] ?? needW)) {
+        if (fits(side)) {
             return side;
         }
     }
 
-    return order.slice().sort((a, b) => (space[b] ?? 0) - (space[a] ?? 0))[0] || 'Right';
+    return order.slice().sort((a, b) => (space[b] ?? 0) - (space[a] ?? 0))[0] || 'Top';
 };
 
 /** Hide an open BaronyTooltip when the user scrolls (capture phase). */

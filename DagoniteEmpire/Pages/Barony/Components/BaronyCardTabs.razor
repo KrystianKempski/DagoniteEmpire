@@ -12,7 +12,7 @@
 @inject CallbackService _callbackService
 @inject IJSRuntime _js
 
-<nav class="barony-tabbar @(!UseDesktopTabChrome ? "barony-tabbar--mobile" : "")"
+<nav class="barony-tabbar @(!UseDesktopTabChrome ? "barony-tabbar--mobile" : "") @(_dragKey != null ? "barony-tabbar--dragging" : "")"
      aria-label="@(L["Barony tabs"])"
      @ondragover="OnNavDragOver"
      @ondragover:preventDefault>
@@ -91,13 +91,15 @@
     {
         var key = tab.Key;
         var locked = IsTabLocked(key);
+        // CSS HudTip (not Mud BaronyTooltip): Mud re-renders on hover/leave and aborts HTML5 drag.
         var tip = locked
             ? L["Closed while the Game Master resolves the turn"].Value
             : (tipReorder ? L["Hold and drag to reorder"].Value : null);
-        <BaronyTooltip Text="@tip">
+        <BaronyHudTip Text="@tip" SuppressOnPress="false">
         <div role="link"
              tabindex="0"
-             draggable="@UseDesktopTabChrome"
+             draggable="@(UseDesktopTabChrome ? "true" : "false")"
+             data-tab-key="@key"
              class="barony-tabbar__tab @(IsActive(tab.Href) ? "barony-tabbar__tab--active" : "") @(locked ? "barony-tabbar__tab--locked" : "") @(BaronyMobile.IsAllowedTab(key) ? "barony-tabbar__tab--mobile-ok" : "") @(key == "audience-hall" ? "barony-tabbar__tab--audience-hall" : "") @(_dragKey == key ? "barony-tabbar__tab--dragging" : "") @(_dropTargetKey == key ? "barony-tabbar__tab--drop-target" : "")"
              @ondragstart="e => OnDragStart(e, key)"
              @ondragenter="e => OnDragEnter(e, key)"
@@ -130,7 +132,7 @@
                 <span class="barony-tabbar__badge">@_hallEventPendingCount</span>
             }
         </div>
-        </BaronyTooltip>
+        </BaronyHudTip>
     };
 
     private sealed record TabItem(string Key, string Label, string Href, string? Icon = null, string? SvgIcon = null);
@@ -497,7 +499,9 @@
         _lastHoverKey = null;
         _orderChanged = false;
         _suppressNextClick = false;
-        e.DataTransfer.EffectAllowed = "move";
+        try { e.DataTransfer.EffectAllowed = "move"; }
+        catch { /* DataTransfer may be locked after sync JS setData; ignore. */ }
+        StateHasChanged();
     }
 
     private void OnNavDragOver(DragEventArgs e)

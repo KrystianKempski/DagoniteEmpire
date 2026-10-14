@@ -4,6 +4,22 @@
 {
     @ChildContent
 }
+else if (!SuppressOnPress)
+{
+    @* No pointer handlers — safe around HTML5 draggable children (tab bar). *@
+    <div class="barony-hud-tip @AlignClass">
+        @ChildContent
+        <div class="barony-hud-tip__popup" role="tooltip">
+            <div class="barony-tip__box">
+                @if (!string.IsNullOrWhiteSpace(Title))
+                {
+                    <div class="barony-tip__title">@Title</div>
+                }
+                <div class="barony-tip__body">@Text</div>
+            </div>
+        </div>
+    </div>
+}
 else
 {
     <div class="barony-hud-tip @AlignClass @(_suppressed ? "barony-hud-tip--suppressed" : null)"
@@ -28,6 +44,11 @@ else
     [Parameter] public string? Text { get; set; }
     /// <summary>Popup alignment: Start (left), Center, End (right).</summary>
     [Parameter] public HudTipAlign Align { get; set; } = HudTipAlign.Center;
+    /// <summary>
+    /// When true (default), hide the tip on pointerdown so :hover does not stick over dialogs.
+    /// Set false for HTML5-draggable chrome — a Blazor re-render on pointerdown aborts the drag.
+    /// </summary>
+    [Parameter] public bool SuppressOnPress { get; set; } = true;
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     private bool _suppressed;

@@ -185,6 +185,10 @@
                                     {
                                         <span class="audience-hall__badge audience-hall__badge--hall-event">!</span>
                                     }
+                                    else if (item.Kind == OrbitItemKind.Audience && item.IsClosed)
+                                    {
+                                        <span class="audience-hall__badge audience-hall__badge--complete" title="@L["Resolved"]">✓</span>
+                                    }
                                     else if (item.Kind == OrbitItemKind.Audience && item.NeedsAttention)
                                     {
                                         <span class="audience-hall__badge audience-hall__badge--flag">!</span>
@@ -210,6 +214,10 @@
                                     @if (item.Kind == OrbitItemKind.HallEvent && item.NeedsAttention)
                                     {
                                         <span class="audience-hall__badge audience-hall__badge--hall-event">!</span>
+                                    }
+                                    else if (item.Kind == OrbitItemKind.Audience && item.IsClosed)
+                                    {
+                                        <span class="audience-hall__badge audience-hall__badge--complete" title="@L["Resolved"]">✓</span>
                                     }
                                     else if (item.Kind == OrbitItemKind.Audience && item.NeedsAttention)
                                     {
@@ -256,6 +264,10 @@
                                                         @if (item.Kind == OrbitItemKind.HallEvent && item.NeedsAttention)
                                                         {
                                                             <span class="audience-hall__badge audience-hall__badge--hall-event audience-hall__badge--inline">!</span>
+                                                        }
+                                                        else if (item.Kind == OrbitItemKind.Audience && item.IsClosed)
+                                                        {
+                                                            <span class="audience-hall__badge audience-hall__badge--complete audience-hall__badge--inline" title="@L["Resolved"]">✓</span>
                                                         }
                                                         else if (item.Kind == OrbitItemKind.Audience && item.NeedsAttention)
                                                         {
@@ -371,6 +383,8 @@
                             <AudiencePanel @key="CurrentAudience.Id"
                                            Audience="CurrentAudience"
                                            HallLayout="true"
+                                           ReadOnly="CurrentAudience.IsClosed"
+                                           ShowSummary="CurrentAudience.IsClosed"
                                            CanWriteAsGm="CanWriteAsGm"
                                            CanWriteAsBaron="CanWriteAsBaron"
                                            BaronCharacterName="@BaronCharacterName"
@@ -457,7 +471,7 @@
     /// <summary>One orbit icon per open council topic (advisor or baron).</summary>
     private sealed record CouncilTopicSatellite(int Id, string Icon, string Label, string Title, bool NeedsAttention);
 
-    private sealed record PetitionerSatellite(int Id, string Icon, string Label, bool NeedsAttention);
+    private sealed record PetitionerSatellite(int Id, string Icon, string Label, bool NeedsAttention, bool IsClosed);
 
     private sealed record OrbitSatellite(
         OrbitItemKind Kind,
@@ -465,7 +479,8 @@
         string Icon,
         string Label,
         bool NeedsAttention,
-        bool IsScheduled);
+        bool IsScheduled,
+        bool IsClosed = false);
 
     private sealed record AdventureSatellite(int Id, string Icon, string Label, string LinkUrl);
 
@@ -498,17 +513,25 @@
     private bool ShouldPresentHallEventsToBaron =>
         CanWriteAsBaron || (CanManageAsMg && IsViewingAsBaronCharacter);
 
-    // All open audiences (baron may have already replied) — shown as icons around the throne.
+    /// <summary>
+    /// Hall orbit / parchment: open audiences, plus Resolved/Dismissed that still belong
+    /// to the current turn (they leave the hall when the turn advances).
+    /// </summary>
     private IReadOnlyList<BaronAudienceDTO> ActiveAudiences =>
         _audiences
-            .Where(a => BaronAudienceKind.IsAudience(a.Kind) && a.IsActive)
+            .Where(ShowsInAudienceHall)
             .OrderBy(a => a.TurnNumber)
             .ThenBy(a => a.Id)
             .ToList();
 
+    private bool ShowsInAudienceHall(BaronAudienceDTO a) =>
+        BaronAudienceKind.IsAudience(a.Kind)
+        && (a.IsActive || (a.IsClosed && a.TurnNumber == (Barony?.TurnNumber ?? 0)));
+
     // Subset still waiting on a reply — badge on throne icons.
     private IReadOnlyList<BaronAudienceDTO> PendingAudiences =>
         ActiveAudiences
+            .Where(a => a.IsActive)
             .Where(AudienceNeedsAttention)
             .ToList();
 
@@ -517,13 +540,16 @@
     /// waiting on a reply from the viewing side (not total open topics).
     /// </summary>
     private IReadOnlyList<BaronAudienceDTO> PendingAudiencesForTileBadge =>
-        ActiveAudiences.Where(TopicNeedsTileBadge).ToList();
+        ActiveAudiences.Where(a => a.IsActive).Where(TopicNeedsTileBadge).ToList();
 
     private IReadOnlyList<BaronAudienceDTO> PendingCouncilTopicsForTileBadge =>
         OpenCouncilTopics.Where(TopicNeedsTileBadge).ToList();
 
     private bool AudienceNeedsAttention(BaronAudienceDTO a)
     {
+        if (a.IsClosed)
+            return false;
+
         // Ignore resource / project / chapter notes — only spoken turns decide whose move it is
         // (same idea as letters: once you replied, the badge goes away).
         var last = LastSpeakableExchange(a);
@@ -653,10 +679,11 @@
                 a.Id,
                 PetitionerIconCatalog.PathFor(a.PetitionerIcon),
                 AudienceOrbitLabel(a),
-                AudienceNeedsAttention(a)))
-            // Needs-attention (yellow badge) topics stay visible; already-answered ones sink
-            // toward the "More" overflow first when there isn't room for every icon.
+                AudienceNeedsAttention(a),
+                a.IsClosed))
+            // Needs-attention first; finished sink toward "More" when the orbit is full.
             .OrderByDescending(p => p.NeedsAttention)
+            .ThenBy(p => p.IsClosed)
             .ToList();
 
     /// <summary>Only this many icons fit comfortably around the throne. The "More" tile itself
@@ -690,7 +717,8 @@
                 p.Icon,
                 p.Label,
                 p.NeedsAttention,
-                IsScheduled: false)))
+                IsScheduled: false,
+                IsClosed: p.IsClosed)))
             .ToList();
 
     private bool HasOrbitOverflow => OrbitSatellites.Count > MaxVisibleOrbitItems;
@@ -1045,16 +1073,27 @@
             return cls;
         }
 
-        return CurrentAudience?.Id == item.Id ? "is-on" : "";
+        var audienceCls = CurrentAudience?.Id == item.Id ? "is-on" : "";
+        if (item.IsClosed)
+            audienceCls = string.IsNullOrEmpty(audienceCls)
+                ? "audience-hall__advisor--completed"
+                : audienceCls + " audience-hall__advisor--completed";
+        return audienceCls;
     }
 
-    private string OrbitMoreItemClass(OrbitSatellite item) =>
-        item.Kind == OrbitItemKind.HallEvent ? "audience-hall__more-item--hall-event" : "";
+    private string OrbitMoreItemClass(OrbitSatellite item)
+    {
+        if (item.Kind == OrbitItemKind.HallEvent)
+            return "audience-hall__more-item--hall-event";
+        return item.IsClosed ? "audience-hall__more-item--completed" : "";
+    }
 
     private string OrbitItemTitle(OrbitSatellite item) =>
         item.Kind == OrbitItemKind.HallEvent
             ? $"{L["Hall event"]}: {item.Label}"
-            : item.Label;
+            : item.IsClosed
+                ? $"{item.Label} ({L["Resolved"]})"
+                : item.Label;
 
     private void OpenAdventure(AdventureSatellite adventure)
     {

@@ -66,28 +66,7 @@
                             && ((x.Additive is not null && !x.Additive.IsEmpty) || x.HasPhp))
                         {
                             <div class="audience-scroll__delta">
-                                @if (x.Additive is not null && !x.Additive.IsEmpty)
-                                {
-                                    @foreach (var info in PpbCatalog.All)
-                                    {
-                                        var v = x.Additive[info.Key];
-                                        if (v == 0m)
-                                            continue;
-                                        <span>@PpbFormat.Additive(v) @info.Short</span>
-                                    }
-                                }
-                                @if (x.Prestige != 0)
-                                {
-                                    <span>@FmtPhp(x.Prestige) @L["Prestige"]</span>
-                                }
-                                @if (x.Honor != 0)
-                                {
-                                    <span>@FmtPhp(x.Honor) @L["Honor"]</span>
-                                }
-                                @if (x.Fear != 0)
-                                {
-                                    <span>@FmtPhp(x.Fear) @L["Fear"]</span>
-                                }
+                                @RenderResourceChangeDelta(x)
                             </div>
                         }
                     </div>
@@ -350,36 +329,7 @@ else
                             && ((x.Additive is not null && !x.Additive.IsEmpty) || x.HasPhp))
                         {
                             <div class="baron-audience__ppb-delta">
-                                @if (x.Additive is not null && !x.Additive.IsEmpty)
-                                {
-                                    @foreach (var info in PpbCatalog.All)
-                                    {
-                                        var v = x.Additive[info.Key];
-                                        if (v == 0m)
-                                            continue;
-                                        <span class="baron-audience__ppb-delta-item @PpbCellStyle.ValueClass(info.Key, v)">
-                                            @PpbFormat.Additive(v) @info.Short
-                                        </span>
-                                    }
-                                }
-                                @if (x.Prestige != 0)
-                                {
-                                    <span class="baron-audience__ppb-delta-item php-metric--prestige">
-                                        @FmtPhp(x.Prestige) @L["Prestige"]
-                                    </span>
-                                }
-                                @if (x.Honor != 0)
-                                {
-                                    <span class="baron-audience__ppb-delta-item php-metric--honor">
-                                        @FmtPhp(x.Honor) @L["Honor"]
-                                    </span>
-                                }
-                                @if (x.Fear != 0)
-                                {
-                                    <span class="baron-audience__ppb-delta-item php-metric--fear">
-                                        @FmtPhp(x.Fear) @L["Fear"]
-                                    </span>
-                                }
+                                @RenderResourceChangeDelta(x)
                             </div>
                         }
                     </div>
@@ -1022,6 +972,44 @@ else
         await OnSpeak.InvokeAsync(new SpeakRequest(text, isGm, speaker));
         _draft = "";
     }
+
+    private RenderFragment RenderResourceChangeDelta(BaronAudienceExchangeDTO x) => __builder =>
+    {
+        if (x.Additive is not null && !x.Additive.IsEmpty)
+        {
+            foreach (var info in PpbCatalog.All)
+            {
+                var v = x.Additive[info.Key];
+                if (v == 0m)
+                    continue;
+                <span class="audience-delta-chip @PpbCellStyle.ValueClass(info.Key, v)">
+                    <span>@PpbFormat.Additive(v) @info.Short</span>
+                    <BaronyResourceIcon Resource="@info.Key" Size="xs" />
+                </span>
+            }
+        }
+        if (x.Prestige != 0)
+        {
+            <span class="audience-delta-chip @PpbCellStyle.ValueClassStandard(x.Prestige)">
+                <span>@FmtPhp(x.Prestige) @L["Prestige"]</span>
+                <PhpMetricIcon Metric="PhpMetric.Prestige" Title="" />
+            </span>
+        }
+        if (x.Honor != 0)
+        {
+            <span class="audience-delta-chip @PpbCellStyle.ValueClassStandard(x.Honor)">
+                <span>@FmtPhp(x.Honor) @L["Honor"]</span>
+                <PhpMetricIcon Metric="PhpMetric.Honor" Title="" />
+            </span>
+        }
+        if (x.Fear != 0)
+        {
+            <span class="audience-delta-chip @PpbCellStyle.ValueClassStandard(x.Fear)">
+                <span>@FmtPhp(x.Fear) @L["Fear"]</span>
+                <PhpMetricIcon Metric="PhpMetric.Fear" Title="" />
+            </span>
+        }
+    };
 
     private static string FmtPhp(int v) => v == 0 ? "·" : (v > 0 ? $"+{v}" : v.ToString());
 }
