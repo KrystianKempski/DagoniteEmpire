@@ -2178,6 +2178,26 @@ button.barony-meta-bar__stat--clickable:focus-visible {
     }
 }
 
+/* ---- Fixed HUD stack (skill roll left of resources), top-right ---- */
+.barony-hud-stack {
+    position: fixed;
+    top: 70px;
+    right: 12px;
+    z-index: 1051; /* below MudAppBar / MudMenu popovers (login & character selector) */
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    width: max-content;
+    max-width: calc(100vw - 24px);
+    pointer-events: none;
+}
+
+.barony-hud-stack > * {
+    pointer-events: auto;
+}
+
 /* ---- Global cumulative resource HUD (game-style, top-right) ---- */
 .barony-resource-hud {
     --res-food: #6bcf75;
@@ -2193,17 +2213,14 @@ button.barony-meta-bar__stat--clickable:focus-visible {
     --res-intelligence: #c4b8d8;
     --res-defense: #a8b0bc;
     --res-gold: #f0d060;
-    position: fixed;
-    top: 70px;
-    right: 12px;
-    z-index: 1051; /* below MudAppBar / MudMenu popovers (login & character selector) */
+    position: static;
     display: flex;
     flex-wrap: nowrap;
     justify-content: flex-end;
     align-items: stretch;
     gap: 2px;
     width: max-content;
-    max-width: calc(100vw - 24px);
+    max-width: 100%;
     padding: 4px 6px;
     border-radius: 10px;
     overflow: visible;
@@ -2212,6 +2229,125 @@ button.barony-meta-bar__stat--clickable:focus-visible {
     box-shadow:
         0 2px 10px rgba(0, 0, 0, 0.45),
         inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.barony-roll-hud {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+}
+
+.barony-roll-hud__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.85rem;
+    height: 2.85rem;
+    margin: 0;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(120, 28, 28, 0.55);
+    background: linear-gradient(180deg, #c23b3b 0%, #8e1f1f 100%);
+    box-shadow:
+        0 3px 12px rgba(80, 12, 12, 0.45),
+        inset 0 1px 0 rgba(255, 220, 220, 0.22);
+    cursor: pointer;
+}
+
+.barony-roll-hud__btn:hover,
+.barony-roll-hud__btn:focus-visible {
+    background: linear-gradient(180deg, #d44848 0%, #a02424 100%);
+    border-color: rgba(160, 40, 40, 0.7);
+    outline: none;
+}
+
+.barony-roll-hud__icon {
+    width: 1.45rem;
+    height: 1.45rem;
+    object-fit: contain;
+    display: block;
+    filter: brightness(0) invert(0.96);
+    pointer-events: none;
+}
+
+.barony-skill-roll-dialog {
+    min-width: min(92vw, 36rem);
+}
+
+.barony-skill-roll-dialog__cols {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    align-items: start;
+}
+
+.barony-skill-roll-dialog__col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1px solid var(--barony-border, #d9cfb8);
+    border-radius: 4px;
+    background: var(--barony-surface, #fbf8f1);
+}
+
+.barony-skill-roll-dialog__section-label {
+    color: var(--barony-muted, #6f6656);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+}
+
+.barony-skill-roll-dialog__bonus-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.barony-skill-roll-dialog__bonus-row {
+    display: grid;
+    grid-template-columns: 1fr 5.5rem;
+    gap: 8px;
+    align-items: start;
+}
+
+.barony-skill-roll-dialog__bonus-num {
+    max-width: 5.5rem;
+}
+
+.barony-skill-roll-dialog__roll-row {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.barony-skill-roll-preview {
+    padding: 12px 14px;
+    border: 1px solid var(--barony-border, #d9cfb8);
+    border-radius: 4px;
+    background: var(--barony-surface-2, #f0ead9);
+    color: var(--barony-ink, #2f2a24);
+    font-size: 0.92rem;
+    line-height: 1.45;
+}
+
+.barony-skill-roll-preview blockquote,
+.barony-skill-roll-preview div {
+    margin: 0;
+    background: transparent !important;
+    color: inherit !important;
+}
+
+@media (max-width: 720px) {
+    .barony-skill-roll-dialog {
+        min-width: 0;
+    }
+
+    .barony-skill-roll-dialog__cols {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* display:contents on desktop = a transparent pass-through, items lay out directly in the
@@ -2298,15 +2434,22 @@ button.barony-meta-bar__stat--clickable:focus-visible {
 .barony-resource-hud__item--gold { --res-accent: var(--res-gold); }
 
 @media (max-width: 1279.98px) {
-    /* Collapsed to a small round toggle; tapping it drops down a vertical resource list
-       instead of the desktop's always-visible horizontal row. */
-    .barony-resource-hud {
+    /* Stack sits above bottom FABs; resources collapse to a round toggle. */
+    .barony-hud-stack {
         top: auto;
         bottom: 72px;
         right: 8px;
         left: auto;
         width: auto;
         max-width: calc(100vw - 16px);
+        flex-direction: row;
+        align-items: flex-end;
+        gap: 8px;
+    }
+
+    /* Collapsed to a small round toggle; tapping it drops down a vertical resource list
+       instead of the desktop's always-visible horizontal row. */
+    .barony-resource-hud {
         flex-direction: column;
         align-items: flex-end;
         gap: 0;
@@ -2315,6 +2458,19 @@ button.barony-meta-bar__stat--clickable:focus-visible {
         border: none;
         box-shadow: none;
         overflow: visible;
+        width: auto;
+        max-width: 100%;
+    }
+
+    .barony-roll-hud__btn {
+        width: 3.1rem;
+        height: 3.1rem;
+        box-shadow: 0 4px 14px rgba(80, 12, 12, 0.4);
+    }
+
+    .barony-roll-hud__icon {
+        width: 1.55rem;
+        height: 1.55rem;
     }
 
     .barony-resource-hud__toggle {

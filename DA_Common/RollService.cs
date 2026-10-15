@@ -17,6 +17,9 @@ public static class RollService
     /// <summary>Override for unit tests: returns three d6 values.</summary>
     internal static Func<(int D1, int D2, int D3)>? TestDiceOverride { get; set; }
 
+    /// <summary>Override for unit tests: returns a single d20 value.</summary>
+    internal static Func<int>? TestD20Override { get; set; }
+
     public static bool IsCriticalSuccess(int diceSum) =>
         diceSum is >= CriticalSuccessMin and <= CriticalSuccessMax;
 
@@ -42,6 +45,18 @@ public static class RollService
     public static RollCheckResult MakeRollTest(int dc, int skill)
     {
         var roll = RollDice();
+        return FormatDcCheck(dc, skill, roll);
+    }
+
+    /// <summary>Same DC scale as <see cref="MakeRollTest"/>: skill + d20 &gt;= DC.</summary>
+    public static RollCheckResult MakeRollTestD20(int dc, int skill)
+    {
+        var roll = RollD20();
+        return FormatDcCheck(dc, skill, roll);
+    }
+
+    private static RollCheckResult FormatDcCheck(int dc, int skill, DiceRoll roll)
+    {
         var total = skill + roll.Sum;
         var success = total >= dc;
         var outcome = success ? Loc.T("Success!") : Loc.T("Fail!");
@@ -104,7 +119,7 @@ public static class RollService
     /// <summary>Single d20: 1–20.</summary>
     public static DiceRoll RollD20()
     {
-        var roll = Random.Shared.Next(1, 21);
+        var roll = TestD20Override?.Invoke() ?? Random.Shared.Next(1, 21);
         return new DiceRoll(roll, $"(d20: {roll})");
     }
 

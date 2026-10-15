@@ -19,7 +19,10 @@
         @if (IsMarchMap || IsBattleMap)
         {
             <div class="barony-scope-body--fill">
-                <BaronyResourceHud />
+                <div class="barony-hud-stack">
+                    <BaronyRollHud />
+                    <BaronyResourceHud />
+                </div>
                 @Body
                 <AuthorizeView Roles="@(SD.Role_DukePlayer + "," + SD.Role_Admin + "," + SD.Role_GameMaster)">
                     <Authorized>
@@ -36,7 +39,10 @@
         }
         else
         {
-            <BaronyResourceHud />
+            <div class="barony-hud-stack">
+                <BaronyRollHud />
+                <BaronyResourceHud />
+            </div>
             @Body
             <AuthorizeView Roles="@(SD.Role_DukePlayer + "," + SD.Role_Admin + "," + SD.Role_GameMaster)">
                 <Authorized>

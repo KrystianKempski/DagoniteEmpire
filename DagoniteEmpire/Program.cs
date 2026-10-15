@@ -190,6 +190,7 @@ public class Program
         builder.Services.AddScoped<IBaronyLogService, BaronyLogService>();
         builder.Services.AddScoped<IUserService, UserService>();
         builder.Services.AddScoped<IDemoBaronyService, DemoBaronyService>();
+        builder.Services.AddScoped<DagoniteEmpire.Pages.Barony.BaronyRollRoster>();
         builder.Services.AddHostedService<DemoSessionSweeper>();
         builder.Services.AddScoped<ICampaignSummaryService, CampaignSummaryService>();
         builder.Services.AddScoped<CallbackService>();

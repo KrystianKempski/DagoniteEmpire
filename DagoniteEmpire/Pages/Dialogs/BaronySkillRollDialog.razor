@@ -1,0 +1,312 @@
+@using System.Text.RegularExpressions
+@using DA_Models.ComponentModels
+@using MudBlazor
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@inject BaronyRollRoster _roster
+
+<MudDialog Class="baron-influence-dialog"
+           ContentClass="baron-influence-dialog-content"
+           ActionsClass="baron-influence-dialog-actions">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@L["Skill roll"]</MudText>
+    </TitleContent>
+    <DialogContent>
+        <div class="barony-dialog-theme baron-influence-edit-dialog barony-skill-roll-dialog">
+            @if (_loading)
+            {
+                <MudProgressLinear Indeterminate="true" Color="Color.Primary" Class="mb-1" />
+                <MudText Typo="Typo.caption" Style="color:var(--barony-muted);">@L["Loading…"]</MudText>
+            }
+            else if (_characters.Count == 0)
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true" Variant="Variant.Outlined">
+                    @L["No campaign found for this baron. Create a barony campaign first."]
+                </MudAlert>
+            }
+            else
+            {
+                <div class="barony-skill-roll-dialog__cols">
+                    <div class="barony-skill-roll-dialog__col">
+                        <MudText Typo="Typo.caption" Class="barony-skill-roll-dialog__section-label">
+                            @L["Select Rolling character"]
+                        </MudText>
+
+                        <MudSelect T="string"
+                                   Value="@_rollerName"
+                                   ValueChanged="SelectCharacter"
+                                   Required="true"
+                                   Label="@(L["Select Rolling character"])"
+                                   Variant="Variant.Outlined"
+                                   Margin="Margin.Dense"
+                                   Dense="true"
+                                   Class="baron-influence-field">
+                            <MudSelectItem Value="@string.Empty">@string.Empty</MudSelectItem>
+                            @foreach (var character in _characters)
+                            {
+                                var name = character.Character.NPCName;
+                                <MudSelectItem Value="@name">@name</MudSelectItem>
+                            }
+                        </MudSelect>
+
+                        <MudSelect ReadOnly="_selected is null"
+                                   T="string"
+                                   Required="true"
+                                   @bind-Value="_baseSkillName"
+                                   Label="@(L["Select base skill"])"
+                                   Variant="Variant.Outlined"
+                                   Margin="Margin.Dense"
+                                   Dense="true"
+                                   Class="baron-influence-field">
+                            @foreach (var baseSkill in SD.BaseSkills.All)
+                            {
+                                <MudSelectItem Value="@baseSkill">@baseSkill</MudSelectItem>
+                            }
+                        </MudSelect>
+
+                        <MudSelect ReadOnly="_baseSkillName == string.Empty || _selected is null"
+                                   T="SpecialSkillDTO"
+                                   Required="true"
+                                   @bind-Value="_specialSkill"
+                                   Label="@(L["Select special skill"])"
+                                   Variant="Variant.Outlined"
+                                   Margin="Margin.Dense"
+                                   Dense="true"
+                                   Class="baron-influence-field">
+                            @if (_baseSkillName != string.Empty && _selected is not null)
+                            {
+                                @foreach (var skill in _selected.SpecialSkills.GetAllSection(_baseSkillName))
+                                {
+                                    <MudSelectItem Value="@skill">@skill.Name</MudSelectItem>
+                                }
+                            }
+                        </MudSelect>
+
+                        <div class="barony-skill-roll-dialog__bonus-head">
+                            <MudText Typo="Typo.body2">@L["Add bonus"]</MudText>
+                            <MudButton Variant="Variant.Outlined"
+                                       Size="Size.Small"
+                                       OnClick="AddBonus">+</MudButton>
+                            <MudButton Variant="Variant.Outlined"
+                                       Size="Size.Small"
+                                       OnClick="RemoveBonus"
+                                       Disabled="_bonuses.Count == 0">−</MudButton>
+                        </div>
+                        @foreach (var item in _bonuses)
+                        {
+                            <div class="barony-skill-roll-dialog__bonus-row">
+                                <MudTextField @bind-Value="item.First"
+                                              Label="@(L["Name"])"
+                                              Variant="Variant.Outlined"
+                                              Margin="Margin.Dense"
+                                              Class="baron-influence-field" />
+                                <MudNumericField @bind-Value="item.Second"
+                                                 Label="@(L["Bonus"])"
+                                                 Variant="Variant.Outlined"
+                                                 Margin="Margin.Dense"
+                                                 Class="baron-influence-field barony-skill-roll-dialog__bonus-num" />
+                            </div>
+                        }
+                    </div>
+
+                    <div class="barony-skill-roll-dialog__col">
+                        <MudText Typo="Typo.caption" Class="barony-skill-roll-dialog__section-label">
+                            @L["Select difficulty"]
+                        </MudText>
+
+                        <MudSelect T="string"
+                                   @bind-Value="_diceMode"
+                                   Label="@(L["Dice"])"
+                                   Required="true"
+                                   Variant="Variant.Outlined"
+                                   Margin="Margin.Dense"
+                                   Dense="true"
+                                   Class="baron-influence-field">
+                            <MudSelectItem Value="@Dice3d6">3k6</MudSelectItem>
+                            <MudSelectItem Value="@DiceD20">k20</MudSelectItem>
+                        </MudSelect>
+
+                        <MudSelect T="int"
+                                   Required="true"
+                                   @bind-Value="_difficulty"
+                                   Label="@(L["Select difficulty"])"
+                                   Variant="Variant.Outlined"
+                                   Margin="Margin.Dense"
+                                   Dense="true"
+                                   Class="baron-influence-field">
+                            @foreach (var level in SD.DifficultyLevel.ToList())
+                            {
+                                <MudSelectItem Value="@level.Value">@DifficultyDisplay.Name(level.Key, L)</MudSelectItem>
+                            }
+                        </MudSelect>
+                        <MudNumericField @bind-Value="_difficulty"
+                                         Label="@(L["Custom DC"])"
+                                         Variant="Variant.Outlined"
+                                         Margin="Margin.Dense"
+                                         Min="2"
+                                         Class="baron-influence-field" />
+                    </div>
+                </div>
+
+                <div class="barony-skill-roll-dialog__roll-row">
+                    <MudButton Class="baron-influence-save-btn"
+                               Variant="Variant.Filled"
+                               OnClick="MakeRoll"
+                               Disabled="_loading">
+                        @L["Roll!"]
+                    </MudButton>
+                </div>
+
+                @if (!string.IsNullOrEmpty(_rollHtml))
+                {
+                    <div class="barony-skill-roll-preview">
+                        @((MarkupString)_rollHtml)
+                    </div>
+                }
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" OnClick="Cancel">@L["Cancel"]</MudButton>
+        <MudButton Class="baron-influence-save-btn"
+                   Variant="Variant.Filled"
+                   Disabled="string.IsNullOrEmpty(_rollHtml)"
+                   OnClick="CopyAsync">
+            @L["Copy"]
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private const string Dice3d6 = "3k6";
+    private const string DiceD20 = "k20";
+
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; } = default!;
+    [Parameter] public BaronyDTO Barony { get; set; } = new();
+
+    private bool _loading = true;
+    private IReadOnlyList<AllParamsModel> _characters = Array.Empty<AllParamsModel>();
+    private AllParamsModel? _selected;
+    private string _rollerName = string.Empty;
+    private string _baseSkillName = string.Empty;
+    private SpecialSkillDTO? _specialSkill;
+    private readonly List<Pair<string, int>> _bonuses = new();
+    private int _difficulty = 5;
+    private string _diceMode = Dice3d6;
+    private string _rollHtml = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _characters = await _roster.LoadAsync(Barony);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(L["Error while rolling: "] + ex.Message, Severity.Error);
+            _characters = Array.Empty<AllParamsModel>();
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private void AddBonus() => _bonuses.Add(new Pair<string, int>("", 0));
+
+    private void RemoveBonus()
+    {
+        if (_bonuses.Count > 0)
+            _bonuses.RemoveAt(_bonuses.Count - 1);
+    }
+
+    private void SelectCharacter(string name)
+    {
+        _rollerName = name ?? string.Empty;
+        _selected = _characters.FirstOrDefault(c =>
+            string.Equals(c.Character?.NPCName, _rollerName, StringComparison.Ordinal));
+        _baseSkillName = string.Empty;
+        _specialSkill = null;
+    }
+
+    private bool IsReady() =>
+        _selected is not null
+        && _specialSkill is not null
+        && !string.IsNullOrEmpty(_specialSkill.Name)
+        && !string.IsNullOrEmpty(_rollerName);
+
+    private void MakeRoll()
+    {
+        try
+        {
+            if (!IsReady())
+            {
+                Snackbar.Add(L["Some component is missing"], Severity.Warning);
+                return;
+            }
+
+            var skillName = _specialSkill!.Name;
+            var skillValue = _specialSkill.SumBonus;
+            var total = skillValue;
+
+            var narrative = new RichText();
+            narrative += $"{RichText.BoldText(_rollerName)} is making an {DifficultyDisplay.Name(_difficulty, L)} {RichText.BoldText(skillName)} skill check ({_diceMode})";
+            narrative.NewLine();
+            narrative += $"{_rollerName} skill value: {skillValue}";
+            narrative.NewLine();
+            foreach (var bonus in _bonuses)
+            {
+                total += bonus.Second;
+                narrative += $"Bonus from {bonus.First}: {bonus.Second}";
+                narrative.NewLine();
+            }
+            narrative += L["Difficulty level: {0}", _difficulty].Value;
+            narrative.NewLine();
+
+            var check = string.Equals(_diceMode, DiceD20, StringComparison.Ordinal)
+                ? RollService.MakeRollTestD20(_difficulty, total)
+                : RollService.MakeRollTest(_difficulty, total);
+
+            narrative += check.Text;
+            narrative.EndText();
+            _rollHtml = narrative.AllText;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(L["Error while rolling: "] + ex.Message, Severity.Error);
+        }
+    }
+
+    private async Task CopyAsync()
+    {
+        if (string.IsNullOrEmpty(_rollHtml))
+        {
+            Snackbar.Add(L["Make a roll first"], Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            var plain = HtmlToPlain(_rollHtml);
+            await JS.InvokeAsync<bool>("copyTextToClipboard", plain);
+            Snackbar.Add(L["Copied"], Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add(L["Error while saving: "] + ex.Message, Severity.Error);
+        }
+    }
+
+    private static string HtmlToPlain(string html)
+    {
+        var text = html
+            .Replace("</p><p>", "\n", StringComparison.OrdinalIgnoreCase)
+            .Replace("<br>", "\n", StringComparison.OrdinalIgnoreCase)
+            .Replace("<br/>", "\n", StringComparison.OrdinalIgnoreCase)
+            .Replace("<br />", "\n", StringComparison.OrdinalIgnoreCase);
+        text = Regex.Replace(text, "<[^>]+>", string.Empty);
+        return text.Trim();
+    }
+}

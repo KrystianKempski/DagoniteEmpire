@@ -7,11 +7,13 @@ public class RollServiceTests : IDisposable
     public RollServiceTests()
     {
         RollService.TestDiceOverride = null;
+        RollService.TestD20Override = null;
     }
 
     public void Dispose()
     {
         RollService.TestDiceOverride = null;
+        RollService.TestD20Override = null;
     }
 
     [Fact]
@@ -130,5 +132,29 @@ public class RollServiceTests : IDisposable
         Assert.True(result.FirstSideWins);
         Assert.Contains("Tie!", result.Text);
         Assert.Contains("Alpha", result.Text);
+    }
+
+    [Fact]
+    public void MakeRollTestD20_SucceedsWhenTotalMeetsDc()
+    {
+        RollService.TestD20Override = () => 12;
+
+        var result = RollService.MakeRollTestD20(16, 4);
+
+        Assert.True(result.Success);
+        Assert.Contains("(d20: 12)", result.Text);
+        Assert.Contains("Success!", result.Text);
+    }
+
+    [Fact]
+    public void MakeRollTestD20_FailsWhenTotalBelowDc()
+    {
+        RollService.TestD20Override = () => 3;
+
+        var result = RollService.MakeRollTestD20(16, 4);
+
+        Assert.False(result.Success);
+        Assert.Contains("(d20: 3)", result.Text);
+        Assert.Contains("Fail!", result.Text);
     }
 }

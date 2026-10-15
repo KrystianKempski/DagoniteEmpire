@@ -130,6 +130,25 @@ window.GetWindowWidth = function () {
     return window.innerWidth;
 };
 
+window.copyTextToClipboard = async function (text) {
+    if (typeof text !== 'string')
+        text = text == null ? '' : String(text);
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+        await navigator.clipboard.writeText(text);
+        return true;
+    }
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+};
+
 window.DownloadTextFile = (fileName, content) => {
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);

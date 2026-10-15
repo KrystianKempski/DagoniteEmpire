@@ -1,0 +1,107 @@
+@namespace DagoniteEmpire.Pages.Barony.Components
+@implements IDisposable
+@inject IBaronyRepository _baronyRepo
+@inject IUserService _userService
+@inject NavigationManager _navigationManager
+@inject IDialogService _dialogService
+
+@if (_ready)
+{
+    <div class="barony-roll-hud">
+        <BaronyHudTip Title="@(L["Skill roll"])"
+                      Text="@(L["Open the barony skill roll generator"])"
+                      Align="BaronyHudTip.HudTipAlign.End">
+            <button type="button"
+                    class="barony-roll-hud__btn"
+                    aria-label="@(L["Skill roll"])"
+                    @onclick="OpenDialogAsync">
+                <img src="@("/" + MyIcon.Dice)" alt="" class="barony-roll-hud__icon" />
+            </button>
+        </BaronyHudTip>
+    </div>
+}
+
+@code {
+    [CascadingParameter] public BaronyViewOptions? ViewOptions { get; set; }
+
+    private bool _ready;
+    private BaronyDTO? _barony;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _navigationManager.LocationChanged += OnLocationChanged;
+        if (ViewOptions is not null)
+            ViewOptions.ResourceHudChanged += OnResourceHudChanged;
+        await ReloadAsync();
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+        => _ = InvokeAsync(ReloadAsync);
+
+    private void OnResourceHudChanged()
+        => _ = InvokeAsync(ReloadAsync);
+
+    private async Task ReloadAsync()
+    {
+        try
+        {
+            var userInfo = await _userService.GetUserInfo();
+            var isAdminOrMg = userInfo?.IsAdminOrMG == true;
+            var characterId = userInfo?.SelectedCharacter?.Id ?? 0;
+
+            BaronyDTO? barony = characterId > 0
+                ? await _baronyRepo.GetByCharacterId(characterId)
+                : null;
+
+            if (barony is null && isAdminOrMg)
+            {
+                var summaries = await _baronyRepo.GetAllSummaries();
+                if (summaries.Count > 0)
+                {
+                    var pick = summaries.FirstOrDefault(b => b.CharacterId == characterId)
+                               ?? summaries[0];
+                    if (pick.CharacterId != characterId)
+                        await _userService.SetSelectedCharId(pick.CharacterId);
+                    barony = await _baronyRepo.GetByCharacterId(pick.CharacterId);
+                }
+            }
+
+            _barony = isAdminOrMg ? barony : null;
+            _ready = isAdminOrMg && barony is not null;
+        }
+        catch
+        {
+            _barony = null;
+            _ready = false;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OpenDialogAsync()
+    {
+        if (_barony is null)
+            return;
+
+        var parameters = new DialogParameters<BaronySkillRollDialog>
+        {
+            { x => x.Barony, _barony },
+        };
+        var options = new DialogOptions
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+            CloseOnEscapeKey = true,
+            BackdropClick = false,
+            CloseButton = true,
+        };
+        await _dialogService.ShowAsync<BaronySkillRollDialog>(L["Skill roll"], parameters, options);
+    }
+
+    public void Dispose()
+    {
+        _navigationManager.LocationChanged -= OnLocationChanged;
+        if (ViewOptions is not null)
+            ViewOptions.ResourceHudChanged -= OnResourceHudChanged;
+    }
+}
