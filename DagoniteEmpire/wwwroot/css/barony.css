@@ -7408,7 +7408,7 @@ button.court-duty-name--editable:hover {
     display: flex;
     align-items: stretch;
     gap: 2px;
-    padding: 0 8px;
+    padding: 0 4px 0 4px;
     height: var(--barony-tabbar-chrome-height);
     background: var(--barony-surface-2);
     border-top: 2px solid var(--barony-border-strong);
@@ -7426,31 +7426,53 @@ button.court-duty-name--editable:hover {
     }
 }
 
-/* HudTip wrappers are the flex items; stretch them so tabs meet the bar bottom
-   whenever a classic scrollbar is not taking layout space. */
+/* HudTip wrappers are the flex items; width follows the tab only. */
+.barony-tabbar > .barony-hud-tip,
+.barony-tabbar > .barony-tabbar__tab {
+    flex: 0 0 auto;
+    align-self: stretch;
+    width: fit-content;
+    min-width: auto;
+}
+
 .barony-tabbar > .barony-hud-tip {
     display: flex;
     flex-direction: column;
-    align-self: stretch;
-    min-width: 0;
 }
 
 .barony-tabbar > .barony-hud-tip > .barony-tabbar__tab {
     height: 100%;
+    width: auto;
+    max-width: none;
     box-sizing: border-box;
 }
 
-/* Open above the fixed bottom bar (default HUD tips open downward). */
-.barony-tabbar .barony-hud-tip__popup {
+/* Open above the bar. Use display:none while idle — visibility:hidden absolute
+   popups still inflate the tabbar's horizontal scrollWidth (empty space on the right).
+   Anchor to the tab's right edge so an open tip grows leftward over other tabs. */
+.barony-tabbar .barony-hud-tip__popup,
+.barony-tabbar .barony-hud-tip--center .barony-hud-tip__popup,
+.barony-tabbar .barony-hud-tip--start .barony-hud-tip__popup,
+.barony-tabbar .barony-hud-tip--end .barony-hud-tip__popup {
+    display: none;
     top: auto;
     bottom: calc(100% + 6px);
+    left: auto;
+    right: 0;
+    transform: none;
     z-index: 1600;
+}
+
+.barony-tabbar .barony-hud-tip:hover .barony-hud-tip__popup,
+.barony-tabbar .barony-hud-tip:has(:focus-visible) .barony-hud-tip__popup {
+    display: block;
+    visibility: visible;
+    opacity: 1;
 }
 
 /* Hide tips while reordering — avoids covering drop targets. */
 .barony-tabbar--dragging .barony-hud-tip__popup {
-    visibility: hidden !important;
-    opacity: 0 !important;
+    display: none !important;
 }
 
 /* Above fixed barony tab bar (z-index 1500) and clear of its height. */
@@ -7465,8 +7487,8 @@ button.court-duty-name--editable:hover {
     position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 0 14px;
+    gap: 5px;
+    padding: 0 10px 0 8px;
     margin-top: 4px;
     border: 1px solid var(--barony-border);
     border-bottom: none;
@@ -7478,6 +7500,12 @@ button.court-duty-name--editable:hover {
     cursor: grab;
     text-decoration: none;
     user-select: none;
+}
+
+.barony-tabbar:not(.barony-tabbar--mobile) .barony-tabbar__label {
+    overflow: visible;
+    text-overflow: clip;
+    flex-shrink: 0;
 }
 
 /* Keep DnD hit-testing on the tab itself (MudIcon otherwise steals drag/drop). */
