@@ -228,8 +228,9 @@ namespace DA_Common.Barony
         int TroopScale);
 
     /// <summary>
-    /// Re-equip an Active unit: full catalog gear cost (Craft/Buy/Defense), scaled by current troops / 50.
-    /// No people cost. Turns = max(1, Standard.Turns × N/50).
+    /// Re-equip an Active unit: catalog gear cost (Craft/Buy/Defense) only for slots that change,
+    /// scaled by current troops / 50. Unchanged pieces are free (no repurchase). No people cost.
+    /// Turns = max(1, Standard.Turns × N/50).
     /// </summary>
     public static class UnitChangeEquipmentCostFormulas
     {
@@ -241,12 +242,25 @@ namespace DA_Common.Barony
             UnitMountDef? mount,
             UnitEquipmentPayModes payModes,
             int troopCount,
-            int fullTroopCount = UnitRules.DefaultTroopCount)
+            int fullTroopCount = UnitRules.DefaultTroopCount,
+            string? previousWeapon1Key = null,
+            string? previousWeapon2Key = null,
+            string? previousArmorKey = null,
+            string? previousShieldKey = null,
+            string? previousMountKey = null)
         {
             var full = Math.Max(1, fullTroopCount);
             var n = Math.Clamp(troopCount, 1, full);
+
+            // Bill only new / replaced slots — keeping axes→axes costs nothing; axes→axes+shield bills the shield only.
+            var billW1 = SameGearKey(previousWeapon1Key, weapon1?.Key) ? null : weapon1;
+            var billW2 = SameGearKey(previousWeapon2Key, weapon2?.Key) ? null : weapon2;
+            var billArmor = SameGearKey(previousArmorKey, armor?.Key) ? null : armor;
+            var billShield = SameGearKey(previousShieldKey, shield?.Key) ? null : shield;
+            var billMount = SameGearKey(previousMountKey, mount?.Key) ? null : mount;
+
             var (fullProd, fullGold, fullDef) = UnitTrainingCostFormulas.SumGear(
-                weapon1, weapon2, armor, shield, mount, payModes);
+                billW1, billW2, billArmor, billShield, billMount, payModes);
 
             var prod = fullProd * n / full;
             var gold = fullGold * n / full;
@@ -261,6 +275,9 @@ namespace DA_Common.Barony
                 Turns: turns,
                 TroopScale: n);
         }
+
+        public static bool SameGearKey(string? a, string? b) =>
+            string.Equals(a ?? "", b ?? "", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>

@@ -6,13 +6,14 @@
            ContentClass="baron-influence-dialog-content"
            ActionsClass="baron-influence-dialog-actions">
     <TitleContent>
-        <MudText Typo="Typo.h6">Change equipment — @Unit.Name</MudText>
+        <MudText Typo="Typo.h6">@L["Change equipment — {0}", Unit.Name]</MudText>
     </TitleContent>
     <DialogContent>
         <div class="barony-dialog-theme baron-influence-edit-dialog unit-change-equip-dialog">
             <MudText Typo="Typo.caption" Style="color:var(--barony-muted);" Class="mb-2">
                 @L["Pick a new loadout and how to pay for each piece (Craft / Buy / Defense), same as the unit generator."]
                 @((MarkupString)L["Creates a <b>{0}</b> project in Resource allocation — fund it on Projects.", L["Unit Change Equipment"]].Value)
+                @L["Only new or replaced gear is charged; unchanged pieces are free."]
                 @L["Cost is scaled by current troops ({0}/{1}).", Unit.TroopCount, Unit.FullTroopCount]
                 @L["Gear quality stays as set by the GM ({0}).", CurrentQuality]
             </MudText>
@@ -36,11 +37,11 @@
                 @L["Craft · Buy (Mkt) · Defense (2×Mkt). Costs below already include troop scale."]
             </MudText>
             <div class="unit-gear-pay mb-3">
-                @PayRow("W1", _w1?.DisplayName(), _w1?.ProductionCost, _w1?.GoldCost, _w1?.MarketGold, _payW1, v => { _payW1 = v; Recalc(); }, required: true)
-                @PayRow("W2", _w2?.DisplayName(), _w2?.ProductionCost, _w2?.GoldCost, _w2?.MarketGold, _payW2, v => { _payW2 = v; Recalc(); }, required: false)
-                @PayRow("Armor", _armorDef?.DisplayName(), _armorDef?.ProductionCost, _armorDef?.GoldCost, _armorDef?.MarketGold, _payArmor, v => { _payArmor = v; Recalc(); }, required: false)
-                @PayRow("Shield", _shieldDef?.DisplayName(), _shieldDef?.ProductionCost, _shieldDef?.GoldCost, _shieldDef?.MarketGold, _payShield, v => { _payShield = v; Recalc(); }, required: false)
-                @PayRow("Mount", _mountDef?.DisplayName(), _mountDef?.ProductionCost, _mountDef?.GoldCost, _mountDef?.MarketGold, _payMount, v => { _payMount = v; Recalc(); }, required: false)
+                @PayRow("W1", _w1?.DisplayName(), _w1?.ProductionCost, _w1?.GoldCost, _w1?.MarketGold, _payW1, v => { _payW1 = v; Recalc(); }, required: true, billable: SlotChanged(Unit.Weapon1Key, _weapon1))
+                @PayRow("W2", _w2?.DisplayName(), _w2?.ProductionCost, _w2?.GoldCost, _w2?.MarketGold, _payW2, v => { _payW2 = v; Recalc(); }, required: false, billable: SlotChanged(Unit.Weapon2Key, _weapon2))
+                @PayRow("Armor", _armorDef?.DisplayName(), _armorDef?.ProductionCost, _armorDef?.GoldCost, _armorDef?.MarketGold, _payArmor, v => { _payArmor = v; Recalc(); }, required: false, billable: SlotChanged(Unit.ArmorKey, _armor))
+                @PayRow("Shield", _shieldDef?.DisplayName(), _shieldDef?.ProductionCost, _shieldDef?.GoldCost, _shieldDef?.MarketGold, _payShield, v => { _payShield = v; Recalc(); }, required: false, billable: SlotChanged(Unit.ShieldKey, _shield))
+                @PayRow("Mount", _mountDef?.DisplayName(), _mountDef?.ProductionCost, _mountDef?.GoldCost, _mountDef?.MarketGold, _payMount, v => { _payMount = v; Recalc(); }, required: false, billable: SlotChanged(Unit.MountKey, _mount))
             </div>
 
             <MudText Typo="Typo.subtitle2" Class="mb-1">@L["Project cost"]</MudText>
@@ -90,14 +91,17 @@
 
     private bool CanConfirm =>
         !string.IsNullOrWhiteSpace(_weapon1)
-        && (_costs.Gold > 0 || _costs.Production > 0 || _costs.Defense > 0 || LoadoutChanged);
+        && LoadoutChanged;
 
     private bool LoadoutChanged =>
-        !string.Equals(Unit.Weapon1Key, _weapon1, StringComparison.OrdinalIgnoreCase)
-        || !string.Equals(Unit.Weapon2Key ?? "", _weapon2 ?? "", StringComparison.OrdinalIgnoreCase)
-        || !string.Equals(Unit.ArmorKey ?? "", _armor ?? "", StringComparison.OrdinalIgnoreCase)
-        || !string.Equals(Unit.ShieldKey ?? "", _shield ?? "", StringComparison.OrdinalIgnoreCase)
-        || !string.Equals(Unit.MountKey ?? "", _mount ?? "", StringComparison.OrdinalIgnoreCase);
+        SlotChanged(Unit.Weapon1Key, _weapon1)
+        || SlotChanged(Unit.Weapon2Key, _weapon2)
+        || SlotChanged(Unit.ArmorKey, _armor)
+        || SlotChanged(Unit.ShieldKey, _shield)
+        || SlotChanged(Unit.MountKey, _mount);
+
+    private static bool SlotChanged(string? previous, string? next) =>
+        !UnitChangeEquipmentCostFormulas.SameGearKey(previous, next);
 
     protected override void OnInitialized()
     {
@@ -173,7 +177,8 @@
             _w1, _w2, _armorDef, _shieldDef, _mountDef,
             new UnitEquipmentPayModes(_payW1, _payW2, _payArmor, _payShield, _payMount),
             Unit.TroopCount,
-            Unit.FullTroopCount);
+            Unit.FullTroopCount,
+            Unit.Weapon1Key, Unit.Weapon2Key, Unit.ArmorKey, Unit.ShieldKey, Unit.MountKey);
     }
 
     private RenderFragment PayRow(
@@ -184,14 +189,15 @@
         int? market,
         string mode,
         Action<string> onChanged,
-        bool required) => __builder =>
+        bool required,
+        bool billable) => __builder =>
     {
         var hasItem = !string.IsNullOrWhiteSpace(name);
         var m = UnitEquipmentAcquireMode.Normalize(mode);
         <div class="unit-gear-pay__row @(hasItem ? null : "unit-gear-pay__row--empty")">
             <span class="unit-gear-pay__slot">@slot</span>
             <span class="unit-gear-pay__name">@(hasItem ? name : (required ? "—" : "none"))</span>
-            @if (hasItem)
+            @if (hasItem && billable)
             {
                 <MudRadioGroup T="string"
                                Value="@m"
@@ -213,6 +219,10 @@
                         </MudRadio>
                     </BaronyTooltip>
                 </MudRadioGroup>
+            }
+            else if (hasItem)
+            {
+                <span class="unit-gear-pay__name" style="color:var(--barony-muted);">@L["unchanged · free"]</span>
             }
         </div>
     };

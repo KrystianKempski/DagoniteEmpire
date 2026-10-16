@@ -346,7 +346,7 @@ Seeded once in `CreateForCharacter` via `StarterUnitsSeeder` (not Ensure):
 
 ### Creation costs
 - Recruit cost from selection catalog: usually Defense; **Mercenaries** = **80** gold (0 Defense); **Forced hire** = 0/0 and creates event **Forced hire** (Loyalty −7, Stability −7 for 3 turns) when training starts
-- **Gear trade access** (`UnitEquipmentTradeAccess`): military weapons need **Military weapons**; powder weapons need **Firearms**; Simple / Medium / Heavy armor (and shields in those Excel tiers) need **Light / Medium / Heavy armor** respectively. Simple weapons need no trade good. Mounts: **Horses** / **War horses**. Generator and re-equip dialog grey locked rows; training / change-equipment APIs reject gear without access.
+- **Gear trade access** (`UnitEquipmentTradeAccess`): military weapons need **Military weapons**; powder weapons need **Firearms**; Simple / Medium / Heavy armor (and shields in those Excel tiers) need **Light / Medium / Heavy armor** respectively. Simple weapons need no trade good. Mounts: **Horses** / **War horses**. Generator and re-equip dialog grey locked rows; training API rejects gear without access. Change-equipment validates **only new/replaced slots** (unchanged pieces are grandfathered).
 - **Mounts** (`UnitMountCatalog`): optional. Horses = +3 Move, +2 Atk/Def, +1 Dmg; Craft 150 Prod + 150 Gold or Buy Mkt **200** or Defense **400**; Riding **6**. War horses = +3 Move, +4 Atk/Def, +2 Dmg; Craft 250+250 / Mkt **300** / Defense **600**; Riding **8**. Bonuses stack on combat totals; Mkt counts toward upkeep.
 - Per-item acquire mode:
   - **Craft** = Production + catalog Gold
@@ -480,7 +480,7 @@ JSON ledger per unit (max 200 entries), mapped to `BaronyUnitLogEntryDTO`:
   - battle XP apply (`kind=battle` + `kind=xp` entries, including MG adjustment and final pool update).
 - **Troop recovery**: understrength units (not Disbanded) regain **+5** troops per Resolve Turn until full (`UnitRules.TroopRegenPerTurn`). Shown in the turn report.
 - **Reinforce project** (`ProjectOutputKind.UnitReinforce`): button on understrength Active units with no open project. People cost = Selected volunteers + Standard, scaled `× N/50` (floor). Gear = current loadout at **50%** salvage × same scale (`× N/100` of full gear). Acquire modes Craft/Buy/Defense like the generator. On complete: add N troops (cap 50) and sync Max HP.
-- **Change equipment project** (`ProjectOutputKind.UnitChangeEquipment`): button on Active units with no open project. Dialog picks new loadout + Craft/Buy/Defense pay modes (unit generator Gear UX). Cost = full gear `SumGear` scaled `× troopCount/50`; turns = max(1, Standard×N/50). Starts in Resource allocation. On complete: write keys/quality, refresh agility penalty / Defense skill / Max HP.
+- **Change equipment project** (`ProjectOutputKind.UnitChangeEquipment`): button on Active units with no open project. Dialog picks new loadout + Craft/Buy/Defense pay modes (unit generator Gear UX). Cost = `SumGear` **only for slots that change** (unchanged pieces free), scaled `× troopCount/50`; turns = max(1, Standard×N/50). Trade/stat checks apply only to new/replaced slots (existing gear is grandfathered). Starts in Resource allocation. On complete: write keys/quality, refresh agility penalty / Defense skill / Max HP.
 
 ### Skill totals (Excel Generator / Oddziały)
 - **Base skills** (Melee, Ranged, Athletics, Agility, Urban, Scout): `Razem = Bazowo + Inne` — **no** attribute.

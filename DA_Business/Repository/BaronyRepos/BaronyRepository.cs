@@ -434,6 +434,11 @@ namespace DA_Business.Repository.BaronyRepos
             return TradeGoodAvailability.Resolve(facilityNames, treaties, overrides);
         }
 
+        /// <summary>
+        /// Validates stats + trade access for gear. With <paramref name="grandfatherUnchangedSlots"/>,
+        /// slots matching the previous loadout are skipped — e.g. re-equip may keep light armor
+        /// the unit already wears even if the barony lacks light-armor trade access.
+        /// </summary>
         private static void EnsureUnitGearMeetsRequirements(
             BaronyUnitDTO unit,
             UnitWeaponDef weapon1,
@@ -441,7 +446,13 @@ namespace DA_Business.Repository.BaronyRepos
             UnitArmorDef? armor,
             UnitArmorDef? shield,
             UnitMountDef? mount,
-            TradeGoodAvailabilitySnapshot availability)
+            TradeGoodAvailabilitySnapshot availability,
+            bool grandfatherUnchangedSlots = false,
+            string? previousWeapon1Key = null,
+            string? previousWeapon2Key = null,
+            string? previousArmorKey = null,
+            string? previousShieldKey = null,
+            string? previousMountKey = null)
         {
             var build = unit.EffectiveBuild;
             var agility = unit.EffectiveAgility;
@@ -449,18 +460,27 @@ namespace DA_Business.Repository.BaronyRepos
             var armorSkill = skillTotals.GetValueOrDefault(UnitSkillKey.ArmorSkill);
             var ridingSkill = skillTotals.GetValueOrDefault(UnitSkillKey.Riding);
 
-            if (!UnitEquipmentTradeAccess.MeetsWeapon(weapon1, build, agility, availability, out var w1Why))
+            bool Skip(string? previous, string? next) =>
+                grandfatherUnchangedSlots
+                && UnitChangeEquipmentCostFormulas.SameGearKey(previous, next);
+
+            if (!Skip(previousWeapon1Key, weapon1.Key)
+                && !UnitEquipmentTradeAccess.MeetsWeapon(weapon1, build, agility, availability, out var w1Why))
                 throw new InvalidOperationException(w1Why);
             if (weapon2 is not null
+                && !Skip(previousWeapon2Key, weapon2.Key)
                 && !UnitEquipmentTradeAccess.MeetsWeapon(weapon2, build, agility, availability, out var w2Why))
                 throw new InvalidOperationException(w2Why);
             if (armor is not null
+                && !Skip(previousArmorKey, armor.Key)
                 && !UnitEquipmentTradeAccess.MeetsArmor(armor, build, armorSkill, availability, out var arWhy))
                 throw new InvalidOperationException(arWhy);
             if (shield is not null
+                && !Skip(previousShieldKey, shield.Key)
                 && !UnitEquipmentTradeAccess.MeetsArmor(shield, build, armorSkill, availability, out var shWhy))
                 throw new InvalidOperationException(shWhy);
             if (mount is not null
+                && !Skip(previousMountKey, mount.Key)
                 && !UnitEquipmentTradeAccess.MeetsMount(mount, ridingSkill, availability, out var mtWhy))
                 throw new InvalidOperationException(mtWhy);
         }
@@ -5951,7 +5971,15 @@ namespace DA_Business.Repository.BaronyRepos
 
                 var availability = await ResolveTradeGoodAvailabilityAsync(ctx, request.BaronyId, barony);
                 var unitDto = ToUnitDTO(unit);
-                EnsureUnitGearMeetsRequirements(unitDto, weapon1, weapon2, armor, shield, mount, availability);
+                // Grandfather unchanged slots (keep light armor without access when only adding a shield).
+                EnsureUnitGearMeetsRequirements(
+                    unitDto, weapon1, weapon2, armor, shield, mount, availability,
+                    grandfatherUnchangedSlots: true,
+                    previousWeapon1Key: unit.Weapon1Key,
+                    previousWeapon2Key: unit.Weapon2Key,
+                    previousArmorKey: unit.ArmorKey,
+                    previousShieldKey: unit.ShieldKey,
+                    previousMountKey: unit.MountKey);
 
                 var sameLoadout =
                     string.Equals(unit.Weapon1Key, weapon1.Key, StringComparison.OrdinalIgnoreCase)
@@ -5979,7 +6007,8 @@ namespace DA_Business.Repository.BaronyRepos
 
                 var full = unit.MaxTroopCount > 0 ? unit.MaxTroopCount : UnitRules.DefaultTroopCount;
                 var costs = UnitChangeEquipmentCostFormulas.Compute(
-                    weapon1, weapon2, armor, shield, mount, payModes, unit.TroopCount, full);
+                    weapon1, weapon2, armor, shield, mount, payModes, unit.TroopCount, full,
+                    unit.Weapon1Key, unit.Weapon2Key, unit.ArmorKey, unit.ShieldKey, unit.MountKey);
 
                 var goldCost = new PpbVector();
                 goldCost[Ppb.Treasury] = costs.Gold;
@@ -6020,7 +6049,7 @@ namespace DA_Business.Repository.BaronyRepos
                     Name = $"Change equipment: {unit.Name}",
                     Description =
                         $"Re-equip {unit.Name} ({unit.TroopCount}/{full} troops): {gearSummary}. "
-                        + "Gear paid Craft / Buy / Defense like the unit generator; cost scaled by troop count.",
+                        + "Only new or replaced gear is charged (Craft / Buy / Defense); cost scaled by troop count.",
                     // Same funding flow as Unit Reinforce (Resource allocation + Combined tracks).
                     OutputKind = ProjectOutputKind.UnitChangeEquipment,
                     UnitId = unit.Id,

@@ -521,7 +521,7 @@
             FullWidth = true,
         };
         var dialog = await _dialogService.ShowAsync<UnitChangeEquipmentDialog>(
-            "Change unit equipment", parameters, options);
+            L["Change unit equipment"], parameters, options);
         var result = await dialog.Result;
         if (result is null || result.Canceled || result.Data is not StartUnitChangeEquipmentRequest request)
             return;
@@ -535,7 +535,7 @@
             Unit.OpenProjectOutputKind = created.Project.OutputKind;
             Unit.OpenProjectStatus = created.Project.Status;
             _snackBar.Add(
-                $"Change equipment project “{created.Project.Name}” created — fund it on Projects.",
+                L["Change equipment project “{0}” created — fund it on Projects.", created.Project.Name],
                 Severity.Success);
             await OnChanged.InvokeAsync();
         }
