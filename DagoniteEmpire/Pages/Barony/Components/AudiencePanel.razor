@@ -557,6 +557,8 @@ else
     [Parameter] public EventCallback OnResolve { get; set; }
     [Parameter] public EventCallback OnDefer { get; set; }
     [Parameter] public EventCallback OnDismiss { get; set; }
+    /// <summary>Fires when the hall dock expands/collapses (mobile compose-focus layout).</summary>
+    [Parameter] public EventCallback<bool> OnComposerExpandedChanged { get; set; }
 
     private bool _isOpen;
     private bool _initialOpenApplied;
@@ -728,8 +730,7 @@ else
         if (_replyExpanded)
             return;
 
-        _replyExpanded = true;
-        StateHasChanged();
+        await SetComposerExpandedAsync(true);
         await Task.Yield();
         try
         {
@@ -756,15 +757,42 @@ else
         }
     }
 
-    [JSInvokable]
-    public async Task CollapseComposerFromJs()
+    /// <summary>Collapse the docked composer (e.g. mode-tile click restores the throne ring).</summary>
+    public Task CollapseComposerAsync() => SetComposerExpandedAsync(false);
+
+    private async Task SetComposerExpandedAsync(bool expanded)
     {
-        if (!_replyExpanded)
+        if (_replyExpanded == expanded)
             return;
 
-        _replyExpanded = false;
-        await InvokeAsync(StateHasChanged);
+        _replyExpanded = expanded;
+        StateHasChanged();
+
+        if (!expanded && _outsideCollapseRegistered)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("QuillPostEditor.disableOutsideClickCollapse", ComposerDockId);
+            }
+            catch
+            {
+                // Circuit may already be gone.
+            }
+            _outsideCollapseRegistered = false;
+        }
+
+        try
+        {
+            await OnComposerExpandedChanged.InvokeAsync(expanded);
+        }
+        catch
+        {
+            // Parent may have unmounted.
+        }
     }
+
+    [JSInvokable]
+    public Task CollapseComposerFromJs() => SetComposerExpandedAsync(false);
 
     public async ValueTask DisposeAsync()
     {
@@ -777,6 +805,20 @@ else
             catch
             {
                 // Circuit may already be gone on navigation/disconnect.
+            }
+            _outsideCollapseRegistered = false;
+        }
+
+        if (_replyExpanded)
+        {
+            _replyExpanded = false;
+            try
+            {
+                await OnComposerExpandedChanged.InvokeAsync(false);
+            }
+            catch
+            {
+                // Parent may already be gone (mode switch / navigation).
             }
         }
 

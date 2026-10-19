@@ -11,7 +11,7 @@
 
 <PageTitle>Dagonite Empire | @L["Audience Hall"]</PageTitle>
 
-<div class="audience-hall">
+<div class="audience-hall @(_composerExpanded ? "audience-hall--compose-focus" : null)">
     @if (IsLoading)
     {
         <MudProgressCircular Indeterminate="true" Size="Size.Small" /> <span>@L["Loading..."]</span>
@@ -331,9 +331,9 @@
                 <div class="audience-hall__tiles">
                     <button type="button"
                             class="audience-hall__tile @(_mode == HallMode.Audiences ? "is-on" : "")"
-                            disabled="@(_mode == HallMode.Audiences)"
+                            disabled="@(_mode == HallMode.Audiences && !_composerExpanded)"
                             title="@L["Audiences"]"
-                            @onclick="ToggleAudiences">
+                            @onclick="() => OnModeTileAsync(HallMode.Audiences)">
                         @if (PendingAudiencesForTileBadge.Count > 0)
                         {
                             <span class="audience-hall__badge">@PendingAudiencesForTileBadge.Count</span>
@@ -342,9 +342,9 @@
                     </button>
                     <button type="button"
                             class="audience-hall__tile @(_mode == HallMode.Council ? "is-on" : "")"
-                            disabled="@(_mode == HallMode.Council)"
+                            disabled="@(_mode == HallMode.Council && !_composerExpanded)"
                             title="@L["Council"]"
-                            @onclick="ToggleCouncil">
+                            @onclick="() => OnModeTileAsync(HallMode.Council)">
                         @if (PendingCouncilTopicsForTileBadge.Count > 0)
                         {
                             <span class="audience-hall__badge">@PendingCouncilTopicsForTileBadge.Count</span>
@@ -353,9 +353,9 @@
                     </button>
                     <button type="button"
                             class="audience-hall__tile @(_mode == HallMode.Adventures ? "is-on" : "")"
-                            disabled="@(_mode == HallMode.Adventures)"
+                            disabled="@(_mode == HallMode.Adventures && !_composerExpanded)"
                             title="@L["Adventures"]"
-                            @onclick="ToggleAdventures">
+                            @onclick="() => OnModeTileAsync(HallMode.Adventures)">
                         @if (_hallAdventures.Count > 0)
                         {
                             <span class="audience-hall__badge">@_hallAdventures.Count</span>
@@ -381,6 +381,7 @@
                         else if (CurrentAudience is not null)
                         {
                             <AudiencePanel @key="CurrentAudience.Id"
+                                           @ref="_activePanel"
                                            Audience="CurrentAudience"
                                            HallLayout="true"
                                            ReadOnly="CurrentAudience.IsClosed"
@@ -389,6 +390,7 @@
                                            CanWriteAsBaron="CanWriteAsBaron"
                                            BaronCharacterName="@BaronCharacterName"
                                            Busy="_busy"
+                                           OnComposerExpandedChanged="OnComposerExpandedChanged"
                                            OnSpeak="req => SendReplyAsync(CurrentAudience, req)"
                                            OnAddResources="() => AddResourcesAsync(CurrentAudience)"
                                            OnCreateProject="() => CreateProjectAsync(CurrentAudience)"
@@ -411,6 +413,7 @@
                         else if (CurrentCouncilTopic is not null)
                         {
                             <AudiencePanel @key="CurrentCouncilTopic.Id"
+                                           @ref="_activePanel"
                                            Audience="CurrentCouncilTopic"
                                            HallLayout="true"
                                            AdvisorIcon="@CurrentCouncilAdvisorIcon"
@@ -419,6 +422,7 @@
                                            BaronCharacterName="@BaronCharacterName"
                                            Busy="_busy"
                                            CourtSpeakers="_courtSpeakers"
+                                           OnComposerExpandedChanged="OnComposerExpandedChanged"
                                            OnSpeak="req => SendReplyAsync(CurrentCouncilTopic, req)"
                                            OnAddResources="() => AddResourcesAsync(CurrentCouncilTopic)"
                                            OnCreateProject="() => CreateProjectAsync(CurrentCouncilTopic)"
@@ -970,28 +974,33 @@
             _overlayEventIndex = Math.Max(0, OverlayHallEvents.Count - 1);
     }
 
-    // These only ENTER their mode now (buttons are disabled while already active, see markup)
-    // so a stray double-click can never fall back to Idle/throne mid-animation.
-    private void ToggleAudiences()
-    {
-        if (_mode == HallMode.Audiences)
-            return;
-        _mode = HallMode.Audiences;
-    }
+    /// <summary>True while the reply dock is open — on phones, collapses the throne ring.</summary>
+    private bool _composerExpanded;
+    private AudiencePanel? _activePanel;
 
-    private void ToggleCouncil()
-    {
-        if (_mode == HallMode.Council)
-            return;
-        _mode = HallMode.Council;
-        _councilIndex = -1;
-    }
+    private void OnComposerExpandedChanged(bool expanded) => _composerExpanded = expanded;
 
-    private void ToggleAdventures()
+    // Mode tiles enter their mode (disabled while already active), except during compose-focus:
+    // then the active tile stays clickable so the player can restore the throne without switching.
+    private async Task OnModeTileAsync(HallMode mode)
     {
-        if (_mode == HallMode.Adventures)
+        if (_composerExpanded)
+        {
+            if (_activePanel is not null)
+                await _activePanel.CollapseComposerAsync();
+            else
+                _composerExpanded = false;
+
+            if (_mode == mode)
+                return;
+        }
+
+        if (_mode == mode)
             return;
-        _mode = HallMode.Adventures;
+
+        _mode = mode;
+        if (mode == HallMode.Council)
+            _councilIndex = -1;
     }
 
     private void MinimizeOverlay()

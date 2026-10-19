@@ -1,6 +1,9 @@
 .audience-hall {
     --throne: clamp(9.2rem, 34.5dvh, 23rem);
-    max-width: 46rem;
+    /* Full content width — the parchment reads better with longer lines than a
+       letter-column max-width; stage (throne + tiles) stays centered via flex. */
+    max-width: none;
+    width: 100%;
     margin: 0 auto;
     position: relative;
     /* Fill .barony-scope--audience-hall (parent is already viewport minus Mud appbar padding). */
@@ -65,6 +68,7 @@
     align-items: center;
     width: 100%;
     overflow: hidden;
+    transition: flex-basis .28s ease, height .28s ease;
 }
 
 .audience-hall__throne {
@@ -131,6 +135,11 @@
     gap: .0rem;
     width: 100%;
     animation: audience-hall-fade-up .6s cubic-bezier(.22, 1, .36, 1) both;
+    transition:
+        flex-basis .28s ease,
+        max-height .28s ease,
+        margin .28s ease,
+        opacity .22s ease;
 }
 
 .audience-hall__ring-core {
@@ -508,7 +517,6 @@
        left edge, right cards (and their badges) on the right edge. */
     .audience-hall {
         --throne: clamp(4.9rem, 18.4dvh, 9.2rem);
-        max-width: none;
     }
 
     .audience-hall__hub {
@@ -586,6 +594,29 @@
     .audience-hall__tile img {
         width: 2.4rem;
         height: 2.4rem;
+    }
+
+    /* Compose focus: hide throne + orbit satellites; keep mode tiles; give parchment
+       and the reply dock almost the full viewport. */
+    .audience-hall--compose-focus .audience-hall__stage {
+        flex: 0 0 auto;
+        height: auto;
+    }
+
+    .audience-hall--compose-focus .audience-hall__ring {
+        flex: 0 0 0;
+        max-height: 0;
+        min-height: 0;
+        margin: 0;
+        opacity: 0;
+        overflow: hidden;
+        pointer-events: none;
+        animation: none;
+    }
+
+    .audience-hall--compose-focus .audience-hall__tiles {
+        padding-top: .15rem;
+        padding-bottom: .25rem;
     }
 }
 
